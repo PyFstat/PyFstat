@@ -18,12 +18,20 @@ import corner
 import dill as pickle
 import lalpulsar
 
-try:
-    from ephemParams import earth_ephem, sun_ephem
-except (IOError, ImportError):
-    logging.warning('No ephemParams.py file found, or it does not contain '
-                    'earth_ephem and sun_ephem, please provide the paths when '
-                    'initialising searches')
+config_file = os.path.expanduser('~')+'/.pyfstat.conf'
+if os.path.isfile(config_file):
+    d = {}
+    with open(config_file, 'r') as f:
+        for line in f:
+            k, v = line.split('=')
+            k = k.replace(' ', '')
+            v = v.replace(' ', '')
+            d[k] = v
+    earth_ephem = d['earth_ephem']
+    sun_ephem = d['sun_ephem']
+else:
+    logging.warning('No ~/.pyfstat.conf file found please provide the paths '
+                    'when initialising searches')
     earth_ephem = None
     sun_ephem = None
 
