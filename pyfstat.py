@@ -169,7 +169,9 @@ class ComputeFstat(object):
         self.sft_filepath = self.sftdir+'/*_'+self.sftlabel+"*sft"
         SFTCatalog = lalpulsar.SFTdataFind(self.sft_filepath, constraints)
         names = list(set([d.header.name for d in SFTCatalog.data]))
-        logging.info('Loaded data from detectors {}'.format(names))
+        logging.info(
+            'Loaded data from detectors {} matching pattern {}'.format(
+                names, self.sft_filepath))
 
         logging.info('Initialising ephems')
         ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
@@ -185,6 +187,9 @@ class ComputeFstat(object):
             fB = fA + (numBins-1)*SFTCatalog.data[0].header.deltaF
             self.minCoverFreq = fA + 0.5
             self.maxCoverFreq = fB - 0.5
+            logging.info('Min/max cover freqs not provided, using '
+                         '{} and {}, est. from SFTs'.format(
+                             self.minCoverFreq, self.maxCoverFreq))
 
         self.FstatInput = lalpulsar.CreateFstatInput(SFTCatalog,
                                                      self.minCoverFreq,
@@ -347,9 +352,9 @@ class MCMCGlitchSearch(BaseSearchClass):
     @initializer
     def __init__(self, label, outdir, sftlabel, sftdir, theta, tref, tstart,
                  tend, nsteps=[100, 100, 100], nwalkers=100, ntemps=1,
-                 nglitch=0, minCoverFreq=29, maxCoverFreq=31, scatter_val=1e-4,
-                 betas=None, detector=None, dtglitchmin=20*86400,
-                 earth_ephem=None, sun_ephem=None):
+                 nglitch=0, minCoverFreq=None, maxCoverFreq=None,
+                 scatter_val=1e-4, betas=None, detector=None,
+                 dtglitchmin=20*86400, earth_ephem=None, sun_ephem=None):
         """
         Parameters
         label, outdir: str
@@ -904,7 +909,7 @@ class GridGlitchSearch(BaseSearchClass):
     def __init__(self, label, outdir, sftlabel=None, sftdir=None, F0s=[0],
                  F1s=[0], F2s=[0], delta_F0s=[0], delta_F1s=[0], tglitchs=None,
                  Alphas=[0], Deltas=[0], tref=None, tstart=None, tend=None,
-                 minCoverFreq=29, maxCoverFreq=31, write_after=1000,
+                 minCoverFreq=None, maxCoverFreq=None, write_after=1000,
                  earth_ephem=None, sun_ephem=None):
         """
         Parameters
@@ -946,8 +951,8 @@ class GridGlitchSearch(BaseSearchClass):
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.out_file = '{}/{}_gridFS.txt'.format(self.outdir, self.label)
-        self.keys = ['F0', 'F1', 'F2', 'delta_F0', 'delta_F1', 'tglitch',
-                     'Alpha', 'Delta']
+        self.keys = ['F0', 'F1', 'F2', 'Alpha', 'Delta', 'delta_F0',
+                     'delta_F1', 'tglitch']
 
     def get_array_from_tuple(self, x):
         if len(x) == 1:
@@ -995,7 +1000,7 @@ class GridGlitchSearch(BaseSearchClass):
         counter = 0
         data = []
         for vals in self.input_data:
-            FS = self.search.compute_glitch_fstat(*vals)
+            FS = self.search.compute_glitch_fstat_single(*vals)
             data.append(list(vals) + [FS])
 
             if counter > self.write_after:
