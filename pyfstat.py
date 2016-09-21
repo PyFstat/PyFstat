@@ -210,11 +210,17 @@ class ComputeFstat(object):
         logging.info('Initialising FstatResults')
         self.FstatResults = lalpulsar.FstatResults()
 
+        self.windowRange = lalpulsar.transientWindowRange_t()
+        self.windowRange.type = lalpulsar.TRANSIENT_RECTANGULAR
+        self.windowRange.t0Band = 0
+        self.windowRange.dt0 = 1
+        self.windowRange.tauBand = 0
+        self.windowRange.dtau = 1
+
     def run_computefstatistic_single_point(self, tstart, tend, F0, F1,
                                            F2, Alpha, Delta):
         """ Compute the F-stat fully-coherently at a single point """
 
-        numFreqBins = 1
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
         self.PulsarDopplerParams.Alpha = Alpha
         self.PulsarDopplerParams.Delta = Delta
@@ -222,21 +228,14 @@ class ComputeFstat(object):
         lalpulsar.ComputeFstat(self.FstatResults,
                                self.FstatInput,
                                self.PulsarDopplerParams,
-                               numFreqBins,
+                               1,
                                self.whatToCompute
                                )
 
-        windowRange = lalpulsar.transientWindowRange_t()
-        windowRange.type = lalpulsar.TRANSIENT_RECTANGULAR
-        windowRange.t0 = int(tstart)  # TYPE UINT4
-        windowRange.t0Band = 0
-        windowRange.dt0 = 1
-        windowRange.tau = int(tend - tstart)  # TYPE UINT4
-        windowRange.tauBand = 0
-        windowRange.dtau = 1
-        useFReg = False
+        self.windowRange.t0 = int(tstart)  # TYPE UINT4
+        self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
         FS = lalpulsar.ComputeTransientFstatMap(
-            self.FstatResults.multiFatoms[0], windowRange, useFReg)
+            self.FstatResults.multiFatoms[0], self.windowRange, False)
         return 2*FS.F_mn.data[0][0]
 
 

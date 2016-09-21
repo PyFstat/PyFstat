@@ -86,8 +86,7 @@ class TestComputeFstat(unittest.TestCase):
 
         search = pyfstat.ComputeFstat(tref=Writer.tref, sftlabel=Writer.label,
                                       sftdir=Writer.outdir)
-        FS = search.run_computefstatistic_single_point(Writer.tref,
-                                                       Writer.tstart,
+        FS = search.run_computefstatistic_single_point(Writer.tstart,
                                                        Writer.tend,
                                                        Writer.F0,
                                                        Writer.F1,
