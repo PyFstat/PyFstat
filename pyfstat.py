@@ -141,7 +141,101 @@ class BaseSearchClass(object):
         return thetas
 
 
-class SemiCoherentGlitchSearch(BaseSearchClass):
+class ComputeFstat(object):
+    """ Base class providing interface to lalpulsar.ComputeFstat """
+
+    earth_ephem_default = earth_ephem
+    sun_ephem_default = sun_ephem
+
+    @initializer
+    def __init__(self, tref, sftlabel=None, sftdir=None,
+                 minCoverFreq=None, maxCoverFreq=None,
+                 detector=None, earth_ephem=None, sun_ephem=None):
+
+        if earth_ephem is None:
+            self.earth_ephem = self.earth_ephem_default
+        if sun_ephem is None:
+            self.sun_ephem = self.sun_ephem_default
+
+        self.init_computefstatistic_single_point()
+
+    def init_computefstatistic_single_point(self):
+        """ Initilisation step of run_computefstatistic for a single point """
+
+        logging.info('Initialising SFTCatalog')
+        constraints = lalpulsar.SFTConstraints()
+        if self.detector:
+            constraints.detector = self.detector
+        self.sft_filepath = self.sftdir+'/*_'+self.sftlabel+"*sft"
+        SFTCatalog = lalpulsar.SFTdataFind(self.sft_filepath, constraints)
+        names = list(set([d.header.name for d in SFTCatalog.data]))
+        logging.info('Loaded data from detectors {}'.format(names))
+
+        logging.info('Initialising ephems')
+        ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
+
+        logging.info('Initialising FstatInput')
+        dFreq = 0
+        self.whatToCompute = lalpulsar.FSTATQ_ATOMS_PER_DET
+        FstatOptionalArgs = lalpulsar.FstatOptionalArgsDefaults
+
+        if self.minCoverFreq is None or self.maxCoverFreq is None:
+            fA = SFTCatalog.data[0].header.f0
+            numBins = SFTCatalog.data[0].numBins
+            fB = fA + (numBins-1)*SFTCatalog.data[0].header.deltaF
+            self.minCoverFreq = fA + 0.5
+            self.maxCoverFreq = fB - 0.5
+
+        self.FstatInput = lalpulsar.CreateFstatInput(SFTCatalog,
+                                                     self.minCoverFreq,
+                                                     self.maxCoverFreq,
+                                                     dFreq,
+                                                     ephems,
+                                                     FstatOptionalArgs
+                                                     )
+
+        logging.info('Initialising PulsarDoplerParams')
+        PulsarDopplerParams = lalpulsar.PulsarDopplerParams()
+        PulsarDopplerParams.refTime = self.tref
+        PulsarDopplerParams.Alpha = 1
+        PulsarDopplerParams.Delta = 1
+        PulsarDopplerParams.fkdot = np.array([0, 0, 0, 0, 0, 0, 0])
+        self.PulsarDopplerParams = PulsarDopplerParams
+
+        logging.info('Initialising FstatResults')
+        self.FstatResults = lalpulsar.FstatResults()
+
+    def run_computefstatistic_single_point(self, tstart, tend, F0, F1,
+                                           F2, Alpha, Delta):
+        """ Compute the F-stat fully-coherently at a single point """
+
+        numFreqBins = 1
+        self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
+        self.PulsarDopplerParams.Alpha = Alpha
+        self.PulsarDopplerParams.Delta = Delta
+
+        lalpulsar.ComputeFstat(self.FstatResults,
+                               self.FstatInput,
+                               self.PulsarDopplerParams,
+                               numFreqBins,
+                               self.whatToCompute
+                               )
+
+        windowRange = lalpulsar.transientWindowRange_t()
+        windowRange.type = lalpulsar.TRANSIENT_RECTANGULAR
+        windowRange.t0 = int(tstart)  # TYPE UINT4
+        windowRange.t0Band = 0
+        windowRange.dt0 = 1
+        windowRange.tau = int(tend - tstart)  # TYPE UINT4
+        windowRange.tauBand = 0
+        windowRange.dtau = 1
+        useFReg = False
+        FS = lalpulsar.ComputeTransientFstatMap(
+            self.FstatResults.multiFatoms[0], windowRange, useFReg)
+        return 2*FS.F_mn.data[0][0]
+
+
+class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
     """ A semi-coherent glitch search
 
     This implements a basic `semi-coherent glitch F-stat in which the data
@@ -214,7 +308,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass):
                     theta_post_glitch_at_glitch, tref - te)
 
             twoFVal = self.run_computefstatistic_single_point(
-                tref, ts, te, theta_at_tref[0], theta_at_tref[1],
+                ts, te, theta_at_tref[0], theta_at_tref[1],
                 theta_at_tref[2], Alpha, Delta)
             twoFSum += twoFVal
 
@@ -234,94 +328,18 @@ class SemiCoherentGlitchSearch(BaseSearchClass):
             theta_post_glitch_at_glitch, tref - tglitch)
 
         twoFsegA = self.run_computefstatistic_single_point(
-            tref, self.tstart, tglitch, theta[0], theta[1], theta[2], Alpha,
+            self.tstart, tglitch, theta[0], theta[1], theta[2], Alpha,
             Delta)
 
         if tglitch == self.tend:
             return twoFsegA
 
         twoFsegB = self.run_computefstatistic_single_point(
-            tref, tglitch, self.tend, theta_post_glitch[0],
+            tglitch, self.tend, theta_post_glitch[0],
             theta_post_glitch[1], theta_post_glitch[2], Alpha,
             Delta)
 
         return twoFsegA + twoFsegB
-
-    def init_computefstatistic_single_point(self):
-        """ Initilisation step of run_computefstatistic for a single point """
-
-        logging.info('Initialising SFTCatalog')
-        constraints = lalpulsar.SFTConstraints()
-        if self.detector:
-            constraints.detector = self.detector
-        self.sft_filepath = self.sftdir+'/*_'+self.sftlabel+"*sft"
-        SFTCatalog = lalpulsar.SFTdataFind(self.sft_filepath, constraints)
-        names = list(set([d.header.name for d in SFTCatalog.data]))
-        logging.info('Loaded data from detectors {}'.format(names))
-
-        logging.info('Initialising ephems')
-        ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
-
-        logging.info('Initialising FstatInput')
-        dFreq = 0
-        self.whatToCompute = lalpulsar.FSTATQ_ATOMS_PER_DET
-        FstatOptionalArgs = lalpulsar.FstatOptionalArgsDefaults
-
-        if self.minCoverFreq is None or self.maxCoverFreq is None:
-            fA = SFTCatalog.data[0].header.f0
-            numBins = SFTCatalog.data[0].numBins
-            fB = fA + (numBins-1)*SFTCatalog.data[0].header.deltaF
-            self.minCoverFreq = fA + 0.5
-            self.maxCoverFreq = fB - 0.5
-
-        self.FstatInput = lalpulsar.CreateFstatInput(SFTCatalog,
-                                                     self.minCoverFreq,
-                                                     self.maxCoverFreq,
-                                                     dFreq,
-                                                     ephems,
-                                                     FstatOptionalArgs
-                                                     )
-
-        logging.info('Initialising PulsarDoplerParams')
-        PulsarDopplerParams = lalpulsar.PulsarDopplerParams()
-        PulsarDopplerParams.refTime = self.tref
-        PulsarDopplerParams.Alpha = 1
-        PulsarDopplerParams.Delta = 1
-        PulsarDopplerParams.fkdot = np.array([0, 0, 0, 0, 0, 0, 0])
-        self.PulsarDopplerParams = PulsarDopplerParams
-
-        logging.info('Initialising FstatResults')
-        self.FstatResults = lalpulsar.FstatResults()
-
-    def run_computefstatistic_single_point(self, tref, tstart, tend, F0, F1,
-                                           F2, Alpha, Delta):
-        """ Compute the F-stat fully-coherently at a single point """
-
-        numFreqBins = 1
-        self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
-        self.PulsarDopplerParams.Alpha = Alpha
-        self.PulsarDopplerParams.Delta = Delta
-
-        lalpulsar.ComputeFstat(self.FstatResults,
-                               self.FstatInput,
-                               self.PulsarDopplerParams,
-                               numFreqBins,
-                               self.whatToCompute
-                               )
-
-        windowRange = lalpulsar.transientWindowRange_t()
-        windowRange.type = lalpulsar.TRANSIENT_RECTANGULAR
-        windowRange.t0 = int(tstart)  # TYPE UINT4
-        windowRange.t0Band = 0
-        windowRange.dt0 = 1
-        windowRange.tau = int(tend - tstart)  # TYPE UINT4
-        windowRange.tauBand = 0
-        windowRange.dtau = 1
-        useFReg = False
-        FS = lalpulsar.ComputeTransientFstatMap(self.FstatResults.multiFatoms[0],
-                                                windowRange,
-                                                useFReg)
-        return 2*FS.F_mn.data[0][0]
 
 
 class MCMCGlitchSearch(BaseSearchClass):
