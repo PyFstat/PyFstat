@@ -137,7 +137,7 @@ class TestSemiCoherentGlitchSearch(unittest.TestCase):
         self.assertTrue(np.abs((FS - predicted_FS))/predicted_FS < 0.3)
 
 
-class TestMCMCGlitchSearch(unittest.TestCase):
+class TestMCMCSearch(unittest.TestCase):
     label = "MCMCTest"
     outdir = 'TestData'
 
@@ -165,13 +165,12 @@ class TestMCMCGlitchSearch(unittest.TestCase):
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
 
-        theta = {'delta_F0': 0, 'delta_F1': 0, 'tglitch': tend,
-                 'F0': {'type': 'norm', 'loc': F0, 'scale': np.abs(1e-9*F0)},
+        theta = {'F0': {'type': 'norm', 'loc': F0, 'scale': np.abs(1e-9*F0)},
                  'F1': {'type': 'norm', 'loc': F1, 'scale': np.abs(1e-9*F1)},
                  'F2': F2, 'Alpha': Alpha, 'Delta': Delta}
 
-        search = pyfstat.MCMCGlitchSearch(
-            label=self.label, outdir=self.outdir, theta=theta, tref=tref,
+        search = pyfstat.MCMCSearch(
+            label=self.label, outdir=self.outdir, theta_prior=theta, tref=tref,
             sftlabel=self.label, sftdir=self.outdir,
             tstart=tstart, tend=tend, nsteps=[100, 100], nwalkers=100,
             ntemps=1)
@@ -181,7 +180,8 @@ class TestMCMCGlitchSearch(unittest.TestCase):
 
         print('Predicted twoF is {} while recovered is {}'.format(
                 predicted_FS, FS))
-        self.assertTrue(np.abs((FS - predicted_FS))/predicted_FS < 0.3)
+        self.assertTrue(
+            FS > predicted_FS or np.abs((FS-predicted_FS))/predicted_FS < 0.3)
 
 
 if __name__ == '__main__':
