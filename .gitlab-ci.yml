@@ -1,8 +1,7 @@
 test_app:
   script: 
-    - alias python='/home/greg/anaconda2/bin/python'
-    - python setup.py install
-    - python tests/tests.py TestWriter
-    - python tests/tests.py TestBaseSearchClass
-    - python tests/tests.py TestComputeFstat
-    - python tests/tests.py TestSemiCoherentGlitchSearch
+    - /home/greg/anaconda2/bin/python setup.py install
+    - /home/greg/anaconda2/bin/python tests/tests.py TestWriter
+    - /home/greg/anaconda2/bin/python tests/tests.py TestBaseSearchClass
+    - /home/greg/anaconda2/bin/python tests/tests.py TestComputeFstat
+    - /home/greg/anaconda2/bin/python tests/tests.py TestSemiCoherentGlitchSearch
