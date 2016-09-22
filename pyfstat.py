@@ -301,6 +301,8 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
             self.earth_ephem = self.earth_ephem_default
         if self.sun_ephem is None:
             self.sun_ephem = self.sun_ephem_default
+        self.transient = True
+        self.binary = False
         self.init_computefstatistic_single_point()
 
     def compute_nglitch_fstat(self, F0, F1, F2, Alpha, Delta, *args):
