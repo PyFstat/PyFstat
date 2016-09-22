@@ -1,5 +1,6 @@
 test_app:
-  script: 
+  script:
+    - . /home/greg/lalsuite-install/etc/lalapps-user-env.sh
     - /home/greg/anaconda2/bin/python tests.py TestWriter
     - /home/greg/anaconda2/bin/python tests.py TestBaseSearchClass
     - /home/greg/anaconda2/bin/python tests.py TestComputeFstat
