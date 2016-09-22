@@ -711,13 +711,13 @@ class MCMCSearch(BaseSearchClass):
 
             if ndim > 1:
                 for i in range(ndim):
+                    axes[i].ticklabel_format(useOffset=False, axis='y')
                     cs = chain[:, start:stop, i].T
                     axes[i].plot(cs, color="k", alpha=alpha)
                     if symbols:
                         axes[i].set_ylabel(symbols[i])
                     if draw_vline is not None:
                         axes[i].axvline(draw_vline, lw=2, ls="--")
-                    axes[i].ticklabel_format(useOffset=False, axis='y')
 
             else:
                 cs = chain[:, start:stop, 0].T

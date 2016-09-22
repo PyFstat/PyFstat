@@ -4,6 +4,14 @@ This is a python package containing basic wrappers of the `lalpulsar` module
 with capabilities to perform a variety of searches, primarily focussing on
 semi-coherent glitch searches.
 
+## Examples
+
+All examples can be run from their source scripts in [examples](examples), or
+for each example there is descriptive documentation:
+
+* [Making fake data with and without glitches](docs/make_fake_data.md)
+* [Fully coherent searches MCMC](docs/fully_coherent_search.md)
+
 ## Installation
 
 The script can be installed system wide via
