@@ -36,8 +36,6 @@ else:
     earth_ephem = None
     sun_ephem = None
 
-plt.style.use('paper')
-
 parser = argparse.ArgumentParser()
 parser.add_argument("-q", "--quite", help="Decrease output verbosity",
                     action="store_true")
