@@ -1,5 +1,6 @@
 test_app:
   script: 
+    - alias python='/home/greg/anaconda2/bin/python'
     - python setup.py install
     - python tests/tests.py TestWriter
     - python tests/tests.py TestBaseSearchClass
