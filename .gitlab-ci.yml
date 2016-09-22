@@ -1,0 +1,2 @@
+test_app:
+  script: python tests/test.py TestWriter
