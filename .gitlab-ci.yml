@@ -1,7 +1,6 @@
 test_app:
   script: 
-    - /home/greg/anaconda2/bin/python setup.py install
-    - /home/greg/anaconda2/bin/python tests/tests.py TestWriter
-    - /home/greg/anaconda2/bin/python tests/tests.py TestBaseSearchClass
-    - /home/greg/anaconda2/bin/python tests/tests.py TestComputeFstat
-    - /home/greg/anaconda2/bin/python tests/tests.py TestSemiCoherentGlitchSearch
+    - /home/greg/anaconda2/bin/python tests.py TestWriter
+    - /home/greg/anaconda2/bin/python tests.py TestBaseSearchClass
+    - /home/greg/anaconda2/bin/python tests.py TestComputeFstat
+    - /home/greg/anaconda2/bin/python tests.py TestSemiCoherentGlitchSearch
