@@ -1079,7 +1079,147 @@ class MCMCGlitchSearch(MCMCSearch):
         return p0
 
 
-class GridGlitchSearch(BaseSearchClass):
+class GridSearch(BaseSearchClass):
+    """ Gridded search using ComputeFstat """
+    @initializer
+    def __init__(self, label, outdir, sftlabel=None, sftdir=None, F0s=[0],
+                 F1s=[0], F2s=[0], Alphas=[0], Deltas=[0], tref=None,
+                 tstart=None, tend=None, minCoverFreq=None, maxCoverFreq=None,
+                 write_after=1000, earth_ephem=None, sun_ephem=None,
+                 detector=None):
+        """
+        Parameters
+        label, outdir: str
+            A label and directory to read/write data from/to
+        sftlabel, sftdir: str
+            A label and directory in which to find the relevant sft file
+        F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
+            Length 3 tuple describing the grid for each parameter, e.g
+            [F0min, F0max, dF0], for a fixed value simply give [F0].
+        tref, tstart, tend: int
+            GPS seconds of the reference time, start time and end time
+        minCoverFreq, maxCoverFreq: float
+            Minimum and maximum instantaneous frequency which will be covered
+            over the SFT time span as passed to CreateFstatInput
+        earth_ephem, sun_ephem: str
+            Paths of the two files containing positions of Earth and Sun,
+            respectively at evenly spaced times, as passed to CreateFstatInput
+            If None defaults defined in BaseSearchClass will be used
+
+        """
+        if sftlabel is None:
+            self.sftlabel = self.label
+        if sftdir is None:
+            self.sftdir = self.outdir
+        if earth_ephem is None:
+            self.earth_ephem = self.earth_ephem_default
+        if sun_ephem is None:
+            self.sun_ephem = self.sun_ephem_default
+
+        self.search = ComputeFstat(
+            tref=self.tref, sftlabel=self.sftlabel,
+            sftdir=self.sftdir, minCoverFreq=self.minCoverFreq,
+            maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
+            sun_ephem=self.sun_ephem, detector=self.detector, transient=False)
+
+        if os.path.isdir(outdir) is False:
+            os.mkdir(outdir)
+        self.out_file = '{}/{}_gridFS.txt'.format(self.outdir, self.label)
+        self.keys = ['_', '_', 'F0', 'F1', 'F2', 'Alpha', 'Delta']
+
+    def get_array_from_tuple(self, x):
+        if len(x) == 1:
+            return np.array(x)
+        else:
+            return np.arange(x[0], x[1]*(1+1e-15), x[2])
+
+    def get_input_data_array(self):
+        arrays = []
+        for tup in ([self.tstart], [self.tend], self.F0s, self.F1s, self.F2s,
+                    self.Alphas, self.Deltas):
+            arrays.append(self.get_array_from_tuple(tup))
+
+        input_data = []
+        for vals in itertools.product(*arrays):
+            input_data.append(vals)
+
+        self.arrays = arrays
+        self.input_data = np.array(input_data)
+
+    def check_old_data_is_okay_to_use(self):
+        if os.path.isfile(self.out_file) is False:
+            logging.info('No old data found, continuing with grid search')
+            return False
+        data = np.atleast_2d(np.genfromtxt(self.out_file, delimiter=' '))
+        if np.all(data[:, 0:-1] == self.input_data):
+            logging.info(
+                'Old data found with matching input, no search performed')
+            return data
+        else:
+            logging.info(
+                'Old data found, input differs, continuing with grid search')
+            return False
+
+    def run(self):
+        self.get_input_data_array()
+        old_data = self.check_old_data_is_okay_to_use()
+        if old_data is not False:
+            self.data = old_data
+            return
+
+        logging.info('Total number of grid points is {}'.format(
+            len(self.input_data)))
+
+        counter = 0
+        data = []
+        for vals in self.input_data:
+            FS = self.search.run_computefstatistic_single_point(*vals)
+            data.append(list(vals) + [FS])
+
+            if counter > self.write_after:
+                np.savetxt(self.out_file, data, delimiter=' ')
+                counter = 0
+                data = []
+
+        logging.info('Saving data to {}'.format(self.out_file))
+        np.savetxt(self.out_file, data, delimiter=' ')
+        self.data = np.array(data)
+
+    def plot_1D(self, xkey):
+        fig, ax = plt.subplots()
+        xidx = self.keys.index(xkey)
+        x = np.unique(self.data[:, xidx])
+        z = self.data[:, -1]
+        plt.plot(x, z)
+        fig.savefig('{}/{}_1D.png'.format(self.outdir, self.label))
+
+    def plot_2D(self, xkey, ykey):
+        fig, ax = plt.subplots()
+        xidx = self.keys.index(xkey)
+        yidx = self.keys.index(ykey)
+        x = np.unique(self.data[:, xidx])
+        y = np.unique(self.data[:, yidx])
+        z = self.data[:, -1]
+
+        X, Y = np.meshgrid(x, y)
+        Z = z.reshape(X.shape)
+
+        pax = ax.pcolormesh(X, Y, Z, cmap=plt.cm.viridis)
+        fig.colorbar(pax)
+        ax.set_xlim(x[0], x[-1])
+        ax.set_ylim(y[0], y[-1])
+        ax.set_xlabel(xkey)
+        ax.set_ylabel(ykey)
+
+        fig.tight_layout()
+        fig.savefig('{}/{}_2D.png'.format(self.outdir, self.label))
+
+    def get_max_twoF(self):
+        twoF = self.data[:, -1]
+        return np.max(twoF)
+
+
+class GridGlitchSearch(GridSearch):
     """ Gridded search using the SemiCoherentGlitchSearch """
     @initializer
     def __init__(self, label, outdir, sftlabel=None, sftdir=None, F0s=[0],
@@ -1130,12 +1270,6 @@ class GridGlitchSearch(BaseSearchClass):
         self.keys = ['F0', 'F1', 'F2', 'Alpha', 'Delta', 'delta_F0',
                      'delta_F1', 'tglitch']
 
-    def get_array_from_tuple(self, x):
-        if len(x) == 1:
-            return np.array(x)
-        else:
-            return np.arange(x[0], x[1]*(1+1e-15), x[2])
-
     def get_input_data_array(self):
         arrays = []
         for tup in (self.F0s, self.F1s, self.F2s, self.Alphas, self.Deltas,
@@ -1149,70 +1283,6 @@ class GridGlitchSearch(BaseSearchClass):
         self.arrays = arrays
         self.input_data = np.array(input_data)
 
-    def check_old_data_is_okay_to_use(self):
-        if os.path.isfile(self.out_file) is False:
-            logging.info('No old data found, continuing with grid search')
-            return False
-        data = np.atleast_2d(np.genfromtxt(self.out_file, delimiter=' '))
-        if np.all(data[:, 0:-1] == self.input_data):
-            logging.info(
-                'Old data found with matching input, no search performed')
-            return data
-        else:
-            logging.info(
-                'Old data found, input differs, continuing with grid search')
-            return False
-
-    def run(self):
-        self.get_input_data_array()
-        old_data = self.check_old_data_is_okay_to_use()
-        if old_data is not False:
-            self.data = old_data
-            return
-
-        logging.info('Total number of grid points is {}'.format(
-            len(self.input_data)))
-
-        counter = 0
-        data = []
-        for vals in self.input_data:
-            FS = self.search.compute_glitch_fstat_single(*vals)
-            data.append(list(vals) + [FS])
-
-            if counter > self.write_after:
-                np.savetxt(self.out_file, data, delimiter=' ')
-                counter = 0
-                data = []
-
-        logging.info('Saving data to {}'.format(self.out_file))
-        np.savetxt(self.out_file, data, delimiter=' ')
-        self.data = np.array(data)
-
-    def plot_2D(self, xkey, ykey):
-        fig, ax = plt.subplots()
-        xidx = self.keys.index(xkey)
-        yidx = self.keys.index(ykey)
-        x = np.unique(self.data[:, xidx])
-        y = np.unique(self.data[:, yidx])
-        z = self.data[:, -1]
-
-        X, Y = np.meshgrid(x, y)
-        Z = z.reshape(X.shape)
-
-        pax = ax.pcolormesh(X, Y, Z, cmap=plt.cm.viridis)
-        fig.colorbar(pax)
-        ax.set_xlim(x[0], x[-1])
-        ax.set_ylim(y[0], y[-1])
-        ax.set_xlabel(xkey)
-        ax.set_ylabel(ykey)
-
-        fig.tight_layout()
-        fig.savefig('{}/{}_2D.png'.format(self.outdir, self.label))
-
-    def get_max_twoF(self):
-        twoF = self.data[:, -1]
-        return np.max(twoF)
-
 
 class Writer(BaseSearchClass):
     """ Instance object for generating SFTs containing glitch signals """
@@ -1222,7 +1292,7 @@ class Writer(BaseSearchClass):
                  delta_phi=0, delta_F0=0, delta_F1=0, delta_F2=0,
                  tref=None, phi=0, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
                  Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, Tsft=1800, outdir=".",
-                 sqrtSX=1, Band=4):
+                 sqrtSX=1, Band=4, detector='H1'):
         """
         Parameters
         ----------
@@ -1271,7 +1341,6 @@ class Writer(BaseSearchClass):
         self.delta_thetas = np.atleast_2d(
                 np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T)
 
-        self.detector = 'H1'
         numSFTs = int(float(self.duration) / self.Tsft)
         self.sft_filename = lalpulsar.OfficialSFTFilename(
             'H', '1', numSFTs, self.Tsft, self.tstart, self.duration,
