@@ -1,5 +1,6 @@
 test_app:
   script: 
+    - python setup.py install
     - python tests/tests.py TestWriter
     - python tests/tests.py TestBaseSearchClass
     - python tests/tests.py TestComputeFstat
