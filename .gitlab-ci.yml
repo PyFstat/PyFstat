@@ -1,2 +1,6 @@
 test_app:
-  script: python tests/test.py TestWriter
+  script: 
+    - python tests/tests.py TestWriter
+    - python tests/tests.py TestBaseSearchClass
+    - python tests/tests.py TestComputeFstat
+    - python tests/tests.py TestSemiCoherentGlitchSearch
