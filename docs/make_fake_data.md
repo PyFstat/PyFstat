@@ -74,6 +74,7 @@ data.run_makefakedata()
 In fact, the previous two commands are wrapped together by a single call to
 `data.make_data()` which we will use from now on.
 
+
 ## Glitching signal
 
 We now want to generate a set of data which contains a *glitching signal*. We
@@ -83,8 +84,8 @@ another `Writer` instance called `glitch_data`, and then run `make_data()`
 
 ```
 dtglitch = duration/2.0
-delta_F0 = 1e-6 * F0
-delta_F1 = 1e-5 * F1
+delta_F0 = 0.4e-5
+delta_F1 = 0
 
 glitch_data = Writer(
     label='glitch', outdir='data', tref=tref, tstart=tstart, F0=F0, F1=F1,
@@ -117,9 +118,9 @@ Delta = 5.999999999999999778e-02
 h0 = 9.999999999999999604e-24
 cosi = 0.000000000000000000e+00
 psi = 0.000000000000000000e+00
-phi0 = -1.222261350197196007e+05
-Freq = 3.000003064156959098e+01
-f1dot = -1.000009999999999993e-10
+phi0 = -1.612440256772935390e+04
+Freq = 3.000000400000000056e+01
+f1dot = -1.000000000000000036e-10
 f2dot = 0.000000000000000000e+00
 refTime = 362750407.000000
 transientWindowType=rect
@@ -130,4 +131,14 @@ transientTauDays=50.000
 The glitch config file uses transient windows to create two non-overlapping,
 but continuous signals.
 
+## Expected twoF
 
+Finally, the `Writer` class also provides a wrapper of `lalapps_PredictFstat`.
+So calling
+
+```
+>>> print data.predict_fstat()
+1721.1
+```
+
+Notice that the predicted value will be the same for both sets of data.

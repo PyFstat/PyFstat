@@ -10,7 +10,8 @@ All examples can be run from their source scripts in [examples](examples), or
 for each example there is descriptive documentation:
 
 * [Making fake data with and without glitches](docs/make_fake_data.md)
-* [Fully coherent searches MCMC](docs/fully_coherent_search.md)
+* [Fully coherent MCMC search](docs/fully_coherent_search.md)
+* [Fully coherent MCMC search on data containing glitching signals](docs/fully_coherent_search_on_glitching_data.md)
 
 ## Installation
 

@@ -27,8 +27,8 @@ data.make_data()
 
 # Next, taking the same signal parameters, we include a glitch half way through
 dtglitch = duration/2.0
-delta_F0 = 1e-6 * F0
-delta_F1 = 1e-5 * F1
+delta_F0 = 0.4e-5
+delta_F1 = 0
 
 glitch_data = Writer(
     label='glitch', outdir='data', tref=tref, tstart=tstart, F0=F0, F1=F1,
@@ -36,3 +36,7 @@ glitch_data = Writer(
     dtglitch=dtglitch, delta_F0=delta_F0, delta_F1=delta_F1)
 glitch_data.make_data()
 
+
+# The predicted twoF, given by lalapps_predictFstat can be accsessed by
+
+print data.predict_fstat()
