@@ -293,7 +293,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
     """
 
     @initializer
-    def __init__(self, label, outdir, tref, tstart, tend, nglitches=0,
+    def __init__(self, label, outdir, tref, tstart, tend, nglitch=0,
                  sftlabel=None, sftdir=None, minCoverFreq=None,
                  maxCoverFreq=None, detector=None, earth_ephem=None,
                  sun_ephem=None):
