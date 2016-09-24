@@ -9,6 +9,7 @@ import glob
 import inspect
 from functools import wraps
 import subprocess
+from collections import OrderedDict
 
 import numpy as np
 import matplotlib
@@ -18,6 +19,8 @@ import emcee
 import corner
 import dill as pickle
 import lalpulsar
+
+plt.rcParams['text.usetex'] = True
 
 config_file = os.path.expanduser('~')+'/.pyfstat.conf'
 if os.path.isfile(config_file):
@@ -41,6 +44,7 @@ parser.add_argument("-q", "--quite", help="Decrease output verbosity",
                     action="store_true")
 parser.add_argument("-c", "--clean", help="Don't use cached data",
                     action="store_true")
+parser.add_argument("-u", "--use-old-data", action="store_true")
 parser.add_argument('unittest_args', nargs='*')
 args, unknown = parser.parse_known_args()
 sys.argv[1:] = args.unittest_args
@@ -814,6 +818,10 @@ class MCMCSearch(BaseSearchClass):
         return d
 
     def check_old_data_is_okay_to_use(self):
+        if args.use_old_data:
+            logging.info("Forcing use of old data")
+            return True
+
         if os.path.isfile(self.pickle_path) is False:
             logging.info('No pickled data found')
             return False
@@ -872,7 +880,7 @@ class MCMCSearch(BaseSearchClass):
         idxs = np.isfinite(self.lnlikes)
         jmax = np.nanargmax(self.lnlikes[idxs])
         maxtwoF = self.lnlikes[jmax]
-        d = {}
+        d = OrderedDict()
         close_idxs = abs((maxtwoF - self.lnlikes[idxs]) / maxtwoF) < threshold
         for i, k in enumerate(self.theta_keys):
             base_key = copy.copy(k)
@@ -887,7 +895,7 @@ class MCMCSearch(BaseSearchClass):
 
     def get_median_stds(self):
         """ Returns a dict of the median and std of all production samples """
-        d = {}
+        d = OrderedDict()
         for s, k in zip(self.samples.T, self.theta_keys):
             d[k] = np.median(s)
             d[k+'_std'] = np.std(s)
@@ -897,16 +905,17 @@ class MCMCSearch(BaseSearchClass):
         """ Writes a .par of the best-fit params with an estimated std """
         logging.info('Writing {}/{}.par using the {} method'.format(
             self.outdir, self.label, method))
-        if method == 'med':
-            median_std_d = self.get_median_stds()
-            filename = '{}/{}.par'.format(self.outdir, self.label)
-            with open(filename, 'w+') as f:
+
+        median_std_d = self.get_median_stds()
+        max_twoF_d, max_twoF = self.get_max_twoF()
+
+        filename = '{}/{}.par'.format(self.outdir, self.label)
+        with open(filename, 'w+') as f:
+            f.write('MaxtwoF = {}\n'.format(max_twoF))
+            if method == 'med':
                 for key, val in median_std_d.iteritems():
                     f.write('{} = {:1.16e}\n'.format(key, val))
-        if method == 'twoFmax':
-            max_twoF_d, _ = self.get_max_twoF()
-            filename = '{}/{}.par'.format(self.outdir, self.label)
-            with open(filename, 'w+') as f:
+            if method == 'twoFmax':
                 for key, val in max_twoF_d.iteritems():
                     f.write('{} = {:1.16e}\n'.format(key, val))
 
