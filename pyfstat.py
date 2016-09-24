@@ -60,7 +60,7 @@ logging.basicConfig(level=log_level,
 
 
 def initializer(func):
-    """ Automatically assigns the parameters to self"""
+    """ Automatically assigns the parameters to self """
     names, varargs, keywords, defaults = inspect.getargspec(func)
 
     @wraps(func)
@@ -78,6 +78,7 @@ def initializer(func):
 
 
 def read_par(label, outdir):
+    """ Read in a .par file, returns a dictionary of the values """
     filename = '{}/{}.par'.format(outdir, label)
     d = {}
     with open(filename, 'r') as f:
@@ -88,6 +89,7 @@ def read_par(label, outdir):
 
 
 class BaseSearchClass(object):
+    """ The base search class, provides ephemeris and general utilities """
 
     earth_ephem_default = earth_ephem
     sun_ephem_default = sun_ephem
@@ -117,20 +119,19 @@ class BaseSearchClass(object):
         ----------
         theta: array-like, shape (n,)
             vector of the expansion coefficients to transform starting from the
-            lowest degree e.g [phi, F0, F1,...]
+            lowest degree e.g [phi, F0, F1,...].
         dT: float
-            difference between the two reference times as tref_new - tref_old
+            difference between the two reference times as tref_new - tref_old.
 
         Returns
         -------
         theta_new: array-like shape (n,)
-            vector of the coefficients as evaluate as the new reference time
+            vector of the coefficients as evaluate as the new reference time.
         """
         n = len(theta)
         m = self.shift_matrix(n, dT)
         return np.dot(m, theta)
 
-    # Rewrite this to generalise to N glitches, then use everywhere!
     def calculate_thetas(self, theta, delta_thetas, tbounds):
         """ Calculates the set of coefficients for the post-glitch signal """
         thetas = [theta]
@@ -154,6 +155,30 @@ class ComputeFstat(object):
                  minCoverFreq=None, maxCoverFreq=None,
                  detector=None, earth_ephem=None, sun_ephem=None,
                  binary=False, transient=True):
+        """
+        Parameters
+        ----------
+        tref: int
+            GPS seconds of the reference time.
+        sftlabel, sftdir: str
+            A label and directory in which to find the relevant sft file
+        minCoverFreq, maxCoverFreq: float
+            The min and max cover frequency passed to CreateFstatInput, if
+            either is None the range of frequencies in the SFT less 1Hz is
+            used.
+        detector: str
+            Two character reference to the data to use, specify None for no
+            contraint.
+        earth_ephem, sun_ephem: str
+            Paths of the two files containing positions of Earth and Sun,
+            respectively at evenly spaced times, as passed to CreateFstatInput.
+            If None defaults defined in BaseSearchClass will be used.
+        binary: bool
+            If true, search of binary parameters.
+        transient: bool
+            If true, allow for the Fstat to be computed over a transient range.
+
+        """
 
         if earth_ephem is None:
             self.earth_ephem = self.earth_ephem_default
@@ -229,7 +254,7 @@ class ComputeFstat(object):
                                            F2, Alpha, Delta, asini=None,
                                            period=None, ecc=None, tp=None,
                                            argp=None):
-        """ Compute the F-stat fully-coherently at a single point """
+        """ Returns the twoF fully-coherently at a single point """
 
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
         self.PulsarDopplerParams.Alpha = Alpha
@@ -268,30 +293,34 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
     """
 
     @initializer
-    def __init__(self, label, outdir, tref, tstart, tend, sftlabel=None,
-                 nglitch=0, sftdir=None, minCoverFreq=None, maxCoverFreq=None,
-                 detector=None, earth_ephem=None, sun_ephem=None):
+    def __init__(self, label, outdir, tref, tstart, tend, nglitches=0,
+                 sftlabel=None, sftdir=None, minCoverFreq=None,
+                 maxCoverFreq=None, detector=None, earth_ephem=None,
+                 sun_ephem=None):
         """
         Parameters
         ----------
         label, outdir: str
-            A label and directory to read/write data from/to
+            A label and directory to read/write data from/to.
+        tref, tstart, tend: int
+            GPS seconds of the reference time, and start and end of the data.
+        nglitch: int
+            The (fixed) number of glitches; this can zero, but occasionally
+            this causes issue (in which case just use ComputeFstat).
         sftlabel, sftdir: str
             A label and directory in which to find the relevant sft file. If
-            None use label and outdir
-        tref: int
-            GPS seconds of the reference time
+            None use label and outdir.
         minCoverFreq, maxCoverFreq: float
             The min and max cover frequency passed to CreateFstatInput, if
             either is None the range of frequencies in the SFT less 1Hz is
             used.
         detector: str
             Two character reference to the data to use, specify None for no
-            contraint
+            contraint.
         earth_ephem, sun_ephem: str
             Paths of the two files containing positions of Earth and Sun,
-            respectively at evenly spaced times, as passed to CreateFstatInput
-            If None defaults defined in BaseSearchClass will be used
+            respectively at evenly spaced times, as passed to CreateFstatInput.
+            If None defaults defined in BaseSearchClass will be used.
         """
 
         if self.sftlabel is None:
@@ -308,7 +337,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
         self.init_computefstatistic_single_point()
 
     def compute_nglitch_fstat(self, F0, F1, F2, Alpha, Delta, *args):
-        """ Compute the semi-coherent glitch F-stat """
+        """ Returns the semi-coherent glitch summed twoF """
 
         args = list(args)
         tboundaries = [self.tstart] + args[-self.nglitch:] + [self.tend]
@@ -341,7 +370,10 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
 
     def compute_glitch_fstat_single(self, F0, F1, F2, Alpha, Delta, delta_F0,
                                     delta_F1, tglitch):
-        """ Compute the semi-coherent glitch F-stat """
+        """ Returns the semi-coherent glitch summed twoF for nglitch=1
+
+        Note: used for testing
+        """
 
         theta = [F0, F1, F2]
         delta_theta = [delta_F0, delta_F1, 0]
@@ -372,8 +404,8 @@ class MCMCSearch(BaseSearchClass):
     @initializer
     def __init__(self, label, outdir, sftlabel, sftdir, theta_prior, tref,
                  tstart, tend, nsteps=[100, 100, 100], nwalkers=100, ntemps=1,
-                 theta_initial=None, minCoverFreq=None, maxCoverFreq=None,
-                 scatter_val=1e-4, betas=None, binary=False,
+                 log10temperature_min=-5, theta_initial=None, scatter_val=1e-4,
+                 binary=False, minCoverFreq=None, maxCoverFreq=None,
                  detector=None, earth_ephem=None, sun_ephem=None):
         """
         Parameters
@@ -397,8 +429,17 @@ class MCMCSearch(BaseSearchClass):
             give the nburn and nprod of the 'production' run, all entries
             before are for iterative initialisation steps (usually just one)
             e.g. [1000, 1000, 500].
-        nwalkers, ntemps: int
-            Number of walkers and temperatures
+        nwalkers, ntemps: int,
+            The number of walkers and temperates to use in the parallel
+            tempered PTSampler.
+        log10temperature_min float < 0
+            The  log_10(tmin) value, the set of betas passed to PTSampler are
+            generated from np.logspace(0, log10temperature_min, ntemps).
+        binary: Bool
+            If true, search over binary parameters
+        detector: str
+            Two character reference to the data to use, specify None for no
+            contraint.
         minCoverFreq, maxCoverFreq: float
             Minimum and maximum instantaneous frequency which will be covered
             over the SFT time span as passed to CreateFstatInput
@@ -406,8 +447,6 @@ class MCMCSearch(BaseSearchClass):
             Paths of the two files containing positions of Earth and Sun,
             respectively at evenly spaced times, as passed to CreateFstatInput
             If None defaults defined in BaseSearchClass will be used
-        binary: Bool
-            If true, search over binary parameters
 
         """
 
@@ -421,7 +460,9 @@ class MCMCSearch(BaseSearchClass):
         self.theta_prior['tend'] = self.tend
         self.unpack_input_theta()
         self.ndim = len(self.theta_keys)
+        self.betas = np.logspace(0, self.log10temperature_min, self.ntemps)
         self.sft_filepath = self.sftdir+'/*_'+self.sftlabel+"*sft"
+
         if earth_ephem is None:
             self.earth_ephem = self.earth_ephem_default
         if sun_ephem is None:
@@ -932,10 +973,10 @@ class MCMCGlitchSearch(MCMCSearch):
     """ MCMC search using the SemiCoherentGlitchSearch """
     @initializer
     def __init__(self, label, outdir, sftlabel, sftdir, theta_prior, tref,
-                 tstart, tend, nsteps=[100, 100, 100], nwalkers=100, ntemps=1,
-                 nglitch=0, theta_initial=None, minCoverFreq=None,
-                 maxCoverFreq=None, scatter_val=1e-4, betas=None,
-                 detector=None, dtglitchmin=20*86400, earth_ephem=None,
+                 tstart, tend, nglitch=1, nsteps=[100, 100, 100], nwalkers=100,
+                 ntemps=1, log10temperature_min=-5, theta_initial=None,
+                 scatter_val=1e-4, dtglitchmin=20*86400, detector=None,
+                 minCoverFreq=None, maxCoverFreq=None, earth_ephem=None,
                  sun_ephem=None):
         """
         Parameters
@@ -964,8 +1005,15 @@ class MCMCGlitchSearch(MCMCSearch):
         dtglitchmin: int
             The minimum duration (in seconds) of a segment between two glitches
             or a glitch and the start/end of the data
-        nwalkers, ntemps: int
-            Number of walkers and temperatures
+        nwalkers, ntemps: int,
+            The number of walkers and temperates to use in the parallel
+            tempered PTSampler.
+        log10temperature_min float < 0
+            The  log_10(tmin) value, the set of betas passed to PTSampler are
+            generated from np.logspace(0, log10temperature_min, ntemps).
+        detector: str
+            Two character reference to the data to use, specify None for no
+            contraint.
         minCoverFreq, maxCoverFreq: float
             Minimum and maximum instantaneous frequency which will be covered
             over the SFT time span as passed to CreateFstatInput
@@ -984,6 +1032,7 @@ class MCMCGlitchSearch(MCMCSearch):
         self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
         self.unpack_input_theta()
         self.ndim = len(self.theta_keys)
+        self.betas = np.logspace(0, self.log10temperature_min, self.ntemps)
         self.sft_filepath = self.sftdir+'/*_'+self.sftlabel+"*sft"
         if earth_ephem is None:
             self.earth_ephem = self.earth_ephem_default
