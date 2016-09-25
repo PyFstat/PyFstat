@@ -828,7 +828,8 @@ class MCMCSearch(BaseSearchClass):
     def get_save_data_dictionary(self):
         d = dict(nsteps=self.nsteps, nwalkers=self.nwalkers,
                  ntemps=self.ntemps, theta_keys=self.theta_keys,
-                 theta_prior=self.theta_prior, scatter_val=self.scatter_val)
+                 theta_prior=self.theta_prior, scatter_val=self.scatter_val,
+                 log10temperature_min=self.log10temperature_min)
         return d
 
     def save_data(self, sampler, samples, lnprobs, lnlikes):
