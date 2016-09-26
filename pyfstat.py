@@ -600,21 +600,24 @@ class MCMCSearch(BaseSearchClass):
         self.lnlikes = lnlikes
         self.save_data(sampler, samples, lnprobs, lnlikes)
 
-    def plot_corner(self, corner_figsize=(7, 7),  deltat=False,
+    def plot_corner(self, figsize=(7, 7),  tglitch_ratio=False,
                     add_prior=False, nstds=None, label_offset=0.4, **kwargs):
 
         fig, axes = plt.subplots(self.ndim, self.ndim,
-                                 figsize=corner_figsize)
+                                 figsize=figsize)
 
         samples_plt = copy.copy(self.samples)
         theta_symbols_plt = copy.copy(self.theta_symbols)
         theta_symbols_plt = [s.replace('_{glitch}', r'_\textrm{glitch}') for s
                              in theta_symbols_plt]
 
-        if deltat:
-            samples_plt[:, self.theta_keys.index('tglitch')] -= self.tref
-            theta_symbols_plt[self.theta_keys.index('tglitch')] = (
-                r'$t_{\textrm{glitch}} - t_{\textrm{ref}}$')
+        if tglitch_ratio:
+            for j, k in enumerate(self.theta_keys):
+                if k == 'tglitch':
+                    s = samples_plt[:, j]
+                    samples_plt[:, j] = (s - self.tstart)/(
+                                         self.tend - self.tstart)
+                    theta_symbols_plt[j] = r'$R_{\textrm{glitch}}$'
 
         if type(nstds) is int and 'range' not in kwargs:
             _range = []
@@ -976,7 +979,7 @@ class MCMCGlitchSearch(MCMCSearch):
     def __init__(self, label, outdir, sftlabel, sftdir, theta_prior, tref,
                  tstart, tend, nglitch=1, nsteps=[100, 100, 100], nwalkers=100,
                  ntemps=1, log10temperature_min=-5, theta_initial=None,
-                 scatter_val=1e-4, dtglitchmin=20*86400, detector=None,
+                 scatter_val=1e-4, dtglitchmin=1*86400, detector=None,
                  minCoverFreq=None, maxCoverFreq=None, earth_ephem=None,
                  sun_ephem=None):
         """
