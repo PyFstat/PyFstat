@@ -829,6 +829,8 @@ class MCMCSearch(BaseSearchClass):
             ntemps_temp = self.ntemps
         pF = sampler.chain[:, :, -1, :].reshape(
             ntemps_temp, self.nwalkers, self.ndim)[0, :, :]
+        lnl = sampler.lnlikelihood[:, :, -1].reshape(
+            self.ntemps, self.nwalkers)[0, :]
         lnp = sampler.lnprobability[:, :, -1].reshape(
             self.ntemps, self.nwalkers)[0, :]
 
@@ -849,6 +851,8 @@ class MCMCSearch(BaseSearchClass):
         lnp_finite = copy.copy(lnp)
         lnp_finite[np.isinf(lnp)] = np.nan
         p = pF[np.nanargmax(lnp_finite)]
+        logging.info('Generating new p0 from max lnp which had twoF={}'
+                     .format(lnl[np.nanargmax(lnp_finite)]))
         p0 = self.generate_scattered_p0(p)
 
         return p0
@@ -959,7 +963,8 @@ class MCMCSearch(BaseSearchClass):
         for i, k in enumerate(self.theta_keys):
             ng = 1
             while k in d:
-                k = k + '_{}'.format(ng)
+                k = k.rstrip('_{}'.format(ng-1)) + '_{}'.format(ng)
+                ng += 1
             d[k] = self.samples[jmax][i]
 
             s = self.samples[:, i][close_idxs]
@@ -972,7 +977,8 @@ class MCMCSearch(BaseSearchClass):
         for s, k in zip(self.samples.T, self.theta_keys):
             ng = 1
             while k in d:
-                k = k + '_{}'.format(ng)
+                k = k.rstrip('_{}'.format(ng-1)) + '_{}'.format(ng)
+                ng += 1
             d[k] = np.median(s)
             d[k+'_std'] = np.std(s)
         return d
