@@ -341,29 +341,23 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
 
         args = list(args)
         tboundaries = [self.tstart] + args[-self.nglitch:] + [self.tend]
-        delta_F0s = [0] + args[-3*self.nglitch:-2*self.nglitch]
-        delta_F1s = [0] + args[-2*self.nglitch:-self.nglitch]
-        theta = [F0, F1, F2]
-        tref = self.tref
+        delta_F0s = args[-3*self.nglitch:-2*self.nglitch]
+        delta_F1s = args[-2*self.nglitch:-self.nglitch]
+        delta_F2 = np.zeros(len(delta_F0s))
+        delta_phi = np.zeros(len(delta_F0s))
+        theta = [0, F0, F1, F2]
+        delta_thetas = np.atleast_2d(
+                np.array([delta_phi, delta_F0s, delta_F1s, delta_F2]).T)
+
+        thetas = self.calculate_thetas(theta, delta_thetas, tboundaries)
 
         twoFSum = 0
-        for i in range(self.nglitch+1):
+        for i, theta_i_at_tref in enumerate(thetas):
             ts, te = tboundaries[i], tboundaries[i+1]
 
-            if i == 0:
-                theta_at_tref = theta
-            else:
-                # Issue here - are these correct?
-                delta_theta = np.array([delta_F0s[i], delta_F1s[i], 0])
-                theta_at_glitch = self.shift_coefficients(theta_at_tref,
-                                                          te - tref)
-                theta_post_glitch_at_glitch = theta_at_glitch + delta_theta
-                theta_at_tref = self.shift_coefficients(
-                    theta_post_glitch_at_glitch, tref - te)
-
             twoFVal = self.run_computefstatistic_single_point(
-                ts, te, theta_at_tref[0], theta_at_tref[1],
-                theta_at_tref[2], Alpha, Delta)
+                ts, te, theta_i_at_tref[1], theta_i_at_tref[2],
+                theta_i_at_tref[3], Alpha, Delta)
             twoFSum += twoFVal
 
         return twoFSum
@@ -572,7 +566,8 @@ class MCMCSearch(BaseSearchClass):
             logging.info('Running {}/{} initialisation with {} steps'.format(
                 j, ninit_steps, n))
             sampler.run_mcmc(p0, n)
-
+            logging.info("Mean acceptance fraction: {0:.3f}"
+                         .format(np.mean(sampler.acceptance_fraction)))
             fig, axes = self.plot_walkers(sampler, symbols=self.theta_symbols)
             fig.savefig('{}/{}_init_{}_walkers.png'.format(
                 self.outdir, self.label, j))
@@ -587,6 +582,8 @@ class MCMCSearch(BaseSearchClass):
         logging.info('Running final burn and prod with {} steps'.format(
             nburn+nprod))
         sampler.run_mcmc(p0, nburn+nprod)
+        logging.info("Mean acceptance fraction: {0:.3f}"
+                     .format(np.mean(sampler.acceptance_fraction)))
 
         fig, axes = self.plot_walkers(sampler, symbols=self.theta_symbols)
         fig.savefig('{}/{}_walkers.png'.format(self.outdir, self.label))
@@ -901,9 +898,9 @@ class MCMCSearch(BaseSearchClass):
             for key in mod_keys:
                 if len(key) == 3:
                     if np.isscalar(key[1]) or key[0] == 'nsteps':
-                        logging.info("{} : {} -> {}".format(*key))
+                        logging.info("    {} : {} -> {}".format(*key))
                     else:
-                        logging.info(key[0])
+                        logging.info("    " + key[0])
                 else:
                     logging.info(key)
             return False
