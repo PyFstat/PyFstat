@@ -21,6 +21,7 @@ import dill as pickle
 import lalpulsar
 
 plt.rcParams['text.usetex'] = True
+plt.rcParams['axes.formatter.useoffset'] = False
 
 config_file = os.path.expanduser('~')+'/.pyfstat.conf'
 if os.path.isfile(config_file):
@@ -951,12 +952,14 @@ class MCMCSearch(BaseSearchClass):
         jmax = np.nanargmax(self.lnlikes[idxs])
         maxtwoF = self.lnlikes[jmax]
         d = OrderedDict()
-        close_idxs = abs((maxtwoF - self.lnlikes[idxs]) / maxtwoF) < threshold
+
+        lnl_finite = copy.copy(self.lnlikes)
+        lnl_finite[idxs] = np.nan
+        close_idxs = abs((maxtwoF - lnl_finite) / maxtwoF) < threshold
         for i, k in enumerate(self.theta_keys):
-            base_key = copy.copy(k)
             ng = 1
             while k in d:
-                k = base_key + '_{}'.format(ng)
+                k = k + '_{}'.format(ng)
             d[k] = self.samples[jmax][i]
 
             s = self.samples[:, i][close_idxs]
@@ -967,6 +970,9 @@ class MCMCSearch(BaseSearchClass):
         """ Returns a dict of the median and std of all production samples """
         d = OrderedDict()
         for s, k in zip(self.samples.T, self.theta_keys):
+            ng = 1
+            while k in d:
+                k = k + '_{}'.format(ng)
             d[k] = np.median(s)
             d[k+'_std'] = np.std(s)
         return d
@@ -992,12 +998,13 @@ class MCMCSearch(BaseSearchClass):
 
     def print_summary(self):
         d, max_twoF = self.get_max_twoF()
+        median_std_d = self.get_median_stds()
         print('Max twoF: {}'.format(max_twoF))
         print('theta0 index: {}'.format(self.theta0_idx))
-        for k in np.sort(d.keys()):
+        for k in np.sort(median_std_d.keys()):
             if 'std' not in k:
                 print('{:10s} = {:1.9e} +/- {:1.9e}'.format(
-                    k, d[k], d[k+'_std']))
+                    k, median_std_d[k], median_std_d[k+'_std']))
 
 
 class MCMCGlitchSearch(MCMCSearch):
