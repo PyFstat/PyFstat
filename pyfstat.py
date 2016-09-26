@@ -577,7 +577,7 @@ class MCMCSearch(BaseSearchClass):
             fig.savefig('{}/{}_init_{}_walkers.png'.format(
                 self.outdir, self.label, j))
 
-            p0 = self.get_new_p0(sampler, scatter_val=self.scatter_val)
+            p0 = self.get_new_p0(sampler)
             p0 = self.apply_corrections_to_p0(p0)
             self.check_initial_points(p0)
             sampler.reset()
@@ -802,7 +802,7 @@ class MCMCSearch(BaseSearchClass):
 
         return p0
 
-    def get_new_p0(self, sampler, scatter_val=1e-3):
+    def get_new_p0(self, sampler):
         """ Returns new initial positions for walkers are burn0 stage
 
         This returns new positions for all walkers by scattering points about
@@ -994,6 +994,10 @@ class MCMCGlitchSearch(MCMCSearch):
             Either a dictionary of distribution about which to distribute the
             initial walkers about, an array (from which the walkers will be
             scattered by scatter_val, or  None in which case the prior is used.
+        scatter_val, float or ndim array
+            Size of scatter to use about the initialisation step, if given as
+            an array it must be of length ndim and the order is given by
+            theta_keys
         nglitch: int
             The number of glitches to allow
         tref, tstart, tend: int
