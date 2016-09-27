@@ -995,31 +995,39 @@ class MCMCSearch(BaseSearchClass):
         maxtwoF = self.lnlikes[jmax]
         d = OrderedDict()
 
-        lnl_finite = copy.copy(self.lnlikes)
-        lnl_finite[idxs] = 0
-        close_idxs = abs((maxtwoF - lnl_finite) / maxtwoF) < threshold
+        repeats = []
         for i, k in enumerate(self.theta_keys):
-            ng = 1
-            while k in d:
-                if k == 1:
-                    k = k + '_1'
-                else:
-                    k.replace('_{}'.format(ng-1), '_{}'.format(ng))
-                ng += 1
+            if k in d and k not in repeats:
+                d[k+'_0'] = d[k]  # relabel the old key
+                d.pop(k)
+                repeats.append(k)
+            if k in repeats:
+                k = k + '_0'
+                count = 1
+                while k in d:
+                    k = k.replace('_{}'.format(count-1), '_{}'.format(count))
+                    count += 1
             d[k] = self.samples[jmax][i]
-
-            s = self.samples[:, i][close_idxs]
-            d[k + '_std'] = np.std(s)
         return d, maxtwoF
 
     def get_median_stds(self):
         """ Returns a dict of the median and std of all production samples """
         d = OrderedDict()
+        repeats = []
         for s, k in zip(self.samples.T, self.theta_keys):
-            ng = 1
-            while k in d:
-                k = k.rstrip('_{}'.format(ng-1)) + '_{}'.format(ng)
-                ng += 1
+            if k in d and k not in repeats:
+                d[k+'_0'] = d[k]  # relabel the old key
+                d[k+'_0_std'] = d[k+'_std']
+                d.pop(k)
+                d.pop(k+'_std')
+                repeats.append(k)
+            if k in repeats:
+                k = k + '_0'
+                count = 1
+                while k in d:
+                    k = k.replace('_{}'.format(count-1), '_{}'.format(count))
+                    count += 1
+
             d[k] = np.median(s)
             d[k+'_std'] = np.std(s)
         return d
@@ -1044,13 +1052,17 @@ class MCMCSearch(BaseSearchClass):
                     f.write('{} = {:1.16e}\n'.format(key, val))
 
     def print_summary(self):
-        d, max_twoF = self.get_max_twoF()
+        max_twoFd, max_twoF = self.get_max_twoF()
         median_std_d = self.get_median_stds()
-        print('Max twoF: {}'.format(max_twoF))
+        print('\nSummary:')
         print('theta0 index: {}'.format(self.theta0_idx))
+        print('Max twoF: {} with parameters:'.format(max_twoF))
+        for k in np.sort(max_twoFd.keys()):
+            print('  {:10s} = {:1.9e}'.format(k, max_twoFd[k]))
+        print('\nMedian +/- std for production values')
         for k in np.sort(median_std_d.keys()):
             if 'std' not in k:
-                print('{:10s} = {:1.9e} +/- {:1.9e}'.format(
+                print('  {:10s} = {:1.9e} +/- {:1.9e}'.format(
                     k, median_std_d[k], median_std_d[k+'_std']))
 
 
