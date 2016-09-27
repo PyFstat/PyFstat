@@ -374,7 +374,10 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
                 theta_i_at_tref[3], Alpha, Delta)
             twoFSum += twoFVal
 
-        return twoFSum
+        if np.isfinite(twoFSum):
+            return twoFSum
+        else:
+            return 0
 
     def compute_glitch_fstat_single(self, F0, F1, F2, Alpha, Delta, delta_F0,
                                     delta_F1, tglitch):
