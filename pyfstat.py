@@ -800,11 +800,21 @@ class MCMCSearch(BaseSearchClass):
         """ Generate a set of init vals for the walkers """
 
         if type(self.theta_initial) == dict:
+            logging.info('Generate initial values from initial dictionary')
+            if self.nglitch > 1:
+                raise ValueError('Initial dict not implemented for nglitch>1')
             p0 = [[[self.generate_rv(**self.theta_initial[key])
                     for key in self.theta_keys]
                    for i in range(self.nwalkers)]
                   for j in range(self.ntemps)]
+        elif type(self.theta_initial) == list:
+            logging.info('Generate initial values from list of theta_initial')
+            p0 = [[[self.generate_rv(**val)
+                    for val in self.theta_initial]
+                   for i in range(self.nwalkers)]
+                  for j in range(self.ntemps)]
         elif self.theta_initial is None:
+            logging.info('Generate initial values from prior dictionary')
             p0 = [[[self.generate_rv(**self.theta_prior[key])
                     for key in self.theta_keys]
                    for i in range(self.nwalkers)]
@@ -958,12 +968,15 @@ class MCMCSearch(BaseSearchClass):
         d = OrderedDict()
 
         lnl_finite = copy.copy(self.lnlikes)
-        lnl_finite[idxs] = np.nan
+        lnl_finite[idxs] = 0
         close_idxs = abs((maxtwoF - lnl_finite) / maxtwoF) < threshold
         for i, k in enumerate(self.theta_keys):
             ng = 1
             while k in d:
-                k = k.rstrip('_{}'.format(ng-1)) + '_{}'.format(ng)
+                if k == 1:
+                    k = k + '_1'
+                else:
+                    k.replace('_{}'.format(ng-1), '_{}'.format(ng))
                 ng += 1
             d[k] = self.samples[jmax][i]
 
