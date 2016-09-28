@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import emcee
 import corner
 import dill as pickle
+import lal
 import lalpulsar
 
 plt.rcParams['text.usetex'] = True
@@ -161,6 +162,7 @@ class ComputeFstat(object):
 
     @initializer
     def __init__(self, tref, sftlabel=None, sftdir=None,
+                 minStartTime=None, maxStartTime=None,
                  minCoverFreq=None, maxCoverFreq=None,
                  detector=None, earth_ephem=None, sun_ephem=None,
                  binary=False, transient=True):
@@ -203,6 +205,11 @@ class ComputeFstat(object):
         constraints = lalpulsar.SFTConstraints()
         if self.detector:
             constraints.detector = self.detector
+        if self.minStartTime:
+            constraints.minStartTime = lal.LIGOTimeGPS(self.minStartTime)
+        if self.maxStartTime:
+            constraints.maxStartTime = lal.LIGOTimeGPS(self.maxStartTime)
+
         self.sft_filepath = self.sftdir+'/*_'+self.sftlabel+"*sft"
         SFTCatalog = lalpulsar.SFTdataFind(self.sft_filepath, constraints)
         names = list(set([d.header.name for d in SFTCatalog.data]))
@@ -304,8 +311,8 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
     @initializer
     def __init__(self, label, outdir, tref, tstart, tend, nglitch=0,
                  sftlabel=None, sftdir=None, theta0_idx=0, minCoverFreq=None,
-                 maxCoverFreq=None, detector=None, earth_ephem=None,
-                 sun_ephem=None):
+                 maxCoverFreq=None, minStartTime=None, maxStartTime=None,
+                 detector=None, earth_ephem=None, sun_ephem=None):
         """
         Parameters
         ----------
@@ -461,6 +468,9 @@ class MCMCSearch(BaseSearchClass):
 
         """
 
+        self.minStartTime = tstart
+        self.maxStartTime = tend
+
         logging.info(
             'Set-up MCMC search for model {} on data {}'.format(
                 self.label, self.sftlabel))
@@ -490,7 +500,9 @@ class MCMCSearch(BaseSearchClass):
             tref=self.tref, sftlabel=self.sftlabel,
             sftdir=self.sftdir, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
-            sun_ephem=self.sun_ephem, detector=self.detector, transient=False)
+            sun_ephem=self.sun_ephem, detector=self.detector,
+            transient=False,
+            minStartTime=self.minStartTime, maxStartTime=self.maxStartTime)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [self.generic_lnprior(**theta_prior[key])(p) for p, key in
@@ -1145,6 +1157,8 @@ class MCMCGlitchSearch(MCMCSearch):
                                             self.sftlabel))
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
+        self.minStartTime = tstart
+        self.maxStartTime = tend
         self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
         self.unpack_input_theta()
         self.ndim = len(self.theta_keys)
@@ -1168,7 +1182,8 @@ class MCMCGlitchSearch(MCMCSearch):
             tend=self.tend, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem, detector=self.detector,
-            nglitch=self.nglitch, theta0_idx=self.theta0_idx)
+            nglitch=self.nglitch, theta0_idx=self.theta0_idx,
+            minStartTime=self.minStartTime, maxStartTime=self.maxStartTime)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         if self.nglitch > 1:
@@ -1257,8 +1272,7 @@ class GridSearch(BaseSearchClass):
     def __init__(self, label, outdir, sftlabel=None, sftdir=None, F0s=[0],
                  F1s=[0], F2s=[0], Alphas=[0], Deltas=[0], tref=None,
                  tstart=None, tend=None, minCoverFreq=None, maxCoverFreq=None,
-                 write_after=1000, earth_ephem=None, sun_ephem=None,
-                 detector=None):
+                 earth_ephem=None, sun_ephem=None, detector=None):
         """
         Parameters
         label, outdir: str
@@ -1279,6 +1293,10 @@ class GridSearch(BaseSearchClass):
             If None defaults defined in BaseSearchClass will be used
 
         """
+
+        minStartTime = tstart
+        maxStartTime = tend
+
         if sftlabel is None:
             self.sftlabel = self.label
         if sftdir is None:
@@ -1292,7 +1310,8 @@ class GridSearch(BaseSearchClass):
             tref=self.tref, sftlabel=self.sftlabel,
             sftdir=self.sftdir, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
-            sun_ephem=self.sun_ephem, detector=self.detector, transient=False)
+            sun_ephem=self.sun_ephem, detector=self.detector, transient=False,
+            minStartTime=minStartTime, maxStartTime=maxStartTime)
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -1332,7 +1351,7 @@ class GridSearch(BaseSearchClass):
                 'Old data found, input differs, continuing with grid search')
             return False
 
-    def run(self):
+    def run(self, return_data=False):
         self.get_input_data_array()
         old_data = self.check_old_data_is_okay_to_use()
         if old_data is not False:
@@ -1342,20 +1361,18 @@ class GridSearch(BaseSearchClass):
         logging.info('Total number of grid points is {}'.format(
             len(self.input_data)))
 
-        counter = 0
         data = []
         for vals in self.input_data:
             FS = self.search.run_computefstatistic_single_point(*vals)
             data.append(list(vals) + [FS])
 
-            if counter > self.write_after:
-                np.savetxt(self.out_file, data, delimiter=' ')
-                counter = 0
-                data = []
-
-        logging.info('Saving data to {}'.format(self.out_file))
-        np.savetxt(self.out_file, data, delimiter=' ')
-        self.data = np.array(data)
+        data = np.array(data)
+        if return_data:
+            return data
+        else:
+            logging.info('Saving data to {}'.format(self.out_file))
+            np.savetxt(self.out_file, data, delimiter=' ')
+            self.data = data
 
     def plot_1D(self, xkey):
         fig, ax = plt.subplots()
