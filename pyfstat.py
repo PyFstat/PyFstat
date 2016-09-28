@@ -165,7 +165,7 @@ class ComputeFstat(object):
                  minStartTime=None, maxStartTime=None,
                  minCoverFreq=None, maxCoverFreq=None,
                  detector=None, earth_ephem=None, sun_ephem=None,
-                 binary=False, transient=True):
+                 binary=False, transient=True, BSGL=False):
         """
         Parameters
         ----------
@@ -188,6 +188,8 @@ class ComputeFstat(object):
             If true, search of binary parameters.
         transient: bool
             If true, allow for the Fstat to be computed over a transient range.
+        BSGL: bool
+            If true, compute the BSGL rather than the twoF value.
 
         """
 
@@ -258,7 +260,24 @@ class ComputeFstat(object):
         logging.info('Initialising FstatResults')
         self.FstatResults = lalpulsar.FstatResults()
 
+        if self.BSGL:
+            logging.info('Initialising BSGL: this will fail if numDet < 2')
+            # Tuning parameters - to be reviewed
+            numDetectors = 2
+            Fstar0sc = 40.
+            oLGX = np.zeros(10)
+            oLGX[:numDetectors] = 0.5
+            self.BSGLSetup = lalpulsar.CreateBSGLSetup(numDetectors,
+                                                       Fstar0sc,
+                                                       oLGX,
+                                                       False,
+                                                       1)
+            self.twoFX = np.zeros(10)
+            self.whatToCompute = (lalpulsar.FSTATQ_2F +
+                                  lalpulsar.FSTATQ_2F_PER_DET)
+
         if self.transient:
+            logging.info('Initialising transient parameters')
             self.windowRange = lalpulsar.transientWindowRange_t()
             self.windowRange.type = lalpulsar.TRANSIENT_RECTANGULAR
             self.windowRange.t0Band = 0
@@ -290,13 +309,40 @@ class ComputeFstat(object):
                                )
 
         if self.transient is False:
-            return self.FstatResults.twoF[0]
+            if self.BSGL is False:
+                return self.FstatResults.twoF[0]
+
+            twoF = np.float(self.FstatResults.twoF[0])
+            self.twoFX[0] = self.FstatResults.twoFPerDet(0)
+            self.twoFX[1] = self.FstatResults.twoFPerDet(1)
+            BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX,
+                                         self.BSGLSetup)
+            return BSGL
 
         self.windowRange.t0 = int(tstart)  # TYPE UINT4
         self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
+
         FS = lalpulsar.ComputeTransientFstatMap(
             self.FstatResults.multiFatoms[0], self.windowRange, False)
-        return 2*FS.F_mn.data[0][0]
+
+        if self.BSGL is False:
+            return 2*FS.F_mn.data[0][0]
+
+        FstatResults_single = copy.copy(self.FstatResults)
+        FstatResults_single.lenth = 1
+        FstatResults_single.data = self.FstatResults.multiFatoms[0].data[0]
+        FS0 = lalpulsar.ComputeTransientFstatMap(
+            FstatResults_single.multiFatoms[0], self.windowRange, False)
+        FstatResults_single.data = self.FstatResults.multiFatoms[0].data[1]
+        FS1 = lalpulsar.ComputeTransientFstatMap(
+            FstatResults_single.multiFatoms[0], self.windowRange, False)
+
+        self.twoFX[0] = 2*FS0.F_mn.data[0][0]
+        self.twoFX[1] = 2*FS1.F_mn.data[0][0]
+        BSGL = lalpulsar.ComputeBSGL(2*FS.F_mn.data[0][0], self.twoFX,
+                                     self.BSGLSetup)
+
+        return BSGL
 
 
 class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
@@ -310,9 +356,10 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
 
     @initializer
     def __init__(self, label, outdir, tref, tstart, tend, nglitch=0,
-                 sftlabel=None, sftdir=None, theta0_idx=0, minCoverFreq=None,
-                 maxCoverFreq=None, minStartTime=None, maxStartTime=None,
-                 detector=None, earth_ephem=None, sun_ephem=None):
+                 sftlabel=None, sftdir=None, theta0_idx=0, BSGL=False,
+                 minCoverFreq=None, maxCoverFreq=None, minStartTime=None,
+                 maxStartTime=None, detector=None, earth_ephem=None,
+                 sun_ephem=None):
         """
         Parameters
         ----------
@@ -384,7 +431,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
         if np.isfinite(twoFSum):
             return twoFSum
         else:
-            return 0
+            return -np.inf
 
     def compute_glitch_fstat_single(self, F0, F1, F2, Alpha, Delta, delta_F0,
                                     delta_F1, tglitch):
@@ -423,8 +470,8 @@ class MCMCSearch(BaseSearchClass):
     def __init__(self, label, outdir, sftlabel, sftdir, theta_prior, tref,
                  tstart, tend, nsteps=[100, 100, 100], nwalkers=100, ntemps=1,
                  log10temperature_min=-5, theta_initial=None, scatter_val=1e-4,
-                 binary=False, minCoverFreq=None, maxCoverFreq=None,
-                 detector=None, earth_ephem=None, sun_ephem=None):
+                 binary=False, BSGL=False, minCoverFreq=None, maxCoverFreq=None,
+                 detector=None, earth_ephem=None, sun_ephem=None, theta0_idx=0):
         """
         Parameters
         label, outdir: str
@@ -501,7 +548,7 @@ class MCMCSearch(BaseSearchClass):
             sftdir=self.sftdir, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem, detector=self.detector,
-            transient=False,
+            BSGL=self.BSGL, transient=False,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
@@ -1095,7 +1142,7 @@ class MCMCGlitchSearch(MCMCSearch):
                  tstart, tend, nglitch=1, nsteps=[100, 100, 100], nwalkers=100,
                  ntemps=1, log10temperature_min=-5, theta_initial=None,
                  scatter_val=1e-4, dtglitchmin=1*86400, theta0_idx=0,
-                 detector=None,
+                 detector=None, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, earth_ephem=None,
                  sun_ephem=None):
         """
@@ -1181,7 +1228,7 @@ class MCMCGlitchSearch(MCMCSearch):
             sftdir=self.sftdir, tref=self.tref, tstart=self.tstart,
             tend=self.tend, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
-            sun_ephem=self.sun_ephem, detector=self.detector,
+            sun_ephem=self.sun_ephem, detector=self.detector, BSGL=self.BSGL,
             nglitch=self.nglitch, theta0_idx=self.theta0_idx,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime)
 
@@ -1272,7 +1319,7 @@ class GridSearch(BaseSearchClass):
     def __init__(self, label, outdir, sftlabel=None, sftdir=None, F0s=[0],
                  F1s=[0], F2s=[0], Alphas=[0], Deltas=[0], tref=None,
                  tstart=None, tend=None, minCoverFreq=None, maxCoverFreq=None,
-                 earth_ephem=None, sun_ephem=None, detector=None):
+                 earth_ephem=None, sun_ephem=None, detector=None, BSGL=False):
         """
         Parameters
         label, outdir: str
@@ -1311,7 +1358,8 @@ class GridSearch(BaseSearchClass):
             sftdir=self.sftdir, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem, detector=self.detector, transient=False,
-            minStartTime=minStartTime, maxStartTime=maxStartTime)
+            minStartTime=minStartTime, maxStartTime=maxStartTime,
+            BSGL=BSGL)
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
