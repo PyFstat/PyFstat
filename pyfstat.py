@@ -85,8 +85,10 @@ def read_par(label, outdir):
     d = {}
     with open(filename, 'r') as f:
         for line in f:
-            key, val = line.rstrip('\n').split(' = ')
-            d[key] = np.float64(val)
+            if len(line.split('=')) > 1:
+                key, val = line.rstrip('\n').split(' = ')
+                key = key.strip()
+                d[key] = np.float64(val.rstrip('; '))
     return d
 
 
@@ -1341,8 +1343,8 @@ class GridSearch(BaseSearchClass):
 
         """
 
-        minStartTime = tstart
-        maxStartTime = tend
+        self.minStartTime = tstart
+        self.maxStartTime = tend
 
         if sftlabel is None:
             self.sftlabel = self.label
@@ -1353,18 +1355,20 @@ class GridSearch(BaseSearchClass):
         if sun_ephem is None:
             self.sun_ephem = self.sun_ephem_default
 
+        if os.path.isdir(outdir) is False:
+            os.mkdir(outdir)
+        self.out_file = '{}/{}_gridFS.txt'.format(self.outdir, self.label)
+        self.keys = ['_', '_', 'F0', 'F1', 'F2', 'Alpha', 'Delta']
+
+    def inititate_search_object(self):
+        logging.info('Setting up search object')
         self.search = ComputeFstat(
             tref=self.tref, sftlabel=self.sftlabel,
             sftdir=self.sftdir, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem, detector=self.detector, transient=False,
-            minStartTime=minStartTime, maxStartTime=maxStartTime,
-            BSGL=BSGL)
-
-        if os.path.isdir(outdir) is False:
-            os.mkdir(outdir)
-        self.out_file = '{}/{}_gridFS.txt'.format(self.outdir, self.label)
-        self.keys = ['_', '_', 'F0', 'F1', 'F2', 'Alpha', 'Delta']
+            minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
+            BSGL=self.BSGL)
 
     def get_array_from_tuple(self, x):
         if len(x) == 1:
@@ -1406,6 +1410,8 @@ class GridSearch(BaseSearchClass):
             self.data = old_data
             return
 
+        self.inititate_search_object()
+
         logging.info('Total number of grid points is {}'.format(
             len(self.input_data)))
 
@@ -1430,26 +1436,30 @@ class GridSearch(BaseSearchClass):
         plt.plot(x, z)
         fig.savefig('{}/{}_1D.png'.format(self.outdir, self.label))
 
-    def plot_2D(self, xkey, ykey):
-        fig, ax = plt.subplots()
+    def plot_2D(self, xkey, ykey, ax=None, save=True, vmin=None, vmax=None):
+        if ax is None:
+            fig, ax = plt.subplots()
         xidx = self.keys.index(xkey)
         yidx = self.keys.index(ykey)
         x = np.unique(self.data[:, xidx])
         y = np.unique(self.data[:, yidx])
         z = self.data[:, -1]
 
-        X, Y = np.meshgrid(x, y)
+        Y, X = np.meshgrid(y, x)
         Z = z.reshape(X.shape)
 
-        pax = ax.pcolormesh(X, Y, Z, cmap=plt.cm.viridis)
-        fig.colorbar(pax)
+        pax = ax.pcolormesh(X, Y, Z, cmap=plt.cm.viridis, vmin=vmin, vmax=vmax)
+        plt.colorbar(pax, ax=ax)
         ax.set_xlim(x[0], x[-1])
         ax.set_ylim(y[0], y[-1])
         ax.set_xlabel(xkey)
         ax.set_ylabel(ykey)
 
-        fig.tight_layout()
-        fig.savefig('{}/{}_2D.png'.format(self.outdir, self.label))
+        if save:
+            fig.tight_layout()
+            fig.savefig('{}/{}_2D.png'.format(self.outdir, self.label))
+        else:
+            return ax
 
     def get_max_twoF(self):
         twoF = self.data[:, -1]
