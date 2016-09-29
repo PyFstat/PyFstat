@@ -542,6 +542,16 @@ class MCMCSearch(BaseSearchClass):
             os.rename(self.pickle_path, self.pickle_path+".old")
 
         self.old_data_is_okay_to_use = self.check_old_data_is_okay_to_use()
+        self.log_input()
+
+    def log_input(self):
+        logging.info('Input prior dictionary: {}'.format(self.theta_prior))
+        logging.info('nwalkers={}'.format(self.nwalkers))
+        logging.info('scatter_val={}'.format(self.scatter_val))
+        logging.info('nsteps={}'.format(self.nsteps))
+        logging.info('ntemps={}'.format(self.ntemps))
+        logging.info('log10temperature_min={}'.format(
+            self.log10temperature_min))
 
     def inititate_search_object(self):
         logging.info('Setting up search object')
@@ -1222,6 +1232,7 @@ class MCMCGlitchSearch(MCMCSearch):
             os.rename(self.pickle_path, self.pickle_path+".old")
 
         self.old_data_is_okay_to_use = self.check_old_data_is_okay_to_use()
+        self.log_input()
 
     def inititate_search_object(self):
         logging.info('Setting up search object')
