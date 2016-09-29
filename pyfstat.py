@@ -266,9 +266,9 @@ class ComputeFstat(object):
             logging.info('Initialising BSGL: this will fail if numDet < 2')
             # Tuning parameters - to be reviewed
             numDetectors = 2
-            Fstar0sc = 40.
+            Fstar0sc = 15.
             oLGX = np.zeros(10)
-            oLGX[:numDetectors] = 0.5
+            oLGX[:numDetectors] = 1./numDetectors
             self.BSGLSetup = lalpulsar.CreateBSGLSetup(numDetectors,
                                                        Fstar0sc,
                                                        oLGX,
