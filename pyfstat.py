@@ -88,7 +88,7 @@ def read_par(label, outdir):
             if len(line.split('=')) > 1:
                 key, val = line.rstrip('\n').split(' = ')
                 key = key.strip()
-                d[key] = np.float64(val.rstrip('; '))
+                d[key] = np.float64(eval(val.rstrip('; ')))
     return d
 
 
@@ -215,11 +215,14 @@ class ComputeFstat(object):
             constraints.maxStartTime = lal.LIGOTimeGPS(self.maxStartTime)
 
         self.sft_filepath = self.sftdir+'/*_'+self.sftlabel+"*sft"
+        logging.info('Loading data matching pattern {}'.format(
+                     self.sft_filepath))
         SFTCatalog = lalpulsar.SFTdataFind(self.sft_filepath, constraints)
         names = list(set([d.header.name for d in SFTCatalog.data]))
+        epochs = [d.header.epoch for d in SFTCatalog.data]
         logging.info(
-            'Loaded data from detectors {} matching pattern {}'.format(
-                names, self.sft_filepath))
+            'Loaded {} data files from detectors {} spanning {} to {}'.format(
+                len(epochs), names, int(epochs[0]), int(epochs[-1])))
 
         logging.info('Initialising ephems')
         ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
@@ -545,12 +548,12 @@ class MCMCSearch(BaseSearchClass):
         self.log_input()
 
     def log_input(self):
-        logging.info('Input prior dictionary: {}'.format(self.theta_prior))
+        logging.info('theta_prior = {}'.format(self.theta_prior))
         logging.info('nwalkers={}'.format(self.nwalkers))
-        logging.info('scatter_val={}'.format(self.scatter_val))
-        logging.info('nsteps={}'.format(self.nsteps))
-        logging.info('ntemps={}'.format(self.ntemps))
-        logging.info('log10temperature_min={}'.format(
+        logging.info('scatter_val = {}'.format(self.scatter_val))
+        logging.info('nsteps = {}'.format(self.nsteps))
+        logging.info('ntemps = {}'.format(self.ntemps))
+        logging.info('log10temperature_min = {}'.format(
             self.log10temperature_min))
 
     def inititate_search_object(self):
@@ -680,7 +683,7 @@ class MCMCSearch(BaseSearchClass):
         ninit_steps = len(self.nsteps) - 2
         for j, n in enumerate(self.nsteps[:-2]):
             logging.info('Running {}/{} initialisation with {} steps'.format(
-                j, ninit_steps, n))
+                j+1, ninit_steps, n))
             sampler.run_mcmc(p0, n)
             logging.info("Mean acceptance fraction: {0:.3f}"
                          .format(np.mean(sampler.acceptance_fraction)))
