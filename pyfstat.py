@@ -163,7 +163,7 @@ class ComputeFstat(object):
     sun_ephem_default = sun_ephem
 
     @initializer
-    def __init__(self, tref, sftlabel=None, sftdir=None,
+    def __init__(self, tref, sftfilepath=None,
                  minStartTime=None, maxStartTime=None,
                  minCoverFreq=None, maxCoverFreq=None,
                  detector=None, earth_ephem=None, sun_ephem=None,
@@ -173,8 +173,8 @@ class ComputeFstat(object):
         ----------
         tref: int
             GPS seconds of the reference time.
-        sftlabel, sftdir: str
-            A label and directory in which to find the relevant sft file
+        sftfilepath: str
+            File patern to match SFTs
         minCoverFreq, maxCoverFreq: float
             The min and max cover frequency passed to CreateFstatInput, if
             either is None the range of frequencies in the SFT less 1Hz is
@@ -214,10 +214,9 @@ class ComputeFstat(object):
         if self.maxStartTime:
             constraints.maxStartTime = lal.LIGOTimeGPS(self.maxStartTime)
 
-        self.sft_filepath = self.sftdir+'/*_'+self.sftlabel+"*sft"
         logging.info('Loading data matching pattern {}'.format(
-                     self.sft_filepath))
-        SFTCatalog = lalpulsar.SFTdataFind(self.sft_filepath, constraints)
+                     self.sftfilepath))
+        SFTCatalog = lalpulsar.SFTdataFind(self.sftfilepath, constraints)
         names = list(set([d.header.name for d in SFTCatalog.data]))
         epochs = [d.header.epoch for d in SFTCatalog.data]
         logging.info(
@@ -361,7 +360,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
 
     @initializer
     def __init__(self, label, outdir, tref, tstart, tend, nglitch=0,
-                 sftlabel=None, sftdir=None, theta0_idx=0, BSGL=False,
+                 sftfilepath=None, theta0_idx=0, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, minStartTime=None,
                  maxStartTime=None, detector=None, earth_ephem=None,
                  sun_ephem=None):
@@ -375,9 +374,8 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
         nglitch: int
             The (fixed) number of glitches; this can zero, but occasionally
             this causes issue (in which case just use ComputeFstat).
-        sftlabel, sftdir: str
-            A label and directory in which to find the relevant sft file. If
-            None use label and outdir.
+        sftfilepath: str
+            File patern to match SFTs
         theta0_idx, int
             Index (zero-based) of which segment the theta refers to - uyseful
             if providing a tight prior on theta to allow the signal to jump
@@ -395,10 +393,6 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
             If None defaults defined in BaseSearchClass will be used.
         """
 
-        if self.sftlabel is None:
-            self.sftlabel = self.label
-        if self.sftdir is None:
-            self.sftdir = self.outdir
         self.fs_file_name = "{}/{}_FS.dat".format(self.outdir, self.label)
         if self.earth_ephem is None:
             self.earth_ephem = self.earth_ephem_default
@@ -472,7 +466,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
 class MCMCSearch(BaseSearchClass):
     """ MCMC search using ComputeFstat"""
     @initializer
-    def __init__(self, label, outdir, sftlabel, sftdir, theta_prior, tref,
+    def __init__(self, label, outdir, sftfilepath, theta_prior, tref,
                  tstart, tend, nsteps=[100, 100, 100], nwalkers=100, ntemps=1,
                  log10temperature_min=-5, theta_initial=None, scatter_val=1e-4,
                  binary=False, BSGL=False, minCoverFreq=None, maxCoverFreq=None,
@@ -481,8 +475,8 @@ class MCMCSearch(BaseSearchClass):
         Parameters
         label, outdir: str
             A label and directory to read/write data from/to
-        sftlabel, sftdir: str
-            A label and directory in which to find the relevant sft file
+        sftfilepath: str
+            File patern to match SFTs
         theta_prior: dict
             Dictionary of priors and fixed values for the search parameters.
             For each parameters (key of the dict), if it is to be held fixed
@@ -534,7 +528,6 @@ class MCMCSearch(BaseSearchClass):
         self.unpack_input_theta()
         self.ndim = len(self.theta_keys)
         self.betas = np.logspace(0, self.log10temperature_min, self.ntemps)
-        self.sft_filepath = self.sftdir+'/*_'+self.sftlabel+"*sft"
 
         if earth_ephem is None:
             self.earth_ephem = self.earth_ephem_default
@@ -559,11 +552,10 @@ class MCMCSearch(BaseSearchClass):
     def inititate_search_object(self):
         logging.info('Setting up search object')
         self.search = ComputeFstat(
-            tref=self.tref, sftlabel=self.sftlabel,
-            sftdir=self.sftdir, minCoverFreq=self.minCoverFreq,
-            maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
-            sun_ephem=self.sun_ephem, detector=self.detector,
-            BSGL=self.BSGL, transient=False,
+            tref=self.tref, sftfilepath=self.sftfilepath,
+            minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
+            earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
+            detector=self.detector, BSGL=self.BSGL, transient=False,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
@@ -1153,7 +1145,7 @@ class MCMCSearch(BaseSearchClass):
 class MCMCGlitchSearch(MCMCSearch):
     """ MCMC search using the SemiCoherentGlitchSearch """
     @initializer
-    def __init__(self, label, outdir, sftlabel, sftdir, theta_prior, tref,
+    def __init__(self, label, outdir, sftfilepath, theta_prior, tref,
                  tstart, tend, nglitch=1, nsteps=[100, 100, 100], nwalkers=100,
                  ntemps=1, log10temperature_min=-5, theta_initial=None,
                  scatter_val=1e-4, dtglitchmin=1*86400, theta0_idx=0,
@@ -1164,8 +1156,8 @@ class MCMCGlitchSearch(MCMCSearch):
         Parameters
         label, outdir: str
             A label and directory to read/write data from/to
-        sftlabel, sftdir: str
-            A label and directory in which to find the relevant sft file
+_        sftfilepath: str
+            File patern to match SFTs
         theta_prior: dict
             Dictionary of priors and fixed values for the search parameters.
             For each parameters (key of the dict), if it is to be held fixed
@@ -1216,7 +1208,7 @@ class MCMCGlitchSearch(MCMCSearch):
 
         logging.info(('Set-up MCMC glitch search with {} glitches for model {}'
                       ' on data {}').format(self.nglitch, self.label,
-                                            self.sftlabel))
+                                            self.sftfilepath))
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.minStartTime = tstart
@@ -1225,7 +1217,6 @@ class MCMCGlitchSearch(MCMCSearch):
         self.unpack_input_theta()
         self.ndim = len(self.theta_keys)
         self.betas = np.logspace(0, self.log10temperature_min, self.ntemps)
-        self.sft_filepath = self.sftdir+'/*_'+self.sftlabel+"*sft"
         if earth_ephem is None:
             self.earth_ephem = self.earth_ephem_default
         if sun_ephem is None:
@@ -1240,8 +1231,8 @@ class MCMCGlitchSearch(MCMCSearch):
     def inititate_search_object(self):
         logging.info('Setting up search object')
         self.search = SemiCoherentGlitchSearch(
-            label=self.label, outdir=self.outdir, sftlabel=self.sftlabel,
-            sftdir=self.sftdir, tref=self.tref, tstart=self.tstart,
+            label=self.label, outdir=self.outdir, sftfilepath=self.sftfilepath,
+            tref=self.tref, tstart=self.tstart,
             tend=self.tend, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem, detector=self.detector, BSGL=self.BSGL,
@@ -1332,7 +1323,7 @@ class MCMCGlitchSearch(MCMCSearch):
 class GridSearch(BaseSearchClass):
     """ Gridded search using ComputeFstat """
     @initializer
-    def __init__(self, label, outdir, sftlabel=None, sftdir=None, F0s=[0],
+    def __init__(self, label, outdir, sftfilepath, F0s=[0],
                  F1s=[0], F2s=[0], Alphas=[0], Deltas=[0], tref=None,
                  tstart=None, tend=None, minCoverFreq=None, maxCoverFreq=None,
                  earth_ephem=None, sun_ephem=None, detector=None, BSGL=False):
@@ -1340,8 +1331,8 @@ class GridSearch(BaseSearchClass):
         Parameters
         label, outdir: str
             A label and directory to read/write data from/to
-        sftlabel, sftdir: str
-            A label and directory in which to find the relevant sft file
+        sftfilepath: str
+            File patern to match SFTs
         F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
             Length 3 tuple describing the grid for each parameter, e.g
             [F0min, F0max, dF0], for a fixed value simply give [F0].
@@ -1360,10 +1351,6 @@ class GridSearch(BaseSearchClass):
         self.minStartTime = tstart
         self.maxStartTime = tend
 
-        if sftlabel is None:
-            self.sftlabel = self.label
-        if sftdir is None:
-            self.sftdir = self.outdir
         if earth_ephem is None:
             self.earth_ephem = self.earth_ephem_default
         if sun_ephem is None:
@@ -1377,10 +1364,10 @@ class GridSearch(BaseSearchClass):
     def inititate_search_object(self):
         logging.info('Setting up search object')
         self.search = ComputeFstat(
-            tref=self.tref, sftlabel=self.sftlabel,
-            sftdir=self.sftdir, minCoverFreq=self.minCoverFreq,
-            maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
-            sun_ephem=self.sun_ephem, detector=self.detector, transient=False,
+            tref=self.tref, sftfilepath=self.sftfilepath,
+            minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
+            earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
+            detector=self.detector, transient=False,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL)
 
@@ -1483,7 +1470,7 @@ class GridSearch(BaseSearchClass):
 class GridGlitchSearch(GridSearch):
     """ Gridded search using the SemiCoherentGlitchSearch """
     @initializer
-    def __init__(self, label, outdir, sftlabel=None, sftdir=None, F0s=[0],
+    def __init__(self, label, outdir, sftfilepath=None, F0s=[0],
                  F1s=[0], F2s=[0], delta_F0s=[0], delta_F1s=[0], tglitchs=None,
                  Alphas=[0], Deltas=[0], tref=None, tstart=None, tend=None,
                  minCoverFreq=None, maxCoverFreq=None, write_after=1000,
@@ -1492,8 +1479,8 @@ class GridGlitchSearch(GridSearch):
         Parameters
         label, outdir: str
             A label and directory to read/write data from/to
-        sftlabel, sftdir: str
-            A label and directory in which to find the relevant sft file
+        sftfilepath: str
+            File patern to match SFTs
         F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
             Length 3 tuple describing the grid for each parameter, e.g
             [F0min, F0max, dF0], for a fixed value simply give [F0].
@@ -1510,17 +1497,13 @@ class GridGlitchSearch(GridSearch):
         """
         if tglitchs is None:
             self.tglitchs = [self.tend]
-        if sftlabel is None:
-            self.sftlabel = self.label
-        if sftdir is None:
-            self.sftdir = self.outdir
         if earth_ephem is None:
             self.earth_ephem = self.earth_ephem_default
         if sun_ephem is None:
             self.sun_ephem = self.sun_ephem_default
 
         self.search = SemiCoherentGlitchSearch(
-            label=label, outdir=outdir, sftlabel=sftlabel, sftdir=sftdir,
+            label=label, outdir=outdir, sftfilepath=self.sftfilepath,
             tref=tref, tstart=tstart, tend=tend, minCoverFreq=minCoverFreq,
             maxCoverFreq=maxCoverFreq, earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem)
