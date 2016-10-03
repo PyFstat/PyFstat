@@ -98,6 +98,15 @@ class BaseSearchClass(object):
     earth_ephem_default = earth_ephem
     sun_ephem_default = sun_ephem
 
+    def add_log_file(self):
+        ' Log output to a log-file, requires class to have outdir and label '
+        logfilename = '{}/{}.log'.format(self.outdir, self.label)
+        fh = logging.FileHandler(logfilename)
+        fh.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)-8s: %(message)s',
+            datefmt='%y-%m-%d %H:%M'))
+        logging.getLogger().addHandler(fh)
+
     def shift_matrix(self, n, dT):
         """ Generate the shift matrix """
         m = np.zeros((n, n))
@@ -517,6 +526,7 @@ class MCMCSearch(BaseSearchClass):
         self.minStartTime = tstart
         self.maxStartTime = tend
 
+        self.add_log_file()
         logging.info(
             'Set-up MCMC search for model {} on data {}'.format(
                 self.label, self.sftfilepath))
@@ -1206,6 +1216,7 @@ _        sftfilepath: str
 
         """
 
+        self.add_log_file()
         logging.info(('Set-up MCMC glitch search with {} glitches for model {}'
                       ' on data {}').format(self.nglitch, self.label,
                                             self.sftfilepath))
