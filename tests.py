@@ -92,8 +92,9 @@ class TestComputeFstat(Test):
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
 
-        search = pyfstat.ComputeFstat(tref=Writer.tref, sftlabel=Writer.label,
-                                      sftdir=Writer.outdir)
+        search = pyfstat.ComputeFstat(
+            tref=Writer.tref,
+            sftfilepath='{}/*{}*sft'.format(Writer.outdir, Writer.label))
         FS = search.run_computefstatistic_single_point(Writer.tstart,
                                                        Writer.tend,
                                                        Writer.F0,
@@ -119,8 +120,10 @@ class TestSemiCoherentGlitchSearch(Test):
         Writer.make_data()
 
         search = pyfstat.SemiCoherentGlitchSearch(
-            label=Writer.label, outdir=Writer.outdir, tref=Writer.tref,
-            tstart=Writer.tstart, tend=Writer.tend, nglitch=1)
+            label=self.label, outdir=outdir,
+            sftfilepath='{}/*{}*sft'.format(Writer.outdir, Writer.label),
+            tref=Writer.tref, tstart=Writer.tstart, tend=Writer.tend,
+            nglitch=1)
 
         FS = search.compute_nglitch_fstat(Writer.F0, Writer.F1, Writer.F2,
                                           Writer.Alpha, Writer.Delta,
@@ -177,7 +180,7 @@ class TestMCMCSearch(Test):
 
         search = pyfstat.MCMCSearch(
             label=self.label, outdir=outdir, theta_prior=theta, tref=tref,
-            sftlabel=self.label, sftdir=outdir,
+            sftfilepath='{}/*{}*sft'.format(Writer.outdir, Writer.label),
             tstart=tstart, tend=tend, nsteps=[100, 100], nwalkers=100,
             ntemps=1)
         search.run()
