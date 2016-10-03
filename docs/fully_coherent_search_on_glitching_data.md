@@ -47,11 +47,10 @@ nwalkers = 500
 nsteps = [100, 100, 100]
 
 mcmc = MCMCSearch('fully_coherent_on_glitching_data', 'data',
-                  sftlabel='glitch', sftdir='data',
+                  sftfilepath='data/*_glitch*.sft',
                   theta_prior=theta_prior, tref=tref, tstart=tstart, tend=tend,
-                  nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps, betas=betas,
-                  scatter_val=1e-6)
-
+                  nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps,
+                  log10temperature_min=log10temperature_min, scatter_val=1e-6)
 mcmc.run()
 mcmc.plot_corner(add_prior=True)
 ```

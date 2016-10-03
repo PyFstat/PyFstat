@@ -66,11 +66,11 @@ simply called `nsteps = [500, 1000]`). Finally, the simulation run for `500`
 steps of burn-in then `1000` steps of production to estimate the posterior.
 
 Passing all this to the MCMC search, we also need to give it a label and
-directory to save the data and provide `sftlabel` and `sftdir` which defines
-which data to use in the search
+directory to save the data and provide `sftfilepath`, a string matching
+the data to use in the search
 
 ```
-mcmc = MCMCSearch('fully_coherent', 'data', sftlabel='basic', sftdir='data',
+mcmc = MCMCSearch('fully_coherent', 'data', sftfilepath='data/*basic*sft',
                   theta_prior=theta_prior, tref=tref, tstart=tstart, tend=tend,
                   nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps,
                   scatter_val=1e-10)

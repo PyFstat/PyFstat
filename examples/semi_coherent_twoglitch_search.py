@@ -28,8 +28,8 @@ nwalkers = 100
 nsteps = [500, 500, 500]
 
 mcmc = pyfstat.MCMCGlitchSearch(
-    'semi_coherent_twoglitch_search', 'data', sftlabel='twoglitch',
-    sftdir='data', theta_prior=theta_prior, tref=tref, tstart=tstart,
+    'semi_coherent_twoglitch_search', 'data', sftfilepath='data/*twoglitch*sft',
+    theta_prior=theta_prior, tref=tref, tstart=tstart,
     tend=tend, nsteps=nsteps, nwalkers=nwalkers, scatter_val=1e-10, nglitch=2)
 
 mcmc.run()
