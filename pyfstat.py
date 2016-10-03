@@ -519,7 +519,7 @@ class MCMCSearch(BaseSearchClass):
 
         logging.info(
             'Set-up MCMC search for model {} on data {}'.format(
-                self.label, self.sftlabel))
+                self.label, self.sftfilepath))
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
