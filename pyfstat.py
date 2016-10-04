@@ -537,7 +537,10 @@ class MCMCSearch(BaseSearchClass):
         self.theta_prior['tend'] = self.tend
         self.unpack_input_theta()
         self.ndim = len(self.theta_keys)
-        self.betas = np.logspace(0, self.log10temperature_min, self.ntemps)
+        if self.log10temperature_min:
+            self.betas = np.logspace(0, self.log10temperature_min, self.ntemps)
+        else:
+            self.betas = None
 
         if earth_ephem is None:
             self.earth_ephem = self.earth_ephem_default
@@ -1233,7 +1236,10 @@ _        sftfilepath: str
         self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
         self.unpack_input_theta()
         self.ndim = len(self.theta_keys)
-        self.betas = np.logspace(0, self.log10temperature_min, self.ntemps)
+        if self.log10temperature_min:
+            self.betas = np.logspace(0, self.log10temperature_min, self.ntemps)
+        else:
+            self.betas = None
         if earth_ephem is None:
             self.earth_ephem = self.earth_ephem_default
         if sun_ephem is None:

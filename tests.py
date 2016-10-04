@@ -32,16 +32,16 @@ class TestWriter(Test):
 
     def test_makefakedata_usecached(self):
         Writer = pyfstat.Writer(self.label, outdir=outdir)
-        if os.path.isfile(Writer.sft_filepath):
-            os.remove(Writer.sft_filepath)
+        if os.path.isfile(Writer.sftfilepath):
+            os.remove(Writer.sftfilepath)
         Writer.run_makefakedata()
-        time_first = os.path.getmtime(Writer.sft_filepath)
+        time_first = os.path.getmtime(Writer.sftfilepath)
         Writer.run_makefakedata()
-        time_second = os.path.getmtime(Writer.sft_filepath)
+        time_second = os.path.getmtime(Writer.sftfilepath)
         self.assertTrue(time_first == time_second)
         os.system('touch {}'.format(Writer.config_file_name))
         Writer.run_makefakedata()
-        time_third = os.path.getmtime(Writer.sft_filepath)
+        time_third = os.path.getmtime(Writer.sftfilepath)
         self.assertFalse(time_first == time_third)
 
 
