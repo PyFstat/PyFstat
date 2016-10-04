@@ -689,6 +689,9 @@ class MCMCSearch(BaseSearchClass):
             sampler.run_mcmc(p0, n)
             logging.info("Mean acceptance fraction: {0:.3f}"
                          .format(np.mean(sampler.acceptance_fraction)))
+            if self.ntemps > 1:
+                logging.info("Tswap acceptance fraction: {}"
+                             .format(sampler.tswap_acceptance_fraction))
             fig, axes = self.plot_walkers(sampler, symbols=self.theta_symbols)
             fig.savefig('{}/{}_init_{}_walkers.png'.format(
                 self.outdir, self.label, j))
@@ -705,6 +708,9 @@ class MCMCSearch(BaseSearchClass):
         sampler.run_mcmc(p0, nburn+nprod)
         logging.info("Mean acceptance fraction: {0:.3f}"
                      .format(np.mean(sampler.acceptance_fraction)))
+        if self.ntemps > 1:
+            logging.info("Tswap acceptance fraction: {}"
+                         .format(sampler.tswap_acceptance_fraction))
 
         fig, axes = self.plot_walkers(sampler, symbols=self.theta_symbols)
         fig.savefig('{}/{}_walkers.png'.format(self.outdir, self.label))
