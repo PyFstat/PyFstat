@@ -13,7 +13,7 @@ from collections import OrderedDict
 
 import numpy as np
 import matplotlib
-matplotlib.use('cairo')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import emcee
 import corner
