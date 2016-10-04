@@ -13,7 +13,7 @@ from collections import OrderedDict
 
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('cairo')
 import matplotlib.pyplot as plt
 import emcee
 import corner
@@ -1004,12 +1004,12 @@ class MCMCSearch(BaseSearchClass):
             pickle.dump(d, File)
 
     def get_list_of_matching_sfts(self):
-        matches = glob.glob(self.sft_filepath)
+        matches = glob.glob(self.sftfilepath)
         if len(matches) > 0:
             return matches
         else:
             raise IOError('No sfts found matching {}'.format(
-                self.sft_filepath))
+                self.sftfilepath))
 
     def get_saved_data(self):
         with open(self.pickle_path, "r") as File:
@@ -1597,10 +1597,10 @@ class Writer(BaseSearchClass):
                 np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T)
 
         numSFTs = int(float(self.duration) / self.Tsft)
-        self.sft_filename = lalpulsar.OfficialSFTFilename(
+        self.sftfilename = lalpulsar.OfficialSFTFilename(
             'H', '1', numSFTs, self.Tsft, self.tstart, self.duration,
             self.label)
-        self.sft_filepath = '{}/{}'.format(self.outdir, self.sft_filename)
+        self.sftfilepath = '{}/{}'.format(self.outdir, self.sftfilename)
         self.calculate_fmin_Band()
 
     def make_data(self):
@@ -1659,28 +1659,28 @@ transientTauDays={:1.3f}\n""")
 
         getmtime = os.path.getmtime
 
-        if os.path.isfile(self.sft_filepath) is False:
+        if os.path.isfile(self.sftfilepath) is False:
             logging.info('No SFT file matching {} found'.format(
-                self.sft_filepath))
+                self.sftfilepath))
             return False
         else:
             logging.info('Matching SFT file found')
 
-        if getmtime(self.sft_filepath) < getmtime(self.config_file_name):
+        if getmtime(self.sftfilepath) < getmtime(self.config_file_name):
             logging.info(
                 ('The config file {} has been modified since the sft file {} '
                  + 'was created').format(
-                    self.config_file_name, self.sft_filepath))
+                    self.config_file_name, self.sftfilepath))
             return False
 
         logging.info(
             'The config file {} is older than the sft file {}'.format(
-                self.config_file_name, self.sft_filepath))
+                self.config_file_name, self.sftfilepath))
         logging.info('Checking contents of cff file')
         logging.info('Execute: {}'.format(
-            'lalapps_SFTdumpheader {} | head -n 20'.format(self.sft_filepath)))
+            'lalapps_SFTdumpheader {} | head -n 20'.format(self.sftfilepath)))
         output = subprocess.check_output(
-            'lalapps_SFTdumpheader {} | head -n 20'.format(self.sft_filepath),
+            'lalapps_SFTdumpheader {} | head -n 20'.format(self.sftfilepath),
             shell=True)
         calls = [line for line in output.split('\n') if line[:3] == 'lal']
         if calls[0] == cl:
