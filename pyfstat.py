@@ -1452,6 +1452,32 @@ class GridSearch(BaseSearchClass):
             np.savetxt(self.out_file, data, delimiter=' ')
             self.data = data
 
+    def convert_F0_to_mismatch(self, F0, F0hat, Tseg):
+        DeltaF0 = F0[1] - F0[0]
+        m_spacing = (np.pi*Tseg*DeltaF0)**2 / 12.
+        N = len(F0)
+        return np.arange(-N*m_spacing/2., N*m_spacing/2., m_spacing)
+
+    def convert_F1_to_mismatch(self, F1, F1hat, Tseg):
+        DeltaF1 = F1[1] - F1[0]
+        m_spacing = (np.pi*Tseg**2*DeltaF1)**2 / 720.
+        N = len(F1)
+        return np.arange(-N*m_spacing/2., N*m_spacing/2., m_spacing)
+
+    def add_mismatch_to_ax(self, ax, x, y, xkey, ykey, xhat, yhat, Tseg):
+        axX = ax.twiny()
+        axX.zorder = -10
+        axY = ax.twinx()
+        axY.zorder = -10
+
+        if xkey == 'F0':
+            m = self.convert_F0_to_mismatch(x, xhat, Tseg)
+            axX.set_xlim(m[0], m[-1])
+
+        if ykey == 'F1':
+            m = self.convert_F1_to_mismatch(y, yhat, Tseg)
+            axY.set_ylim(m[0], m[-1])
+
     def plot_1D(self, xkey):
         fig, ax = plt.subplots()
         xidx = self.keys.index(xkey)
@@ -1460,7 +1486,16 @@ class GridSearch(BaseSearchClass):
         plt.plot(x, z)
         fig.savefig('{}/{}_1D.png'.format(self.outdir, self.label))
 
-    def plot_2D(self, xkey, ykey, ax=None, save=True, vmin=None, vmax=None):
+    def plot_2D(self, xkey, ykey, ax=None, save=True, vmin=None, vmax=None,
+                add_mismatch=None, xN=None, yN=None):
+        """ Plots a 2D grid of 2F values
+
+        Parameters
+        ----------
+        add_mismatch: tuple (xhat, yhat, Tseg)
+            If not None, add a secondary axis with the metric mismatch from the
+            point xhat, yhat with duration Tseg
+        """
         if ax is None:
             fig, ax = plt.subplots()
         xidx = self.keys.index(xkey)
@@ -1474,10 +1509,19 @@ class GridSearch(BaseSearchClass):
 
         pax = ax.pcolormesh(X, Y, Z, cmap=plt.cm.viridis, vmin=vmin, vmax=vmax)
         plt.colorbar(pax, ax=ax)
+
+        if add_mismatch:
+            self.add_mismatch_to_ax(ax, x, y, xkey, ykey, *add_mismatch)
+
         ax.set_xlim(x[0], x[-1])
         ax.set_ylim(y[0], y[-1])
         ax.set_xlabel(xkey)
         ax.set_ylabel(ykey)
+
+        if xN:
+            ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(xN))
+        if yN:
+            ax.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(yN))
 
         if save:
             fig.tight_layout()
