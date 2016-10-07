@@ -662,7 +662,7 @@ class MCMCSearch(BaseSearchClass):
 
         return p0
 
-    def run(self):
+    def run(self, proposal_scale_factor=None):
 
         if self.old_data_is_okay_to_use is True:
             logging.warning('Using saved data from {}'.format(
@@ -679,7 +679,7 @@ class MCMCSearch(BaseSearchClass):
         sampler = emcee.PTSampler(
             self.ntemps, self.nwalkers, self.ndim, self.logl, self.logp,
             logpargs=(self.theta_prior, self.theta_keys, self.search),
-            loglargs=(self.search,), betas=self.betas)
+            loglargs=(self.search,), betas=self.betas, a=proposal_scale_factor)
 
         p0 = self.generate_initial_p0()
         p0 = self.apply_corrections_to_p0(p0)
