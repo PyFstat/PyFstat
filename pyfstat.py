@@ -478,8 +478,9 @@ class MCMCSearch(BaseSearchClass):
     def __init__(self, label, outdir, sftfilepath, theta_prior, tref,
                  tstart, tend, nsteps=[100, 100, 100], nwalkers=100, ntemps=1,
                  log10temperature_min=-5, theta_initial=None, scatter_val=1e-4,
-                 binary=False, BSGL=False, minCoverFreq=None, maxCoverFreq=None,
-                 detector=None, earth_ephem=None, sun_ephem=None, theta0_idx=0):
+                 binary=False, BSGL=False, minCoverFreq=None,
+                 maxCoverFreq=None, detector=None, earth_ephem=None,
+                 sun_ephem=None, theta0_idx=0):
         """
         Parameters
         label, outdir: str
@@ -699,8 +700,8 @@ class MCMCSearch(BaseSearchClass):
             logging.info('Running {}/{} initialisation with {} steps'.format(
                 j+1, ninit_steps, n))
             sampler = self.run_sampler_with_progress_bar(sampler, n, p0)
-            logging.info("Mean acceptance fraction: {0:.3f}"
-                         .format(np.mean(sampler.acceptance_fraction)))
+            logging.info("Mean acceptance fraction: {}"
+                         .format(np.mean(sampler.acceptance_fraction, axis=1)))
             if self.ntemps > 1:
                 logging.info("Tswap acceptance fraction: {}"
                              .format(sampler.tswap_acceptance_fraction))
@@ -721,8 +722,8 @@ class MCMCSearch(BaseSearchClass):
         logging.info('Running final burn and prod with {} steps'.format(
             nburn+nprod))
         sampler = self.run_sampler_with_progress_bar(sampler, nburn+nprod, p0)
-        logging.info("Mean acceptance fraction: {0:.3f}"
-                     .format(np.mean(sampler.acceptance_fraction)))
+        logging.info("Mean acceptance fraction: {}"
+                     .format(np.mean(sampler.acceptance_fraction, axis=1)))
         if self.ntemps > 1:
             logging.info("Tswap acceptance fraction: {}"
                          .format(sampler.tswap_acceptance_fraction))
@@ -749,8 +750,8 @@ class MCMCSearch(BaseSearchClass):
 
             samples_plt = copy.copy(self.samples)
             theta_symbols_plt = copy.copy(self.theta_symbols)
-            theta_symbols_plt = [s.replace('_{glitch}', r'_\textrm{glitch}') for s
-                                 in theta_symbols_plt]
+            theta_symbols_plt = [s.replace('_{glitch}', r'_\textrm{glitch}')
+                                 for s in theta_symbols_plt]
 
             if tglitch_ratio:
                 for j, k in enumerate(self.theta_keys):
@@ -1653,7 +1654,7 @@ class Writer(BaseSearchClass):
         if self.dtglitch is None or self.dtglitch == self.duration:
             self.tbounds = [self.tstart, self.tend]
         elif np.size(self.dtglitch) == 1:
-            self.tbounds = [self.tstart, self.tstart+self.dtglitch, self.tend]
+           self.tbounds = [self.tstart, self.tstart+self.dtglitch, self.tend]
         else:
             self.tglitch = self.tstart + np.array(self.dtglitch)
             self.tbounds = [self.tstart] + list(self.tglitch) + [self.tend]
