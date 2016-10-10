@@ -286,7 +286,7 @@ class ComputeFstat(object):
                                                        False,
                                                        1)
             self.twoFX = np.zeros(10)
-            self.whatToCompute = (lalpulsar.FSTATQ_2F +
+            self.whatToCompute = (self.whatToCompute +
                                   lalpulsar.FSTATQ_2F_PER_DET)
 
         if self.transient:
@@ -527,12 +527,12 @@ class MCMCSearch(BaseSearchClass):
         self.minStartTime = tstart
         self.maxStartTime = tend
 
+        if os.path.isdir(outdir) is False:
+            os.mkdir(outdir)
         self.add_log_file()
         logging.info(
             'Set-up MCMC search for model {} on data {}'.format(
                 self.label, self.sftfilepath))
-        if os.path.isdir(outdir) is False:
-            os.mkdir(outdir)
         self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
         self.theta_prior['tstart'] = self.tstart
         self.theta_prior['tend'] = self.tend
@@ -1238,12 +1238,12 @@ _        sftfilepath: str
 
         """
 
+        if os.path.isdir(outdir) is False:
+            os.mkdir(outdir)
         self.add_log_file()
         logging.info(('Set-up MCMC glitch search with {} glitches for model {}'
                       ' on data {}').format(self.nglitch, self.label,
                                             self.sftfilepath))
-        if os.path.isdir(outdir) is False:
-            os.mkdir(outdir)
         self.minStartTime = tstart
         self.maxStartTime = tend
         self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
@@ -1277,7 +1277,7 @@ _        sftfilepath: str
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         if self.nglitch > 1:
-            ts = [self.tstart] + theta_vals[-self.nglitch:] + [self.tend]
+            ts = [self.tstart] + list(theta_vals[-self.nglitch:]) + [self.tend]
             if np.array_equal(ts, np.sort(ts)) is False:
                 return -np.inf
             if any(np.diff(ts) < self.dtglitchmin):
@@ -1288,6 +1288,11 @@ _        sftfilepath: str
         return np.sum(H)
 
     def logl(self, theta, search):
+        if self.nglitch > 1:
+            ts = [self.tstart] + list(theta[-self.nglitch:]) + [self.tend]
+            if np.array_equal(ts, np.sort(ts)) is False:
+                return -np.inf
+
         for j, theta_i in enumerate(self.theta_idxs):
             self.fixed_theta[theta_i] = theta[j]
         FS = search.compute_nglitch_fstat(*self.fixed_theta)
