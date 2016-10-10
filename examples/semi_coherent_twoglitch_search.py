@@ -19,12 +19,15 @@ theta_prior = {'F0': {'type': 'norm', 'loc': F0, 'scale': abs(1e-6*F0)},
                'delta_F0': {'type': 'halfnorm', 'loc': 0,
                             'scale': 1e-7*F0},
                'delta_F1': 0,
-               'tglitch': {'type': 'unif',
-                           'lower': tstart+0.01*duration,
-                           'upper': tstart+0.99*duration},
+               'tglitch_0': {'type': 'unif',
+                             'lower': tstart+0.01*duration,
+                             'upper': tstart+0.5*duration},
+               'tglitch_1': {'type': 'unif',
+                             'lower': tstart+0.5*duration,
+                             'upper': tstart+0.99*duration},
                }
 
-nwalkers = 100
+nwalkers = 50
 nsteps = [500, 500, 500]
 
 mcmc = pyfstat.MCMCGlitchSearch(
