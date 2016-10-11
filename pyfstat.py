@@ -283,7 +283,7 @@ class ComputeFstat(object):
             self.BSGLSetup = lalpulsar.CreateBSGLSetup(numDetectors,
                                                        Fstar0sc,
                                                        oLGX,
-                                                       False,
+                                                       True,
                                                        1)
             self.twoFX = np.zeros(10)
             self.whatToCompute = (self.whatToCompute +
@@ -303,6 +303,8 @@ class ComputeFstat(object):
                                            period=None, ecc=None, tp=None,
                                            argp=None):
         """ Returns the twoF fully-coherently at a single point """
+
+        BSGL_PREFACTOR = 10 * 1 / np.log10(np.exp(1))
 
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
         self.PulsarDopplerParams.Alpha = Alpha
@@ -330,7 +332,7 @@ class ComputeFstat(object):
             self.twoFX[1] = self.FstatResults.twoFPerDet(1)
             BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX,
                                          self.BSGLSetup)
-            return BSGL
+            return BSGL_PREFACTOR * BSGL
 
         self.windowRange.t0 = int(tstart)  # TYPE UINT4
         self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
@@ -355,7 +357,7 @@ class ComputeFstat(object):
         BSGL = lalpulsar.ComputeBSGL(2*FS.F_mn.data[0][0], self.twoFX,
                                      self.BSGLSetup)
 
-        return BSGL
+        return BSGL_PREFACTOR * BSGL
 
 
 class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
