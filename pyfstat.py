@@ -928,11 +928,14 @@ class MCMCSearch(BaseSearchClass):
         axes.append(fig.add_subplot(ndim+1, 1, ndim+1))
         lnl = sampler.lnlikelihood[temp, :, :]
         if burnin_idx:
-            axes[-1].hist(lnl[:, :burnin_idx].flatten(), bins=50, histtype='step',
-                          color='r')
+            axes[-1].hist(lnl[:, :burnin_idx].flatten(), bins=50,
+                          histtype='step', color='r')
         axes[-1].hist(lnl[:, burnin_idx:].flatten(), bins=50, histtype='step',
                       color='k')
-        axes[-1].set_xlabel(r'$2\mathcal{F}$')
+        if self.BSGL:
+            axes[-1].set_xlabel(r'$\mathcal{B}_\mathrm{S/GL}$')
+        else:
+            axes[-1].set_xlabel(r'$2\mathcal{F}$')
 
         return fig, axes
 
