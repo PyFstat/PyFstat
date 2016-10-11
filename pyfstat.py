@@ -952,7 +952,7 @@ class MCMCSearch(BaseSearchClass):
 
         if type(self.theta_initial) == dict:
             logging.info('Generate initial values from initial dictionary')
-            if self.nglitch > 1:
+            if hasattr(self, 'nglitch') and self.nglitch > 1:
                 raise ValueError('Initial dict not implemented for nglitch>1')
             p0 = [[[self.generate_rv(**self.theta_initial[key])
                     for key in self.theta_keys]
@@ -1006,11 +1006,16 @@ class MCMCSearch(BaseSearchClass):
         lnp_finite = copy.copy(lnp)
         lnp_finite[np.isinf(lnp)] = np.nan
         idx = np.unravel_index(np.nanargmax(lnp_finite), lnp_finite.shape)
-        logging.info(('Gen. new p0 from max lnp (walker {}, pos {})'
-                      ' which had twoF={} ')
-                     .format(idx[0], idx[1], lnl[idx]))
         p = pF[idx]
         p0 = self.generate_scattered_p0(p)
+
+        self.search.BSGL = False
+        twoF = self.logl(p, self.search)
+        self.search.BSGL = self.BSGL
+
+        logging.info(('Gen. new p0 from pos {} which had det. stat.={:2.1f},'
+                      ' twoF={:2.1f} and lnp={:2.1f}')
+                     .format(idx[1], lnl[idx], twoF, lnp_finite[idx]))
 
         return p0
 
@@ -1096,7 +1101,7 @@ class MCMCSearch(BaseSearchClass):
             return False
 
     def get_max_twoF(self, threshold=0.05):
-        """ Returns the max 2F sample and the corresponding 2F value
+        """ Returns the max likelihood sample and the corresponding 2F value
 
         Note: the sample is returned as a dictionary along with an estimate of
         the standard deviation calculated from the std of all samples with a
@@ -1111,8 +1116,18 @@ class MCMCSearch(BaseSearchClass):
             logging.info('twoF values contain nan')
         idxs = np.isfinite(self.lnlikes)
         jmax = np.nanargmax(self.lnlikes[idxs])
-        maxtwoF = self.lnlikes[jmax]
+        maxlogl = self.lnlikes[jmax]
         d = OrderedDict()
+
+        if self.BSGL:
+            if hasattr(self, 'search') is False:
+                self.inititate_search_object()
+            p = self.samples[jmax]
+            self.search.BSGL = False
+            maxtwoF = self.logl(p, self.search)
+            self.search.BSGL = self.BSGL
+        else:
+            maxtwoF = maxlogl
 
         repeats = []
         for i, k in enumerate(self.theta_keys):
