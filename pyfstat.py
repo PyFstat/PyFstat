@@ -1460,7 +1460,8 @@ class GridSearch(BaseSearchClass):
     def __init__(self, label, outdir, sftfilepath, F0s=[0],
                  F1s=[0], F2s=[0], Alphas=[0], Deltas=[0], tref=None,
                  tstart=None, tend=None, minCoverFreq=None, maxCoverFreq=None,
-                 earth_ephem=None, sun_ephem=None, detector=None, BSGL=False):
+                 earth_ephem=None, sun_ephem=None, detector=None, BSGL=False,
+                 BSGL_PREFACTOR=1/np.log10(np.exp(1))):
         """
         Parameters
         label, outdir: str
@@ -1503,7 +1504,7 @@ class GridSearch(BaseSearchClass):
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detector=self.detector, transient=False,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-            BSGL=self.BSGL)
+            BSGL=self.BSGL, BSGL_PREFACTOR=self.BSGL_PREFACTOR)
 
     def get_array_from_tuple(self, x):
         if len(x) == 1:
@@ -1662,7 +1663,8 @@ class GridGlitchSearch(GridSearch):
                  F1s=[0], F2s=[0], delta_F0s=[0], delta_F1s=[0], tglitchs=None,
                  Alphas=[0], Deltas=[0], tref=None, tstart=None, tend=None,
                  minCoverFreq=None, maxCoverFreq=None, write_after=1000,
-                 earth_ephem=None, sun_ephem=None):
+                 earth_ephem=None, sun_ephem=None,
+                 BSGL_PREFACTOR=1/np.log10(np.exp(1))):
         """
         Parameters
         label, outdir: str
@@ -1694,7 +1696,8 @@ class GridGlitchSearch(GridSearch):
             label=label, outdir=outdir, sftfilepath=self.sftfilepath,
             tref=tref, tstart=tstart, tend=tend, minCoverFreq=minCoverFreq,
             maxCoverFreq=maxCoverFreq, earth_ephem=self.earth_ephem,
-            sun_ephem=self.sun_ephem)
+            sun_ephem=self.sun_ephem, BSGL=self.BSGL,
+            BSGL_PREFACTOR=self.BSGL_PREFACTOR)
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
