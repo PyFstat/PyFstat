@@ -186,7 +186,8 @@ class ComputeFstat(object):
                  minStartTime=None, maxStartTime=None,
                  minCoverFreq=None, maxCoverFreq=None,
                  detector=None, earth_ephem=None, sun_ephem=None,
-                 binary=False, transient=True, BSGL=False):
+                 binary=False, transient=True, BSGL=False,
+                 BSGL_PREFACTOR=1/np.log10(np.exp(1))):
         """
         Parameters
         ----------
@@ -284,7 +285,8 @@ class ComputeFstat(object):
         self.FstatResults = lalpulsar.FstatResults()
 
         if self.BSGL:
-            logging.info('Initialising BSGL: this will fail if numDet < 2')
+            logging.info('Initialising BSGL with prefactor {:2.2f}, this will'
+                         ' fail if numDet < 2'.format(self.BSGL_PREFACTOR))
             # Tuning parameters - to be reviewed
             numDetectors = 2
             Fstar0sc = 15.
@@ -314,7 +316,6 @@ class ComputeFstat(object):
                                            argp=None):
         """ Returns the twoF fully-coherently at a single point """
 
-        BSGL_PREFACTOR = 10 * 1 / np.log10(np.exp(1))
 
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
         self.PulsarDopplerParams.Alpha = Alpha
@@ -342,7 +343,7 @@ class ComputeFstat(object):
             self.twoFX[1] = self.FstatResults.twoFPerDet(1)
             BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX,
                                          self.BSGLSetup)
-            return BSGL_PREFACTOR * BSGL
+            return self.BSGL_PREFACTOR * BSGL
 
         self.windowRange.t0 = int(tstart)  # TYPE UINT4
         self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
@@ -367,7 +368,7 @@ class ComputeFstat(object):
         BSGL = lalpulsar.ComputeBSGL(2*FS.F_mn.data[0][0], self.twoFX,
                                      self.BSGLSetup)
 
-        return BSGL_PREFACTOR * BSGL
+        return self.BSGL_PREFACTOR * BSGL
 
 
 class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
@@ -384,7 +385,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
                  sftfilepath=None, theta0_idx=0, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, minStartTime=None,
                  maxStartTime=None, detector=None, earth_ephem=None,
-                 sun_ephem=None):
+                 sun_ephem=None, BSGL_PREFACTOR=1/np.log10(np.exp(1))):
         """
         Parameters
         ----------
@@ -492,7 +493,8 @@ class MCMCSearch(BaseSearchClass):
                  log10temperature_min=-5, theta_initial=None, scatter_val=1e-4,
                  binary=False, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, detector=None, earth_ephem=None,
-                 sun_ephem=None, theta0_idx=0):
+                 sun_ephem=None, theta0_idx=0,
+                 BSGL_PREFACTOR=1/np.log10(np.exp(1))):
         """
         Parameters
         label, outdir: str
@@ -582,7 +584,8 @@ class MCMCSearch(BaseSearchClass):
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detector=self.detector, BSGL=self.BSGL, transient=False,
-            minStartTime=self.minStartTime, maxStartTime=self.maxStartTime)
+            minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
+            BSGL_PREFACTOR=self.BSGL_PREFACTOR)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [self.generic_lnprior(**theta_prior[key])(p) for p, key in
@@ -1077,7 +1080,8 @@ class MCMCSearch(BaseSearchClass):
                  ntemps=self.ntemps, theta_keys=self.theta_keys,
                  theta_prior=self.theta_prior, scatter_val=self.scatter_val,
                  log10temperature_min=self.log10temperature_min,
-                 theta0_idx=self.theta0_idx)
+                 theta0_idx=self.theta0_idx, BSGL=self.BSGL,
+                 BSGL_PREFACTOR=self.BSGL_PREFACTOR)
         return d
 
     def save_data(self, sampler, samples, lnprobs, lnlikes):
@@ -1263,7 +1267,7 @@ class MCMCGlitchSearch(MCMCSearch):
                  scatter_val=1e-4, dtglitchmin=1*86400, theta0_idx=0,
                  detector=None, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, earth_ephem=None,
-                 sun_ephem=None):
+                 sun_ephem=None, BSGL_PREFACTOR=1/np.log10(np.exp(1))):
         """
         Parameters
         label, outdir: str
@@ -1353,7 +1357,8 @@ _        sftfilepath: str
             maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem, detector=self.detector, BSGL=self.BSGL,
             nglitch=self.nglitch, theta0_idx=self.theta0_idx,
-            minStartTime=self.minStartTime, maxStartTime=self.maxStartTime)
+            minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
+            BSGL_PREFACTOR=self.BSGL_PREFACTOR)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         if self.nglitch > 1:
