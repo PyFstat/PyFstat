@@ -1338,6 +1338,10 @@ _        sftfilepath: str
         if 'tglitch_0' in self.theta_prior:
             full_glitch_keys[-self.nglitch:] = [
                 'tglitch_{}'.format(i) for i in range(self.nglitch)]
+            full_glitch_keys[-2*self.nglitch:-1*self.nglitch] = [
+                'delta_F1_{}'.format(i) for i in range(self.nglitch)]
+            full_glitch_keys[-4*self.nglitch:-2*self.nglitch] = [
+                'delta_F0_{}'.format(i) for i in range(self.nglitch)]
         full_theta_keys = ['F0', 'F1', 'F2', 'Alpha', 'Delta']+full_glitch_keys
         full_theta_keys_copy = copy.copy(full_theta_keys)
 
