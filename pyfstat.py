@@ -51,14 +51,17 @@ parser.add_argument('unittest_args', nargs='*')
 args, unknown = parser.parse_known_args()
 sys.argv[1:] = args.unittest_args
 
-if args.quite:
-    log_level = logging.WARNING
-else:
-    log_level = logging.DEBUG
 
-logging.basicConfig(level=log_level,
-                    format='%(asctime)s %(levelname)-8s: %(message)s',
-                    datefmt='%H:%M')
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+stream_handler = logging.StreamHandler()
+if args.quite:
+    stream_handler.setLevel(logging.WARNING)
+else:
+    stream_handler.setLevel(logging.DEBUG)
+stream_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)-8s: %(message)s', datefmt='%H:%M'))
+logger.addHandler(stream_handler)
 
 
 def initializer(func):
@@ -102,6 +105,7 @@ class BaseSearchClass(object):
         ' Log output to a log-file, requires class to have outdir and label '
         logfilename = '{}/{}.log'.format(self.outdir, self.label)
         fh = logging.FileHandler(logfilename)
+        fh.setLevel(logging.INFO)
         fh.setFormatter(logging.Formatter(
             '%(asctime)s %(levelname)-8s: %(message)s',
             datefmt='%y-%m-%d %H:%M'))
