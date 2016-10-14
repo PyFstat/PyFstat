@@ -187,7 +187,7 @@ class ComputeFstat(object):
                  minCoverFreq=None, maxCoverFreq=None,
                  detector=None, earth_ephem=None, sun_ephem=None,
                  binary=False, transient=True, BSGL=False,
-                 BSGL_PREFACTOR=1/np.log10(np.exp(1))):
+                 BSGL_PREFACTOR=1):
         """
         Parameters
         ----------
@@ -343,7 +343,7 @@ class ComputeFstat(object):
             self.twoFX[1] = self.FstatResults.twoFPerDet(1)
             BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX,
                                          self.BSGLSetup)
-            return self.BSGL_PREFACTOR * BSGL
+            return self.BSGL_PREFACTOR * BSGL/np.log10(np.exp(1))
 
         self.windowRange.t0 = int(tstart)  # TYPE UINT4
         self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
@@ -368,7 +368,7 @@ class ComputeFstat(object):
         BSGL = lalpulsar.ComputeBSGL(2*FS.F_mn.data[0][0], self.twoFX,
                                      self.BSGLSetup)
 
-        return self.BSGL_PREFACTOR * BSGL
+        return self.BSGL_PREFACTOR * BSGL/np.log10(np.exp(1))
 
 
 class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
@@ -385,7 +385,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
                  sftfilepath=None, theta0_idx=0, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, minStartTime=None,
                  maxStartTime=None, detector=None, earth_ephem=None,
-                 sun_ephem=None, BSGL_PREFACTOR=1/np.log10(np.exp(1))):
+                 sun_ephem=None, BSGL_PREFACTOR=1):
         """
         Parameters
         ----------
@@ -494,7 +494,7 @@ class MCMCSearch(BaseSearchClass):
                  binary=False, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, detector=None, earth_ephem=None,
                  sun_ephem=None, theta0_idx=0,
-                 BSGL_PREFACTOR=1/np.log10(np.exp(1))):
+                 BSGL_PREFACTOR=1):
         """
         Parameters
         label, outdir: str
@@ -1267,7 +1267,7 @@ class MCMCGlitchSearch(MCMCSearch):
                  scatter_val=1e-4, dtglitchmin=1*86400, theta0_idx=0,
                  detector=None, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, earth_ephem=None,
-                 sun_ephem=None, BSGL_PREFACTOR=1/np.log10(np.exp(1))):
+                 sun_ephem=None, BSGL_PREFACTOR=1):
         """
         Parameters
         label, outdir: str
@@ -1461,7 +1461,7 @@ class GridSearch(BaseSearchClass):
                  F1s=[0], F2s=[0], Alphas=[0], Deltas=[0], tref=None,
                  tstart=None, tend=None, minCoverFreq=None, maxCoverFreq=None,
                  earth_ephem=None, sun_ephem=None, detector=None, BSGL=False,
-                 BSGL_PREFACTOR=1/np.log10(np.exp(1))):
+                 BSGL_PREFACTOR=1):
         """
         Parameters
         label, outdir: str
@@ -1664,7 +1664,7 @@ class GridGlitchSearch(GridSearch):
                  Alphas=[0], Deltas=[0], tref=None, tstart=None, tend=None,
                  minCoverFreq=None, maxCoverFreq=None, write_after=1000,
                  earth_ephem=None, sun_ephem=None,
-                 BSGL_PREFACTOR=1/np.log10(np.exp(1))):
+                 BSGL_PREFACTOR=1):
         """
         Parameters
         label, outdir: str
