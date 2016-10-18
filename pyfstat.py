@@ -845,6 +845,11 @@ class MCMCSearch(BaseSearchClass):
                 upper = prior_dict['loc'] + normal_stds * prior_dict['scale']
                 x = np.linspace(lower, upper, N)
                 prior = prior_func(x)
+            elif prior_dict['type'] == 'halfnorm':
+                lower = prior_dict['loc']
+                upper = prior_dict['loc'] + normal_stds * prior_dict['scale']
+                x = np.linspace(lower, upper, N)
+                prior = [prior_func(xi) for xi in x]
             else:
                 raise ValueError('Not implemented for prior type {}'.format(
                     prior_dict['type']))
