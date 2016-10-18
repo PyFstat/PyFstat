@@ -1653,7 +1653,17 @@ class GridSearch(BaseSearchClass):
 
     def get_max_twoF(self):
         twoF = self.data[:, -1]
-        return np.max(twoF)
+        idx = np.argmax(twoF)
+        v = self.data[idx, :]
+        d = OrderedDict(tstart=v[0], tend=v[1], F0=v[2], F1=v[3], F2=v[4],
+                        Alpha=v[5], Delta=v[6], twoF=v[7])
+        return d
+
+    def print_max_twoF(self):
+        d = self.get_max_twoF()
+        print('Max twoF values for {}:'.format(self.label))
+        for k, v in d.iteritems():
+            print('  {}={}'.format(k, v))
 
 
 class GridGlitchSearch(GridSearch):
