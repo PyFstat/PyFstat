@@ -1531,6 +1531,8 @@ class GridSearch(BaseSearchClass):
         self.input_data = np.array(input_data)
 
     def check_old_data_is_okay_to_use(self):
+        if args.clean:
+            return False
         if os.path.isfile(self.out_file) is False:
             logging.info('No old data found, continuing with grid search')
             return False
