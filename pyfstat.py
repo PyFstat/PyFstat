@@ -71,7 +71,7 @@ logger.addHandler(stream_handler)
 
 
 def initializer(func):
-    """ Automatically assigns the parameters to self """
+    """ Decorator function to automatically assign the parameters to self """
     names, varargs, keywords, defaults = inspect.getargspec(func)
 
     @wraps(func)
@@ -102,13 +102,13 @@ def read_par(label, outdir):
 
 
 class BaseSearchClass(object):
-    """ The base search class, provides ephemeris and general utilities """
+    """ The base search class, provides general functions """
 
     earth_ephem_default = earth_ephem
     sun_ephem_default = sun_ephem
 
     def add_log_file(self):
-        ' Log output to a log-file, requires class to have outdir and label '
+        """ Log output to a file, requires class to have outdir and label """
         logfilename = '{}/{}.log'.format(self.outdir, self.label)
         fh = logging.FileHandler(logfilename)
         fh.setLevel(logging.INFO)
@@ -118,7 +118,21 @@ class BaseSearchClass(object):
         logging.getLogger().addHandler(fh)
 
     def shift_matrix(self, n, dT):
-        """ Generate the shift matrix """
+        """ Generate the shift matrix
+
+        Parameters
+        ----------
+        n: int
+            The dimension of the shift-matrix to generate
+        dT: float
+            The time delta of the shift matrix
+
+        Returns
+        -------
+        m: array (n, n)
+            The shift matrix
+        """
+
         m = np.zeros((n, n))
         factorial = np.math.factorial
         for i in range(n):
@@ -132,7 +146,6 @@ class BaseSearchClass(object):
                         m[i, j] = 2*np.pi*float(dT)**(j-i) / factorial(j-i)
                     else:
                         m[i, j] = float(dT)**(j-i) / factorial(j-i)
-
         return m
 
     def shift_coefficients(self, theta, dT):
@@ -151,6 +164,7 @@ class BaseSearchClass(object):
         theta_new: array-like shape (n,)
             vector of the coefficients as evaluate as the new reference time.
         """
+
         n = len(theta)
         m = self.shift_matrix(n, dT)
         return np.dot(m, theta)
@@ -176,18 +190,17 @@ class BaseSearchClass(object):
 
 
 class ComputeFstat(object):
-    """ Base class providing interface to lalpulsar.ComputeFstat """
+    """ Base class providing interface to `lalpulsar.ComputeFstat` """
 
     earth_ephem_default = earth_ephem
     sun_ephem_default = sun_ephem
 
     @initializer
-    def __init__(self, tref, sftfilepath=None,
-                 minStartTime=None, maxStartTime=None,
-                 minCoverFreq=None, maxCoverFreq=None,
-                 detector=None, earth_ephem=None, sun_ephem=None,
-                 binary=False, transient=True, BSGL=False,
-                 BSGL_PREFACTOR=1):
+    def __init__(self, tref, sftfilepath=None, minStartTime=None,
+                 maxStartTime=None, binary=False, transient=True, BSGL=False,
+                 BSGL_PREFACTOR=1, detector=None, minCoverFreq=None,
+                 maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
+                 ):
         """
         Parameters
         ----------
@@ -195,23 +208,30 @@ class ComputeFstat(object):
             GPS seconds of the reference time.
         sftfilepath: str
             File patern to match SFTs
-        minCoverFreq, maxCoverFreq: float
-            The min and max cover frequency passed to CreateFstatInput, if
-            either is None the range of frequencies in the SFT less 1Hz is
-            used.
-        detector: str
-            Two character reference to the data to use, specify None for no
-            contraint.
-        earth_ephem, sun_ephem: str
-            Paths of the two files containing positions of Earth and Sun,
-            respectively at evenly spaced times, as passed to CreateFstatInput.
-            If None defaults defined in BaseSearchClass will be used.
+        minStartTime, maxStartTime: float GPStime
+            Only use SFTs with timestemps starting from (including, excluding)
+            this epoch
         binary: bool
             If true, search of binary parameters.
         transient: bool
             If true, allow for the Fstat to be computed over a transient range.
         BSGL: bool
             If true, compute the BSGL rather than the twoF value.
+        BSGL_PREFACTOR: float
+            If BSGL is True, one can specify a prefactor to multiply the
+            computed BSGL value by, useful in MCMC searches to amplify the
+            peaks.
+        detector: str
+            Two character reference to the data to use, specify None for no
+            contraint.
+        minCoverFreq, maxCoverFreq: float
+            The min and max cover frequency passed to CreateFstatInput, if
+            either is None the range of frequencies in the SFT less 1Hz is
+            used.
+        earth_ephem, sun_ephem: str
+            Paths of the two files containing positions of Earth and Sun,
+            respectively at evenly spaced times, as passed to CreateFstatInput.
+            If None defaults defined in BaseSearchClass will be used.
 
         """
 
@@ -316,7 +336,6 @@ class ComputeFstat(object):
                                            argp=None):
         """ Returns the twoF fully-coherently at a single point """
 
-
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
         self.PulsarDopplerParams.Alpha = Alpha
         self.PulsarDopplerParams.Delta = Delta
@@ -382,10 +401,10 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
 
     @initializer
     def __init__(self, label, outdir, tref, tstart, tend, nglitch=0,
-                 sftfilepath=None, theta0_idx=0, BSGL=False,
-                 minCoverFreq=None, maxCoverFreq=None, minStartTime=None,
-                 maxStartTime=None, detector=None, earth_ephem=None,
-                 sun_ephem=None, BSGL_PREFACTOR=1):
+                 sftfilepath=None, theta0_idx=0, BSGL=False, BSGL_PREFACTOR=1,
+                 minStartTime=None, maxStartTime=None, minCoverFreq=None,
+                 maxCoverFreq=None, detector=None, earth_ephem=None,
+                 sun_ephem=None):
         """
         Parameters
         ----------
@@ -402,17 +421,8 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
             Index (zero-based) of which segment the theta refers to - uyseful
             if providing a tight prior on theta to allow the signal to jump
             too theta (and not just from)
-        minCoverFreq, maxCoverFreq: float
-            The min and max cover frequency passed to CreateFstatInput, if
-            either is None the range of frequencies in the SFT less 1Hz is
-            used.
-        detector: str
-            Two character reference to the data to use, specify None for no
-            contraint.
-        earth_ephem, sun_ephem: str
-            Paths of the two files containing positions of Earth and Sun,
-            respectively at evenly spaced times, as passed to CreateFstatInput.
-            If None defaults defined in BaseSearchClass will be used.
+
+        For all other parameters, see pyfstat.ComputeFStat.
         """
 
         self.fs_file_name = "{}/{}_FS.dat".format(self.outdir, self.label)
@@ -1462,13 +1472,14 @@ _        sftfilepath: str
 class GridSearch(BaseSearchClass):
     """ Gridded search using ComputeFstat """
     @initializer
-    def __init__(self, label, outdir, sftfilepath, F0s=[0],
-                 F1s=[0], F2s=[0], Alphas=[0], Deltas=[0], tref=None,
-                 tstart=None, tend=None, minCoverFreq=None, maxCoverFreq=None,
-                 earth_ephem=None, sun_ephem=None, detector=None, BSGL=False,
-                 BSGL_PREFACTOR=1):
+    def __init__(self, label, outdir, sftfilepath, F0s=[0], F1s=[0], F2s=[0],
+                 Alphas=[0], Deltas=[0], tref=None, tstart=None, tend=None,
+                 BSGL=False, BSGL_PREFACTOR=1, minCoverFreq=None,
+                 maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
+                 detector=None):
         """
         Parameters
+        ----------
         label, outdir: str
             A label and directory to read/write data from/to
         sftfilepath: str
@@ -1478,14 +1489,8 @@ class GridSearch(BaseSearchClass):
             [F0min, F0max, dF0], for a fixed value simply give [F0].
         tref, tstart, tend: int
             GPS seconds of the reference time, start time and end time
-        minCoverFreq, maxCoverFreq: float
-            Minimum and maximum instantaneous frequency which will be covered
-            over the SFT time span as passed to CreateFstatInput
-        earth_ephem, sun_ephem: str
-            Paths of the two files containing positions of Earth and Sun,
-            respectively at evenly spaced times, as passed to CreateFstatInput
-            If None defaults defined in BaseSearchClass will be used
 
+        For all other parameters, see `pyfstat.ComputeFStat` for details
         """
 
         self.minStartTime = tstart
@@ -1606,9 +1611,9 @@ class GridSearch(BaseSearchClass):
         fig.savefig('{}/{}_1D.png'.format(self.outdir, self.label))
 
     def plot_2D(self, xkey, ykey, ax=None, save=True, vmin=None, vmax=None,
-                add_mismatch=None, xN=None, yN=None, flat_keys=[], 
+                add_mismatch=None, xN=None, yN=None, flat_keys=[],
                 rel_flat_idxs=[], flatten_method=np.max,
-                predicted_twoF=None, cm=None):
+                predicted_twoF=None, cm=None, cbarkwargs={}):
         """ Plots a 2D grid of 2F values
 
         Parameters
@@ -1646,7 +1651,8 @@ class GridSearch(BaseSearchClass):
                 cm = plt.cm.viridis
 
         pax = ax.pcolormesh(X, Y, Z, cmap=cm, vmin=vmin, vmax=vmax)
-        plt.colorbar(pax, ax=ax)
+        cb = plt.colorbar(pax, ax=ax, **cbarkwargs)
+        cb.set_label('$2\mathcal{F}$')
 
         if add_mismatch:
             self.add_mismatch_to_ax(ax, x, y, xkey, ykey, *add_mismatch)
@@ -1683,7 +1689,7 @@ class GridSearch(BaseSearchClass):
 
 
 class GridGlitchSearch(GridSearch):
-    """ Gridded search using the SemiCoherentGlitchSearch """
+    """ Grid search using the SemiCoherentGlitchSearch """
     @initializer
     def __init__(self, label, outdir, sftfilepath=None, F0s=[0],
                  F1s=[0], F2s=[0], delta_F0s=[0], delta_F1s=[0], tglitchs=None,
@@ -1693,6 +1699,7 @@ class GridGlitchSearch(GridSearch):
                  BSGL_PREFACTOR=1):
         """
         Parameters
+        ----------
         label, outdir: str
             A label and directory to read/write data from/to
         sftfilepath: str
@@ -1702,14 +1709,8 @@ class GridGlitchSearch(GridSearch):
             [F0min, F0max, dF0], for a fixed value simply give [F0].
         tref, tstart, tend: int
             GPS seconds of the reference time, start time and end time
-        minCoverFreq, maxCoverFreq: float
-            Minimum and maximum instantaneous frequency which will be covered
-            over the SFT time span as passed to CreateFstatInput
-        earth_ephem, sun_ephem: str
-            Paths of the two files containing positions of Earth and Sun,
-            respectively at evenly spaced times, as passed to CreateFstatInput
-            If None defaults defined in BaseSearchClass will be used
 
+        For all other parameters, see pyfstat.ComputeFStat.
         """
         if tglitchs is None:
             self.tglitchs = [self.tend]
