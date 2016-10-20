@@ -198,8 +198,9 @@ class ComputeFstat(object):
     @initializer
     def __init__(self, tref, sftfilepath=None, minStartTime=None,
                  maxStartTime=None, binary=False, transient=True, BSGL=False,
-                 BSGL_PREFACTOR=1, detector=None, minCoverFreq=None,
-                 maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
+                 BSGL_PREFACTOR=1, BSGL_FLOOR=None, detector=None,
+                 minCoverFreq=None, maxCoverFreq=None, earth_ephem=None,
+                 sun_ephem=None,
                  ):
         """
         Parameters
@@ -221,6 +222,8 @@ class ComputeFstat(object):
             If BSGL is True, one can specify a prefactor to multiply the
             computed BSGL value by, useful in MCMC searches to amplify the
             peaks.
+        BSGL_FLOOR: float
+            IF BSGL < BSGL_FLOOR -> BSGL_FLOOR
         detector: str
             Two character reference to the data to use, specify None for no
             contraint.
@@ -305,8 +308,11 @@ class ComputeFstat(object):
         self.FstatResults = lalpulsar.FstatResults()
 
         if self.BSGL:
-            logging.info('Initialising BSGL with prefactor {:2.2f}, this will'
-                         ' fail if numDet < 2'.format(self.BSGL_PREFACTOR))
+            if len(names) < 2:
+                raise ValueError("Can't use BSGL with single detector data")
+            logging.info('Initialising BSGL with prefactor {:2.2f} and floor'
+                         '{:2.2f}'.format(self.BSGL_PREFACTOR, self.BSGL_FLOOR)
+                         )
             # Tuning parameters - to be reviewed
             numDetectors = 2
             Fstar0sc = 15.
@@ -362,7 +368,10 @@ class ComputeFstat(object):
             self.twoFX[1] = self.FstatResults.twoFPerDet(1)
             BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX,
                                          self.BSGLSetup)
-            return self.BSGL_PREFACTOR * BSGL/np.log10(np.exp(1))
+            if self.BSGL_FLOOR and BSGL < self.BSGL_FLOOR:
+                return -self.BSGL_FLOOR
+            else:
+                return self.BSGL_PREFACTOR * BSGL/np.log10(np.exp(1))
 
         self.windowRange.t0 = int(tstart)  # TYPE UINT4
         self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
@@ -387,7 +396,10 @@ class ComputeFstat(object):
         BSGL = lalpulsar.ComputeBSGL(2*FS.F_mn.data[0][0], self.twoFX,
                                      self.BSGLSetup)
 
-        return self.BSGL_PREFACTOR * BSGL/np.log10(np.exp(1))
+        if self.BSGL_FLOOR and BSGL < self.BSGL_FLOOR:
+            return self.BSGL_FLOOR
+        else:
+            return self.BSGL_PREFACTOR * BSGL/np.log10(np.exp(1))
 
 
 class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
@@ -402,9 +414,9 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
     @initializer
     def __init__(self, label, outdir, tref, tstart, tend, nglitch=0,
                  sftfilepath=None, theta0_idx=0, BSGL=False, BSGL_PREFACTOR=1,
-                 minStartTime=None, maxStartTime=None, minCoverFreq=None,
-                 maxCoverFreq=None, detector=None, earth_ephem=None,
-                 sun_ephem=None):
+                 BSGL_FLOOR=None, minStartTime=None, maxStartTime=None,
+                 minCoverFreq=None, maxCoverFreq=None, detector=None,
+                 earth_ephem=None, sun_ephem=None):
         """
         Parameters
         ----------
@@ -504,7 +516,7 @@ class MCMCSearch(BaseSearchClass):
                  binary=False, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, detector=None, earth_ephem=None,
                  sun_ephem=None, theta0_idx=0,
-                 BSGL_PREFACTOR=1):
+                 BSGL_PREFACTOR=1, BSGL_FLOOR=None):
         """
         Parameters
         label, outdir: str
@@ -595,7 +607,7 @@ class MCMCSearch(BaseSearchClass):
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detector=self.detector, BSGL=self.BSGL, transient=False,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-            BSGL_PREFACTOR=self.BSGL_PREFACTOR)
+            BSGL_PREFACTOR=self.BSGL_PREFACTOR, BSGL_FLOOR=self.BSGL_FLOOR)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [self.generic_lnprior(**theta_prior[key])(p) for p, key in
@@ -954,7 +966,7 @@ class MCMCSearch(BaseSearchClass):
             raise ValueError("dist_type {} unknown".format(dist_type))
 
     def plot_walkers(self, sampler, symbols=None, alpha=0.4, color="k", temp=0,
-                     burnin_idx=None):
+                     lw=0.1, burnin_idx=None):
         """ Plot all the chains from a sampler """
 
         shape = sampler.chain.shape
@@ -983,9 +995,9 @@ class MCMCSearch(BaseSearchClass):
                     cs = chain[:, :, i].T
                     if burnin_idx:
                         axes[i].plot(idxs[:burnin_idx], cs[:burnin_idx],
-                                     color="r", alpha=alpha)
+                                     color="r", alpha=alpha, lw=lw)
                     axes[i].plot(idxs[burnin_idx:], cs[burnin_idx:], color="k",
-                                 alpha=alpha)
+                                 alpha=alpha, lw=lw)
                     if symbols:
                         axes[i].set_ylabel(symbols[i])
             else:
@@ -1096,7 +1108,8 @@ class MCMCSearch(BaseSearchClass):
                  theta_prior=self.theta_prior, scatter_val=self.scatter_val,
                  log10temperature_min=self.log10temperature_min,
                  theta0_idx=self.theta0_idx, BSGL=self.BSGL,
-                 BSGL_PREFACTOR=self.BSGL_PREFACTOR)
+                 BSGL_PREFACTOR=self.BSGL_PREFACTOR,
+                 BSGL_FLOOR=self.BSGL_FLOOR)
         return d
 
     def save_data(self, sampler, samples, lnprobs, lnlikes):
@@ -1282,7 +1295,7 @@ class MCMCGlitchSearch(MCMCSearch):
                  scatter_val=1e-4, dtglitchmin=1*86400, theta0_idx=0,
                  detector=None, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, earth_ephem=None,
-                 sun_ephem=None, BSGL_PREFACTOR=1):
+                 sun_ephem=None, BSGL_PREFACTOR=1, BSGL_FLOOR=None):
         """
         Parameters
         label, outdir: str
@@ -1373,7 +1386,7 @@ _        sftfilepath: str
             sun_ephem=self.sun_ephem, detector=self.detector, BSGL=self.BSGL,
             nglitch=self.nglitch, theta0_idx=self.theta0_idx,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-            BSGL_PREFACTOR=self.BSGL_PREFACTOR)
+            BSGL_PREFACTOR=self.BSGL_PREFACTOR, BSGL_FLOOR=self.BSGL_FLOOR)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         if self.nglitch > 1:
@@ -1474,9 +1487,9 @@ class GridSearch(BaseSearchClass):
     @initializer
     def __init__(self, label, outdir, sftfilepath, F0s=[0], F1s=[0], F2s=[0],
                  Alphas=[0], Deltas=[0], tref=None, tstart=None, tend=None,
-                 BSGL=False, BSGL_PREFACTOR=1, minCoverFreq=None,
-                 maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
-                 detector=None):
+                 BSGL=False, BSGL_PREFACTOR=1, BSGL_FLOOR=None,
+                 minCoverFreq=None, maxCoverFreq=None, earth_ephem=None,
+                 sun_ephem=None, detector=None):
         """
         Parameters
         ----------
@@ -1514,7 +1527,8 @@ class GridSearch(BaseSearchClass):
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detector=self.detector, transient=False,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-            BSGL=self.BSGL, BSGL_PREFACTOR=self.BSGL_PREFACTOR)
+            BSGL=self.BSGL, BSGL_PREFACTOR=self.BSGL_PREFACTOR,
+            BSGL_FLOOR=self.BSGL_FLOOR)
 
     def get_array_from_tuple(self, x):
         if len(x) == 1:
@@ -1696,7 +1710,7 @@ class GridGlitchSearch(GridSearch):
                  Alphas=[0], Deltas=[0], tref=None, tstart=None, tend=None,
                  minCoverFreq=None, maxCoverFreq=None, write_after=1000,
                  earth_ephem=None, sun_ephem=None,
-                 BSGL_PREFACTOR=1):
+                 BSGL_PREFACTOR=1, BSGL_FLOOR=None):
         """
         Parameters
         ----------
@@ -1724,7 +1738,7 @@ class GridGlitchSearch(GridSearch):
             tref=tref, tstart=tstart, tend=tend, minCoverFreq=minCoverFreq,
             maxCoverFreq=maxCoverFreq, earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem, BSGL=self.BSGL,
-            BSGL_PREFACTOR=self.BSGL_PREFACTOR)
+            BSGL_PREFACTOR=self.BSGL_PREFACTOR, BSGL_FLOOR=self.BSGL_FLOOR)
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
