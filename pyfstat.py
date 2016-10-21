@@ -310,9 +310,16 @@ class ComputeFstat(object):
         if self.BSGL:
             if len(names) < 2:
                 raise ValueError("Can't use BSGL with single detector data")
-            logging.info('Initialising BSGL with prefactor {:2.2f} and floor '
-                         '{:2.2f}'.format(self.BSGL_PREFACTOR, self.BSGL_FLOOR)
-                         )
+            if self.BSGL_FLOOR is None:
+                logging.info('Initialising BSGL with prefactor {:2.2f}'
+                             .format(self.BSGL_PREFACTOR)
+                             )
+            else:
+                logging.info('Initialising BSGL with prefactor {:0.2f} and '
+                             'floor {}'.format(self.BSGL_PREFACTOR,
+                                               self.BSGL_FLOOR)
+                             )
+
             # Tuning parameters - to be reviewed
             numDetectors = 2
             Fstar0sc = 15.
@@ -512,7 +519,7 @@ class MCMCSearch(BaseSearchClass):
     @initializer
     def __init__(self, label, outdir, sftfilepath, theta_prior, tref,
                  tstart, tend, nsteps=[100, 100, 100], nwalkers=100, ntemps=1,
-                 log10temperature_min=-5, theta_initial=None, scatter_val=1e-4,
+                 log10temperature_min=-5, theta_initial=None, scatter_val=1e-10,
                  binary=False, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, detector=None, earth_ephem=None,
                  sun_ephem=None, theta0_idx=0,
@@ -1292,7 +1299,7 @@ class MCMCGlitchSearch(MCMCSearch):
     def __init__(self, label, outdir, sftfilepath, theta_prior, tref,
                  tstart, tend, nglitch=1, nsteps=[100, 100, 100], nwalkers=100,
                  ntemps=1, log10temperature_min=-5, theta_initial=None,
-                 scatter_val=1e-4, dtglitchmin=1*86400, theta0_idx=0,
+                 scatter_val=1e-10, dtglitchmin=1*86400, theta0_idx=0,
                  detector=None, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, earth_ephem=None,
                  sun_ephem=None, BSGL_PREFACTOR=1, BSGL_FLOOR=None):
