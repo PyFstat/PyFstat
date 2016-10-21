@@ -973,7 +973,7 @@ class MCMCSearch(BaseSearchClass):
             raise ValueError("dist_type {} unknown".format(dist_type))
 
     def plot_walkers(self, sampler, symbols=None, alpha=0.4, color="k", temp=0,
-                     lw=0.1, burnin_idx=None):
+                     lw=0.1, burnin_idx=None, add_det_stat_burnin=False):
         """ Plot all the chains from a sampler """
 
         shape = sampler.chain.shape
@@ -1014,7 +1014,7 @@ class MCMCSearch(BaseSearchClass):
 
         axes.append(fig.add_subplot(ndim+1, 1, ndim+1))
         lnl = sampler.lnlikelihood[temp, :, :]
-        if burnin_idx:
+        if burnin_idx and add_det_stat_burnin:
             axes[-1].hist(lnl[:, :burnin_idx].flatten(), bins=50,
                           histtype='step', color='r')
         axes[-1].hist(lnl[:, burnin_idx:].flatten(), bins=50, histtype='step',
