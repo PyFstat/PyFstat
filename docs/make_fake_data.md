@@ -2,9 +2,9 @@
 
 Here, we describe the steps required to generate fake data which will be used
 throughout the other examples. We will generate data based on the properties of
-the Crab pulsar, first as a smooth CW signal and then as a CW signal which
-contains a glitch. This document is based on the file
-[make_fake_data.py](../examples/make_fake_data.py).
+the Crab pulsar, first as a smooth CW signal, then as a CW signal which
+contains one glitch, and finally as a signal with two glitches. This document
+is based on the file [make_fake_data.py](../examples/make_fake_data.py).
 
 ## Smooth signal
 
@@ -12,7 +12,7 @@ In the following code segment, we import the `Writer` class used to generate
 fake data, define the Crab parameters and create an instant of the `Writer`
 called `data`
 
-```
+```python
 from pyfstat import Writer
 
 # Define parameters of the Crab pulsar
@@ -40,7 +40,7 @@ data = Writer(
 We can now use the `data` object to create `.sft` files which contain a smooth
 signal in Gaussian noise. In detail, the process consists first in calling
 
-```
+```python
 data.make_cff()
 ```
 which generates a file `data/basic.cff` (notice the directory and file name
@@ -67,7 +67,7 @@ transientTauDays=100.000
 
 Finally, we generate the `.sft` files by calling
 
-```
+```python
 data.run_makefakedata()
 ```
 
@@ -82,7 +82,7 @@ start with a simple case in which the glitch occurs half way through the
 observation span. We define the properties of this signal, create
 another `Writer` instance called `glitch_data`, and then run `make_data()`
 
-```
+```python
 dtglitch = duration/2.0
 delta_F0 = 0.4e-5
 delta_F1 = 0
@@ -136,7 +136,7 @@ but continuous signals.
 Finally, the `Writer` class also provides a wrapper of `lalapps_PredictFstat`.
 So calling
 
-```
+```python
 >>> print data.predict_fstat()
 1721.1
 ```
@@ -153,7 +153,7 @@ sequentially and additively as implemented
 `pyfstat.BaseSearchClass.calculate_thetas`. Here is an example with two
 glitches, one a quarter of the way through and the other a fifth from the end.
 
-```
+```python
 dtglitch = [duration/4.0, 4*duration/5.0]
 delta_phi = [0, 0]
 delta_F0 = [0.4e-5, 0.3e-6]

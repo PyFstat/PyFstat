@@ -2,7 +2,7 @@ from pyfstat import Writer
 
 # First, we generate data with a reasonably strong smooth signal
 
-# Define parameters of the Crab pulsar
+# Define parameters of the Crab pulsar as an example
 F0 = 30.0
 F1 = -1e-10
 F2 = 0
@@ -37,7 +37,7 @@ glitch_data = Writer(
 glitch_data.make_data()
 
 
-# The predicted twoF, given by lalapps_predictFstat can be accsessed by
+# The predicted twoF, given by lalapps_predictFstat can be accessed by
 
 print data.predict_fstat()
 
