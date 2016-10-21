@@ -1,7 +1,7 @@
 # Fully coherent search on glitching data using MCMC
 
 This example applies the basic [fully coherent
-search](fully_coherent_search.md), to the glitching signal data set created in
+search using MCMC](fully_coherent_search_using_MCMC.md), to the glitching signal data set created in
 [make fake data](make_fake_data.md]). The aim here is to illustrate the effect
 such a signal can have on a fully-coherent search. The complete script for this
 example canbe found

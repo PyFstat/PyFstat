@@ -27,7 +27,7 @@ data.make_data()
 
 # Next, taking the same signal parameters, we include a glitch half way through
 dtglitch = duration/2.0
-delta_F0 = 0.4e-5
+delta_F0 = 4e-5
 delta_F1 = 0
 
 glitch_data = Writer(
@@ -45,7 +45,7 @@ print data.predict_fstat()
 
 dtglitch = [duration/4.0, 4*duration/5.0]
 delta_phi = [0, 0]
-delta_F0 = [0.4e-5, 0.3e-6]
+delta_F0 = [4e-6, 3e-7]
 delta_F1 = [0, 0]
 delta_F2 = [0, 0]
 

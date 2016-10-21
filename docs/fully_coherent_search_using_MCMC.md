@@ -2,8 +2,8 @@
 
 In this example, we will show the basics of setting up and running a MCMC
 search for a fully-coherent search. This is based on the example
-[fully_coherent_search.py](../example/fully_coherent_search.py). We will run
-the search on the `basic` data generated in the
+[fully_coherent_search_using_MCMC.py](../example/fully_coherent_search_using_MCMC.py).
+We will run the search on the `basic` data generated in the
 [make_fake_data](make_fake_data.md) example.
 
 First, we need to import the search tool, in this example we will use the
@@ -83,7 +83,7 @@ mcmc.run()
 
 This produces two `.png` images. The first is the position of the *walkers*
 during the simulation:
-![](img/fully_coherent_using_MCMC_walkers.png)
+![](img/fully_coherent_search_using_MCMC_walkers.png)
 This shows (in red) the position of the walkers during the burn-in stage. They
 are initially defuse (they start from positions randomly picked from the prior),
 but eventually converge to a single stable solution. The black is the production
@@ -99,7 +99,7 @@ To get posteriors, we call
 mcmc.plot_corner()
 ```
 which produces a corner plot
-![](img/fully_coherent_using_MCMC_corner.png)
+![](img/fully_coherent_search_using_MCMC_corner.png)
 illustrating the tightly constrained posteriors on `F0` and `F1` and their
 covariance. Furthermore, one may wish to get a summary which can be printed
 to the terminal via
