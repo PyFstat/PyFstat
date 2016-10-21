@@ -310,7 +310,7 @@ class ComputeFstat(object):
         if self.BSGL:
             if len(names) < 2:
                 raise ValueError("Can't use BSGL with single detector data")
-            logging.info('Initialising BSGL with prefactor {:2.2f} and floor'
+            logging.info('Initialising BSGL with prefactor {:2.2f} and floor '
                          '{:2.2f}'.format(self.BSGL_PREFACTOR, self.BSGL_FLOOR)
                          )
             # Tuning parameters - to be reviewed
@@ -368,8 +368,8 @@ class ComputeFstat(object):
             self.twoFX[1] = self.FstatResults.twoFPerDet(1)
             BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX,
                                          self.BSGLSetup)
-            if self.BSGL_FLOOR and BSGL < self.BSGL_FLOOR:
-                return -self.BSGL_FLOOR
+            if self.BSGL_FLOOR is not None and BSGL < self.BSGL_FLOOR:
+                return self.BSGL_FLOOR
             else:
                 return self.BSGL_PREFACTOR * BSGL/np.log10(np.exp(1))
 
