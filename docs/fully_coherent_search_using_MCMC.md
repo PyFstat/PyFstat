@@ -88,7 +88,7 @@ This shows (in red) the position of the walkers during the burn-in stage. They
 are initially defuse (they start from positions randomly picked from the prior),
 but eventually converge to a single stable solution. The black is the production
 period from which posterior estimates are made. The bottom panel is a histogram
-of `twoF`, split into production and burn-in. Note that, early on there are
+of `twoF`, split for the production period. Note that, early on there are
 multiple modes corresponding to other peaks, by using the parallel tempering,
 we allow the walkers to explore all of these peaks and opt for the strong
 central candidate.
