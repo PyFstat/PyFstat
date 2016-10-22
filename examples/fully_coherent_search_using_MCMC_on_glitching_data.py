@@ -18,10 +18,10 @@ theta_prior = {'F0': {'type': 'unif', 'lower': F0-1e-4, 'upper': F0+1e-4},
                'Delta': Delta
                }
 
-ntemps = 10
-log10temperature_min = -30
-nwalkers = 500
-nsteps = [100, 100, 100]
+ntemps = 2
+log10temperature_min = -0.01
+nwalkers = 100
+nsteps = [5000, 10000]
 
 mcmc = MCMCSearch('fully_coherent_search_using_MCMC_on_glitching_data', 'data',
                   sftfilepath='data/*_glitch*.sft',
