@@ -785,6 +785,16 @@ class MCMCSearch(BaseSearchClass):
                     add_prior=False, nstds=None, label_offset=0.4,
                     dpi=300, rc_context={}, **kwargs):
 
+        if self.ndim < 2:
+            with plt.rc_context(rc_context):
+                fig, ax = plt.subplots(figsize=figsize)
+                ax.hist(self.samples, bins=50, histtype='stepfilled')
+                ax.set_xlabel(self.theta_symbols[0])
+
+            fig.savefig('{}/{}_corner.png'.format(
+                self.outdir, self.label), dpi=dpi)
+            return
+
         with plt.rc_context(rc_context):
             fig, axes = plt.subplots(self.ndim, self.ndim,
                                      figsize=figsize)
@@ -1008,9 +1018,15 @@ class MCMCSearch(BaseSearchClass):
                     if symbols:
                         axes[i].set_ylabel(symbols[i])
             else:
+                axes[0].ticklabel_format(useOffset=False, axis='y')
                 cs = chain[:, :, temp].T
-                axes.plot(cs, color='k', alpha=alpha)
-                axes.ticklabel_format(useOffset=False, axis='y')
+                if burnin_idx:
+                    axes[0].plot(idxs[:burnin_idx], cs[:burnin_idx],
+                                 color="r", alpha=alpha, lw=lw)
+                axes[0].plot(idxs[burnin_idx:], cs[burnin_idx:], color="k",
+                             alpha=alpha, lw=lw)
+                if symbols:
+                    axes[0].set_ylabel(symbols[0])
 
         axes.append(fig.add_subplot(ndim+1, 1, ndim+1))
         lnl = sampler.lnlikelihood[temp, :, :]
