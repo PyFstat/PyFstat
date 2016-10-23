@@ -24,13 +24,17 @@ theta_prior = {'F0': {'type': 'norm', 'loc': F0, 'scale': abs(1e-6*F0)},
                            'upper': tstart+0.9*duration},
                }
 
-nwalkers = 500
-nsteps = [1000, 1000, 1000]
+ntemps = 4
+log10temperature_min = -1
+nwalkers = 100
+nsteps = [5000, 1000, 1000]
 
 mcmc = pyfstat.MCMCGlitchSearch(
-    'semi_coherent_glitch_search', 'data', sftfilepath='data/*_glitch*sft',
-    theta_prior=theta_prior, tref=tref, tstart=tstart, tend=tend,
-    nsteps=nsteps, nwalkers=nwalkers, scatter_val=1e-10, nglitch=1)
+    'semi_coherent_glitch_search_using_MCMC', 'data',
+    sftfilepath='data/*_glitch*sft', theta_prior=theta_prior, tref=tref,
+    tstart=tstart, tend=tend, nsteps=nsteps, nwalkers=nwalkers,
+    scatter_val=1e-10, nglitch=1, ntemps=ntemps,
+    log10temperature_min=log10temperature_min)
 
 mcmc.run()
 mcmc.plot_corner(add_prior=True)

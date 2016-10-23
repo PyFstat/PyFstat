@@ -54,8 +54,8 @@ Running this example, we obtain traces of the walkers like this:
 ![](img/fully_coherent_search_using_MCMC_on_glitching_data_walkers.png)
 
 Although it is not obvious at first, the large widths of these traces in fact
-show that the walkers are jumping between two bimodal peaks (for both `F0` and
-`F1): this is possible due to the tuning of the parallel tempering. To see this
+show that the walkers are jumping between multiple peaks (for both `F0` and
+`F1): this is possible, due to the tuning of the parallel tempering. To see this
 clearly, we also plot the corner plot:
 ![](img/fully_coherent_search_using_MCMC_on_glitching_data_corner.png)
 
@@ -71,7 +71,7 @@ see bimodality in `F1`, which did does not change during the glitch.
 
 ```
 >>> mcmc.print_summary()
-Max twoF: 1354.7
+Max twoF: 422.97
 ```
 That is, compared to the basic search (on a smooth signal) which had a twoF of
 `~1764` (in agreement with the predicted twoF), we have lost a large

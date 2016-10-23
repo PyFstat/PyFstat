@@ -16,9 +16,12 @@ theta_prior = {'F0': {'type': 'norm', 'loc': F0, 'scale': abs(1e-6*F0)},
                'F2': F2,
                'Alpha': Alpha,
                'Delta': Delta,
-               'delta_F0': {'type': 'halfnorm', 'loc': 0,
-                            'scale': 1e-7*F0},
-               'delta_F1': 0,
+               'delta_F0_0': {'type': 'halfnorm', 'loc': 0,
+                              'scale': 1e-7*F0},
+               'delta_F0_1': {'type': 'halfnorm', 'loc': 0,
+                              'scale': 1e-7*F0},
+               'delta_F1_0': 0,
+               'delta_F1_1': 0,
                'tglitch_0': {'type': 'unif',
                              'lower': tstart+0.01*duration,
                              'upper': tstart+0.5*duration},
@@ -27,8 +30,8 @@ theta_prior = {'F0': {'type': 'norm', 'loc': F0, 'scale': abs(1e-6*F0)},
                              'upper': tstart+0.99*duration},
                }
 
-nwalkers = 50
-nsteps = [500, 500, 500]
+nwalkers = 100
+nsteps = [1000, 1000, 5000]
 
 mcmc = pyfstat.MCMCGlitchSearch(
     'semi_coherent_twoglitch_search', 'data', sftfilepath='data/*twoglitch*sft',

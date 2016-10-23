@@ -36,7 +36,7 @@ delta_F1 = 0
 glitch_data = Writer(
     label='glitch', outdir='data', tref=tref, tstart=tstart, F0=F0, F1=F1,
     F2=F2, duration=duration, Alpha=Alpha, Delta=Delta, h0=h0, sqrtSX=sqrtSX,
-    dtglitch=dtglitch, delta_F0=delta_F0, delta_F1=delta_F1, detector='L1')
+    dtglitch=dtglitch, delta_F0=delta_F0, delta_F1=delta_F1)
 glitch_data.make_data()
 
 # Making data with two glitches
