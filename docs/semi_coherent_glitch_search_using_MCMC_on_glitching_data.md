@@ -55,5 +55,9 @@ mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()
 ```
 
-The posterior for this search demonstrates that we recover the input parameters:
-![](img/semi_coherent_search_using_MCMC_corner.png)
+The output png's for the initialisation and burnin/production steps:
+![](img/semi_coherent_glitch_search_using_MCMC_init_0_walkers.png)
+![](img/semi_coherent_glitch_search_using_MCMC_walkers.png)
+
+and the final posterior estimates:
+![](img/semi_coherent_glitch_search_using_MCMC_corner.png)

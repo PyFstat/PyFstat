@@ -12,8 +12,10 @@ output which we list below. Before running any of the search examples, be sure
 to have run the [script to generate fake data](examples/make_fake_data.py).
 
 * [Making fake data with and without glitches](docs/make_fake_data.md)
-* [Fully coherent MCMC search](docs/fully_coherent_search_using_MCMC.md)
-* [Fully coherent MCMC search on data containing glitching signals](docs/fully_coherent_search_using_MCMC_on_glitching_data.md)
+* [Fully-coherent MCMC search](docs/fully_coherent_search_using_MCMC.md)
+* [Fully-coherent MCMC search on data containing a single glitch](docs/fully_coherent_search_using_MCMC_on_glitching_data.md)
+* [Semi-coherent MCMC glitch-search on data containing a single glitch](docs/semi_coherent_glitch_search_using_MCMC_on_glitching_data.md)
+* [Semi-coherent MCMC glitch-search on data containing two glitches](docs/semi_coherent_glitch_search_with_two_glitches_using_MCMC_on_glitching_data.md)
 
 ## Installation
 
