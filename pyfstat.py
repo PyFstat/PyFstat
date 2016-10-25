@@ -261,10 +261,12 @@ class ComputeFstat(object):
                      self.sftfilepath))
         SFTCatalog = lalpulsar.SFTdataFind(self.sftfilepath, constraints)
         names = list(set([d.header.name for d in SFTCatalog.data]))
-        epochs = [d.header.epoch for d in SFTCatalog.data]
+        SFT_timestamps = [d.header.epoch for d in SFTCatalog.data]
         logging.info(
             'Loaded {} data files from detectors {} spanning {} to {}'.format(
-                len(epochs), names, int(epochs[0]), int(epochs[-1])))
+                len(SFT_timestamps), names, int(SFT_timestamps[0]),
+                int(SFT_timestamps[-1])))
+        self.SFT_timestamps = SFT_timestamps
 
         logging.info('Initialising ephems')
         ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
@@ -407,6 +409,37 @@ class ComputeFstat(object):
             return self.BSGL_FLOOR
         else:
             return self.BSGL_PREFACTOR * BSGL/np.log10(np.exp(1))
+
+    def calculate_twoF_cumulative(self, F0, F1, F2, Alpha, Delta, asini=None,
+                                  period=None, ecc=None, tp=None, argp=None,
+                                  tstart=None, tend=None, Npoints=1000,
+                                  minfraction=0.01):
+        """ Calculate the cumulative twoF along the obseration span """
+        duration = tend - tstart
+        taus = np.linspace(minfraction*duration, duration, Npoints)
+        twoFs = []
+        for tau in taus:
+            twoFs.append(self.run_computefstatistic_single_point(
+                tstart=tstart, tend=tstart+tau, F0=F0, F1=F1, F2=F2,
+                Alpha=Alpha, Delta=Delta, asini=asini, period=period, ecc=ecc,
+                tp=tp, argp=argp))
+
+        return taus, np.array(twoFs)
+
+    def plot_twoF_cumulative(self, label, outdir, ax=None, c='k', savefig=True,
+                             **kwargs):
+        taus, twoFs = self.calculate_twoF_cumulative(**kwargs)
+        if ax is None:
+            fig, ax = plt.subplots()
+        ax.plot(taus/86400., twoFs, label=label, color=c)
+        ax.set_xlabel(r'Days from $t_{{\rm start}}={:.0f}$'.format(
+            kwargs['tstart']))
+        ax.set_ylabel(r'$\widetilde{2\mathcal{F}}_{\rm cumulative}$')
+        ax.set_xlim(0, taus[-1]/86400)
+        if savefig:
+            plt.savefig('{}/{}_twoFcumulative.png'.format(outdir, label))
+        else:
+            return ax
 
 
 class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
