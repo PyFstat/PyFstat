@@ -427,7 +427,7 @@ class ComputeFstat(object):
         return taus, np.array(twoFs)
 
     def plot_twoF_cumulative(self, label, outdir, ax=None, c='k', savefig=True,
-                             **kwargs):
+                             title=None, **kwargs):
         taus, twoFs = self.calculate_twoF_cumulative(**kwargs)
         if ax is None:
             fig, ax = plt.subplots()
@@ -436,6 +436,7 @@ class ComputeFstat(object):
             kwargs['tstart']))
         ax.set_ylabel(r'$\widetilde{2\mathcal{F}}_{\rm cumulative}$')
         ax.set_xlim(0, taus[-1]/86400)
+        ax.set_title(title)
         if savefig:
             plt.savefig('{}/{}_twoFcumulative.png'.format(outdir, label))
         else:
