@@ -1567,12 +1567,21 @@ _        sftfilepath: str
             if key not in d:
                 d[key] = val
 
-        delta_F0s = [d['delta_F0_{}'.format(i)] for i in range(self.nglitch)]
-        delta_F0s.insert(self.theta0_idx, 0)
-        delta_F0s = np.array(delta_F0s)
-        delta_F0s[:self.theta0_idx] *= -1
+        if self.nglitch > 1:
+            delta_F0s = [d['delta_F0_{}'.format(i)] for i in
+                         range(self.nglitch)]
+            delta_F0s.insert(self.theta0_idx, 0)
+            delta_F0s = np.array(delta_F0s)
+            delta_F0s[:self.theta0_idx] *= -1
+            tglitches = [d['tglitch_{}'.format(i)] for i in
+                         range(self.nglitch)]
+        elif self.nglitch == 1:
+            delta_F0s = [d['delta_F0']]
+            delta_F0s.insert(self.theta0_idx, 0)
+            delta_F0s = np.array(delta_F0s)
+            delta_F0s[:self.theta0_idx] *= -1
+            tglitches = [d['tglitch']]
 
-        tglitches = [d['tglitch_{}'.format(i)] for i in range(self.nglitch)]
         tbounderies = [self.tstart] + tglitches + [self.tend]
 
         for j in range(self.nglitch+1):
