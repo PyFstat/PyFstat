@@ -266,7 +266,6 @@ class ComputeFstat(object):
             'Loaded {} data files from detectors {} spanning {} to {}'.format(
                 len(SFT_timestamps), names, int(SFT_timestamps[0]),
                 int(SFT_timestamps[-1])))
-        self.SFT_timestamps = SFT_timestamps
 
         logging.info('Initialising ephems')
         ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
@@ -418,6 +417,9 @@ class ComputeFstat(object):
         duration = tend - tstart
         taus = np.linspace(minfraction*duration, duration, Npoints)
         twoFs = []
+        if self.transient is False:
+            self.transient = True
+            self.init_computefstatistic_single_point()
         for tau in taus:
             twoFs.append(self.run_computefstatistic_single_point(
                 tstart=tstart, tend=tstart+tau, F0=F0, F1=F1, F2=F2,
@@ -434,11 +436,15 @@ class ComputeFstat(object):
         ax.plot(taus/86400., twoFs, label=label, color=c)
         ax.set_xlabel(r'Days from $t_{{\rm start}}={:.0f}$'.format(
             kwargs['tstart']))
-        ax.set_ylabel(r'$\widetilde{2\mathcal{F}}_{\rm cumulative}$')
+        if self.BSGL:
+            ax.set_ylabel(r'$\log_{10}(\mathrm{BSGL})_{\rm cumulative}$')
+        else:
+            ax.set_ylabel(r'$\widetilde{2\mathcal{F}}_{\rm cumulative}$')
         ax.set_xlim(0, taus[-1]/86400)
         ax.set_title(title)
         if savefig:
             plt.savefig('{}/{}_twoFcumulative.png'.format(outdir, label))
+            return taus, twoFs
         else:
             return ax
 
@@ -923,6 +929,11 @@ class MCMCSearch(BaseSearchClass):
                 upper = prior_dict['loc'] + normal_stds * prior_dict['scale']
                 x = np.linspace(lower, upper, N)
                 prior = [prior_func(xi) for xi in x]
+            elif prior_dict['type'] == 'neghalfnorm':
+                upper = prior_dict['loc']
+                lower = prior_dict['loc'] - normal_stds * prior_dict['scale']
+                x = np.linspace(lower, upper, N)
+                prior = [prior_func(xi) for xi in x]
             else:
                 raise ValueError('Not implemented for prior type {}'.format(
                     prior_dict['type']))
@@ -945,6 +956,16 @@ class MCMCSearch(BaseSearchClass):
 
         fig.savefig('{}/{}_prior_posterior.png'.format(
             self.outdir, self.label))
+
+    def plot_cumulative_max(self):
+        d, maxtwoF = self.get_max_twoF()
+        for key, val in self.theta_prior.iteritems():
+            if key not in d:
+                d[key] = val
+        self.search.plot_twoF_cumulative(
+            self.label, self.outdir, F0=d['F0'], F1=d['F1'], F2=d['F2'],
+            Alpha=d['Alpha'], Delta=d['Delta'], tstart=self.tstart,
+            tend=self.tend)
 
     def generic_lnprior(self, **kwargs):
         """ Return a lambda function of the pdf
@@ -1537,6 +1558,46 @@ _        sftfilepath: str
             p0[:, :, -self.nglitch:] = np.sort(p0[:, :, -self.nglitch:],
                                                axis=2)
         return p0
+
+    def plot_cumulative_max(self):
+
+        fig, ax = plt.subplots()
+        d, maxtwoF = self.get_max_twoF()
+        for key, val in self.theta_prior.iteritems():
+            if key not in d:
+                d[key] = val
+
+        delta_F0s = [d['delta_F0_{}'.format(i)] for i in range(self.nglitch)]
+        delta_F0s.insert(self.theta0_idx, 0)
+        delta_F0s = np.array(delta_F0s)
+        delta_F0s[:self.theta0_idx] *= -1
+
+        tglitches = [d['tglitch_{}'.format(i)] for i in range(self.nglitch)]
+        tbounderies = [self.tstart] + tglitches + [self.tend]
+
+        for j in range(self.nglitch+1):
+            ts = tbounderies[j]
+            te = tbounderies[j+1]
+            if (te - ts)/86400 < 5:
+                logging.info('Period too short to perform cumulative search')
+                continue
+            if j < self.theta0_idx:
+                summed_deltaF0 = np.sum(delta_F0s[j:self.theta0_idx])
+                F0_j = d['F0'] - summed_deltaF0
+                taus, twoFs = self.search.calculate_twoF_cumulative(
+                    F0_j, F1=d['F1'], F2=d['F2'], Alpha=d['Alpha'],
+                    Delta=d['Delta'], tstart=ts, tend=te)
+
+            elif j >= self.theta0_idx:
+                summed_deltaF0 = np.sum(delta_F0s[self.theta0_idx:j+1])
+                F0_j = d['F0'] + summed_deltaF0
+                taus, twoFs = self.search.calculate_twoF_cumulative(
+                    F0_j, F1=d['F1'], F2=d['F2'], Alpha=d['Alpha'],
+                    Delta=d['Delta'], tstart=ts, tend=te)
+            ax.plot(ts+taus, twoFs)
+
+        ax.set_xlabel('GPS time')
+        fig.savefig('{}/{}_twoFcumulative.png'.format(self.outdir, self.label))
 
 
 class GridSearch(BaseSearchClass):
