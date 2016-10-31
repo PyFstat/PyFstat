@@ -1363,6 +1363,54 @@ class MCMCSearch(BaseSearchClass):
                 print('  {:10s} = {:1.9e} +/- {:1.9e}'.format(
                     k, median_std_d[k], median_std_d[k+'_std']))
 
+    def CF_twoFmax(self, theta, twoFmax, ntrials):
+        Fmax = twoFmax/2.0
+        return (np.exp(1j*theta*twoFmax)*ntrials/2.0
+                * Fmax*np.exp(-Fmax)*(1-(1+Fmax)*np.exp(-Fmax))**(ntrials-1))
+
+    def pdf_twoFhat(self, twoFhat, nglitch, ntrials, twoFmax=100, dtwoF=0.1):
+        if np.ndim(ntrials) == 0:
+            ntrials = np.zeros(nglitch+1) + ntrials
+        twoFmax_int = np.arange(0, twoFmax, dtwoF)
+        theta_int = np.arange(-1/dtwoF, 1./dtwoF, 1./twoFmax)
+        CF_twoFmax_theta = np.array(
+            [[np.trapz(self.CF_twoFmax(t, twoFmax_int, ntrial), twoFmax_int)
+              for t in theta_int]
+             for ntrial in ntrials])
+        CF_twoFhat_theta = np.prod(CF_twoFmax_theta, axis=0)
+        pdf = (1/(2*np.pi)) * np.array(
+            [np.trapz(np.exp(-1j*theta_int*twoFhat_val)
+             * CF_twoFhat_theta, theta_int) for twoFhat_val in twoFhat])
+        return pdf.real
+
+    def p_val_twoFhat(self, twoFhat, ntrials, twoFhatmax=500, Npoints=1000):
+        """ Caluculate the p-value for the given twoFhat in Gaussian noise 
+
+        Parameters
+        ----------
+        twoFhat: float
+            The observed twoFhat value
+        ntrials: int, array of len Nglitch+1
+            The number of trials for each glitch+1
+        """
+        twoFhats = np.linspace(twoFhat, twoFhatmax, Npoints)
+        pdf = self.pdf_twoFhat(twoFhats, self.nglitch, ntrials)
+        return np.trapz(pdf, twoFhats)
+
+    def get_p_value(self, delta_F0, time_trials=0):
+        """ Get's the p-value for the maximum twoFhat value """
+        d, max_twoF = self.get_max_twoF()
+        if self.nglitch == 1:
+            tglitches = [d['tglitch']]
+        else:
+            tglitches = [d['tglitch_{}'.format(i)] for i in range(self.nglitch)]
+        tbounderies = [self.tstart] + tglitches + [self.tend]
+        deltaTs = np.diff(tbounderies)
+        ntrials = [time_trials + delta_F0 * dT for dT in deltaTs]
+        p_val = self.p_val_twoFhat(max_twoF, ntrials)
+        print 'p-value = {}'.format(p_val)
+        return p_val
+
 
 class MCMCGlitchSearch(MCMCSearch):
     """ MCMC search using the SemiCoherentGlitchSearch """
