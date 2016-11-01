@@ -103,7 +103,7 @@ class TestComputeFstat(Test):
                                                        Writer.Alpha,
                                                        Writer.Delta)
         print predicted_FS, FS
-        self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.1)
+        self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.2)
 
 
 class TestSemiCoherentGlitchSearch(Test):
