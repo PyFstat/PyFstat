@@ -411,11 +411,12 @@ class ComputeFstat(object):
 
     def calculate_twoF_cumulative(self, F0, F1, F2, Alpha, Delta, asini=None,
                                   period=None, ecc=None, tp=None, argp=None,
-                                  tstart=None, tend=None, Npoints=1000,
-                                  minfraction=0.01):
+                                  tstart=None, tend=None, npoints=1000,
+                                  minfraction=0.01, maxfraction=1):
         """ Calculate the cumulative twoF along the obseration span """
         duration = tend - tstart
-        taus = np.linspace(minfraction*duration, duration, Npoints)
+        tstart = tstart + minfraction*duration
+        taus = np.linspace(minfraction*duration, maxfraction*duration, npoints)
         twoFs = []
         if self.transient is False:
             self.transient = True
@@ -430,6 +431,7 @@ class ComputeFstat(object):
 
     def plot_twoF_cumulative(self, label, outdir, ax=None, c='k', savefig=True,
                              title=None, **kwargs):
+
         taus, twoFs = self.calculate_twoF_cumulative(**kwargs)
         if ax is None:
             fig, ax = plt.subplots()
@@ -654,7 +656,8 @@ class MCMCSearch(BaseSearchClass):
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detector=self.detector, BSGL=self.BSGL, transient=False,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-            BSGL_PREFACTOR=self.BSGL_PREFACTOR, BSGL_FLOOR=self.BSGL_FLOOR)
+            BSGL_PREFACTOR=self.BSGL_PREFACTOR, BSGL_FLOOR=self.BSGL_FLOOR,
+            binary=self.binary)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [self.generic_lnprior(**theta_prior[key])(p) for p, key in
@@ -957,15 +960,25 @@ class MCMCSearch(BaseSearchClass):
         fig.savefig('{}/{}_prior_posterior.png'.format(
             self.outdir, self.label))
 
-    def plot_cumulative_max(self):
+    def plot_cumulative_max(self, **kwargs):
         d, maxtwoF = self.get_max_twoF()
         for key, val in self.theta_prior.iteritems():
             if key not in d:
                 d[key] = val
-        self.search.plot_twoF_cumulative(
-            self.label, self.outdir, F0=d['F0'], F1=d['F1'], F2=d['F2'],
-            Alpha=d['Alpha'], Delta=d['Delta'], tstart=self.tstart,
-            tend=self.tend)
+
+        if hasattr(self, 'search') is False:
+            self.inititate_search_object()
+        if self.binary is False:
+            self.search.plot_twoF_cumulative(
+                self.label, self.outdir, F0=d['F0'], F1=d['F1'], F2=d['F2'],
+                Alpha=d['Alpha'], Delta=d['Delta'], tstart=self.tstart,
+                tend=self.tend, **kwargs)
+        else:
+            self.search.plot_twoF_cumulative(
+                self.label, self.outdir, F0=d['F0'], F1=d['F1'], F2=d['F2'],
+                Alpha=d['Alpha'], Delta=d['Delta'], asini=d['asini'],
+                period=d['period'], ecc=d['ecc'], argp=d['argp'], tp=d['argp'],
+                tstart=self.tstart, tend=self.tend, **kwargs)
 
     def generic_lnprior(self, **kwargs):
         """ Return a lambda function of the pdf
@@ -1408,7 +1421,7 @@ class MCMCSearch(BaseSearchClass):
         deltaTs = np.diff(tbounderies)
         ntrials = [time_trials + delta_F0 * dT for dT in deltaTs]
         p_val = self.p_val_twoFhat(max_twoF, ntrials)
-        print 'p-value = {}'.format(p_val)
+        print('p-value = {}'.format(p_val))
         return p_val
 
 
