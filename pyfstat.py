@@ -198,9 +198,8 @@ class ComputeFstat(object):
     @initializer
     def __init__(self, tref, sftfilepath=None, minStartTime=None,
                  maxStartTime=None, binary=False, transient=True, BSGL=False,
-                 BSGL_PREFACTOR=1, BSGL_FLOOR=None, detector=None,
-                 minCoverFreq=None, maxCoverFreq=None, earth_ephem=None,
-                 sun_ephem=None,
+                 detector=None, minCoverFreq=None, maxCoverFreq=None,
+                 earth_ephem=None, sun_ephem=None,
                  ):
         """
         Parameters
@@ -218,12 +217,6 @@ class ComputeFstat(object):
             If true, allow for the Fstat to be computed over a transient range.
         BSGL: bool
             If true, compute the BSGL rather than the twoF value.
-        BSGL_PREFACTOR: float
-            If BSGL is True, one can specify a prefactor to multiply the
-            computed BSGL value by, useful in MCMC searches to amplify the
-            peaks.
-        BSGL_FLOOR: float
-            IF BSGL < BSGL_FLOOR -> BSGL_FLOOR
         detector: str
             Two character reference to the data to use, specify None for no
             contraint.
@@ -311,15 +304,8 @@ class ComputeFstat(object):
         if self.BSGL:
             if len(names) < 2:
                 raise ValueError("Can't use BSGL with single detector data")
-            if self.BSGL_FLOOR is None:
-                logging.info('Initialising BSGL with prefactor {:2.2f}'
-                             .format(self.BSGL_PREFACTOR)
-                             )
             else:
-                logging.info('Initialising BSGL with prefactor {:0.2f} and '
-                             'floor {}'.format(self.BSGL_PREFACTOR,
-                                               self.BSGL_FLOOR)
-                             )
+                logging.info('Initialising BSGL')
 
             # Tuning parameters - to be reviewed
             numDetectors = 2
@@ -348,7 +334,7 @@ class ComputeFstat(object):
                                            F2, Alpha, Delta, asini=None,
                                            period=None, ecc=None, tp=None,
                                            argp=None):
-        """ Returns the twoF fully-coherently at a single point """
+        """ Returns twoF or ln(BSGL) fully-coherently at a single point """
 
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
         self.PulsarDopplerParams.Alpha = Alpha
@@ -374,12 +360,9 @@ class ComputeFstat(object):
             twoF = np.float(self.FstatResults.twoF[0])
             self.twoFX[0] = self.FstatResults.twoFPerDet(0)
             self.twoFX[1] = self.FstatResults.twoFPerDet(1)
-            BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX,
-                                         self.BSGLSetup)
-            if self.BSGL_FLOOR is not None and BSGL < self.BSGL_FLOOR:
-                return self.BSGL_FLOOR
-            else:
-                return self.BSGL_PREFACTOR * BSGL/np.log10(np.exp(1))
+            log10_BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX,
+                                               self.BSGLSetup)
+            return log10_BSGL/np.log10(np.exp(1))
 
         self.windowRange.t0 = int(tstart)  # TYPE UINT4
         self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
@@ -401,13 +384,10 @@ class ComputeFstat(object):
 
         self.twoFX[0] = 2*FS0.F_mn.data[0][0]
         self.twoFX[1] = 2*FS1.F_mn.data[0][0]
-        BSGL = lalpulsar.ComputeBSGL(2*FS.F_mn.data[0][0], self.twoFX,
-                                     self.BSGLSetup)
+        log10_BSGL = lalpulsar.ComputeBSGL(
+                2*FS.F_mn.data[0][0], self.twoFX, self.BSGLSetup)
 
-        if self.BSGL_FLOOR and BSGL < self.BSGL_FLOOR:
-            return self.BSGL_FLOOR
-        else:
-            return self.BSGL_PREFACTOR * BSGL/np.log10(np.exp(1))
+        return log10_BSGL/np.log10(np.exp(1))
 
     def calculate_twoF_cumulative(self, F0, F1, F2, Alpha, Delta, asini=None,
                                   period=None, ecc=None, tp=None, argp=None,
@@ -455,17 +435,16 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
     """ A semi-coherent glitch search
 
     This implements a basic `semi-coherent glitch F-stat in which the data
-    is divided into two segments either side of the proposed glitch and the
-    fully-coherent F-stat in each segment is averaged to give the semi-coherent
+    is divided into segments either side of the proposed glitches and the
+    fully-coherent F-stat in each segment is summed to give the semi-coherent
     F-stat
     """
 
     @initializer
     def __init__(self, label, outdir, tref, tstart, tend, nglitch=0,
-                 sftfilepath=None, theta0_idx=0, BSGL=False, BSGL_PREFACTOR=1,
-                 BSGL_FLOOR=None, minStartTime=None, maxStartTime=None,
-                 minCoverFreq=None, maxCoverFreq=None, detector=None,
-                 earth_ephem=None, sun_ephem=None):
+                 sftfilepath=None, theta0_idx=0, BSGL=False, minStartTime=None,
+                 maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
+                 detector=None, earth_ephem=None, sun_ephem=None):
         """
         Parameters
         ----------
@@ -564,8 +543,7 @@ class MCMCSearch(BaseSearchClass):
                  log10temperature_min=-5, theta_initial=None, scatter_val=1e-10,
                  binary=False, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, detector=None, earth_ephem=None,
-                 sun_ephem=None, theta0_idx=0,
-                 BSGL_PREFACTOR=1, BSGL_FLOOR=None):
+                 sun_ephem=None, theta0_idx=0):
         """
         Parameters
         label, outdir: str
@@ -656,7 +634,6 @@ class MCMCSearch(BaseSearchClass):
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detector=self.detector, BSGL=self.BSGL, transient=False,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-            BSGL_PREFACTOR=self.BSGL_PREFACTOR, BSGL_FLOOR=self.BSGL_FLOOR,
             binary=self.binary)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
@@ -1198,9 +1175,7 @@ class MCMCSearch(BaseSearchClass):
                  ntemps=self.ntemps, theta_keys=self.theta_keys,
                  theta_prior=self.theta_prior, scatter_val=self.scatter_val,
                  log10temperature_min=self.log10temperature_min,
-                 theta0_idx=self.theta0_idx, BSGL=self.BSGL,
-                 BSGL_PREFACTOR=self.BSGL_PREFACTOR,
-                 BSGL_FLOOR=self.BSGL_FLOOR)
+                 theta0_idx=self.theta0_idx, BSGL=self.BSGL)
         return d
 
     def save_data(self, sampler, samples, lnprobs, lnlikes):
@@ -1397,7 +1372,7 @@ class MCMCSearch(BaseSearchClass):
         return pdf.real
 
     def p_val_twoFhat(self, twoFhat, ntrials, twoFhatmax=500, Npoints=1000):
-        """ Caluculate the p-value for the given twoFhat in Gaussian noise 
+        """ Caluculate the p-value for the given twoFhat in Gaussian noise
 
         Parameters
         ----------
@@ -1434,7 +1409,7 @@ class MCMCGlitchSearch(MCMCSearch):
                  scatter_val=1e-10, dtglitchmin=1*86400, theta0_idx=0,
                  detector=None, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, earth_ephem=None,
-                 sun_ephem=None, BSGL_PREFACTOR=1, BSGL_FLOOR=None):
+                 sun_ephem=None):
         """
         Parameters
         label, outdir: str
@@ -1524,8 +1499,7 @@ _        sftfilepath: str
             maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem, detector=self.detector, BSGL=self.BSGL,
             nglitch=self.nglitch, theta0_idx=self.theta0_idx,
-            minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-            BSGL_PREFACTOR=self.BSGL_PREFACTOR, BSGL_FLOOR=self.BSGL_FLOOR)
+            minStartTime=self.minStartTime, maxStartTime=self.maxStartTime)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         if self.nglitch > 1:
@@ -1746,9 +1720,8 @@ class GridSearch(BaseSearchClass):
     @initializer
     def __init__(self, label, outdir, sftfilepath, F0s=[0], F1s=[0], F2s=[0],
                  Alphas=[0], Deltas=[0], tref=None, tstart=None, tend=None,
-                 BSGL=False, BSGL_PREFACTOR=1, BSGL_FLOOR=None,
-                 minCoverFreq=None, maxCoverFreq=None, earth_ephem=None,
-                 sun_ephem=None, detector=None):
+                 BSGL=False, minCoverFreq=None, maxCoverFreq=None,
+                 earth_ephem=None, sun_ephem=None, detector=None):
         """
         Parameters
         ----------
@@ -1786,8 +1759,7 @@ class GridSearch(BaseSearchClass):
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detector=self.detector, transient=False,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-            BSGL=self.BSGL, BSGL_PREFACTOR=self.BSGL_PREFACTOR,
-            BSGL_FLOOR=self.BSGL_FLOOR)
+            BSGL=self.BSGL)
 
     def get_array_from_tuple(self, x):
         if len(x) == 1:
@@ -1968,8 +1940,8 @@ class GridGlitchSearch(GridSearch):
                  F1s=[0], F2s=[0], delta_F0s=[0], delta_F1s=[0], tglitchs=None,
                  Alphas=[0], Deltas=[0], tref=None, tstart=None, tend=None,
                  minCoverFreq=None, maxCoverFreq=None, write_after=1000,
-                 earth_ephem=None, sun_ephem=None,
-                 BSGL_PREFACTOR=1, BSGL_FLOOR=None):
+                 earth_ephem=None, sun_ephem=None):
+
         """
         Parameters
         ----------
@@ -1996,8 +1968,7 @@ class GridGlitchSearch(GridSearch):
             label=label, outdir=outdir, sftfilepath=self.sftfilepath,
             tref=tref, tstart=tstart, tend=tend, minCoverFreq=minCoverFreq,
             maxCoverFreq=maxCoverFreq, earth_ephem=self.earth_ephem,
-            sun_ephem=self.sun_ephem, BSGL=self.BSGL,
-            BSGL_PREFACTOR=self.BSGL_PREFACTOR, BSGL_FLOOR=self.BSGL_FLOOR)
+            sun_ephem=self.sun_ephem, BSGL=self.BSGL)
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
