@@ -1399,6 +1399,55 @@ class MCMCSearch(BaseSearchClass):
         print('p-value = {}'.format(p_val))
         return p_val
 
+    def compute_evidence(self):
+        """ Computes the evidence/marginal likelihood for the model """
+        fburnin = float(self.nsteps[-2])/np.sum(self.nsteps[-2:])
+        print fburnin
+        lnev, lnev_err = self.sampler.thermodynamic_integration_log_evidence(
+            fburnin=fburnin)
+
+        log10evidence = lnev/np.log(10)
+        log10evidence_err = lnev_err/np.log(10)
+        betas = self.betas
+        alllnlikes = self.sampler.lnlikelihood[:, :, self.nsteps[-2]:]
+        mean_lnlikes = np.mean(np.mean(alllnlikes, axis=1), axis=1)
+
+        mean_lnlikes = mean_lnlikes[::-1]
+        betas = betas[::-1]
+
+        fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(6, 8))
+
+        if any(np.isinf(mean_lnlikes)):
+            print("WARNING mean_lnlikes contains inf: recalculating without"
+                  " the {} infs".format(len(betas[np.isinf(mean_lnlikes)])))
+            idxs = np.isinf(mean_lnlikes)
+            mean_lnlikes = mean_lnlikes[~idxs]
+            betas = betas[~idxs]
+            log10evidence = np.trapz(mean_lnlikes, betas)/np.log(10)
+            z1 = np.trapz(mean_lnlikes, betas)
+            z2 = np.trapz(mean_lnlikes[::-1][::2][::-1],
+                          betas[::-1][::2][::-1])
+            log10evidence_err = np.abs(z1 - z2) / np.log(10)
+
+        ax1.semilogx(betas, mean_lnlikes, "-o")
+        ax1.set_xlabel(r"$\beta$")
+        ax1.set_ylabel(r"$\langle \log(\mathcal{L}) \rangle$")
+        print("log10 evidence for {} = {} +/- {}".format(
+              self.label, log10evidence, log10evidence_err))
+        min_betas = []
+        evidence = []
+        for i in range(len(betas)/2):
+            min_betas.append(betas[i])
+            lnZ = np.trapz(mean_lnlikes[i:], betas[i:])
+            evidence.append(lnZ/np.log(10))
+
+        ax2.semilogx(min_betas, evidence, "-o")
+        ax2.set_ylabel(r"$\int_{\beta_{\textrm{Min}}}^{\beta=1}" +
+                       r"\langle \log(\mathcal{L})\rangle d\beta$", size=16)
+        ax2.set_xlabel(r"$\beta_{\textrm{min}}$")
+        plt.tight_layout()
+        fig.savefig("{}/{}_beta_lnl.png".format(self.outdir, self.label))
+
 
 class MCMCGlitchSearch(MCMCSearch):
     """ MCMC search using the SemiCoherentGlitchSearch """
