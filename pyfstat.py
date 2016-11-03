@@ -1131,9 +1131,11 @@ class MCMCSearch(BaseSearchClass):
         axes.append(fig.add_subplot(ndim+1, 1, ndim+1))
         lnl = sampler.lnlikelihood[temp, :, :]
         if burnin_idx and add_det_stat_burnin:
-            axes[-1].hist(lnl[:, :burnin_idx].flatten(), bins=50,
-                          histtype='step', color='r')
-        axes[-1].hist(lnl[:, burnin_idx:].flatten(), bins=50, histtype='step',
+            vals = lnl[:, :burnin_idx].flatten()
+            axes[-1].hist(vals[~np.isnan(vals)], bins=50, histtype='step',
+                          color='r')
+        vals = lnl[:, burnin_idx:].flatten()
+        axes[-1].hist(vals[~np.isnan(vals)], bins=50, histtype='step',
                       color='k')
         if self.BSGL:
             axes[-1].set_xlabel(r'$\mathcal{B}_\mathrm{S/GL}$')
@@ -1827,7 +1829,7 @@ class MCMCTransientSearch(MCMCSearch):
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detector=self.detector, transient=True,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-            BSGL=self.BSGL)
+            BSGL=self.BSGL, binary=self.binary)
 
     def logl(self, theta, search):
         for j, theta_i in enumerate(self.theta_idxs):
