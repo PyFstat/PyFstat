@@ -1386,7 +1386,8 @@ class MCMCSearch(BaseSearchClass):
         filename = '{}/{}.par'.format(self.outdir, self.label)
         with open(filename, 'w+') as f:
             f.write('MaxtwoF = {}\n'.format(max_twoF))
-            f.write('theta0_index = {}\n'.format(self.theta0_idx))
+            if hasattr(self, 'theta0_index'):
+                f.write('theta0_index = {}\n'.format(self.theta0_idx))
             if method == 'med':
                 for key, val in median_std_d.iteritems():
                     f.write('{} = {:1.16e}\n'.format(key, val))
