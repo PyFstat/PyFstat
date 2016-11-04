@@ -473,7 +473,12 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
         self.init_semicoherent_parameters()
 
     def init_semicoherent_parameters(self):
-        logging.info('Initialise semicoherent parameters')
+        logging.info(('Initialising semicoherent parameters from {} to {} in'
+                      ' {} segments').format(
+            self.minStartTime, self.maxStartTime, self.nsegs))
+        if self.nsegs == 1:
+            self.transient = False
+            self.whatToCompute = lalpulsar.FSTATQ_2F
         self.tboundaries = np.linspace(self.minStartTime, self.maxStartTime,
                                        self.nsegs+1)
 
@@ -1927,6 +1932,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             self.samples = d['samples']
             self.lnprobs = d['lnprobs']
             self.lnlikes = d['lnlikes']
+            self.nsegs = run_setup[-1][1]
             return
 
         fig = None
@@ -1969,7 +1975,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             nsteps_total += nburn+nprod
 
             fig.savefig('{}/{}_walkers.png'.format(
-                self.outdir, self.label))
+                self.outdir, self.label), dpi=600)
 
         samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
         lnprobs = sampler.lnprobability[0, :, nburn:].reshape((-1))
@@ -1998,10 +2004,10 @@ class MCMCTransientSearch(MCMCSearch):
         for j, theta_i in enumerate(self.theta_idxs):
             self.fixed_theta[theta_i] = theta[j]
         if self.fixed_theta[1] < 86400:
-            return 0
+            return -np.inf
         self.fixed_theta[1] += self.fixed_theta[0]
         if self.fixed_theta[1] > self.tend:
-            return 0
+            return -np.inf
         FS = search.run_computefstatistic_single_point(*self.fixed_theta)
         return FS
 
