@@ -1957,8 +1957,10 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 loglargs=(self.search,), betas=self.betas,
                 a=proposal_scale_factor)
 
-            logging.info('Running {}/{} with {} steps and {} nsegs'.format(
-                j+1, len(self.nsteps), (nburn, nprod), nseg))
+            logging.info(('Running {}/{} with {} steps and {} nsegs '
+                          '(Tcoh={:1.2f} days)').format(
+                j+1, len(self.nsteps), (nburn, nprod), nseg,
+                (self.maxStartTime-self.minStartTime)/nseg/86400))
             sampler = self.run_sampler_with_progress_bar(
                 sampler, nburn+nprod, p0)
             logging.info("Mean acceptance fraction: {}"
