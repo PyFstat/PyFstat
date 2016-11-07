@@ -21,8 +21,8 @@ theta_prior = {'F0': {'type': 'unif', 'lower': F0*(1-1e-6), 'upper': F0*(1+1e-5)
 ntemps = 1
 log10temperature_min = -1
 nwalkers = 100
-run_setup = [(500, 50), (500, 25), (100, 1, False), 
-             ((100, 100), 1, True)]
+run_setup = [(1000, 50), (1000, 25), (1000, 1, False), 
+             ((500, 500), 1, True)]
 
 mcmc = pyfstat.MCMCFollowUpSearch(
     label='follow_up', outdir='data',

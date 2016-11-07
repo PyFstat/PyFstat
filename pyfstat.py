@@ -199,7 +199,7 @@ class ComputeFstat(object):
     def __init__(self, tref, sftfilepath=None, minStartTime=None,
                  maxStartTime=None, binary=False, transient=True, BSGL=False,
                  detector=None, minCoverFreq=None, maxCoverFreq=None,
-                 earth_ephem=None, sun_ephem=None,
+                 earth_ephem=None, sun_ephem=None, injectSources=None
                  ):
         """
         Parameters
@@ -270,7 +270,37 @@ class ComputeFstat(object):
         else:
             self.whatToCompute = lalpulsar.FSTATQ_2F
 
-        FstatOptionalArgs = lalpulsar.FstatOptionalArgsDefaults
+        FstatOAs = lalpulsar.FstatOptionalArgs()
+        FstatOAs.randSeed = lalpulsar.FstatOptionalArgsDefaults.randSeed
+        FstatOAs.SSBprec = lalpulsar.FstatOptionalArgsDefaults.SSBprec
+        FstatOAs.Dterms = lalpulsar.FstatOptionalArgsDefaults.Dterms
+        FstatOAs.runningMedianWindow = lalpulsar.FstatOptionalArgsDefaults.runningMedianWindow
+        FstatOAs.FstatMethod = lalpulsar.FstatOptionalArgsDefaults.FstatMethod
+        FstatOAs.InjectSqrtSX = lalpulsar.FstatOptionalArgsDefaults.injectSqrtSX
+        FstatOAs.assumeSqrtSX = lalpulsar.FstatOptionalArgsDefaults.assumeSqrtSX
+        FstatOAs.prevInput = lalpulsar.FstatOptionalArgsDefaults.prevInput
+        FstatOAs.collectTiming = lalpulsar.FstatOptionalArgsDefaults.collectTiming
+
+        if type(self.injectSources) == dict:
+            logging.info('Injecting source with params: {}'.format(
+                self.injectSources))
+            PPV = lalpulsar.CreatePulsarParamsVector(1)
+            PP = PPV.data[0]
+            PP.Amp.h0 = self.injectSources['h0']
+            PP.Amp.cosi = self.injectSources['cosi']
+            PP.Amp.phi0 = self.injectSources['phi0']
+            PP.Amp.psi = self.injectSources['psi']
+            PP.Doppler.Alpha = self.injectSources['Alpha']
+            PP.Doppler.Delta = self.injectSources['Delta']
+            PP.Doppler.fkdot = np.array(self.injectSources['fkdot'])
+            PP.Doppler.refTime = self.tref
+            if 't0' not in self.injectSources:
+                #PP.Transient.t0 = int(self.minStartTime)
+                #PP.Transient.tau = int(self.maxStartTime - self.minStartTime)
+                PP.Transient.type = lalpulsar.TRANSIENT_NONE
+            FstatOAs.injectSources = PPV
+        else:
+            FstatOAs.injectSources = lalpulsar.FstatOptionalArgsDefaults.injectSources
 
         if self.minCoverFreq is None or self.maxCoverFreq is None:
             fA = SFTCatalog.data[0].header.f0
@@ -287,7 +317,7 @@ class ComputeFstat(object):
                                                      self.maxCoverFreq,
                                                      dFreq,
                                                      ephems,
-                                                     FstatOptionalArgs
+                                                     FstatOAs
                                                      )
 
         logging.info('Initialising PulsarDoplerParams')
@@ -447,7 +477,8 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
     def __init__(self, label, outdir, tref, nsegs=None, sftfilepath=None,
                  binary=False, BSGL=False, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
-                 detector=None, earth_ephem=None, sun_ephem=None):
+                 detector=None, earth_ephem=None, sun_ephem=None,
+                 injectSources=None):
         """
         Parameters
         ----------
@@ -476,9 +507,8 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
         logging.info(('Initialising semicoherent parameters from {} to {} in'
                       ' {} segments').format(
             self.minStartTime, self.maxStartTime, self.nsegs))
-        if self.nsegs == 1:
-            self.transient = False
-            self.whatToCompute = lalpulsar.FSTATQ_2F
+        self.transient = True
+        self.whatToCompute = lalpulsar.FSTATQ_2F+lalpulsar.FSTATQ_ATOMS_PER_DET
         self.tboundaries = np.linspace(self.minStartTime, self.maxStartTime,
                                        self.nsegs+1)
 
@@ -658,7 +688,7 @@ class MCMCSearch(BaseSearchClass):
                  log10temperature_min=-5, theta_initial=None, scatter_val=1e-10,
                  binary=False, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, detector=None, earth_ephem=None,
-                 sun_ephem=None):
+                 sun_ephem=None, injectSource=None):
         """
         Parameters
         label, outdir: str
@@ -746,7 +776,7 @@ class MCMCSearch(BaseSearchClass):
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detector=self.detector, BSGL=self.BSGL, transient=False,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-            binary=self.binary)
+            binary=self.binary, injectSources=self.injectSources)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [self.generic_lnprior(**theta_prior[key])(p) for p, key in
@@ -1839,7 +1869,8 @@ class MCMCSemiCoherentSearch(MCMCSearch):
                  ntemps=1, log10temperature_min=-5, theta_initial=None,
                  scatter_val=1e-10, detector=None, BSGL=False,
                  minStartTime=None, maxStartTime=None, minCoverFreq=None,
-                 maxCoverFreq=None, earth_ephem=None, sun_ephem=None):
+                 maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
+                 injectSources=None):
         """
 
         """
@@ -1875,7 +1906,8 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             BSGL=self.BSGL, minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, detector=self.detector,
-            earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem)
+            earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
+            injectSources=self.injectSources)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [self.generic_lnprior(**theta_prior[key])(p) for p, key in
@@ -1938,6 +1970,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         fig = None
         axes = None
         nsteps_total = 0
+        self.nsegs = 1
+        self.inititate_search_object()
         for j, ((nburn, nprod), nseg, reset_p0) in enumerate(run_setup):
             if j == 0:
                 p0 = self.generate_initial_p0()
@@ -1950,7 +1984,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 p0 = sampler.chain[:, :, -1, :]
 
             self.nsegs = nseg
-            self.inititate_search_object()
+            self.search.nsegs = nseg
+            self.search.init_semicoherent_parameters()
             sampler = emcee.PTSampler(
                 self.ntemps, self.nwalkers, self.ndim, self.logl, self.logp,
                 logpargs=(self.theta_prior, self.theta_keys, self.search),
