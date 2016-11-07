@@ -1603,7 +1603,7 @@ _        sftfilepath: str
         theta_initial: dict, array, (None)
             Either a dictionary of distribution about which to distribute the
             initial walkers about, an array (from which the walkers will be
-            scattered by scatter_val, or  None in which case the prior is used.
+            scattered by scatter_val), or  None in which case the prior is used.
         scatter_val, float or ndim array
             Size of scatter to use about the initialisation step, if given as
             an array it must be of length ndim and the order is given by
@@ -1957,10 +1957,10 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 loglargs=(self.search,), betas=self.betas,
                 a=proposal_scale_factor)
 
+            Tcoh = (self.maxStartTime-self.minStartTime)/nseg/86400.
             logging.info(('Running {}/{} with {} steps and {} nsegs '
                           '(Tcoh={:1.2f} days)').format(
-                j+1, len(self.nsteps), (nburn, nprod), nseg,
-                (self.maxStartTime-self.minStartTime)/nseg/86400))
+                j+1, len(run_setup), (nburn, nprod), nseg, Tcoh))
             sampler = self.run_sampler_with_progress_bar(
                 sampler, nburn+nprod, p0)
             logging.info("Mean acceptance fraction: {}"
@@ -1968,10 +1968,17 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             if self.ntemps > 1:
                 logging.info("Tswap acceptance fraction: {}"
                              .format(sampler.tswap_acceptance_fraction))
+            logging.info('Max detection statistic of run was {}'.format(
+                np.max(sampler.lnlikelihood)))
 
             fig, axes = self.plot_walkers(sampler, symbols=self.theta_symbols,
                                           fig=fig, axes=axes, burnin_idx=nburn,
                                           xoffset=nsteps_total)
+            yvals = axes[0].get_ylim()
+            axes[0].annotate(
+                r'$T_{{\rm coh}}^{{\rm (days)}}{{=}}{:1.1f}$'.format(Tcoh),
+                xy=(nsteps_total, yvals[0]*(1+1e-2*(yvals[1]-yvals[0])/yvals[1])),
+                fontsize=6)
             for ax in axes[:-1]:
                 ax.axvline(nsteps_total, color='k', ls='--')
             nsteps_total += nburn+nprod
