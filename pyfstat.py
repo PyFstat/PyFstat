@@ -188,6 +188,20 @@ class BaseSearchClass(object):
                     post_theta_at_ith_glitch, self.tref - tbounds[i+1]))
         return thetas
 
+    def generate_loudest(self):
+        params = read_par(self.label, self.outdir)
+        for key in ['Alpha', 'Delta', 'F0', 'F1']:
+            if key not in params:
+                params[key] = self.theta_prior[key]
+        cmd = ('lalapps_ComputeFstatistic_v2 -a {} -d {} -f {} -s {} -D "{}"'
+               ' --refTime={} --outputLoudest="{}/{}.loudest" '
+               '--minStartTime={} --maxStartTime={}').format(
+                    params['Alpha'], params['Delta'], params['F0'],
+                    params['F1'], self.sftfilepath, params['tref'],
+                    self.outdir, self.label, self.minStartTime,
+                    self.maxStartTime)
+        subprocess.call([cmd], shell=True)
+
 
 class ComputeFstat(object):
     """ Base class providing interface to `lalpulsar.ComputeFstat` """
@@ -255,10 +269,23 @@ class ComputeFstat(object):
         SFTCatalog = lalpulsar.SFTdataFind(self.sftfilepath, constraints)
         names = list(set([d.header.name for d in SFTCatalog.data]))
         SFT_timestamps = [d.header.epoch for d in SFTCatalog.data]
-        logging.info(
-            'Loaded {} data files from detectors {} spanning {} to {}'.format(
-                len(SFT_timestamps), names, int(SFT_timestamps[0]),
-                int(SFT_timestamps[-1])))
+        try:
+            from bashplotlib.histogram import plot_hist
+            print('Data timestamps histogram:')
+            plot_hist(SFT_timestamps, height=5, bincount=50)
+        except IOError:
+            pass
+        if len(names) == 0:
+            raise ValueError('No data loaded.')
+        logging.info('Loaded {} data files from detectors {}'.format(
+            len(SFT_timestamps), names))
+        logging.info('Data spans from {} ({}) to {} ({})'.format(
+            int(SFT_timestamps[0]),
+            subprocess.check_output('lalapps_tconvert {}'.format(
+                int(SFT_timestamps[0])), shell=True).rstrip('\n'),
+            int(SFT_timestamps[-1]),
+            subprocess.check_output('lalapps_tconvert {}'.format(
+                int(SFT_timestamps[-1])), shell=True)).rstrip('\n'))
 
         logging.info('Initialising ephems')
         ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
@@ -303,11 +330,11 @@ class ComputeFstat(object):
             FstatOAs.injectSources = lalpulsar.FstatOptionalArgsDefaults.injectSources
 
         if self.minCoverFreq is None or self.maxCoverFreq is None:
-            fA = SFTCatalog.data[0].header.f0
-            numBins = SFTCatalog.data[0].numBins
-            fB = fA + (numBins-1)*SFTCatalog.data[0].header.deltaF
-            self.minCoverFreq = fA + 0.5
-            self.maxCoverFreq = fB - 0.5
+            fAs = [d.header.f0 for d in SFTCatalog.data]
+            fBs = [d.header.f0 + (d.numBins-1)*d.header.deltaF
+                   for d in SFTCatalog.data]
+            self.minCoverFreq = np.min(fAs) + 0.5
+            self.maxCoverFreq = np.max(fBs) - 0.5
             logging.info('Min/max cover freqs not provided, using '
                          '{} and {}, est. from SFTs'.format(
                              self.minCoverFreq, self.maxCoverFreq))
@@ -1488,6 +1515,7 @@ class MCMCSearch(BaseSearchClass):
         filename = '{}/{}.par'.format(self.outdir, self.label)
         with open(filename, 'w+') as f:
             f.write('MaxtwoF = {}\n'.format(max_twoF))
+            f.write('tref = {}\n'.format(self.tref))
             if hasattr(self, 'theta0_index'):
                 f.write('theta0_index = {}\n'.format(self.theta0_idx))
             if method == 'med':
