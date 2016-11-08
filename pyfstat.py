@@ -281,7 +281,7 @@ class ComputeFstat(object):
         FstatOAs.prevInput = lalpulsar.FstatOptionalArgsDefaults.prevInput
         FstatOAs.collectTiming = lalpulsar.FstatOptionalArgsDefaults.collectTiming
 
-        if type(self.injectSources) == dict:
+        if hasattr(self, 'injectSource') and type(self.injectSources) == dict:
             logging.info('Injecting source with params: {}'.format(
                 self.injectSources))
             PPV = lalpulsar.CreatePulsarParamsVector(1)
@@ -688,7 +688,7 @@ class MCMCSearch(BaseSearchClass):
                  log10temperature_min=-5, theta_initial=None, scatter_val=1e-10,
                  binary=False, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, detector=None, earth_ephem=None,
-                 sun_ephem=None, injectSource=None):
+                 sun_ephem=None, injectSources=None):
         """
         Parameters
         label, outdir: str
