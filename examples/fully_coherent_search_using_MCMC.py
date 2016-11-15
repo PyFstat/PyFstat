@@ -18,7 +18,7 @@ theta_prior = {'F0': {'type': 'unif', 'lower': F0*(1-1e-6), 'upper': F0*(1+1e-6)
                'Delta': Delta
                }
 
-ntemps = 4
+ntemps = 3
 log10temperature_min = -1
 nwalkers = 100
 nsteps = [1000, 1000]
