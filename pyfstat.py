@@ -15,6 +15,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import scipy.special
 import emcee
 import corner
 import dill as pickle
@@ -388,11 +389,20 @@ class ComputeFstat(object):
 
             # Tuning parameters - to be reviewed
             numDetectors = 2
-            Fstar0sc = 15.
+            if hasattr(self, 'nsegs'):
+                p_val_threshold = 1e-6
+                Fstar0s = np.linspace(0, 1000, 10000)
+                p_vals = scipy.special.gammaincc(2*self.nsegs, Fstar0s)
+                Fstar0 = Fstar0s[np.argmin(np.abs(p_vals - p_val_threshold))]
+                if Fstar0 == Fstar0s[-1]:
+                    raise ValueError('Max Fstar0 exceeded')
+            else:
+                Fstar0 = 15.
+            logging.info('Using Fstar0 of {:1.2f}'.format(Fstar0))
             oLGX = np.zeros(10)
             oLGX[:numDetectors] = 1./numDetectors
             self.BSGLSetup = lalpulsar.CreateBSGLSetup(numDetectors,
-                                                       Fstar0sc,
+                                                       Fstar0,
                                                        oLGX,
                                                        True,
                                                        1)
@@ -2154,6 +2164,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
             self.nsegs = nseg
             self.search.nsegs = nseg
+            self.inititate_search_object()
             self.search.init_semicoherent_parameters()
             sampler = emcee.PTSampler(
                 self.ntemps, self.nwalkers, self.ndim, self.logl, self.logp,
