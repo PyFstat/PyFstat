@@ -545,7 +545,7 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
         ----------
         label, outdir: str
             A label and directory to read/write data from/to.
-        tref, tstart, tend: int
+        tref, minStartTime, maxStartTime: int
             GPS seconds of the reference time, and start and end of the data.
         nsegs: int
             The (fixed) number of segments
@@ -647,16 +647,16 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
     """
 
     @initializer
-    def __init__(self, label, outdir, tref, tstart, tend, nglitch=0,
-                 sftfilepath=None, theta0_idx=0, BSGL=False, minStartTime=None,
-                 maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
+    def __init__(self, label, outdir, tref, minStartTime, maxStartTime,
+                 nglitch=0, sftfilepath=None, theta0_idx=0, BSGL=False,
+                 minCoverFreq=None, maxCoverFreq=None,
                  detector=None, earth_ephem=None, sun_ephem=None):
         """
         Parameters
         ----------
         label, outdir: str
             A label and directory to read/write data from/to.
-        tref, tstart, tend: int
+        tref, minStartTime, maxStartTime: int
             GPS seconds of the reference time, and start and end of the data.
         nglitch: int
             The (fixed) number of glitches; this can zero, but occasionally
@@ -684,7 +684,8 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
         """ Returns the semi-coherent glitch summed twoF """
 
         args = list(args)
-        tboundaries = [self.tstart] + args[-self.nglitch:] + [self.tend]
+        tboundaries = ([self.minStartTime] + args[-self.nglitch:]
+                       + [self.maxStartTime])
         delta_F0s = args[-3*self.nglitch:-2*self.nglitch]
         delta_F1s = args[-2*self.nglitch:-self.nglitch]
         delta_F2 = np.zeros(len(delta_F0s))
@@ -714,7 +715,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
                                     delta_F1, tglitch):
         """ Returns the semi-coherent glitch summed twoF for nglitch=1
 
-        Note: used for testing
+        Note: OBSOLETE, used only for testing
         """
 
         theta = [F0, F1, F2]
@@ -727,14 +728,14 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
             theta_post_glitch_at_glitch, tref - tglitch)
 
         twoFsegA = self.run_computefstatistic_single_point(
-            self.tstart, tglitch, theta[0], theta[1], theta[2], Alpha,
+            self.minStartTime, tglitch, theta[0], theta[1], theta[2], Alpha,
             Delta)
 
-        if tglitch == self.tend:
+        if tglitch == self.maxStartTime:
             return twoFsegA
 
         twoFsegB = self.run_computefstatistic_single_point(
-            tglitch, self.tend, theta_post_glitch[0],
+            tglitch, self.maxStartTime, theta_post_glitch[0],
             theta_post_glitch[1], theta_post_glitch[2], Alpha,
             Delta)
 
@@ -745,8 +746,9 @@ class MCMCSearch(BaseSearchClass):
     """ MCMC search using ComputeFstat"""
     @initializer
     def __init__(self, label, outdir, sftfilepath, theta_prior, tref,
-                 tstart, tend, nsteps=[100, 100, 100], nwalkers=100, ntemps=1,
-                 log10temperature_min=-5, theta_initial=None, scatter_val=1e-10,
+                 minStartTime, maxStartTime, nsteps=[100, 100, 100],
+                 nwalkers=100, ntemps=1, log10temperature_min=-5,
+                 theta_initial=None, scatter_val=1e-10,
                  binary=False, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, detector=None, earth_ephem=None,
                  sun_ephem=None, injectSources=None):
@@ -765,7 +767,7 @@ class MCMCSearch(BaseSearchClass):
             Either a dictionary of distribution about which to distribute the
             initial walkers about, an array (from which the walkers will be
             scattered by scatter_val, or  None in which case the prior is used.
-        tref, tstart, tend: int
+        tref, minStartTime, maxStartTime: int
             GPS seconds of the reference time, start time and end time
         nsteps: list (m,)
             List specifying the number of steps to take, the last two entries
@@ -792,9 +794,6 @@ class MCMCSearch(BaseSearchClass):
             If None defaults defined in BaseSearchClass will be used
 
         """
-
-        self.minStartTime = tstart
-        self.maxStartTime = tend
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -1034,8 +1033,9 @@ class MCMCSearch(BaseSearchClass):
                 for j, k in enumerate(self.theta_keys):
                     if k == 'tglitch':
                         s = samples_plt[:, j]
-                        samples_plt[:, j] = (s - self.tstart)/(
-                                             self.tend - self.tstart)
+                        samples_plt[:, j] = (
+                            s - self.minStartTime)/(
+                                self.maxStartTime - self.minStartTime)
                         theta_symbols_plt[j] = r'$R_{\textrm{glitch}}$'
 
             if type(nstds) is int and 'range' not in kwargs:
@@ -1154,14 +1154,16 @@ class MCMCSearch(BaseSearchClass):
         if self.binary is False:
             self.search.plot_twoF_cumulative(
                 self.label, self.outdir, F0=d['F0'], F1=d['F1'], F2=d['F2'],
-                Alpha=d['Alpha'], Delta=d['Delta'], tstart=self.minStartTime,
-                tend=self.maxStartTime, **kwargs)
+                Alpha=d['Alpha'], Delta=d['Delta'],
+                minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
+                **kwargs)
         else:
             self.search.plot_twoF_cumulative(
                 self.label, self.outdir, F0=d['F0'], F1=d['F1'], F2=d['F2'],
                 Alpha=d['Alpha'], Delta=d['Delta'], asini=d['asini'],
                 period=d['period'], ecc=d['ecc'], argp=d['argp'], tp=d['argp'],
-                tstart=self.tstart, tend=self.tend, **kwargs)
+                minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
+                **kwargs)
 
     def generic_lnprior(self, **kwargs):
         """ Return a lambda function of the pdf
@@ -1622,7 +1624,7 @@ class MCMCSearch(BaseSearchClass):
             tglitches = [d['tglitch']]
         else:
             tglitches = [d['tglitch_{}'.format(i)] for i in range(self.nglitch)]
-        tboundaries = [self.tstart] + tglitches + [self.tend]
+        tboundaries = [self.minStartTime] + tglitches + [self.maxStartTime]
         deltaTs = np.diff(tboundaries)
         ntrials = [time_trials + delta_F0 * dT for dT in deltaTs]
         p_val = self.p_val_twoFhat(max_twoF, ntrials)
@@ -1682,12 +1684,11 @@ class MCMCGlitchSearch(MCMCSearch):
     """ MCMC search using the SemiCoherentGlitchSearch """
     @initializer
     def __init__(self, label, outdir, sftfilepath, theta_prior, tref,
-                 tstart, tend, nglitch=1, nsteps=[100, 100, 100], nwalkers=100,
-                 ntemps=1, log10temperature_min=-5, theta_initial=None,
-                 scatter_val=1e-10, dtglitchmin=1*86400, theta0_idx=0,
-                 detector=None, BSGL=False,
-                 minCoverFreq=None, maxCoverFreq=None, earth_ephem=None,
-                 sun_ephem=None):
+                 minStartTime, maxStartTime, nglitch=1, nsteps=[100, 100, 100],
+                 nwalkers=100, ntemps=1, log10temperature_min=-5,
+                 theta_initial=None, scatter_val=1e-10, dtglitchmin=1*86400,
+                 theta0_idx=0, detector=None, BSGL=False, minCoverFreq=None,
+                 maxCoverFreq=None, earth_ephem=None, sun_ephem=None):
         """
         Parameters
         label, outdir: str
@@ -1709,7 +1710,7 @@ _        sftfilepath: str
             theta_keys
         nglitch: int
             The number of glitches to allow
-        tref, tstart, tend: int
+        tref, minStartTime, maxStartTime: int
             GPS seconds of the reference time, start time and end time
         nsteps: list (m,)
             List specifying the number of steps to take, the last two entries
@@ -1748,8 +1749,6 @@ _        sftfilepath: str
         logging.info(('Set-up MCMC glitch search with {} glitches for model {}'
                       ' on data {}').format(self.nglitch, self.label,
                                             self.sftfilepath))
-        self.minStartTime = tstart
-        self.maxStartTime = tend
         self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
         self.unpack_input_theta()
         self.ndim = len(self.theta_keys)
@@ -1772,16 +1771,16 @@ _        sftfilepath: str
         logging.info('Setting up search object')
         self.search = SemiCoherentGlitchSearch(
             label=self.label, outdir=self.outdir, sftfilepath=self.sftfilepath,
-            tref=self.tref, tstart=self.tstart,
-            tend=self.tend, minCoverFreq=self.minCoverFreq,
+            tref=self.tref, minStartTime=self.minStartTime,
+            maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem, detector=self.detector, BSGL=self.BSGL,
-            nglitch=self.nglitch, theta0_idx=self.theta0_idx,
-            minStartTime=self.minStartTime, maxStartTime=self.maxStartTime)
+            nglitch=self.nglitch, theta0_idx=self.theta0_idx)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         if self.nglitch > 1:
-            ts = [self.tstart] + list(theta_vals[-self.nglitch:]) + [self.tend]
+            ts = ([self.minStartTime] + list(theta_vals[-self.nglitch:])
+                  + [self.maxStartTime])
             if np.array_equal(ts, np.sort(ts)) is False:
                 return -np.inf
             if any(np.diff(ts) < self.dtglitchmin):
@@ -1793,7 +1792,8 @@ _        sftfilepath: str
 
     def logl(self, theta, search):
         if self.nglitch > 1:
-            ts = [self.tstart] + list(theta[-self.nglitch:]) + [self.tend]
+            ts = ([self.minStartTime] + list(theta_vals[-self.nglitch:])
+                  + [self.maxStartTime])
             if np.array_equal(ts, np.sort(ts)) is False:
                 return -np.inf
 
@@ -1903,7 +1903,7 @@ _        sftfilepath: str
             delta_F0s[:self.theta0_idx] *= -1
             tglitches = [d['tglitch']]
 
-        tboundaries = [self.tstart] + tglitches + [self.tend]
+        tboundaries = [self.minStartTime] + tglitches + [self.maxStartTime]
 
         for j in range(self.nglitch+1):
             ts = tboundaries[j]
@@ -1916,14 +1916,14 @@ _        sftfilepath: str
                 F0_j = d['F0'] - summed_deltaF0
                 taus, twoFs = self.search.calculate_twoF_cumulative(
                     F0_j, F1=d['F1'], F2=d['F2'], Alpha=d['Alpha'],
-                    Delta=d['Delta'], tstart=ts, tend=te)
+                    Delta=d['Delta'], minStartTime=ts, maxStartTime=te)
 
             elif j >= self.theta0_idx:
                 summed_deltaF0 = np.sum(delta_F0s[self.theta0_idx:j+1])
                 F0_j = d['F0'] + summed_deltaF0
                 taus, twoFs = self.search.calculate_twoF_cumulative(
                     F0_j, F1=d['F1'], F2=d['F2'], Alpha=d['Alpha'],
-                    Delta=d['Delta'], tstart=ts, tend=te)
+                    Delta=d['Delta'], minStartTime=ts, maxStartTime=te)
             ax.plot(ts+taus, twoFs)
 
         ax.set_xlabel('GPS time')
@@ -2244,7 +2244,7 @@ class MCMCTransientSearch(MCMCSearch):
         if self.fixed_theta[1] < 86400:
             return -np.inf
         self.fixed_theta[1] += self.fixed_theta[0]
-        if self.fixed_theta[1] > self.tend:
+        if self.fixed_theta[1] > self.maxStartTime:
             return -np.inf
         FS = search.run_computefstatistic_single_point(*self.fixed_theta)
         return FS
@@ -2298,9 +2298,10 @@ class GridSearch(BaseSearchClass):
     """ Gridded search using ComputeFstat """
     @initializer
     def __init__(self, label, outdir, sftfilepath, F0s=[0], F1s=[0], F2s=[0],
-                 Alphas=[0], Deltas=[0], tref=None, tstart=None, tend=None,
-                 BSGL=False, minCoverFreq=None, maxCoverFreq=None,
-                 earth_ephem=None, sun_ephem=None, detector=None):
+                 Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
+                 maxStartTime=None, BSGL=False, minCoverFreq=None,
+                 maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
+                 detector=None):
         """
         Parameters
         ----------
@@ -2311,14 +2312,11 @@ class GridSearch(BaseSearchClass):
         F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
             Length 3 tuple describing the grid for each parameter, e.g
             [F0min, F0max, dF0], for a fixed value simply give [F0].
-        tref, tstart, tend: int
+        tref, minStartTime, maxStartTime: int
             GPS seconds of the reference time, start time and end time
 
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
-
-        self.minStartTime = tstart
-        self.maxStartTime = tend
 
         if earth_ephem is None:
             self.earth_ephem = self.earth_ephem_default
@@ -2348,7 +2346,7 @@ class GridSearch(BaseSearchClass):
 
     def get_input_data_array(self):
         arrays = []
-        for tup in ([self.tstart], [self.tend], self.F0s, self.F1s, self.F2s,
+        for tup in ([self.minStartTime], [self.maxStartTime], self.F0s, self.F1s, self.F2s,
                     self.Alphas, self.Deltas):
             arrays.append(self.get_array_from_tuple(tup))
 
@@ -2501,8 +2499,8 @@ class GridSearch(BaseSearchClass):
         twoF = self.data[:, -1]
         idx = np.argmax(twoF)
         v = self.data[idx, :]
-        d = OrderedDict(tstart=v[0], tend=v[1], F0=v[2], F1=v[3], F2=v[4],
-                        Alpha=v[5], Delta=v[6], twoF=v[7])
+        d = OrderedDict(minStartTime=v[0], maxStartTime=v[1], F0=v[2], F1=v[3],
+                        F2=v[4], Alpha=v[5], Delta=v[6], twoF=v[7])
         return d
 
     def print_max_twoF(self):
@@ -2517,9 +2515,9 @@ class GridGlitchSearch(GridSearch):
     @initializer
     def __init__(self, label, outdir, sftfilepath=None, F0s=[0],
                  F1s=[0], F2s=[0], delta_F0s=[0], delta_F1s=[0], tglitchs=None,
-                 Alphas=[0], Deltas=[0], tref=None, tstart=None, tend=None,
-                 minCoverFreq=None, maxCoverFreq=None, write_after=1000,
-                 earth_ephem=None, sun_ephem=None):
+                 Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
+                 maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
+                 write_after=1000, earth_ephem=None, sun_ephem=None):
 
         """
         Parameters
@@ -2531,13 +2529,13 @@ class GridGlitchSearch(GridSearch):
         F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
             Length 3 tuple describing the grid for each parameter, e.g
             [F0min, F0max, dF0], for a fixed value simply give [F0].
-        tref, tstart, tend: int
+        tref, minStartTime, maxStartTime: int
             GPS seconds of the reference time, start time and end time
 
         For all other parameters, see pyfstat.ComputeFStat.
         """
         if tglitchs is None:
-            self.tglitchs = [self.tend]
+            self.tglitchs = [self.maxStartTime]
         if earth_ephem is None:
             self.earth_ephem = self.earth_ephem_default
         if sun_ephem is None:
@@ -2545,9 +2543,10 @@ class GridGlitchSearch(GridSearch):
 
         self.search = SemiCoherentGlitchSearch(
             label=label, outdir=outdir, sftfilepath=self.sftfilepath,
-            tref=tref, tstart=tstart, tend=tend, minCoverFreq=minCoverFreq,
-            maxCoverFreq=maxCoverFreq, earth_ephem=self.earth_ephem,
-            sun_ephem=self.sun_ephem, BSGL=self.BSGL)
+            tref=tref, minStartTime=minStartTime, maxStartTime=maxStartTime,
+            minCoverFreq=minCoverFreq, maxCoverFreq=maxCoverFreq,
+            earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
+            BSGL=self.BSGL)
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -2578,7 +2577,7 @@ class Writer(BaseSearchClass):
                  tref=None, phi=0, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
                  Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, Tsft=1800, outdir=".",
                  sqrtSX=1, Band=4, detector='H1', data_tstart=None,
-                 data_duration=None):
+                 minStartTime=None, maxStartTime=None):
         """
         Parameters
         ----------
@@ -2598,7 +2597,7 @@ class Writer(BaseSearchClass):
             pre-glitch phase, frequency, sky-position, and signal properties
         Tsft: float
             the sft duration
-        data_tstart, data_duration: float
+        minStartTime, maxStartTime: float
             if not None, the total span of data, this can be used to generate
             transient signals
 
@@ -2609,6 +2608,10 @@ class Writer(BaseSearchClass):
             if np.size(d) == 1:
                 d = [d]
         self.tend = self.tstart + self.duration
+        if self.minStartTime is None:
+            self.minStartTime = self.tstart
+        if self.maxStartTime is None:
+            self.maxStartTime = self.tend
         if self.dtglitch is None or self.dtglitch == self.duration:
             self.tbounds = [self.tstart, self.tend]
         elif np.size(self.dtglitch) == 1:
@@ -2767,14 +2770,15 @@ transientTauDays={:1.3f}\n""")
         cl.append('--outLabel="{}"'.format(self.label))
         cl.append('--IFOs="{}"'.format(self.detector))
         cl.append('--sqrtSX="{}"'.format(self.sqrtSX))
-        if self.data_tstart is None:
+        if self.minStartTime is None:
             cl.append('--startTime={:10.9f}'.format(float(self.tstart)))
         else:
-            cl.append('--startTime={:10.9f}'.format(float(self.data_tstart)))
-        if self.data_duration is None:
+            cl.append('--startTime={:10.9f}'.format(float(self.minStartTime)))
+        if self.maxStartTime is None:
             cl.append('--duration={}'.format(int(self.duration)))
         else:
-            cl.append('--duration={}'.format(int(self.data_duration)))
+            data_duration = self.maxStartTime - self.minStartTime
+            cl.append('--duration={}'.format(int(data_duration)))
         cl.append('--fmin={}'.format(int(self.fmin)))
         cl.append('--Band={}'.format(self.Band))
         cl.append('--Tsft={}'.format(self.Tsft))
@@ -2802,8 +2806,8 @@ transientTauDays={:1.3f}\n""")
             self.outdir+"/*SFT_"+self.label+"*sft"))
         c_l.append("--assumeSqrtSX={}".format(self.sqrtSX))
 
-        c_l.append("--minStartTime={}".format(self.tstart))
-        c_l.append("--maxStartTime={}".format(self.tend))
+        c_l.append("--minStartTime={}".format(int(self.minStartTime)))
+        c_l.append("--maxStartTime={}".format(int(self.maxStartTime)))
 
         logging.info("Executing: " + " ".join(c_l) + "\n")
         output = subprocess.check_output(" ".join(c_l), shell=True)

@@ -111,7 +111,7 @@ class TestSemiCoherentGlitchSearch(Test):
 
     def test_compute_nglitch_fstat(self):
         duration = 100*86400
-        dtglitch = 100*43200
+        dtglitch = .5*100*86400
         delta_F0 = 0
         Writer = pyfstat.Writer(self.label, outdir=outdir,
                                 duration=duration, dtglitch=dtglitch,
@@ -122,25 +122,26 @@ class TestSemiCoherentGlitchSearch(Test):
         search = pyfstat.SemiCoherentGlitchSearch(
             label=self.label, outdir=outdir,
             sftfilepath='{}/*{}*sft'.format(Writer.outdir, Writer.label),
-            tref=Writer.tref, tstart=Writer.tstart, tend=Writer.tend,
-            nglitch=1)
+            tref=Writer.tref, minStartTime=Writer.tstart,
+            maxStartTime=Writer.tend, nglitch=1)
 
         FS = search.compute_nglitch_fstat(Writer.F0, Writer.F1, Writer.F2,
                                           Writer.Alpha, Writer.Delta,
                                           Writer.delta_F0, Writer.delta_F1,
-                                          search.tstart+dtglitch)
+                                          search.minStartTime+dtglitch)
 
         # Compute the predicted semi-coherent glitch Fstat
-        tstart = Writer.tstart
-        tend = Writer.tend
+        minStartTime = Writer.tstart
+        maxStartTime = Writer.tend
 
-        Writer.tend = tstart + dtglitch
+        Writer.maxStartTime = minStartTime + dtglitch
         FSA = Writer.predict_fstat()
 
-        Writer.tstart = tstart + dtglitch
-        Writer.tend = tend
+        Writer.tstart = minStartTime + dtglitch
+        Writer.tend = maxStartTime
         FSB = Writer.predict_fstat()
 
+        print FSA, FSB
         predicted_FS = (FSA + FSB)
 
         print(predicted_FS, FS)
@@ -156,17 +157,17 @@ class TestMCMCSearch(Test):
         F0 = 30
         F1 = -1e-10
         F2 = 0
-        tstart = 700000000
+        minStartTime = 700000000
         duration = 100 * 86400
-        tend = tstart + duration
+        maxStartTime = minStartTime + duration
         Alpha = 5e-3
         Delta = 1.2
-        tref = tstart
+        tref = minStartTime
         dtglitch = duration
         delta_F0 = 0
         Writer = pyfstat.Writer(F0=F0, F1=F1, F2=F2, label=self.label,
                                 h0=h0, sqrtSX=sqrtSX,
-                                outdir=outdir, tstart=tstart,
+                                outdir=outdir, tstart=minStartTime,
                                 Alpha=Alpha, Delta=Delta, tref=tref,
                                 duration=duration, dtglitch=dtglitch,
                                 delta_F0=delta_F0, Band=4)
@@ -181,8 +182,8 @@ class TestMCMCSearch(Test):
         search = pyfstat.MCMCSearch(
             label=self.label, outdir=outdir, theta_prior=theta, tref=tref,
             sftfilepath='{}/*{}*sft'.format(Writer.outdir, Writer.label),
-            tstart=tstart, tend=tend, nsteps=[100, 100], nwalkers=100,
-            ntemps=1)
+            minStartTime=minStartTime, maxStartTime=maxStartTime,
+            nsteps=[100, 100], nwalkers=100, ntemps=1)
         search.run()
         search.plot_corner(add_prior=True)
         _, FS = search.get_max_twoF()
