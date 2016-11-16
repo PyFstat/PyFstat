@@ -81,6 +81,8 @@ def round_to_n(x, n):
 
 
 def texify_float(x, d=1):
+    if type(x) == str:
+        return x
     x = round_to_n(x, d)
     if 0.01 < abs(x) < 100:
         return str(x)
@@ -1152,8 +1154,8 @@ class MCMCSearch(BaseSearchClass):
         if self.binary is False:
             self.search.plot_twoF_cumulative(
                 self.label, self.outdir, F0=d['F0'], F1=d['F1'], F2=d['F2'],
-                Alpha=d['Alpha'], Delta=d['Delta'], tstart=self.tstart,
-                tend=self.tend, **kwargs)
+                Alpha=d['Alpha'], Delta=d['Delta'], tstart=self.minStartTime,
+                tend=self.maxStartTime, **kwargs)
         else:
             self.search.plot_twoF_cumulative(
                 self.label, self.outdir, F0=d['F0'], F1=d['F1'], F2=d['F2'],
@@ -2013,57 +2015,64 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             return 'N/A'
         tboundaries = np.linspace(self.minStartTime, self.maxStartTime,
                                   nsegs+1)
+
         if 'Alpha' in self.theta_keys:
             DeltaAlpha = self.get_width_from_prior(self.theta_prior, 'Alpha')
             DeltaDelta = self.get_width_from_prior(self.theta_prior, 'Delta')
             DeltaMid = self.get_mid_from_prior(self.theta_prior, 'Delta')
             DeltaOmega = np.sin(DeltaMid) * DeltaDelta * DeltaAlpha
-            if 'F0' in self.theta_keys:
-                DeltaF0 = self.get_width_from_prior(self.theta_prior, 'F0')
-            else:
-                DeltaF0 = 1
-            if 'F1' in self.theta_keys:
-                DeltaF1 = self.get_width_from_prior(self.theta_prior, 'F1')
-                spindowns = 1
-            else:
-                DeltaF1 = 1
-                spindowns = 0
+        if 'F0' in self.theta_keys:
+            DeltaF0 = self.get_width_from_prior(self.theta_prior, 'F0')
+        else:
+            DeltaF0 = 1
+        if 'F1' in self.theta_keys:
+            DeltaF1 = self.get_width_from_prior(self.theta_prior, 'F1')
+            spindowns = 1
+        else:
+            DeltaF1 = 1
+            spindowns = 0
 
-            ref_time = lal.LIGOTimeGPS(self.tref)
-            segments = lal.SegListCreate()
-            for j in range(len(tboundaries)-1):
-                seg = lal.SegCreate(lal.LIGOTimeGPS(tboundaries[j]),
-                                    lal.LIGOTimeGPS(tboundaries[j+1]),
-                                    j)
-                lal.SegListAppend(segments, seg)
-            if type(self.theta_prior['F0']) == dict:
-                fiducial_freq = self.get_mid_from_prior(self.theta_prior, 'F0')
-            else:
-                fiducial_freq = self.theta_prior['F0']
-            detector_names = self.search.names
-            detNames = lal.CreateStringVector(*detector_names)
-            detectors = lalpulsar.MultiLALDetector()
-            lalpulsar.ParseMultiLALDetector(detectors, detNames)
-            detector_weights = None
-            detector_motion = (lalpulsar.DETMOTION_SPIN
-                               + lalpulsar.DETMOTION_ORBIT)
-            ephemeris = lalpulsar.InitBarycenter(self.earth_ephem,
-                                                 self.sun_ephem)
-            try:
-                SSkyMetric = lalpulsar.ComputeSuperskyMetrics(
-                    spindowns, ref_time, segments, fiducial_freq, detectors,
-                    detector_weights, detector_motion, ephemeris)
-                sqrtdetG_SKY = np.sqrt(np.linalg.det(
-                    SSkyMetric.semi_rssky_metric.data[:2, :2]))
-                sqrtdetG_F = np.sqrt(np.linalg.det(
-                    SSkyMetric.semi_rssky_metric.data[2:, 2:]))
-                return (.5*sqrtdetG_SKY*sqrtdetG_F*DeltaOmega*DeltaF1*DeltaF0,
-                        .5*sqrtdetG_SKY*DeltaOmega,
-                        sqrtdetG_F*DeltaF1*DeltaF0)
-            except RuntimeError:
-                return 'N/A'
-        elif self.theta_keys == ['F0', 'F1']:
+        ref_time = lal.LIGOTimeGPS(self.tref)
+        segments = lal.SegListCreate()
+        for j in range(len(tboundaries)-1):
+            seg = lal.SegCreate(lal.LIGOTimeGPS(tboundaries[j]),
+                                lal.LIGOTimeGPS(tboundaries[j+1]),
+                                j)
+            lal.SegListAppend(segments, seg)
+        if type(self.theta_prior['F0']) == dict:
+            fiducial_freq = self.get_mid_from_prior(self.theta_prior, 'F0')
+        else:
+            fiducial_freq = self.theta_prior['F0']
+        detector_names = self.search.names
+        detNames = lal.CreateStringVector(*detector_names)
+        detectors = lalpulsar.MultiLALDetector()
+        lalpulsar.ParseMultiLALDetector(detectors, detNames)
+        detector_weights = None
+        detector_motion = (lalpulsar.DETMOTION_SPIN
+                           + lalpulsar.DETMOTION_ORBIT)
+        ephemeris = lalpulsar.InitBarycenter(self.earth_ephem,
+                                             self.sun_ephem)
+        try:
+            SSkyMetric = lalpulsar.ComputeSuperskyMetrics(
+                spindowns, ref_time, segments, fiducial_freq, detectors,
+                detector_weights, detector_motion, ephemeris)
+        except RuntimeError as e:
+            print e
             return 'N/A'
+
+        sqrtdetG_SKY = np.sqrt(np.linalg.det(
+            SSkyMetric.semi_rssky_metric.data[:2, :2]))
+        sqrtdetG_F = np.sqrt(np.linalg.det(
+            SSkyMetric.semi_rssky_metric.data[2:, 2:]))
+
+        if 'Alpha' in self.theta_keys:
+            return (.5*sqrtdetG_SKY*sqrtdetG_F*DeltaOmega*DeltaF1*DeltaF0,
+                    .5*sqrtdetG_SKY*DeltaOmega,
+                    sqrtdetG_F*DeltaF1*DeltaF0)
+        else:
+            return (sqrtdetG_F*DeltaF1*DeltaF0,
+                    'N/A',
+                    sqrtdetG_F*DeltaF1*DeltaF0)
 
     def init_run_setup(self, run_setup, log_table=True, gen_tex_table=True):
         logging.info('Calculating the number of templates for this setup..')
@@ -2080,18 +2089,22 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
         if log_table:
             logging.info('Using run-setup as follow:')
-            logging.info('Stage | nburn | nprod | nsegs | resetp0 |'
+            logging.info('Stage | nburn | nprod | nsegs | Tcoh | resetp0 |'
                          '# templates = # sky x # Freq')
             for i, rs in enumerate(run_setup):
-                if number_of_templates[i] != 'N/A':
-                    vtext = '{:1.0e} = {:1.0e} x {:1.0e}'.format(
+                Tcoh = (self.maxStartTime - self.minStartTime) / rs[1] / 86400
+                if number_of_templates[i] == 'N/A':
+                    vtext = number_of_templates[i]
+                elif 'N/A' in number_of_templates[i]:
+                    vtext = '{:1.0e} = {} x {:1.0e}'.format(
                             *number_of_templates[i])
                 else:
-                    vtext = number_of_templates[i]
-                logging.info('{} | {} | {} | {} | {} | {}'.format(
+                    vtext = '{:1.0e} = {:1.0e} x {:1.0e}'.format(
+                            *number_of_templates[i])
+                logging.info('{} | {} | {} | {} | {} | {} | {}'.format(
                     str(i).ljust(5), str(rs[0][0]).ljust(5),
                     str(rs[0][1]).ljust(5), str(rs[1]).ljust(5),
-                    str(rs[2]).ljust(7), vtext))
+                    '{:1.2f}'.format(Tcoh).ljust(4), str(rs[2]).ljust(7), vtext))
 
         if gen_tex_table:
             filename = '{}/{}_run_setup.tex'.format(self.outdir, self.label)
