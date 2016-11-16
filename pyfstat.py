@@ -54,6 +54,7 @@ parser.add_argument("-c", "--clean", help="Don't use cached data",
                     action="store_true")
 parser.add_argument("-u", "--use-old-data", action="store_true")
 parser.add_argument('-s', "--setup-only", action="store_true")
+parser.add_argument('-n', "--no-template-counting", action="store_true")
 parser.add_argument('unittest_args', nargs='*')
 args, unknown = parser.parse_known_args()
 sys.argv[1:] = args.unittest_args
@@ -1998,6 +1999,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
     def get_number_of_templates_estimate(self, nsegs):
         """ Returns V, Vsky, Vf estimated from the super-sky metric """
+        if args.no_template_counting:
+            return 'N/A'
         tboundaries = np.linspace(self.minStartTime, self.maxStartTime,
                                   nsegs+1)
         if 'Alpha' in self.theta_keys:
