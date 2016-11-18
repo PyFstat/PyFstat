@@ -194,6 +194,42 @@ class TestMCMCSearch(Test):
             FS > predicted_FS or np.abs((FS-predicted_FS))/predicted_FS < 0.3)
 
 
+class TestAuxillaryFunctions(Test):
+    nsegs = 10
+    minStartTime = 1e9
+    maxStartTime = minStartTime + 100 * 86400
+    tref = .5*(minStartTime + maxStartTime)
+    DeltaOmega = 1e-2
+    DeltaFs = [1e-4, 1e-14]
+    fiducial_freq = 100
+    detector_names = ['H1', 'L1']
+    earth_ephem = pyfstat.earth_ephem
+    sun_ephem = pyfstat.sun_ephem
+
+    def test_get_V_estimate_sky_F0_F1(self):
+
+        out = pyfstat.get_V_estimate(
+            self.nsegs, self.tref, self.minStartTime, self.maxStartTime,
+            self.DeltaOmega, self.DeltaFs, self.fiducial_freq,
+            self.detector_names, self.earth_ephem, self.sun_ephem)
+        V, Vsky, Vpe = out
+        self.assertTrue(V == Vsky * Vpe)
+        self.__class__.Vpe_COMPUTED_WITH_SKY = Vpe
+
+    def test_get_V_estimate_F0_F1(self):
+        out = pyfstat.get_V_estimate(
+            self.nsegs, self.tref, self.minStartTime, self.maxStartTime,
+            self.DeltaOmega, self.DeltaFs, self.fiducial_freq,
+            self.detector_names, self.earth_ephem, self.sun_ephem)
+        V, Vsky, Vpe = out
+        self.assertTrue(V == Vsky * Vpe)
+        self.__class__.Vpe_COMPUTED_WITHOUT_SKY = Vpe
+
+    def test_the_equivalence_of_Vpe(self):
+        """Tests if the Vpe computed with and without the sky are equal """
+        self.assertEqual(self.__class__.Vpe_COMPUTED_WITHOUT_SKY,
+                         self.__class__.Vpe_COMPUTED_WITH_SKY)
+
 if __name__ == '__main__':
     outdir = 'TestData'
     if os.path.isdir(outdir):
