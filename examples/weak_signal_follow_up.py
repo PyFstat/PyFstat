@@ -44,25 +44,15 @@ ntemps = 3
 log10temperature_min = -1
 nwalkers = 200
 scatter_val = 1e-10
-
-stages = 7
-steps = 100
-#run_setup = [(steps, 2**i) for i in reversed(range(1, stages+1))]
-#run_setup.append(((steps, steps), 1, True))
-run_setup = [(steps, 80),
-             (steps, 40),
-             (steps, 20),
-             (steps, 10),
-             (steps, 5),
-             ((steps, steps), 1, False)]
+nsteps = [100, 100]
 
 mcmc = pyfstat.MCMCFollowUpSearch(
     label='weak_signal_follow_up', outdir='data',
     sftfilepath='data/*'+data_label+'*sft', theta_prior=theta_prior, tref=tref,
-    minStartTime=tstart, maxStartTime=tend, nwalkers=nwalkers,
+    minStartTime=tstart, maxStartTime=tend, nwalkers=nwalkers, nsteps=nsteps,
     ntemps=ntemps, log10temperature_min=log10temperature_min,
     scatter_val=scatter_val)
-mcmc.run(run_setup)
+mcmc.run(R0=10, Vmin=100)
 mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()
 #mcmc.generate_loudest()

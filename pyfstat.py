@@ -16,6 +16,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import scipy.special
+import scipy.optimize
 import emcee
 import corner
 import dill as pickle
@@ -123,6 +124,68 @@ def read_par(label, outdir):
                 key = key.strip()
                 d[key] = np.float64(eval(val.rstrip('; ')))
     return d
+
+
+def get_optimal_setup(
+        R0, Vmin, tref, minStartTime, maxStartTime, DeltaOmega,
+        DeltaFs, fiducial_freq, detector_names, earth_ephem, sun_ephem):
+    logging.info('Calculating optimal setup for R0={}, Vmin={}'.format(
+        R0, Vmin))
+
+    log10R0 = np.log10(R0)
+    log10Vmin = np.log10(Vmin)
+    nsegs_i = 1
+    V_i = get_V_estimate(
+        nsegs_i, tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
+        fiducial_freq, detector_names, earth_ephem, sun_ephem)
+    logging.info('Stage {}, nsegs={}, V={}'.format(0, nsegs_i, V_i))
+
+    nsegs_vals = [1]
+    V_vals = [V_i]
+
+    i = 0
+    while np.log10(V_i[0]) > log10Vmin:
+        nsegs_i, V_i = get_nsegs_ip1(
+            nsegs_i, log10R0, tref, minStartTime, maxStartTime, DeltaOmega,
+            DeltaFs, fiducial_freq, detector_names, earth_ephem, sun_ephem)
+        nsegs_vals.append(nsegs_i)
+        V_vals.append(V_i)
+        i += 1
+        logging.info(
+            'Stage {}, nsegs={}, V={}'.format(i, nsegs_i, V_i))
+
+    nsegs_vals.reverse()
+    V_vals.reverse()
+    return nsegs_vals, V_vals
+
+
+def get_nsegs_ip1(
+        nsegs_i, log10R0, tref, minStartTime, maxStartTime, DeltaOmega,
+        DeltaFs, fiducial_freq, detector_names, earth_ephem, sun_ephem):
+
+    log10Vi = np.log10(get_V_estimate(
+        nsegs_i, tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
+        fiducial_freq, detector_names, earth_ephem, sun_ephem))
+
+    def f(nsegs_ip1):
+        if nsegs_ip1[0] < 1:
+            return 1e6
+        Vip1 = get_V_estimate(
+            nsegs_ip1[0], tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
+            fiducial_freq, detector_names, earth_ephem, sun_ephem)
+        if Vip1[0] is None:
+            return 1e6
+        else:
+            log10Vip1 = np.log10(Vip1)
+            return np.abs(log10R0 + log10Vip1[0] - log10Vi[0])
+    res = scipy.optimize.minimize(f, 2*nsegs_i, method='Powell', tol=0.1,
+                                  options={'maxiter':10})
+    if res.success:
+        return int(res.x), get_V_estimate(
+            int(res.x), tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
+            fiducial_freq, detector_names, earth_ephem, sun_ephem)
+    else:
+        raise ValueError('Optimisation unsuccesful')
 
 
 def get_V_estimate(
@@ -2110,12 +2173,56 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
         return fiducial_freq, DeltaOmega, DeltaFs
 
-    def init_run_setup(self, run_setup, log_table=True, gen_tex_table=True):
-        logging.info('Calculating the number of templates for this setup..')
-        Vs = []
-        Vskys = []
-        Vpes = []
+    def read_setup_input_file(self, run_setup_input_file):
+        with open(run_setup_input_file, 'r+') as f:
+            d = pickle.load(f)
+        return d
+
+    def write_setup_input_file(self, run_setup_input_file, R0, Vmin, run_setup,
+                               V_vals):
+        d = dict(R0=R0, Vmin=Vmin, run_setup=run_setup, V_vals=V_vals)
+        with open(run_setup_input_file, 'w+') as f:
+            pickle.dump(d, f)
+
+    def init_run_setup(self, run_setup, log_table=True, gen_tex_table=True,
+                       R0=10, Vmin=100):
         fiducial_freq, DeltaOmega, DeltaFs = self.init_V_estimate_parameters()
+        if run_setup is None:
+            logging.info('No run_setup provided')
+
+            run_setup_input_file = '{}/{}_run_setup.p'.format(
+                self.outdir, self.label)
+
+            run_setup = None
+            if os.path.isfile(run_setup_input_file):
+                logging.info('Checking old setup input file {}'.format(
+                    run_setup_input_file))
+                old_setup = self.read_setup_input_file(run_setup_input_file)
+                if old_setup['R0'] == R0 and old_setup['Vmin'] == Vmin:
+                    logging.info('Using old setup with R0={}, Vmin={}'.format(
+                        R0, Vmin))
+                    run_setup = old_setup['run_setup']
+                    V_vals = old_setup['V_vals']
+                else:
+                    logging.info('Old setup does not match requested R0, Vmin')
+
+            if run_setup is None:
+                nsegs_vals, V_vals = get_optimal_setup(
+                    R0, Vmin, self.tref, self.minStartTime,
+                    self.maxStartTime, DeltaOmega, DeltaFs, fiducial_freq,
+                    self.search.detector_names, self.earth_ephem,
+                    self.sun_ephem)
+                run_setup = [(self.nsteps[0], nsegs)
+                             for nsegs in nsegs_vals[:-1]]
+                run_setup.append(
+                    ((self.nsteps[0], self.nsteps[1]), nsegs_vals[-1]))
+                self.write_setup_input_file(run_setup_input_file, R0, Vmin,
+                                            run_setup, V_vals)
+
+        else:
+            logging.info('Calculating the number of templates for this setup')
+            V_vals = []
+
         for i, rs in enumerate(run_setup):
             rs = list(rs)
             if len(rs) == 2:
@@ -2124,25 +2231,25 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 rs[0] = (rs[0], 0)
             run_setup[i] = rs
 
-            V, Vsky, Vpe = get_V_estimate(
-                rs[1], self.tref, self.minStartTime, self.maxStartTime,
-                DeltaOmega, DeltaFs, fiducial_freq, self.search.detector_names,
-                self.earth_ephem, self.sun_ephem)
-            Vs.append(V)
-            Vskys.append(Vsky)
-            Vpes.append(Vpe)
+            if len(V_vals) > 0:
+                V, Vsky, Vpe = get_V_estimate(
+                    rs[1], self.tref, self.minStartTime, self.maxStartTime,
+                    DeltaOmega, DeltaFs, fiducial_freq,
+                    self.search.detector_names, self.earth_ephem,
+                    self.sun_ephem)
+                V_vals.append([V, Vsky, Vpe])
 
         if log_table:
-            logging.info('Using run-setup as follow:')
+            logging.info('Using run-setup as follows:')
             logging.info('Stage | nburn | nprod | nsegs | Tcoh d | resetp0 |'
-                         '# templates = # sky x # Freq')
+                         ' V = Vsky x Vpe')
             for i, rs in enumerate(run_setup):
                 Tcoh = (self.maxStartTime - self.minStartTime) / rs[1] / 86400
-                if Vs[i] is None:
+                if V_vals[i] is None:
                     vtext = 'N/A'
                 else:
                     vtext = '{:1.0e} = {:1.0e} x {:1.0e}'.format(
-                            Vs[i], Vskys[i], Vpes[i])
+                            V_vals[i][0], V_vals[i][1], V_vals[i][2])
                 logging.info('{} | {} | {} | {} | {} | {} | {}'.format(
                     str(i).ljust(5), str(rs[0][0]).ljust(5),
                     str(rs[0][1]).ljust(5), str(rs[1]).ljust(5),
@@ -2158,18 +2265,21 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                             r'$\Nsteps$ & $\V$ & $\Vsky$ & $\Vpe$ \\ \hline'
                             '\n')
                     for i, rs in enumerate(run_setup):
-                        Tcoh = float(self.maxStartTime - self.minStartTime)/rs[1]/86400
+                        Tcoh = float(
+                            self.maxStartTime - self.minStartTime)/rs[1]/86400
                         line = r'{} & {} & {} & {} & {} & {} & {} \\' + '\n'
-                        if Vs[i] is None:
-                            Vs[i] = Vskys[i] = Vpes[i] = 'N/A'
+                        if V_vals[i][0] is None:
+                            V = Vsky = Vpe = 'N/A'
+                        else:
+                            V, Vsky, Vpe = V_vals[i]
                         if rs[0][-1] == 0:
                             nsteps = rs[0][0]
                         else:
                             nsteps = '{},{}'.format(*rs[0])
-                        line = line.format(i, rs[1], Tcoh, nsteps,
-                                           texify_float(Vs[i]),
-                                           texify_float(Vskys[i]),
-                                           texify_float(Vpes[i]))
+                        line = line.format(i, rs[1], '{:1.1f}'.format(Tcoh),
+                                           nsteps, texify_float(V),
+                                           texify_float(Vsky),
+                                           texify_float(Vpe))
                         f.write(line)
                     f.write(r'\end{tabular}' + '\n')
             else:
@@ -2179,16 +2289,19 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                             r'$\Nsteps$ & $\Vpe$ \\ \hline'
                             '\n')
                     for i, rs in enumerate(run_setup):
-                        Tcoh = float(self.maxStartTime - self.minStartTime)/rs[1]/86400
+                        Tcoh = float(
+                            self.maxStartTime - self.minStartTime)/rs[1]/86400
                         line = r'{} & {} & {} & {} & {} \\' + '\n'
-                        if Vs[i] is None:
-                            Vs[i] = Vskys[i] = Vpes[i] = 'N/A'
+                        if V_vals[i] is None:
+                            V = Vsky = Vpe = 'N/A'
+                        else:
+                            V, Vsky, Vpe = V_vals[i]
                         if rs[0][-1] == 0:
                             nsteps = rs[0][0]
                         else:
                             nsteps = '{},{}'.format(*rs[0])
                         line = line.format(i, rs[1], Tcoh, nsteps,
-                                           texify_float(Vpes[i]))
+                                           texify_float(Vpe))
                         f.write(line)
                     f.write(r'\end{tabular}' + '\n')
 
@@ -2198,7 +2311,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         else:
             return run_setup
 
-    def run(self, run_setup, proposal_scale_factor=2, **kwargs):
+    def run(self, run_setup=None, proposal_scale_factor=2, R0=10,
+            Vmin=100, **kwargs):
         """ Run the follow-up with the given run_setup
 
         Parameters
@@ -2209,7 +2323,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
         self.nsegs = 1
         self.inititate_search_object()
-        self.run_setup = self.init_run_setup(run_setup)
+        run_setup = self.init_run_setup(run_setup, R0=R0, Vmin=Vmin)
+        self.run_setup = run_setup
 
         self.old_data_is_okay_to_use = self.check_old_data_is_okay_to_use()
         if self.old_data_is_okay_to_use is True:
