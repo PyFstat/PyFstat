@@ -1102,6 +1102,7 @@ class MCMCSearch(BaseSearchClass):
                              .format(sampler.tswap_acceptance_fraction))
             fig, axes = self.plot_walkers(sampler, symbols=self.theta_symbols,
                                           **kwargs)
+            fig.tight_layout()
             fig.savefig('{}/{}_init_{}_walkers.png'.format(
                 self.outdir, self.label, j), dpi=200)
 
@@ -1126,6 +1127,7 @@ class MCMCSearch(BaseSearchClass):
 
         fig, axes = self.plot_walkers(sampler, symbols=self.theta_symbols,
                                       burnin_idx=nburn, **kwargs)
+        fig.tight_layout()
         fig.savefig('{}/{}_walkers.png'.format(self.outdir, self.label),
                     dpi=200)
 
@@ -1370,7 +1372,7 @@ class MCMCSearch(BaseSearchClass):
     def plot_walkers(self, sampler, symbols=None, alpha=0.4, color="k", temp=0,
                      lw=0.1, burnin_idx=None, add_det_stat_burnin=False,
                      fig=None, axes=None, xoffset=0, plot_det_stat=True,
-                     context='classic'):
+                     context='classic', subtractions=None):
         """ Plot all the chains from a sampler """
 
         shape = sampler.chain.shape
@@ -1386,9 +1388,12 @@ class MCMCSearch(BaseSearchClass):
                                   "available range").format(temp))
             chain = sampler.chain[temp, :, :, :]
 
+        if subtractions is None:
+            subtractions = [0 for i in range(ndim)]
+
         with plt.style.context((context)):
             if fig is None and axes is None:
-                fig = plt.figure(figsize=(8, 4*ndim))
+                fig = plt.figure(figsize=(3.3, 3.0*ndim))
                 ax = fig.add_subplot(ndim+1, 1, 1)
                 axes = [ax] + [fig.add_subplot(ndim+1, 1, i)
                                for i in range(2, ndim+1)]
@@ -1402,12 +1407,19 @@ class MCMCSearch(BaseSearchClass):
                     cs = chain[:, :, i].T
                     if burnin_idx:
                         axes[i].plot(xoffset+idxs[:burnin_idx],
-                                     cs[:burnin_idx], color="r", alpha=alpha,
+                                     cs[:burnin_idx]-subtractions[i],
+                                     color="r", alpha=alpha,
                                      lw=lw)
-                    axes[i].plot(xoffset+idxs[burnin_idx:], cs[burnin_idx:],
+                    axes[i].plot(xoffset+idxs[burnin_idx:],
+                                 cs[burnin_idx:]-subtractions[i],
                                  color="k", alpha=alpha, lw=lw)
                     if symbols:
-                        axes[i].set_ylabel(symbols[i])
+                        if subtractions[i] == 0:
+                            axes[i].set_ylabel(symbols[i])
+                        else:
+                            axes[i].set_ylabel(
+                                symbols[i]+'$-$'+symbols[i]+'$_0$')
+
             else:
                 axes[0].ticklabel_format(useOffset=False, axis='y')
                 cs = chain[:, :, temp].T
@@ -1444,6 +1456,10 @@ class MCMCSearch(BaseSearchClass):
                     maxv = np.max(combined_vals)
                     Range = abs(maxv-minv)
                     axes[-1].set_xlim(minv-0.1*Range, maxv+0.1*Range)
+
+                xfmt = matplotlib.ticker.ScalarFormatter()
+                xfmt.set_powerlimits((-4, 4)) 
+                axes[-1].xaxis.set_major_formatter(xfmt)
 
             axes[-2].set_xlabel(r'$\textrm{Number of steps}$', labelpad=0.1)
         return fig, axes
@@ -2383,6 +2399,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 ax.axvline(nsteps_total, color='k', ls='--')
             nsteps_total += nburn+nprod
 
+            fig.tight_layout()
             fig.savefig('{}/{}_walkers.png'.format(
                 self.outdir, self.label), dpi=200)
 

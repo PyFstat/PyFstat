@@ -50,8 +50,7 @@
 
 \begin{document}
 
-\title{MCMC follow-up methods for continuous gravitational wave candidates including
-glitching and transient waveforms}
+\title{MCMC follow-up methods for continuous gravitational wave candidates}
 
     \author{G. Ashton}
     \email[E-mail: ]{gregory.ashton@ligo.org}
@@ -197,20 +196,20 @@ data contains an additive mixture of noise and a signal $h(t; \A, \blambda)$.
 In order to make a quantitative comparison, we use Bayes theorum in the usual
 way to write the odds as
 \begin{equation}
-O_{\rm S/N} \equiv \frac{P(\Hs| x I)}{P(\Hn| x I)} =
+O_{\rm S/N} \equiv \frac{P(\Hs| x, I)}{P(\Hn| x, I)} =
 \Bsn(x| I) \frac{P(\Hs| I)}{P(\Hn | I)},
 \end{equation}
 where the second factor is the prior odds while the first factor is the
 \emph{Bayes factor}:
 \begin{equation}
-\Bsn(x| I) = \frac{P(x| \Hs I)}{P(x| \Hn I)}.
+\Bsn(x| I) = \frac{P(x| \Hs, I)}{P(x| \Hn, I)}.
 \end{equation}
 Typically, we set the prior odds to unity such that it is the Bayes factor
 which determines our confidence in the signal hypothesis. In this work we will
-therefore discuss the Bayes factor with the impplied assumption this is
+therefore discuss the Bayes factor with the implied assumption this is
 equivalent to the odds, unless we have a good reason to change the prior odds.
 
-We can rewrite this Bayes factor in terms of the two sets of signal parameters
+We can rewrite the Bayes factor in terms of the two sets of signal parameters
 as
 \begin{equation}
 \Bsn(x| I) = \frac{P(x, \A, \blambda|\Hs, I)}
@@ -277,13 +276,13 @@ where $(h|h)$ is the inner product of the signal with itself (see for example
 the detector and $\mathcal{N}$ is the number of detectors.
 
 
-\subsection{Using the $\F$-statistic to compute a Bayes factor}
-At first, it appeared that the $\F$-statistic was independent of the Bayesian
-framework. However, it was shown by \citet{prix2009} that if we marginalise
-over the four amplitude parameters of Equation~\eqref{eqn_full_bayes}, choosing
-a prior $\Pi_{\rm c}$ such that
+\subsection{Using the $\F$-statistic to compute a Bayes factor} At first, it
+appears that the $\F$-statistic is independent of the Bayesian framework since
+it was first derived directly from the likelihood. However, it was shown by
+\citet{prix2009} that if we marginalise over the four amplitude parameters of
+Equation~\eqref{eqn_full_bayes}, choosing a prior $\Pic$ such that
 \begin{equation}
-P(\A| \Hs, \Pi_{\rm c}, I) \equiv \left\{
+P(\A| \Hs, \Pic, I) \equiv \left\{
 \begin{array}{ll}
 C & \textrm{ for } \ho < \homax \\
 0 & \textrm{ otherwise}
@@ -293,7 +292,7 @@ C & \textrm{ for } \ho < \homax \\
 then the integral, when $\homax \gg 1$, is a Gaussian integral and can be
 computed analytically as
 \begin{align}
-B_{\rm S/N}(x| \Pi_{\rm c}, \blambda) & \equiv
+\Bsn(x| \Pic, \blambda, I) & \equiv
 \int
 \mathcal{L}(x ;\A, \blambda)
 P(\A| \Hs, I) d\A
@@ -310,13 +309,13 @@ fixed Doppler parameters.
 
 As such, we can define the Bayes-factor of Equation~\eqref{eqn_full_bayes} as
 \begin{equation}
-B_{\rm S/N}(x| \Pi_{\rm c}, I) = \int
-B_{\rm S/N}(x| \Pi_{\rm c}, \blambda) P(\blambda| \Hs, I)
+\Bsn(x| \Pic, I) = \int
+\Bsn(x| \Pic, \blambda, I) P(\blambda| \Hs, I)
  d\blambda,
 \end{equation}
 or neglecting the constants
 \begin{equation}
-B_{\rm S/N}(x| \Pi_{\rm c}, I) \propto \int
+\Bsn(x| \Pic, I) \propto \int
 e^{\F(x| \blambda)} P(\blambda| \Hs, I)
  d\blambda.
 \label{eqn_bayes_over_F}
@@ -327,7 +326,7 @@ there exists a wealth of well-tested tools \citep{lalsuite} capable of
 computing the $\mathcal{F}$-statistic for CW signals, transient-CWs, and CW
 signals from binary systems; these can be levereged to compute
 Equation~\eqref{eqn_bayes_over_F}, or adding in the constant
-$B_{\rm S/N}(x| \Pi_{\rm c})$ itself. The disadvantage to this method is that
+$\Bsn(x| \Pic)$ itself. The disadvantage to this method is that
 we are forced to use the prior $\Pic$, which was shown by \citet{prix2009} to
 be unphysical.
 
@@ -343,14 +342,14 @@ P(\theta| x, \H, I) \propto P(x| \theta, \H, I)P(\theta| \H, I),
 \end{equation}
 is used to evaluate proposed jumps from one point in parameter to other points;
 jumps which increase this probabily are accepted with some probability. The
-algorithm, proceeding in this way, is highly effective at resolving peaks in
-the high-dimension parameter spaces.
+algorithm, proceeding in this way, is highly efficient at resolving peaks in
+high-dimension parameter spaces.
 
 At this point, we note the equivalence of Equation~\eqref{eqn_bayes_for_theta}
 to the integrand of Equation~\eqref{eqn_bayes_over_F}:
 \begin{equation}
-P(\blambda | x, \Pi_{\rm c}, \Hs, I)
-%=B_{\rm S/N}(x| \Pi_{\rm c}, \blambda) P(\blambda| \Hs I).
+P(\blambda | x, \Pic, \Hs, I)
+%=\Bsn(x| \Pic, \blambda) P(\blambda| \Hs I).
 \propto e^{\F(x| \blambda)} P(\blambda| \Hs I),
 \label{eqn_lambda_posterior}
 \end{equation}
@@ -371,47 +370,52 @@ proposal distribution must be `tuned' so that the MCMC sampler effeciently
 walks the parameter space without either jumping too far off the peak, or
 taking such small steps that it takes a long period of time to traverse the
 peak. The \texttt{emcee} sampler addresses this by using an ensemble, a large
-number ${\sim}100$ parallel `walkers', in which the proposal for each walker
-is generated from the current distribution of the other walkers. Moreover, by
-applying an an affine transformation, the efficiency of the algorithm is not
-diminished when the parameter space is highly anisotropic. As such, this
-sampler requires little in the way of tuning: a single proposal scale and the
-Number of steps to take.
+number ${\sim}100$ parallel \emph{walkers}, in which the proposal for each
+walker is generated from the current distribution of the other walkers.
+Moreover, by applying an an affine transformation, the efficiency of the
+algorithm is not diminished when the parameter space is highly anisotropic. As
+such, this sampler requires little in the way of tuning: a single proposal
+scale and the number of steps to take.
 
-Beyond the standard ensemble sampler, we will often use one further
-modification, namely the parallel-tempered ensemble sampler. A parallel
+\subsection{Parallel tempering: sampling multimodal posteriors}
+Beyond the standard ensemble sampler, we will also use one further
+modification, the parallel-tempered ensemble sampler. A parallel
 tempered MCMC simulation, first proposed by \citet{swendsen1986}, runs
 $\Ntemps$ simulations in parallel with the likelihood in the $i^{\rm th}$
-parallel simulation is raied to a power of $1/T_{i}$ (where $T_i$ is referred
-to as the temperature) such that Equation~\eqref{eqn_lambda_posterior} becomes
+parallel simulation is raised to a power of $1/T_{i}$ where $T_i$ is referred
+to as the temperature. As such, Equation~\eqref{eqn_lambda_posterior} is
+written as
 \begin{equation}
-P(\blambda | T_i, x, \Pi_{\rm c}, \Hs, I)
-%=B_{\rm S/N}(x| \Pi_{\rm c}, \blambda)^{T_i} P(\blambda| \Hs I).
+P(\blambda | T_i, x, \Pic, \Hs, I)
+%=\Bsn(x| \Pic, \blambda)^{T_i} P(\blambda| \Hs I).
 \propto (e^{\F(x| \blambda)})^{T_i} P(\blambda| \Hs I).
 \end{equation}
-Setting $T_0=1$ with $T_i > T_0 \forall i > 1$, such that the lowest
+Setting $T_0=1$ with $T_i > T_0 \; \forall \; i > 1$, such that the lowest
 temperature recovers Equation~\eqref{eqn_lambda_posterior} while for higher
 temperatures the likelihood is broadened (for a Gaussian likelihood, the
 standard devitation is larger by a factor of $\sqrt{T_i}$). Periodically, the
-different tempereates swap elements. This allows the $T_0$ chain (from which we
-draw samples of the posterior) to efficiently sample from multi-modal
-posteriors. This does however introduce two additional tuning parameters, the
-number and range of the set of temperatures $\{T_i\}$.
+algorithem swaps the position of the walkers between the different
+temperatures. This allows the $T_0$ chain (from which we draw samples of the
+posterior) to efficiently sample from multi-modal posteriors. This introduces
+two additional tuning parameters, the number and range of the set of
+temperatures $\{T_i\}$, we will discuss their signficance when relevant.
 
-\subsection{Parallel tempering}
+\subsection{Parallel tempering: estimating the Bayes factor}
 In addition, parallel-tempering also offers a robust method to estimate the
 Bayes factor of Equation~\eqref{eqn_bayes_over_F}. If we define
-$\beta\equiv1/T$, the inverse temperature and $Z(\beta)\equiv B_{\rm S/N}(x| \Pi_{\rm
+$\beta\equiv1/T$, the inverse temperature and $Z(\beta)\equiv \Bsn(x| \Pi_{\rm
 c}, I)$, then as noted by \citet{goggans2004} for the general case, we may
 write
 \begin{align}
 \frac{1}{Z} \frac{\partial Z}{\partial \beta}=
 \frac{
-\int B_{\rm S/N}(x| \Pi_{\rm c}, \blambda)^{\beta}
-\log(B_{\rm S/N}(x| \Pi_{\rm c}, \blambda))P(\blambda| I)
+\int \Bsn(x| \Pic, \blambda)^{\beta}
+\log(\Bsn(x| \Pic, \blambda))P(\blambda| I)
+d\blambda
 }
 {
-\int B_{\rm S/N}(x| \Pi_{\rm c}, \blambda)^{\beta})P(\blambda| I)
+\int \Bsn(x| \Pic, \blambda)^{\beta})P(\blambda| I)
+d\blambda
 }
 \end{align}
 The right-hand-side expresses the average of the log-likelihood at $\beta$. As
@@ -427,7 +431,7 @@ can numerically integrate to get the Bayes factor, i.e.
 \langle \log(\Bsn(x| \Pic, \blambda) \rangle_{\beta} d\beta.
 \end{align}
 In practise, we use a simple numerical quadrature over a finite ladder of
-$\beta_i$ with the smallest chosen such that extending closer to zero does not
+$\beta_i$ with the smallest chosen such that choosing a smaller value does not
 change the result beyond other numerical uncertainties. Typically, getting
 accurate results for the Bayes factor requires a substantially larger number of
 temperatures than are required for effeciently sampling multi-modal
@@ -437,22 +441,20 @@ temperatures (suitably initialised close to the target peak) when estimating
 the Bayes factor.
 
 \subsection{The topology of the likelihood}
-As discussed, we intend to use the $\F$-statistic as our log-likelihood in the
-MCMC simulations. Before continuing, it is worthwhile to understand the behaviour
-of the log-likelihood. As shown in Equation~\eqref{eqn_twoF_expectation},
-$\widetilde{2\F}$ has a expectation value of 4 (corresponding to the
-4 degrees of freedom of the underlying chi-square distribution) in Gaussian
-noise, but in the presence of a signal larger value are expected proportional
-to the squared SNR. 
 
-To illustrate this, let us consider $\widetilde{2\F}$ (the log-likelihood)
-as a function of $f$ (the template frequency) if there exists a signal in the
-data with frequency $f_0$. We will assume that all other Doppler parameters
-are perfectly matched.
-This can be calculated analytically, taking the matched-filtering amplitude
-(Equation~(11) of \citep{prix2005}) with $\Delta\Phi(t) = 2\pi(f - f_0) t$
-the expectation of $\widetilde{2\F}$ as a function of the template frequency
-$f$ is given by
+We intend to use the $\F$-statistic as our log-likelihood in MCMC simulations,
+but before continuing, it is worthwhile to acquaint ourselves with the typical
+behaviour of the log-likelihood by considering a specific example.
+
+As shownn in Equation~\eqref{eqn_twoF_expectation}, the expectation of
+$\widetilde{2\F}$ is 4 in Gaussian noise alone, but proportional to the square
+of the SNR in the presense of a signal.  To illustrate this, let us consider
+$\widetilde{2\F}$ as a function of $f$ (the template frequency) if there exists
+a signal in the data with frequency $f_0$. We will assume that all other
+Doppler parameters are perfectly matched.  Such an example can be calculated
+analytically, taking the matched-filtering amplitude (Equation~(11) of
+\citep{prix2005}) with $\Delta\Phi(t) = 2\pi(f - f_0) t$, the expectation of
+$\widetilde{2\F}$ as a function of the template frequency $f$ is given by
 \begin{equation}
 \textrm{E}[\widetilde{2\F}](f) = 4 + 
 (\textrm{E}[\widetilde{2\F_0}] -4)\textrm{sinc}^{2}(\pi(f-f_0)\Tcoh))
@@ -624,6 +626,7 @@ As such, the volume can be decomposed as
 \sqrt{\textrm{det}g^{\rm Sky}}\frac{\Delta\Omega}{2} \times
 \sqrt{\textrm{det}g^{\rm PE}}\prod_{s=0}^{\smax}\Delta f^{(s)} \\
 & = \Vsky \times \Vpe.
+\label{eqn_metric_volume}
 \end{align}
 Moreover, if $\tref$ is in the middle of the observation span, the diagonal
 nature of $g^{\rm PE}$ means that one can further identify
@@ -633,47 +636,89 @@ nature of $g^{\rm PE}$ means that one can further identify
 \end{align}
 This decomposition may be useful in setting up MCMC searches.
 
-\subsection{An example}
+\subsection{Example: signal in noise}
 
-In order to familiarise the reader with the features of the search, we will now
-describe a simple directed search (over $f$ and $\dot{f}$) for a strong
-simulated signal in Gaussian noise. The setup of the search consists in defining
-the following
-\begin{itemize}
-\item The prior for each search parameter. Typically, we recomend either a uniform
-prior bounding the area of interest, or a normal distribution centered on the
-target and with some well defined width. In this example we will use a uniform
-prior.
-\item The initialisation of the walkers. If the whole prior volume is to be explored,
-the walkers should be initialised from the prior (i.e. random drawn from the
-prior distributions) as we will do here. However, it is possible that only a
-small region of parameter space requires exploration, therefore we provide
-functionality to initialise the walkers subject to an independent distribution
-if needed.
-\item The number of burn-in and production steps to take. This is a tuning
-parameter of the MCMC algorithm. First we allow the walkers to run for a number
-of `burn-in' steps which are discarded and then a number of `production' steps
-are taken from which one makes estimates of the posterior
-\item The parallel tempering set-up. If used, one must specify the number of
-temperatures and their arrangement. Typically, we use 3 or so temperatures
-with arranged linearly in log-space from some zero to some maximum temperature.
-\end{itemize}
+In order to familiarise the reader with the features of an MCMC search, we will
+now describe a simple directed search (over $f$ and $\dot{f}$) for a simulated
+signal in Gaussian noise. The signal will have a frequency of $30$~Hz and a
+spin-down of $-1{\times}10^{-10}$~Hz/s, all other Doppler parameters are
+`known' and so are irrelevant. Moreover, the signal has an amplitude
+$h_0=10^{-24}$~Hz$^{-1/2}$ while the Gaussian noise has
+$\Sn=10^{-23}$~Hz$^{-1/2}$ such that the signal has a depth of 10.
 
-Using these choices, the simulation is run. To illustrate the full MCMC process,
-in Figure~\ref{fig_MCMC_simple_example} we plot the progress of all the individual
-walkers (each represented by an individual line) as a function of the total
-number of steps. The red portion of steps are `burn-in' and hence discarded,
-from this plot we see why: the walkers are initialised from the uniform prior
-and initially spend some time exploring the whole parameter space before congerging.
-The production samples, colored black, are only taken once the sampler has
-converged - these can be used to generate posterior plots.
+First, we must define a prior for each search parameter Typically, we recomend
+either a uniform prior bounding the area of interest, or a normal distribution
+centered on the target and with some well defined width. However, to ensure
+that the MCMC simulation has a reasonable chance at finding a peak, one should
+consider the corresponding metric-volume given in
+Equation~\eqref{eqn_metric_volume}. For this example, we will use a uniform
+prior with a frequency range of $\Delta f = 10^{-7}$~Hz and a spin-down range
+of $\Delta \fdot=10^{-13}$~Hz/s both centered on the simulated signal frequency
+and spin-down rate. We set the reference time to coincide with the middle of
+the data span, therefore the metric volume can be decomposed into the frequency
+contribution and spin-down contribution:
+frequency,
+\begin{align}
+\Vpe^{(0)} = \frac{(\pi\Tcoh\Delta f)^2}{3} \approx 2.46
+\end{align}
+and
+\begin{align}
+\Vpe^{(1)} = \frac{4(\pi\Delta \fdot)^2\Tcoh^{4}}{45} \approx 48.9
+\end{align}
+such that $\V\approx120$ (note that $\Vsky$ does not contribute since we do
+not search over the sky parameters). This metric volume indicates that the
+signal will occupy about 1\% of the prior volume, therefore the MCMC is
+expected to work. Alternative priors will need careful thought about how to
+translate them into a metric volume: for example using a Guassian one could use
+the standard deviation as a proxy for the allowed search region.
 
+In addition to defining the prior, one must also consider how to
+\emph{initialise} the walkers. If the prior genuinely represents the stated
+prior knowledge, the usual solution is to initialise the walkers from the
+prior: that is the starting position is drawn from the prior. However,
+instances do occur when one would like to initialise the walkers from a
+different distribution. For example, if one only needs to estimate the evidence
+(given a particular prior), but is aware from previous searches that the only
+significant peak lies in a small area of parameter space, one could initialise
+the walkers in a small cluster close to that area. In this example, we
+initialise the walkers from the prior such that they have the chance to explore
+the entire prior volume.
+
+Having defined the prior, the final setup step is to define the number of
+\emph{burn-in} and \emph{production} steps the sampler should take and the
+number of walkers; this is a tuning parameter of the MCMC algorithm. The number
+of walkers should be typically a few hundred, the greater the number the more
+samples will be taken resulting in improved posterior estimates. The burn-in
+steps refers to an initial set of steps which are discarded as they are taken
+whilst the walkers converge. After they have convereged the steps are known as
+production steps since they are used to produce posterior estimates and
+calculate the marginal likelihood.
+
+Using these choices, the simulation is run. To illustrate the full MCMC
+process, in Figure~\ref{fig_MCMC_simple_example} we plot the progress of all
+the individual walkers (each represented by an individual line) as a function
+of the total number of steps. The red portion of steps are burn-in and hence
+discarded, from this plot we see why: the walkers are initialised from the
+uniform prior and initially spend some time exploring the whole parameter space
+before congerging. The fact that they converge to a single unique point is due
+to the strength of the signal (substantially elevating the likelihood about
+that of Gaussian fluctuations) and the tight prior which was quantifed throug the
+metric volume $\V$. The production samples, colored black, are only taken once
+the sampler has converged - these can be used to generate posterior plots.
 \begin{figure}[htb]
 \centering
 \includegraphics[width=0.5\textwidth]{fully_coherent_search_using_MCMC_walkers}
-\caption{}
-\label{fig:}
+\caption{The progress of the MCMC simulation for a simulated signal in Gaussian
+noise, searching over the frequency and spin-down. The upper two panels show
+the position of all walkers as a function of the number of steps for the
+frequency and spin-down; when they are colored red the samples are discarded as
+burn-in (the first 100 steps), while when they are colored black they are used
+as production samples. The bottom panel shows the distribution of
+$\widetilde{2\F}$ taken from the production samples.}
+\label{fig_MCMC_simple_example}
 \end{figure}
+
+\subsection{Example: noise-only}
 
 \section{Follow-up}
 \label{sec_follow_up}
@@ -686,8 +731,8 @@ fully-coherently. We begin by rewritting Equation~\eqref{eqn_lambda_posterior},
 the posterior distribution of the Doppler parameters, with the explicit
 dependence on the coherence time $\Tcoh$:
 \begin{equation}
-P(\blambda | \Tcoh, x, \Pi_{\rm c}, \Hs, I)
-%=B_{\rm S/N}(x| \Tcoh, \Pi_{\rm c}, \blambda) P(\blambda| \Hs I).
+P(\blambda | \Tcoh, x, \Pic, \Hs, I)
+%=\Bsn(x| \Tcoh, \Pic, \blambda) P(\blambda| \Hs I).
 \propto e^{\hat{\F}(x| \Tcoh, \blambda)} P(\blambda| \Hs I).
 \end{equation}
 
