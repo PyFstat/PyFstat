@@ -739,48 +739,105 @@ P(\blambda | \Tcoh, x, \Pic, \Hs, I)
 Introducing the coherent time $\Tcoh$ as a variable provides an ability to
 adjust the likelihood. Therefore, a natural way to perform a follow-up is to
 start the MCMC simulations with a short coherence time (such that the signal
-peak occupies a substantial fraction of the prior volume). Subsequently,
-incrementally increase this coherence time in a controlled manner, aiming to
-allow the MCMC walkers to converge to the new likelihood before again
-increasing the coherence time. This can be considered analogous to simulated
-annealing (where the likelihood is raised to a power $1/T$ and subseuqntly
-`cooled') with the important difference that the semi-coherent likelihood is
-wider at short coherence times (rather than flatter as in the case of
-high-temperature simulated annealing stages).
+peak occupies a substantial fraction of the prior volume) and then subseuqntly
+incrementally increasing this coherence time in a controlled manner,
+aiming to allow the MCMC walkers to converge to the new likelihood before again
+increasing the coherence time. Ultimately, this coherence time will be increased
+until $\Tcoh = \Tspan$. If this is done in $\Nstages$ discreet \emph{stages},
+this introduces a further set of tuning parameters, namely the ladder of
+coherence times $\Tcoh^{i}$, where $i \in [0, \Nstages]$ to use.
 
-To illustrate the utility of this method, in Figure~\ref{fig_follow_up} we show
-the progress of the MCMC sampler during such a follow-up. The data, 100 days
-from a single detector, consists of Gaussian noise with
-$\sqrt{\Sn}=10^{-23}$~Hz$^{-1/2}$ (at the fiducial frequency of the signal) and
-a signal. The signal has an amplitude $h_0=1.4\times10^{25}$ such that the
-signal has a depth of $\sqrt{\Sn}/h_0=70$ in the noise. The search setup is
-outlined in Table~\ref{tab_weak_signal_follow_up}.
+In some ways, this bears a resembalance to so-called simulated annealing, a
+method in which the likelihood is raised to a power $1/T$ and subseuqntly
+`cooled'. The important difference being that the semi-coherent likelihood is
+wider at short coherence times, rather than flatter as in the case of
+high-temperature simulated annealing stages.
 
+Of course in practise, we do not arbitarily vary $\Tcoh^i$, but rather the
+number of segments at each stage $\Nstages^{i}\equiv \Tspan/\Tcoh^{i}$.
+Ideally, the ladder of segment should be chosen to ensure that the
+metric volume at the $i^{th}$ stage $\V_i \equiv \V(\Nseg^i)$ is a constant
+fraction of the volume at adjacent stages. That is we define
+\begin{equation}
+\mathcal{R} \equiv \frac{\V_i}{\V_{i+1}},
+\end{equation}
+where $\mathcal{R} \ge 1$ as $\Tcoh^{i+1} > \Tcoh^{i}$.
+
+Given a fixed prior on the Doppler parameters and a fixed span of data, the
+metric volume $\V_{\Nstages}$ for $\Tcoh^{\Nstages} = \Tspan$ is fixed, or in
+terms of the number of segments, $\Nseg^{\Nstages} = 1$.
+We can therefore define a minimisation problem:
+\begin{align}
+\min_{\Nseg^{i+1} \in \mathbb{N}}
+\left| \log\mathcal{R} + \log\V(\Nseg^{i+1}) - \log\V(\Nseg^i)\right|
+\end{align}
+which can be solved numerically to a specified tolerance. Due to the difficulty
+in solving such a minimisation with the integer constrain on $\Nseg^{i+1}$ we
+simply solve it as a real scalar, and then round to the nearest integer. We now
+have a method to generate a ladder of $\Nseg^{i}$ which keep the ratio of
+volume fractions fixed. Starting with $\Nseg^{\Nstages}$ = 1, we generate
+$\Nseg^{\Nstages-1}$ such that $\V^{\Nstages-1} < \V^{\Nstages}$ and
+subsequently itterate.  Finally we must define $\V^{\rm min}$ as the stopping
+criterion: a metric volume such that the initial stage will find a signal. This
+stopping criterion itself will set $\Nstages$; alternatively one could set
+$\Nstages$.
+
+We have now defined a method to automate the task of choosing the ladder of
+coherence times. This requires only two tuning parameters, the ratio between
+stages $\mathcal{R}$ and the minimum metric volume $\V^{\min}$.
+
+\subsection{Example}
+
+We now provide an illustrative example of the follow-up method. We consider a
+directed search over the sky position and frequency in 100 days of data from a
+single detector, with $\sqrt{\Sn}=10^{-23}$~Hz$^{-1/2}$ (at the fiducial
+frequency of the signal). The simulated signal has an amplitude
+$h_0=1.4\times10^{25}$ such that the signal has a depth of $\sqrt{\Sn}/h_0=70$
+in the noise.
+
+First, we must define the setup for the run. Using $\mathcal{R}=10$ and
+$\V^{\rm min}=100$ our optimisation procudure is run and proposes the setup
+layed out in Table~\ref{tab_weak_signal_follow_up}. In addition, we show the
+number of steps taken at each stage.
 \begin{table}[htb]
-\caption{The search setup used in Figure~\ref{fig_follow_up}}
+\caption{The search setup used in Figure~\ref{fig_follow_up}, generated with
+$\mathcal{R}=10$ and $\V^{\rm min}=100$.}
 \label{tab_weak_signal_follow_up}
 \input{weak_signal_follow_up_run_setup}
 \end{table}
 
+The choice of $\mathcal{R}$ and $\V^{\rm min}$ is a comprimise between the
+total computing time and the ability to ensure a candidate will be identified.
+From experimentation, we find that $\V^{\rm min}$ values of 100 or so are
+sufficient to ensure that any peaks are sufficiently broad during the
+initial stage. For $\mathcal{R}$ value much larger than $10^{3}$ or so where
+found to result in the MCMC simulations `loosing' the peaks between stages, we
+conservatively opt for 10 here, but values as large as 100 where also succesul.
+
+In Figure~\ref{fig_follow_up} we show the progress of the MCMC sampler during
+the follow-up.  As expected from Table~\ref{tab_weak_signal_follow_up}, during
+the initial stage the signal peak is broad with respect to the size of the
+prior volume, therefore the MCMC simulation quickly converges to it. Subsequently,
+each time the number of segments is reduced, the peak narrows and the samplers
+similarly converge to this new solution. At times it can appeak to be inconsistent,
+however this is due to the changing way that the Gaussian noise adds to the signal.
+Eventually, the walkers all converge to the true signal.
 \begin{figure}[htb]
-\centering
-\includegraphics[width=0.5\textwidth]{weak_signal_follow_up_walkers}
-
+\centering \includegraphics[width=0.5\textwidth]{weak_signal_follow_up_walkers}
 \caption{In the top three panels we show the progress of the 500 parallel
-walkers (each of which is an individual thin line) during the MCMC simulation
-for each of the search parameters, frequency $f$, right-ascension $\alpha$ and
-declination $\delta$. Each vertical dashed line indicates the start of a new
-stage of the search, the parameters for all stages are listed in
-Table~\ref{tab_weak_signal_follow_up}. Samples for use in estimating
-posteriors, or other processes are taken from those samples colored black,
-which we call the production samples.  The period for which the lines are
-coloured red, the samples are discarded either because they are taken from the
-posterior when $\Tcoh < \Tspan$, or they are from the burn-in of the final
-stage. In the final panel we plot the estimated distribution of
-$\widetilde{2\F}$ taken from the production samples.}
-
+walkers (see Figure~\ref{fig_MCMC_simple_example} for a description) during the
+MCMC simulation for each of the search parameters, frequency $f$,
+right-ascension $\alpha$ and declination $\delta$. Each vertical dashed line
+indicates the start of a new stage of the search, the parameters for all stages
+are listed in Table~\ref{tab_weak_signal_follow_up}.}
 \label{fig_follow_up}
 \end{figure}
+
+The key advantage to note here is that all walkers succefully convereged to the
+signal peak, which occupies $\approx 10^{-6}$ of the initial volume. While it
+is possible for this to occur during an ordinary MCMC simulation (with $\Tcoh$
+fixed at $\Tspan$), it would take much longer to converge as the chains explore
+the other `noise peaks' in the data.
 
 \section{Alternative waveform models: transients}
 \label{sec_transients}

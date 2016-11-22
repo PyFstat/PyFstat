@@ -1066,7 +1066,7 @@ class MCMCSearch(BaseSearchClass):
             pass
         return sampler
 
-    def run(self, proposal_scale_factor=2, **kwargs):
+    def run(self, proposal_scale_factor=2, create_plots=True, **kwargs):
 
         self.old_data_is_okay_to_use = self.check_old_data_is_okay_to_use()
         if self.old_data_is_okay_to_use is True:
@@ -1100,11 +1100,13 @@ class MCMCSearch(BaseSearchClass):
             if self.ntemps > 1:
                 logging.info("Tswap acceptance fraction: {}"
                              .format(sampler.tswap_acceptance_fraction))
-            fig, axes = self.plot_walkers(sampler, symbols=self.theta_symbols,
-                                          **kwargs)
-            fig.tight_layout()
-            fig.savefig('{}/{}_init_{}_walkers.png'.format(
-                self.outdir, self.label, j), dpi=200)
+            if create_plots:
+                fig, axes = self.plot_walkers(sampler,
+                                              symbols=self.theta_symbols,
+                                              **kwargs)
+                fig.tight_layout()
+                fig.savefig('{}/{}_init_{}_walkers.png'.format(
+                    self.outdir, self.label, j), dpi=200)
 
             p0 = self.get_new_p0(sampler)
             p0 = self.apply_corrections_to_p0(p0)
@@ -1125,11 +1127,12 @@ class MCMCSearch(BaseSearchClass):
             logging.info("Tswap acceptance fraction: {}"
                          .format(sampler.tswap_acceptance_fraction))
 
-        fig, axes = self.plot_walkers(sampler, symbols=self.theta_symbols,
-                                      burnin_idx=nburn, **kwargs)
-        fig.tight_layout()
-        fig.savefig('{}/{}_walkers.png'.format(self.outdir, self.label),
-                    dpi=200)
+        if create_plots:
+            fig, axes = self.plot_walkers(sampler, symbols=self.theta_symbols,
+                                          burnin_idx=nburn, **kwargs)
+            fig.tight_layout()
+            fig.savefig('{}/{}_walkers.png'.format(self.outdir, self.label),
+                        dpi=200)
 
         samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
         lnprobs = sampler.lnprobability[0, :, nburn:].reshape((-1))
@@ -1393,7 +1396,7 @@ class MCMCSearch(BaseSearchClass):
 
         with plt.style.context((context)):
             if fig is None and axes is None:
-                fig = plt.figure(figsize=(3.3, 3.0*ndim))
+                fig = plt.figure(figsize=(4, 3.0*ndim))
                 ax = fig.add_subplot(ndim+1, 1, 1)
                 axes = [ax] + [fig.add_subplot(ndim+1, 1, i)
                                for i in range(2, ndim+1)]
@@ -1779,14 +1782,17 @@ class MCMCSearch(BaseSearchClass):
         print('p-value = {}'.format(p_val))
         return p_val
 
-    def compute_evidence(self):
-        """ Computes the evidence/marginal likelihood for the model """
+    def get_evidence(self):
         fburnin = float(self.nsteps[-2])/np.sum(self.nsteps[-2:])
         lnev, lnev_err = self.sampler.thermodynamic_integration_log_evidence(
             fburnin=fburnin)
 
         log10evidence = lnev/np.log(10)
         log10evidence_err = lnev_err/np.log(10)
+        return log10evidence, log10evidence_err
+
+    def compute_evidence_long(self):
+        """ Computes the evidence/marginal likelihood for the model """
         betas = self.betas
         alllnlikes = self.sampler.lnlikelihood[:, :, self.nsteps[-2]:]
         mean_lnlikes = np.mean(np.mean(alllnlikes, axis=1), axis=1)
@@ -2399,9 +2405,12 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 ax.axvline(nsteps_total, color='k', ls='--')
             nsteps_total += nburn+nprod
 
+        try:
             fig.tight_layout()
-            fig.savefig('{}/{}_walkers.png'.format(
-                self.outdir, self.label), dpi=200)
+        except ValueError as e:
+            logging.warning('Tight layout encountered {}'.format(e))
+        fig.savefig('{}/{}_walkers.png'.format(
+            self.outdir, self.label), dpi=200)
 
         samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
         lnprobs = sampler.lnprobability[0, :, nburn:].reshape((-1))
