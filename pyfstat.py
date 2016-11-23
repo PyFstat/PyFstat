@@ -2174,19 +2174,23 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             DeltaDelta = self.get_width_from_prior(self.theta_prior, 'Delta')
             DeltaMid = self.get_mid_from_prior(self.theta_prior, 'Delta')
             DeltaOmega = np.sin(DeltaMid) * DeltaDelta * DeltaAlpha
+            logging.info('Search over Alpha and Delta')
         else:
+            logging.info('No sky search requested')
             DeltaOmega = 0
         if 'F0' in self.theta_keys:
             DeltaF0 = self.get_width_from_prior(self.theta_prior, 'F0')
         else:
-            raise ValueError('You are searching over F0?')
+            raise ValueError("You aren't searching over F0?")
         DeltaFs = [DeltaF0]
         if 'F1' in self.theta_keys:
             DeltaF1 = self.get_width_from_prior(self.theta_prior, 'F1')
             DeltaFs.append(DeltaF1)
-        if 'F2' in self.theta_keys:
-            DeltaF2 = self.get_width_from_prior(self.theta_prior, 'F2')
-            DeltaFs.append(DeltaF2)
+            if 'F2' in self.theta_keys:
+                DeltaF2 = self.get_width_from_prior(self.theta_prior, 'F2')
+                DeltaFs.append(DeltaF2)
+        logging.info('Searching over Frequency and {} spin-down components'
+                     .format(len(DeltaFs)-1))
 
         if type(self.theta_prior['F0']) == dict:
             fiducial_freq = self.get_mid_from_prior(self.theta_prior, 'F0')
