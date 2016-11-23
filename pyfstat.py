@@ -1292,15 +1292,14 @@ class MCMCSearch(BaseSearchClass):
             self.search.plot_twoF_cumulative(
                 self.label, self.outdir, F0=d['F0'], F1=d['F1'], F2=d['F2'],
                 Alpha=d['Alpha'], Delta=d['Delta'],
-                minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
+                tstart=self.minStartTime, tend=self.maxStartTime,
                 **kwargs)
         else:
             self.search.plot_twoF_cumulative(
                 self.label, self.outdir, F0=d['F0'], F1=d['F1'], F2=d['F2'],
                 Alpha=d['Alpha'], Delta=d['Delta'], asini=d['asini'],
                 period=d['period'], ecc=d['ecc'], argp=d['argp'], tp=d['argp'],
-                minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-                **kwargs)
+                tstart=self.minStartTime, tend=self.maxStartTime, **kwargs)
 
     def generic_lnprior(self, **kwargs):
         """ Return a lambda function of the pdf
@@ -2071,14 +2070,14 @@ class MCMCGlitchSearch(MCMCSearch):
                 F0_j = d['F0'] - summed_deltaF0
                 taus, twoFs = self.search.calculate_twoF_cumulative(
                     F0_j, F1=d['F1'], F2=d['F2'], Alpha=d['Alpha'],
-                    Delta=d['Delta'], minStartTime=ts, maxStartTime=te)
+                    Delta=d['Delta'], tstart=ts, tend=te)
 
             elif j >= self.theta0_idx:
                 summed_deltaF0 = np.sum(delta_F0s[self.theta0_idx:j+1])
                 F0_j = d['F0'] + summed_deltaF0
                 taus, twoFs = self.search.calculate_twoF_cumulative(
                     F0_j, F1=d['F1'], F2=d['F2'], Alpha=d['Alpha'],
-                    Delta=d['Delta'], minStartTime=ts, maxStartTime=te)
+                    Delta=d['Delta'], tstart=ts, tend=te)
             ax.plot(ts+taus, twoFs)
 
         ax.set_xlabel('GPS time')
@@ -2777,8 +2776,8 @@ class Writer(BaseSearchClass):
                  delta_phi=0, delta_F0=0, delta_F1=0, delta_F2=0,
                  tref=None, phi=0, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
                  Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, Tsft=1800, outdir=".",
-                 sqrtSX=1, Band=4, detector='H1', data_tstart=None,
-                 minStartTime=None, maxStartTime=None):
+                 sqrtSX=1, Band=4, detector='H1', minStartTime=None,
+                 maxStartTime=None):
         """
         Parameters
         ----------
@@ -2834,10 +2833,11 @@ class Writer(BaseSearchClass):
         self.delta_thetas = np.atleast_2d(
                 np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T)
 
-        numSFTs = int(float(self.duration) / self.Tsft)
+        self.data_duration = self.maxStartTime - self.minStartTime
+        numSFTs = int(float(self.data_duration) / self.Tsft)
         self.sftfilename = lalpulsar.OfficialSFTFilename(
-            'H', '1', numSFTs, self.Tsft, self.tstart, self.duration,
-            self.label)
+            'H', '1', numSFTs, self.Tsft, self.minStartTime,
+            self.data_duration, self.label)
         self.sftfilepath = '{}/{}'.format(self.outdir, self.sftfilename)
         self.calculate_fmin_Band()
 
