@@ -2172,7 +2172,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             DeltaAlpha = self.get_width_from_prior(self.theta_prior, 'Alpha')
             DeltaDelta = self.get_width_from_prior(self.theta_prior, 'Delta')
             DeltaMid = self.get_mid_from_prior(self.theta_prior, 'Delta')
-            DeltaOmega = np.sin(DeltaMid) * DeltaDelta * DeltaAlpha
+            DeltaOmega = np.sin(np.pi/2 - DeltaMid) * DeltaDelta * DeltaAlpha
             logging.info('Search over Alpha and Delta')
         else:
             logging.info('No sky search requested')
