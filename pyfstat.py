@@ -2237,32 +2237,31 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                     self.maxStartTime, DeltaOmega, DeltaFs, fiducial_freq,
                     self.search.detector_names, self.earth_ephem,
                     self.sun_ephem)
-                run_setup = [(self.nsteps[0], nsegs)
+                run_setup = [((self.nsteps[0], 0),  nsegs, False)
                              for nsegs in nsegs_vals[:-1]]
                 run_setup.append(
-                    ((self.nsteps[0], self.nsteps[1]), nsegs_vals[-1]))
+                    ((self.nsteps[0], self.nsteps[1]), nsegs_vals[-1], False))
                 self.write_setup_input_file(run_setup_input_file, R0, Vmin,
                                             run_setup, V_vals)
 
         else:
             logging.info('Calculating the number of templates for this setup')
             V_vals = []
+            for i, rs in enumerate(run_setup):
+                rs = list(rs)
+                if len(rs) == 2:
+                    rs.append(False)
+                if np.shape(rs[0]) == ():
+                    rs[0] = (rs[0], 0)
+                run_setup[i] = rs
 
-        for i, rs in enumerate(run_setup):
-            rs = list(rs)
-            if len(rs) == 2:
-                rs.append(False)
-            if np.shape(rs[0]) == ():
-                rs[0] = (rs[0], 0)
-            run_setup[i] = rs
-
-            if len(V_vals) > 0:
-                V, Vsky, Vpe = get_V_estimate(
-                    rs[1], self.tref, self.minStartTime, self.maxStartTime,
-                    DeltaOmega, DeltaFs, fiducial_freq,
-                    self.search.detector_names, self.earth_ephem,
-                    self.sun_ephem)
-                V_vals.append([V, Vsky, Vpe])
+                if len(V_vals) > 0:
+                    V, Vsky, Vpe = get_V_estimate(
+                        rs[1], self.tref, self.minStartTime, self.maxStartTime,
+                        DeltaOmega, DeltaFs, fiducial_freq,
+                        self.search.detector_names, self.earth_ephem,
+                        self.sun_ephem)
+                    V_vals.append([V, Vsky, Vpe])
 
         if log_table:
             logging.info('Using run-setup as follows:')
