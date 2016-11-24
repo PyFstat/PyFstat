@@ -2203,9 +2203,9 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             d = pickle.load(f)
         return d
 
-    def write_setup_input_file(self, run_setup_input_file, R0, Vmin, run_setup,
-                               V_vals):
-        d = dict(R0=R0, Vmin=Vmin, run_setup=run_setup, V_vals=V_vals)
+    def write_setup_input_file(self, run_setup_input_file, R0, Vmin,
+                               nsegs_vals, V_vals):
+        d = dict(R0=R0, Vmin=Vmin, nsegs_vals=nsegs_vals, V_vals=V_vals)
         with open(run_setup_input_file, 'w+') as f:
             pickle.dump(d, f)
 
@@ -2218,7 +2218,6 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             run_setup_input_file = '{}/{}_run_setup.p'.format(
                 self.outdir, self.label)
 
-            run_setup = None
             if os.path.isfile(run_setup_input_file):
                 logging.info('Checking old setup input file {}'.format(
                     run_setup_input_file))
@@ -2226,23 +2225,28 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 if old_setup['R0'] == R0 and old_setup['Vmin'] == Vmin:
                     logging.info('Using old setup with R0={}, Vmin={}'.format(
                         R0, Vmin))
-                    run_setup = old_setup['run_setup']
+                    nsegs_vals = old_setup['nsegs_vals']
                     V_vals = old_setup['V_vals']
+                    generate_setup = False
                 else:
                     logging.info('Old setup does not match requested R0, Vmin')
+                    generate_setup = True
+            else:
+                generate_setup = True
 
-            if run_setup is None:
+            if generate_setup:
                 nsegs_vals, V_vals = get_optimal_setup(
                     R0, Vmin, self.tref, self.minStartTime,
                     self.maxStartTime, DeltaOmega, DeltaFs, fiducial_freq,
                     self.search.detector_names, self.earth_ephem,
                     self.sun_ephem)
-                run_setup = [((self.nsteps[0], 0),  nsegs, False)
-                             for nsegs in nsegs_vals[:-1]]
-                run_setup.append(
-                    ((self.nsteps[0], self.nsteps[1]), nsegs_vals[-1], False))
                 self.write_setup_input_file(run_setup_input_file, R0, Vmin,
-                                            run_setup, V_vals)
+                                            nsegs_vals, V_vals)
+
+            run_setup = [((self.nsteps[0], 0),  nsegs, False)
+                         for nsegs in nsegs_vals[:-1]]
+            run_setup.append(
+                ((self.nsteps[0], self.nsteps[1]), nsegs_vals[-1], False))
 
         else:
             logging.info('Calculating the number of templates for this setup')
