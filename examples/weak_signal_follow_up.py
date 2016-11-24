@@ -13,7 +13,7 @@ duration = 100*86400
 tend = tstart+duration
 tref = .5*(tstart+tend)
 
-depth = 70
+depth = 50
 data_label = 'weak_signal_follow_up_depth_{:1.0f}'.format(depth)
 
 h0 = sqrtSX / depth
@@ -41,8 +41,8 @@ theta_prior = {'F0': {'type': 'unif', 'lower': F0*(1-1e-6),
                }
 
 ntemps = 3
-log10temperature_min = -1
-nwalkers = 200
+log10temperature_min = -0.5
+nwalkers = 100
 scatter_val = 1e-10
 nsteps = [100, 100]
 
@@ -52,7 +52,6 @@ mcmc = pyfstat.MCMCFollowUpSearch(
     minStartTime=tstart, maxStartTime=tend, nwalkers=nwalkers, nsteps=nsteps,
     ntemps=ntemps, log10temperature_min=log10temperature_min,
     scatter_val=scatter_val)
-mcmc.run(R0=10, Vmin=100)
+mcmc.run(R0=10, Vmin=100, subtractions=[F0, Alpha, Delta], context='paper')
 mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()
-#mcmc.generate_loudest()

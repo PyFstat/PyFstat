@@ -655,7 +655,8 @@ class ComputeFstat(object):
         else:
             ax.set_ylabel(r'$\widetilde{2\mathcal{F}}_{\rm cumulative}$')
         ax.set_xlim(0, taus[-1]/86400)
-        ax.set_title(title)
+        if title:
+            ax.set_title(title)
         if savefig:
             plt.savefig('{}/{}_twoFcumulative.png'.format(outdir, label))
             return taus, twoFs

@@ -792,7 +792,7 @@ We now provide an illustrative example of the follow-up method. We consider a
 directed search over the sky position and frequency in 100 days of data from a
 single detector, with $\sqrt{\Sn}=10^{-23}$~Hz$^{-1/2}$ (at the fiducial
 frequency of the signal). The simulated signal has an amplitude
-$h_0=1.4\times10^{25}$ such that the signal has a depth of $\sqrt{\Sn}/h_0=70$
+$h_0=2\times10^{-25}$ such that the signal has a depth of $\sqrt{\Sn}/h_0=50$
 in the noise.
 
 First, we must define the setup for the run. Using $\mathcal{R}=10$ and
@@ -834,13 +834,27 @@ are listed in Table~\ref{tab_weak_signal_follow_up}.}
 \end{figure}
 
 The key advantage to note here is that all walkers succefully convereged to the
-signal peak, which occupies $\approx 10^{-6}$ of the initial volume. While it
-is possible for this to occur during an ordinary MCMC simulation (with $\Tcoh$
-fixed at $\Tspan$), it would take much longer to converge as the chains explore
-the other `noise peaks' in the data.
+signal peak, which occupies $\sim 10^{-6}$ of the initial volume. While it is
+possible for this to occur during an ordinary MCMC simulation (with $\Tcoh$
+fixed at $\Tspan$), it would take substantially longer to converge as the
+chains explore the other `noise peaks' in the data.
 
 \section{Alternative waveform models: transients}
 \label{sec_transients}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.5\textwidth]{transient_search_initial_stage_twoFcumulative}
+\caption{}
+\label{fig:}
+\end{figure}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.5\textwidth]{transient_search_corner}
+\caption{}
+\label{fig:}
+\end{figure}
 
 \section{Alternative waveform models: glitches}
 \label{sec_glitches}
