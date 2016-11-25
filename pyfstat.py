@@ -26,7 +26,7 @@ import lalpulsar
 try:
     from tqdm import tqdm
 except ImportError:
-    def tqdm(x):
+    def tqdm(x, *args, **kwargs):
         return x
 
 plt.rcParams['text.usetex'] = True
@@ -60,6 +60,10 @@ parser.add_argument('-n', "--no-template-counting", action="store_true")
 parser.add_argument('unittest_args', nargs='*')
 args, unknown = parser.parse_known_args()
 sys.argv[1:] = args.unittest_args
+
+if args.quite:
+    def tqdm(x, *args, **kwargs):
+        return x
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -422,12 +426,13 @@ class ComputeFstat(object):
         detector_names = list(set([d.header.name for d in SFTCatalog.data]))
         self.detector_names = detector_names
         SFT_timestamps = [d.header.epoch for d in SFTCatalog.data]
-        try:
-            from bashplotlib.histogram import plot_hist
-            print('Data timestamps histogram:')
-            plot_hist(SFT_timestamps, height=5, bincount=50)
-        except IOError:
-            pass
+        if args.quite is False:
+            try:
+                from bashplotlib.histogram import plot_hist
+                print('Data timestamps histogram:')
+                plot_hist(SFT_timestamps, height=5, bincount=50)
+            except IOError:
+                pass
         if len(detector_names) == 0:
             raise ValueError('No data loaded.')
         logging.info('Loaded {} data files from detectors {}'.format(
@@ -2210,6 +2215,12 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         with open(run_setup_input_file, 'w+') as f:
             pickle.dump(d, f)
 
+    def check_old_run_setup(self, old_setup, **kwargs):
+        try:
+            return all([val == old_setup[key] for key, val in kwargs.iteritems()])
+        except KeyError:
+            return False
+
     def init_run_setup(self, run_setup, log_table=True, gen_tex_table=True,
                        R0=10, Vmin=100):
         fiducial_freq, DeltaOmega, DeltaFs = self.init_V_estimate_parameters()
@@ -2223,7 +2234,9 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 logging.info('Checking old setup input file {}'.format(
                     run_setup_input_file))
                 old_setup = self.read_setup_input_file(run_setup_input_file)
-                if old_setup['R0'] == R0 and old_setup['Vmin'] == Vmin:
+                if self.check_old_run_setup(old_setup, R0=R0, Vmin=Vmin,
+                                            DeltaOmega=DeltaOmega,
+                                            DeltaFs=DeltaFs):
                     logging.info('Using old setup with R0={}, Vmin={}'.format(
                         R0, Vmin))
                     nsegs_vals = old_setup['nsegs_vals']
@@ -2260,7 +2273,9 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                     rs[0] = (rs[0], 0)
                 run_setup[i] = rs
 
-                if len(V_vals) > 0:
+                if args.no_template_counting:
+                    V_vals.append([1, 1, 1])
+                else:
                     V, Vsky, Vpe = get_V_estimate(
                         rs[1], self.tref, self.minStartTime, self.maxStartTime,
                         DeltaOmega, DeltaFs, fiducial_freq,
@@ -2341,7 +2356,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             return run_setup
 
     def run(self, run_setup=None, proposal_scale_factor=2, R0=10,
-            Vmin=100, **kwargs):
+            Vmin=100, create_plots=True, log_table=True, gen_tex_table=True,
+            **kwargs):
         """ Run the follow-up with the given run_setup
 
         Parameters
@@ -2352,7 +2368,9 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
         self.nsegs = 1
         self.inititate_search_object()
-        run_setup = self.init_run_setup(run_setup, R0=R0, Vmin=Vmin)
+        run_setup = self.init_run_setup(
+            run_setup, R0=R0, Vmin=Vmin, log_table=log_table,
+            gen_tex_table=gen_tex_table)
         self.run_setup = run_setup
 
         self.old_data_is_okay_to_use = self.check_old_data_is_okay_to_use()
@@ -2405,19 +2423,21 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             logging.info('Max detection statistic of run was {}'.format(
                 np.max(sampler.lnlikelihood)))
 
-            fig, axes = self.plot_walkers(sampler, symbols=self.theta_symbols,
-                                          fig=fig, axes=axes, burnin_idx=nburn,
-                                          xoffset=nsteps_total, **kwargs)
-            for ax in axes[:-1]:
-                ax.axvline(nsteps_total, color='k', ls='--')
+            if create_plots:
+                fig, axes = self.plot_walkers(
+                    sampler, symbols=self.theta_symbols, fig=fig, axes=axes,
+                    burnin_idx=nburn, xoffset=nsteps_total, **kwargs)
+                for ax in axes[:-1]:
+                    ax.axvline(nsteps_total, color='k', ls='--')
             nsteps_total += nburn+nprod
 
-        try:
-            fig.tight_layout()
-        except ValueError as e:
-            logging.warning('Tight layout encountered {}'.format(e))
-        fig.savefig('{}/{}_walkers.png'.format(
-            self.outdir, self.label), dpi=200)
+        if create_plots:
+            try:
+                fig.tight_layout()
+            except ValueError as e:
+                logging.warning('Tight layout encountered {}'.format(e))
+            fig.savefig('{}/{}_walkers.png'.format(
+                self.outdir, self.label), dpi=200)
 
         samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
         lnprobs = sampler.lnprobability[0, :, nburn:].reshape((-1))
@@ -2776,12 +2796,11 @@ class Writer(BaseSearchClass):
     """ Instance object for generating SFTs containing glitch signals """
     @initializer
     def __init__(self, label='Test', tstart=700000000, duration=100*86400,
-                 dtglitch=None,
-                 delta_phi=0, delta_F0=0, delta_F1=0, delta_F2=0,
-                 tref=None, phi=0, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
-                 Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, Tsft=1800, outdir=".",
-                 sqrtSX=1, Band=4, detector='H1', minStartTime=None,
-                 maxStartTime=None):
+                 dtglitch=None, delta_phi=0, delta_F0=0, delta_F1=0,
+                 delta_F2=0, tref=None, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
+                 Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, phi=0, Tsft=1800,
+                 outdir=".", sqrtSX=1, Band=4, detector='H1',
+                 minStartTime=None, maxStartTime=None):
         """
         Parameters
         ----------
@@ -2797,8 +2816,8 @@ class Writer(BaseSearchClass):
         tref: float or None
             reference time (default is None, which sets the reference time to
             tstart)
-        phil, F0, F1, F2, Alpha, Delta, h0, cosi, psi: float
-            pre-glitch phase, frequency, sky-position, and signal properties
+        F0, F1, F2, Alpha, Delta, h0, cosi, psi, phi: float
+            frequency, sky-position, and amplitude parameters
         Tsft: float
             the sft duration
         minStartTime, maxStartTime: float
