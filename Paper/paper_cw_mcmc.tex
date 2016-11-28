@@ -66,12 +66,12 @@
 
 \begin{abstract}
 We detail methods to follow-up potential CW signals (as identified by
-wide-parameter space semi-coherent searches) leverging MCMC optimisation of the
+wide-parameter space semi-coherent searches) leveraging MCMC optimisation of the
 $\mathcal{F}$-statistic. First, we demonstrate the advantages of such an
 optimisation whilst increasing the coherence time, namely the ability to
-efficiently sample an evolving distrubution and consider multiple modes.
+efficiently sample an evolving distribution and consider multiple modes.
 Subsequently, we illustrate estimation of parameters and the Bayes factor which
-can be used to understand the signficance of the candidate. Finally, we explain
+can be used to understand the significance of the candidate. Finally, we explain
 how the methods can be simply generalised to allow the waveform model to be
 transient or undergo glitches.
 
@@ -94,7 +94,7 @@ There exists three well known sources of the nonaxisymmetry: `mountains',
 precession, and r-mode oscillations; each of which make a prediction for the
 scaling between $\nu$, the NS spin frequency and $f$, the gravitational wave
 frequency. In any case, observing neutron stars through their gravitational
-wave emmission would provide a unique astrophysical insight and has hence
+wave emission would provide a unique astrophysical insight and has hence
 motivated numerous searches.
 
 As shown by \citet{jks1998}, the gravitational wave signal from a
@@ -130,7 +130,7 @@ in each segment computes the fully-coherent detection statistic; the
 semi-coherent detection statistic is then computed by some combination of all
 segments summed at the same point in parameter space. Fundamentally, this gain
 in sensitivity is because the width of a peak in the detection statistic due to
-a signal is inversely propotional to the cohrence time: shorter coherence times
+a signal is inversely proportional to the coherence time: shorter coherence times
 make the peak wider and hence the a lower density of templates. This idea was
 first proposed by \citet{brady2000} along with the first implementation, the
 `Stack-slide' search. Since then, several modifications such as the
@@ -142,12 +142,12 @@ Wide parameter space searches produce a list of candidates with an associated
 detection statistic which passes some threshold. In order to verify these
 candidates, they are subjected to a \emph{followed-up}: a process of increasing
 the coherence time, eventually aiming to calculate a fully-coherent detection
-statistic over the maximal span of data. In essense, the semi-coherent search
+statistic over the maximal span of data. In essence, the semi-coherent search
 is powerful as it spreads the significance of a candidate over a wider area of
 parameter space, so a follow-up attempts to reverse this process and recover
 the maximum significance and tightly constrain the candidate parameters. The
 original hierarchical follow-up of \citet{brady2000} proposed a two-stage method
-(an initial semi-coherent  stage followed directly by a fully-soherent search.
+(an initial semi-coherent  stage followed directly by a fully-coherent search.
 However, it was shown in a numerical study by \citet{cutler2005} that allowing
 an arbitrary number of semi-coherent stages before the final fully-coherent
 stage can significantly improve the efficiency: ultimately they concluded that
@@ -162,24 +162,24 @@ now been removed, but I can't find a publication)}, however these are practical
 limitations which can \comment{(have?)} be overcome.
 \comment{Add something on multiple modes?}
 
-In this paper, we propose an alternative hierarchical follow-up procudure using
-Markov-Chain Monte-Carlo (MCMCM) as the optimisation tool. In terms of the
+In this paper, we propose an alternative hierarchical follow-up procedure using
+Markov-Chain Monte-Carlo (MCMC) as the optimisation tool. In terms of the
 semi-coherent to follow-up procedure, an MCMC tool is advantages due to it's
-ability to trace the evolution multiple modes simultaneuosly through the
-follow-up procudedure and allow the optimisation to decide between them without
+ability to trace the evolution multiple modes simultaneously through the
+follow-up procedure and allow the optimisation to decide between them without
 arbitrary cuts. In addition, MCMC methods also provide two further
-advatanges: they can calculate directly calculate Bayes factors, the significance
-of a candidate and because they are `gridless' one can arbitrarily vary the
-waveform model without requring an understanding of the underlying topology.
+advantages: they can calculate directly calculate Bayes factors, the significance
+of a candidate and because they are `grid-less' one can arbitrarily vary the
+waveform model without requiring an understanding of the underlying topology.
 We will exploit this latter property to propose an additional step in the
-follow-up procudure which allows for the CW signal to be either a transient-CW
+follow-up procedure which allows for the CW signal to be either a transient-CW
 (a periodic signal lasting $\mathcal{O}(\textrm{hours-weeks})$) or to undergo
 glitches (as seen in pulsars).
 
 We begin in Section~\ref{sec_hypothesis_testing} with a review of search
 methods from a Bayesian perspective. Then in
 Section~\ref{sec_MCMC_and_the_F_statistic} we introduce the MCMC optimisation
-producedure and give details of our particular implementation. In
+procedure and give details of our particular implementation. In
 Section~\ref{sec_follow_up} we will illustrate applications of the method and
 provide a prescription for choosing the setup. In Sections~\ref{sec_transients}
 and \ref{sec_glitches} we demonstrate how searches can be performed for either
@@ -193,7 +193,7 @@ Section~\ref{sec_conclusion}.
 Given some data $x$ and a set of background assumptions $I$, we formulate
 two hypotheses: $\Hn$, the data contains solely Gaussian noise and $\Hs$, the
 data contains an additive mixture of noise and a signal $h(t; \A, \blambda)$.
-In order to make a quantitative comparison, we use Bayes theorum in the usual
+In order to make a quantitative comparison, we use Bayes theorem in the usual
 way to write the odds as
 \begin{equation}
 O_{\rm S/N} \equiv \frac{P(\Hs| x, I)}{P(\Hn| x, I)} =
@@ -231,7 +231,7 @@ where
 is the \emph{likelihood-ratio}.
 
 At this point, we can appreciate the problems of searching for unknown signals:
-one has four amplitude parameters and several doppler parameters (three plus
+one has four amplitude parameters and several Doppler parameters (three plus
 the number of spin-down and binary parameters) over which this integral must be
 performed. If a single signal exists in the data, this corresponds to a single
 peak in the likelihood-ratio, but at an unknown location. Therefore, one must
@@ -252,7 +252,7 @@ this likelihood-ratio with respect to the four amplitude parameters results
 (c.f.~\citet{prix2009}) in a maximised log-likelihood given by $\F(x|
 \blambda)$: the so-called $\F$-statistic. Picking a particular set of Doppler
 parameters $\blambda$ (the template) one can then compute a detection statistic
-(typicaly $2\F$ is used) which can be used to quantify the significance of the
+(typically $2\F$ is used) which can be used to quantify the significance of the
 template. Usually this is done by calculating a corresponding false alarm rate,
 the probability of seeing such a detection statistic in Gaussian noise.
 
@@ -324,7 +324,7 @@ e^{\F(x| \blambda)} P(\blambda| \Hs, I)
 Formulating the significance of a CW candidate in this way is pragmatic in that
 there exists a wealth of well-tested tools \citep{lalsuite} capable of
 computing the $\mathcal{F}$-statistic for CW signals, transient-CWs, and CW
-signals from binary systems; these can be levereged to compute
+signals from binary systems; these can be leveraged to compute
 Equation~\eqref{eqn_bayes_over_F}, or adding in the constant
 $\Bsn(x| \Pic)$ itself. The disadvantage to this method is that
 we are forced to use the prior $\Pic$, which was shown by \citet{prix2009} to
@@ -334,14 +334,14 @@ be unphysical.
 \label{sec_MCMC_and_the_F_statistic}
 
 The MCMC class of optimisation tools are formulated to solve the problem of
-infering the posterior distribution of some general model parameters $\theta$
+inferring the posterior distribution of some general model parameters $\theta$
 given given some data $x$ for some hypothesis $\H$. Namely, Bayes rule
 \begin{equation}
 P(\theta| x, \H, I) \propto P(x| \theta, \H, I)P(\theta| \H, I),
 \label{eqn_bayes_for_theta}
 \end{equation}
 is used to evaluate proposed jumps from one point in parameter to other points;
-jumps which increase this probabily are accepted with some probability. The
+jumps which increase this probably are accepted with some probability. The
 algorithm, proceeding in this way, is highly efficient at resolving peaks in
 high-dimension parameter spaces.
 
@@ -365,8 +365,8 @@ In this work we will use the \texttt{emcee} ensemble sampler
 sampler proposed by \citet{goodman2010}. This choice addresses a key issue with
 the use of MCMC sampler, namely the choice of \emph{proposal distribution}. At
 each step of the MCMC algorithm, the sampler generates from some distribution
-(known as the proposal-distribution) a jump in parameter space. Usualy, this
-proposal distribution must be `tuned' so that the MCMC sampler effeciently
+(known as the proposal-distribution) a jump in parameter space. Usually, this
+proposal distribution must be `tuned' so that the MCMC sampler efficiently
 walks the parameter space without either jumping too far off the peak, or
 taking such small steps that it takes a long period of time to traverse the
 peak. The \texttt{emcee} sampler addresses this by using an ensemble, a large
@@ -393,12 +393,12 @@ P(\blambda | T_i, x, \Pic, \Hs, I)
 Setting $T_0=1$ with $T_i > T_0 \; \forall \; i > 1$, such that the lowest
 temperature recovers Equation~\eqref{eqn_lambda_posterior} while for higher
 temperatures the likelihood is broadened (for a Gaussian likelihood, the
-standard devitation is larger by a factor of $\sqrt{T_i}$). Periodically, the
-algorithem swaps the position of the walkers between the different
+standard deviation is larger by a factor of $\sqrt{T_i}$). Periodically, the
+algorithm swaps the position of the walkers between the different
 temperatures. This allows the $T_0$ chain (from which we draw samples of the
 posterior) to efficiently sample from multi-modal posteriors. This introduces
 two additional tuning parameters, the number and range of the set of
-temperatures $\{T_i\}$, we will discuss their signficance when relevant.
+temperatures $\{T_i\}$, we will discuss their significance when relevant.
 
 \subsection{Parallel tempering: estimating the Bayes factor}
 In addition, parallel-tempering also offers a robust method to estimate the
@@ -430,12 +430,12 @@ can numerically integrate to get the Bayes factor, i.e.
 \log \Bsn(x| \Pic, I) = \log Z = \int_{0}^{1}
 \langle \log(\Bsn(x| \Pic, \blambda) \rangle_{\beta} d\beta.
 \end{align}
-In practise, we use a simple numerical quadrature over a finite ladder of
+In practice, we use a simple numerical quadrature over a finite ladder of
 $\beta_i$ with the smallest chosen such that choosing a smaller value does not
 change the result beyond other numerical uncertainties. Typically, getting
 accurate results for the Bayes factor requires a substantially larger number of
-temperatures than are required for effeciently sampling multi-modal
-distributions.  Therefore, it is recomended that one uses a small number of
+temperatures than are required for efficiently sampling multi-modal
+distributions.  Therefore, it is recommended that one uses a small number of
 temperatures during the search stage, and subsequently a larger number of
 temperatures (suitably initialised close to the target peak) when estimating
 the Bayes factor.
@@ -444,11 +444,11 @@ the Bayes factor.
 
 We intend to use the $\F$-statistic as our log-likelihood in MCMC simulations,
 but before continuing, it is worthwhile to acquaint ourselves with the typical
-behaviour of the log-likelihood by considering a specific example.
+behavior of the log-likelihood by considering a specific example.
 
-As shownn in Equation~\eqref{eqn_twoF_expectation}, the expectation of
+As shown in Equation~\eqref{eqn_twoF_expectation}, the expectation of
 $\widetilde{2\F}$ is 4 in Gaussian noise alone, but proportional to the square
-of the SNR in the presense of a signal.  To illustrate this, let us consider
+of the SNR in the presence of a signal.  To illustrate this, let us consider
 $\widetilde{2\F}$ as a function of $f$ (the template frequency) if there exists
 a signal in the data with frequency $f_0$. We will assume that all other
 Doppler parameters are perfectly matched.  Such an example can be calculated
@@ -487,8 +487,8 @@ large maxima which occupy a small fraction of the prior volume. Since we will
 use $\F$ as our log-likelihood, Figure~\ref{fig_grid_frequency} provides an
 example of the space we will ask the sampler to explore. Clearly, if the width
 of the signal peak is small compared to the prior volume, the sampler will get
-`stuck' on the local maxima and be ineffecient at finding the global maxima.
-This problem is excabated in higher-dimensional search spaces where the volume
+`stuck' on the local maxima and be inefficient at finding the global maxima.
+This problem is exacerbated in higher-dimensional search spaces where the volume
 fraction of the signal scales with the exponent of the number of dimensions.
 
 In a traditional CW search which uses a grid of templates (also known as a
@@ -551,7 +551,7 @@ amplitude parameters $\A$; it was shown by \citet{prix2007metric} that it is a
 good approximation when using data spans longer than a day and data from
 multiple detectors. 
 
-The phase metric, Equation~\eqref{eqn_metric} provides the neccesery tool to
+The phase metric, Equation~\eqref{eqn_metric} provides the necessary tool to
 measure distances in the Doppler parameter space in units of mismatch. To
 calculate it's components, we define the phase evolution
 of the source as \citep{wette2015}
@@ -602,8 +602,8 @@ The metric volume $\V$ is the approximate number of templates required to cover
 the the given Doppler parameter volume at a fixed mismatch of $\approx 1$. As
 such, its inverse gives the approximate (order of magnitude) volume fraction of
 the search volume which would be occupied by a signal. This can therefore be
-used as a proxy for determing if an MCMC search will operate in a regime where
-it is effecicient (i.e. where the a signal occupes a reasonable fraction of the
+used as a proxy for determining if an MCMC search will operate in a regime where
+it is efficient (i.e. where the a signal occupies a reasonable fraction of the
 search volume).
 
 The volume $\V$ combines the search volume from all search dimensions. However,
@@ -646,7 +646,7 @@ spin-down of $-1{\times}10^{-10}$~Hz/s, all other Doppler parameters are
 $h_0=10^{-24}$~Hz$^{-1/2}$ while the Gaussian noise has
 $\Sn=10^{-23}$~Hz$^{-1/2}$ such that the signal has a depth of 10.
 
-First, we must define a prior for each search parameter Typically, we recomend
+First, we must define a prior for each search parameter Typically, we recommend
 either a uniform prior bounding the area of interest, or a normal distribution
 centered on the target and with some well defined width. However, to ensure
 that the MCMC simulation has a reasonable chance at finding a peak, one should
@@ -669,7 +669,7 @@ such that $\V\approx120$ (note that $\Vsky$ does not contribute since we do
 not search over the sky parameters). This metric volume indicates that the
 signal will occupy about 1\% of the prior volume, therefore the MCMC is
 expected to work. Alternative priors will need careful thought about how to
-translate them into a metric volume: for example using a Guassian one could use
+translate them into a metric volume: for example using a Gaussian one could use
 the standard deviation as a proxy for the allowed search region.
 
 In addition to defining the prior, one must also consider how to
@@ -690,7 +690,7 @@ number of walkers; this is a tuning parameter of the MCMC algorithm. The number
 of walkers should be typically a few hundred, the greater the number the more
 samples will be taken resulting in improved posterior estimates. The burn-in
 steps refers to an initial set of steps which are discarded as they are taken
-whilst the walkers converge. After they have convereged the steps are known as
+whilst the walkers converge. After they have converged the steps are known as
 production steps since they are used to produce posterior estimates and
 calculate the marginal likelihood.
 
@@ -700,9 +700,9 @@ the individual walkers (each represented by an individual line) as a function
 of the total number of steps. The red portion of steps are burn-in and hence
 discarded, from this plot we see why: the walkers are initialised from the
 uniform prior and initially spend some time exploring the whole parameter space
-before congerging. The fact that they converge to a single unique point is due
+before converging. The fact that they converge to a single unique point is due
 to the strength of the signal (substantially elevating the likelihood about
-that of Gaussian fluctuations) and the tight prior which was quantifed throug the
+that of Gaussian fluctuations) and the tight prior which was quantified through the
 metric volume $\V$. The production samples, colored black, are only taken once
 the sampler has converged - these can be used to generate posterior plots.
 \begin{figure}[htb]
@@ -726,8 +726,8 @@ $\widetilde{2\F}$ taken from the production samples.}
 Incoherent detection statistics trade significance (the height of the peak) for
 sensitivity (the width of the peak). We will now discuss the advantages of
 using an MCMC sampler to follow-up a candidate found incoherently, increasing
-the coherence time until finally estimating it's parameters and significance
-fully-coherently. We begin by rewritting Equation~\eqref{eqn_lambda_posterior},
+the coherence time until finally estimating its parameters and significance
+fully-coherently. We begin by rewriting Equation~\eqref{eqn_lambda_posterior},
 the posterior distribution of the Doppler parameters, with the explicit
 dependence on the coherence time $\Tcoh$:
 \begin{equation}
@@ -736,27 +736,30 @@ P(\blambda | \Tcoh, x, \Pic, \Hs, I)
 \propto e^{\hat{\F}(x| \Tcoh, \blambda)} P(\blambda| \Hs I).
 \end{equation}
 
-Introducing the coherent time $\Tcoh$ as a variable provides an ability to
-adjust the likelihood. Therefore, a natural way to perform a follow-up is to
-start the MCMC simulations with a short coherence time (such that the signal
-peak occupies a substantial fraction of the prior volume) and then subseuqntly
-incrementally increasing this coherence time in a controlled manner,
-aiming to allow the MCMC walkers to converge to the new likelihood before again
-increasing the coherence time. Ultimately, this coherence time will be increased
-until $\Tcoh = \Tspan$. If this is done in $\Nstages$ discreet \emph{stages},
-this introduces a further set of tuning parameters, namely the ladder of
-coherence times $\Tcoh^{i}$, where $i \in [0, \Nstages]$ to use.
+Introducing the coherent time $\Tcoh$ as a variable provides a free parameter
+which adjusts width of signal peaks in the likelihood. Therefore, a natural way
+to perform a follow-up is to start the MCMC simulations with a short coherence
+time (such that the signal peak occupies a substantial fraction of the prior
+volume) and then subsequently incrementally increasing this coherence time in a
+controlled manner, aiming to allow the MCMC walkers to converge to the new
+likelihood before again increasing the coherence time. Ultimately, this
+coherence time will be increased until $\Tcoh = \Tspan$. If this is done in
+$\Nstages$ discreet \emph{stages}, this introduces a further set of tuning
+parameters, namely the ladder of coherence times $\Tcoh^{i}$, where $i \in [0,
+\Nstages]$.
 
-In some ways, this bears a resembalance to so-called simulated annealing, a
-method in which the likelihood is raised to a power $1/T$ and subseuqntly
-`cooled'. The important difference being that the semi-coherent likelihood is
-wider at short coherence times, rather than flatter as in the case of
-high-temperature simulated annealing stages.
+In some ways, this bears a resemblance to `simulated annealing', a method in
+which the likelihood is raised to a power (the inverse temperature) and
+subsequently `cooled'. The important difference being that the semi-coherent
+likelihood is wider at short coherence times, rather than flatter as in the
+case of high-temperature simulated annealing stages. For a discussion and
+examples of using simulated annealing in the context of CW searches see
+\citet{veitch2007}.
 
-Of course in practise, we do not arbitarily vary $\Tcoh^i$, but rather the
-number of segments at each stage $\Nstages^{i}\equiv \Tspan/\Tcoh^{i}$.
-Ideally, the ladder of segment should be chosen to ensure that the
-metric volume at the $i^{th}$ stage $\V_i \equiv \V(\Nseg^i)$ is a constant
+Of course in practice, we can't arbitrarily vary $\Tcoh^i$, but rather the
+number of segments at each stage $\Nseg^{i}\equiv \Tspan/\Tcoh^{i} \in
+\mathbb{N}$.  Ideally, the ladder of segment should be chosen to ensure that
+the metric volume at the $i^{th}$ stage $\V_i \equiv \V(\Nseg^i)$ is a constant
 fraction of the volume at adjacent stages. That is we define
 \begin{equation}
 \mathcal{R} \equiv \frac{\V_i}{\V_{i+1}},
@@ -777,7 +780,7 @@ simply solve it as a real scalar, and then round to the nearest integer. We now
 have a method to generate a ladder of $\Nseg^{i}$ which keep the ratio of
 volume fractions fixed. Starting with $\Nseg^{\Nstages}$ = 1, we generate
 $\Nseg^{\Nstages-1}$ such that $\V^{\Nstages-1} < \V^{\Nstages}$ and
-subsequently itterate.  Finally we must define $\V^{\rm min}$ as the stopping
+subsequently iterate.  Finally we must define $\V^{\rm min}$ as the stopping
 criterion: a metric volume such that the initial stage will find a signal. This
 stopping criterion itself will set $\Nstages$; alternatively one could set
 $\Nstages$.
@@ -796,7 +799,7 @@ $h_0=2\times10^{-25}$ such that the signal has a depth of $\sqrt{\Sn}/h_0=50$
 in the noise.
 
 First, we must define the setup for the run. Using $\mathcal{R}=10$ and
-$\V^{\rm min}=100$ our optimisation procudure is run and proposes the setup
+$\V^{\rm min}=100$ our optimisation procedure is run and proposes the setup
 layed out in Table~\ref{tab_weak_signal_follow_up}. In addition, we show the
 number of steps taken at each stage.
 \begin{table}[htb]
@@ -806,20 +809,20 @@ $\mathcal{R}=10$ and $\V^{\rm min}=100$.}
 \input{weak_signal_follow_up_run_setup}
 \end{table}
 
-The choice of $\mathcal{R}$ and $\V^{\rm min}$ is a comprimise between the
+The choice of $\mathcal{R}$ and $\V^{\rm min}$ is a compromise between the
 total computing time and the ability to ensure a candidate will be identified.
 From experimentation, we find that $\V^{\rm min}$ values of 100 or so are
 sufficient to ensure that any peaks are sufficiently broad during the
 initial stage. For $\mathcal{R}$ value much larger than $10^{3}$ or so where
 found to result in the MCMC simulations `loosing' the peaks between stages, we
-conservatively opt for 10 here, but values as large as 100 where also succesul.
+conservatively opt for 10 here, but values as large as 100 where also successful.
 
 In Figure~\ref{fig_follow_up} we show the progress of the MCMC sampler during
 the follow-up.  As expected from Table~\ref{tab_weak_signal_follow_up}, during
 the initial stage the signal peak is broad with respect to the size of the
 prior volume, therefore the MCMC simulation quickly converges to it. Subsequently,
 each time the number of segments is reduced, the peak narrows and the samplers
-similarly converge to this new solution. At times it can appeak to be inconsistent,
+similarly converge to this new solution. At times it can appear to be inconsistent,
 however this is due to the changing way that the Gaussian noise adds to the signal.
 Eventually, the walkers all converge to the true signal.
 \begin{figure}[htb]
@@ -833,30 +836,111 @@ are listed in Table~\ref{tab_weak_signal_follow_up}.}
 \label{fig_follow_up}
 \end{figure}
 
-The key advantage to note here is that all walkers succefully convereged to the
+The key advantage to note here is that all walkers successfully converged to the
 signal peak, which occupies $\sim 10^{-6}$ of the initial volume. While it is
 possible for this to occur during an ordinary MCMC simulation (with $\Tcoh$
 fixed at $\Tspan$), it would take substantially longer to converge as the
 chains explore the other `noise peaks' in the data.
 
-\section{Alternative waveform models: transients}
+\section{Alternative waveform models}
+
+In a grided search, the template bank is constructed to ensure that a canonical
+CW signal (i.e. when it lasts much longer than the observation span and has a
+phase evolution well-described by a Equation~\eqref{eqn_phi}) will be
+recovered with a fixed maximum loss of detection statistic; this loss can be
+described as the `template-bank mismatch'. In addition to this mismatch, CW
+searches may experience a mismatch if the waveform model differs from the
+matched-filter template. There are of course an unlimited number of ways this
+may manifest given our ignorance of neutron stars, but from studying pulsars
+three obvious mechanisms present themselves: transient, glitching, and noisy
+waveforms. In the following sections we will discuss the first two of these, we
+discussed the effect of random jitters in the phase evolution (noisy waveforms)
+in \citet{ashton2015} and concluded it was unlikely to be of immediate concern.
+
+\subsection{Transients}
 \label{sec_transients}
 
+The term \emph{transient-CWs} refers to periodic gravitational wave signals
+with a duration $\mathcal{O}(\textrm{hours-weeks})$ which have a
+phase-evolution described by Equation~\eqref{eqn_phi}. \citet{prix2011} coined
+this term and layed out the motivations for searching for such signals: in
+essence it is astrophysically plausible for each signals to exist and we should
+therefore build tools capable of finding them. Moreover, the authors described
+a simple extension to the $\F$-statistic (and by inheritance to all associated
+detection statistics) which provides a method to search for them. This
+introduces three new parameters, the start time, duration and a window-function
+which determines the evolution of $h_0(t)$ (typical examples being either a
+rectangular window or an exponential decay). These methods are implemented in
+the code-base used by our sampler to compute the likelihood and therefore we
+can expose these search parameters to our MCMC optimisation. In the following
+we will detail a simple example showing when it may be appropriate to search for
+a transient signal and how it is handles by the MCMC sampler.
+
+We simulate a signal in Gaussian noise at a depth of 10. If the signal where to
+be continuous (i.e. last for the entire duration of the data span), it should
+be recovered with a predicted detection statistic of
+$\widetilde{2\F}\approx5162$. However, the signal we inject is transient in
+that it start one third of the way through the data span and stops abruptly
+two-thirds of the of the way through (with a constant $h_0$ during this
+period). Since the signal lasts for only $1/3$ of the original data span, the
+expected $\widetilde{2\F}$ of the transient signal in a matched-filter over only
+the portion of data for which it is `on' is $5162/3\approx1720$.
+
+Running a fully-coherent MCMC search over the whole data span, we find a peak
+in the likelihood, but with a detection statistic of $\widetilde{2\F}=596$;
+this equates to a mismatch of $\approx0.9$: we have lost more significance due
+to the inclusion of noise-only data into the matched filter.
+
+In a real search, we cannot know beforehand what the $h_0$ of the signal will
+be, so it is not possible to diagnose that the signal is transient due to this
+mismatch. However, there does exist tools which can help in this regard. In
+this case, plotting the cumulative $\widetilde{2\F}$, as shown in
+Figure~\ref{fig_transient_cumulative_twoF}, demonstrates that the first 100
+days contributes no power to the detection statistic, during the middle 100
+days there is an approximately linear increasing in $\widetilde{2\F}$ with time
+(as expected for a signal), while in the last 100 days this is a gradual decay
+from the peak. Such a figure is characteristic of a transient signal.
 \begin{figure}[htb]
 \centering
 \includegraphics[width=0.5\textwidth]{transient_search_initial_stage_twoFcumulative}
-\caption{}
-\label{fig:}
+\caption{Plot of the cumulative $\widetilde{2\F}$ for a transient signal with a
+constant $h_0$ which lasts from 100 to 200 days from the observation start
+time.}
+\label{fig_transient_cumulative_twoF}
 \end{figure}
+
+Having identified that the putative signal may fact be transient, an extension
+of the follow-up procedure is to search for these transient parameters. In our
+MCMC method, these require a prior. For the window-function, one must define it
+either to be rectangular or exponential: one could run both and then use the
+estimated Bayes factors to decide between the two priors. For the start-time it
+is sufficient to provide a uniform distribution on the observation span, the
+duration can similarly be chosen as a uniform distribution from zero to the
+total observation span, or more informatively the absolute value of a central
+normal distribution placing greater weight on shorter transients. The choice of
+prior can allow the transient signal to overlap with epochs outside of the data
+span, in such instances if the likelihood can be computed they are allowed, but
+if the likelihood fails (for example if there is no data) the likelihood is
+returns as $-\infty$. Putting all this together, we run the sampler on the
+simulated transient signal and obtain the posterior estimates given in
+Figure~\ref{fig_transient_posterior}. The resulting best-fit has a
+$\widetilde{2\F}\approx 1670$, in line with the expected value. Comparing the
+Bayes factors between the transient and fully-coherent search can quantify if
+the improvement in fit due to the inclustion of the transient parameters was
+sufficient to compensate for the greater prior volume and produce an
+improvement in the evidence for the model.
 
 \begin{figure}[htb]
 \centering
 \includegraphics[width=0.5\textwidth]{transient_search_corner}
-\caption{}
-\label{fig:}
+\caption{Posterior distributions for a targeted search of data containing
+a simulated transient signal and Gaussian noise.}
+\label{fig_transient_posterior}
 \end{figure}
 
-\section{Alternative waveform models: glitches}
+
+
+\subsection{Glitches}
 \label{sec_glitches}
 
 \section{Conclusion}
