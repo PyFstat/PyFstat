@@ -663,6 +663,7 @@ class ComputeFstat(object):
         if title:
             ax.set_title(title)
         if savefig:
+            plt.tight_layout()
             plt.savefig('{}/{}_twoFcumulative.png'.format(outdir, label))
             return taus, twoFs
         else:
@@ -2210,14 +2211,16 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         return d
 
     def write_setup_input_file(self, run_setup_input_file, R0, Vmin,
-                               nsegs_vals, V_vals):
-        d = dict(R0=R0, Vmin=Vmin, nsegs_vals=nsegs_vals, V_vals=V_vals)
+                               nsegs_vals, V_vals, DeltaOmega, DeltaFs):
+        d = dict(R0=R0, Vmin=Vmin, nsegs_vals=nsegs_vals, V_vals=V_vals,
+                 DeltaOmega=DeltaOmega, DeltaFs=DeltaFs)
         with open(run_setup_input_file, 'w+') as f:
             pickle.dump(d, f)
 
     def check_old_run_setup(self, old_setup, **kwargs):
         try:
-            return all([val == old_setup[key] for key, val in kwargs.iteritems()])
+            truths = [val == old_setup[key] for key, val in kwargs.iteritems()]
+            return all(truths)
         except KeyError:
             return False
 
@@ -2255,7 +2258,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                     self.search.detector_names, self.earth_ephem,
                     self.sun_ephem)
                 self.write_setup_input_file(run_setup_input_file, R0, Vmin,
-                                            nsegs_vals, V_vals)
+                                            nsegs_vals, V_vals, DeltaOmega,
+                                            DeltaFs)
 
             run_setup = [((self.nsteps[0], 0),  nsegs, False)
                          for nsegs in nsegs_vals[:-1]]
