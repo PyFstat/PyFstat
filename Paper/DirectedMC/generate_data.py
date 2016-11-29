@@ -1,6 +1,14 @@
 import pyfstat
 import numpy as np
 import os
+import sys
+
+ID = sys.argv[1]
+outdir = sys.argv[2]
+
+label = 'run_{}'.format(ID)
+data_label = '{}_data'.format(label)
+results_file_name = '{}/MCResults_{}.txt'.format(outdir, ID)
 
 # Properties of the GW data
 sqrtSX = 2e-23
@@ -16,14 +24,13 @@ Alpha = 5e-3
 Delta = 6e-2
 tref = .5*(tstart+tend)
 
-data_label = 'temp_data_{}'.format(os.getpid())
-results_file_name = 'MCResults.txt'
 
 VF0 = VF1 = 100
 DeltaF0 = VF0 * np.sqrt(3)/(np.pi*Tspan)
 DeltaF1 = VF1 * np.sqrt(45/4.)/(np.pi*Tspan**2)
 
-depths = np.linspace(100, 250, 13)
+depths = np.linspace(100, 400, 7)
+depths = [125, 175]
 
 run_setup = [((10, 0), 16, False),
              ((10, 0), 5, False),
@@ -40,7 +47,7 @@ for depth in depths:
     cosi = np.random.uniform(-1, 1)
 
     data = pyfstat.Writer(
-        label=data_label, outdir='data', tref=tref,
+        label=data_label, outdir=outdir, tref=tref,
         tstart=tstart, F0=F0, F1=F1, F2=F2, duration=Tspan, Alpha=Alpha,
         Delta=Delta, h0=h0, sqrtSX=sqrtSX, psi=psi, phi=phi, cosi=cosi,
         detector='H1,L1')
@@ -60,12 +67,13 @@ for depth in depths:
 
     ntemps = 1
     log10temperature_min = -1
-    nwalkers = 50
+    nwalkers = 100
     nsteps = [50, 50]
 
     mcmc = pyfstat.MCMCFollowUpSearch(
-        label='temp', outdir='data',
-        sftfilepath='data/*'+data_label+'*sft', theta_prior=theta_prior,
+        label=label, outdir=outdir,
+        sftfilepath='{}/*{}*sft'.format(outdir, data_label),
+        theta_prior=theta_prior,
         tref=tref, minStartTime=tstart, maxStartTime=tend, nsteps=nsteps,
         nwalkers=nwalkers, ntemps=ntemps,
         log10temperature_min=log10temperature_min)
@@ -77,4 +85,4 @@ for depth in depths:
     with open(results_file_name, 'a') as f:
         f.write('{} {:1.8e} {:1.8e} {:1.8e} {:1.8e} {:1.8e}\n'
                 .format(depth, h0, dF0, dF1, predicted_twoF, maxtwoF))
-    os.system('rm data/temp*')
+    os.system('rm {}/*{}*'.format(outdir, label))

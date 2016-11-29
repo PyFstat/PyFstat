@@ -1,15 +1,29 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import scipy.stats
+import os
+from tqdm import tqdm
+from oct2py import octave
+
+plt.style.use('paper')
 
 Tspan = 100 * 86400
 
 
-def Recovery(Tspan, Depth, twoFstar=60):
-    rho2 = 4*Tspan/25./Depth**2
-    twoF_Hs = scipy.stats.distributions.ncx2(df=4, nc=rho2)
-    return 1 - twoF_Hs.cdf(twoFstar)
+def Recovery(Tspan, Depth, twoFstar=60, detectors='H1,L1'):
+    numDetectors = len(detectors.split(','))
+    cmd = ("DetectionProbabilityStackSlide('Nseg', 1, 'Tdata', {},"
+           "'misHist', createDeltaHist(0), 'avg2Fth', {}, 'detectors', '{}',"
+           "'Depth', {})"
+           ).format(numDetectors*Tspan, twoFstar, detectors, Depth)
+    return octave.eval(cmd, verbose=False)
+
+
+def binomialConfidenceInterval(N, K, confidence=0.95):
+    cmd = '[fLow, fUpper] = binomialConfidenceInterval({}, {}, {})'.format(
+        N, K, confidence)
+    [l, u] =  octave.eval(cmd, verbose=False, return_both=True)[0].split('\n')
+    return float(l.split('=')[1]), float(u.split('=')[1])
 
 results_file_name = 'MCResults.txt'
 
@@ -20,26 +34,40 @@ df = pd.read_csv(
 twoFstar = 60
 depths = np.unique(df.depth.values)
 recovery_fraction = []
-recovery_fraction_std = []
+recovery_fraction_CI = []
 for d in depths:
     twoFs = df[df.depth == d].twoF.values
-    print d, len(twoFs)
-    n = float(len(twoFs))
-    rf = np.sum(twoFs > twoFstar) / n
-    rf_bars = [np.sum(np.concatenate((twoFs[:i-1], twoFs[i:]))>twoFstar)/(n-1)
-               for i in range(int(n))]
-    var = (n-1)/n * np.sum([(rf_bar - rf)**2 for rf_bar in rf_bars])
-    recovery_fraction.append(rf)
-    recovery_fraction_std.append(np.sqrt(var))
+    N = len(twoFs)
+    K = np.sum(twoFs > twoFstar)
+    print d, N, K
+    recovery_fraction.append(K/float(N))
+    [fLower, fUpper] = binomialConfidenceInterval(N, K)
+    recovery_fraction_CI.append([fLower, fUpper])
 
+yerr = np.abs(recovery_fraction - np.array(recovery_fraction_CI).T)
 fig, ax = plt.subplots()
-ax.errorbar(depths, recovery_fraction, yerr=recovery_fraction_std)
-#ax.plot(depths, recovery_fraction)
+ax.errorbar(depths, recovery_fraction, yerr=yerr, fmt='sk', marker='s', ms=2,
+            capsize=1, capthick=0.5, elinewidth=0.5,
+            label='Monte-Carlo result')
 
-depths_smooth = np.linspace(min(depths), max(depths), 100)
-recovery_analytic = [Recovery(Tspan, d) for d in depths_smooth]
-ax.plot(depths_smooth, recovery_analytic)
+fname = 'analytic_data.txt'
+if os.path.isfile(fname):
+    depths_smooth, recovery_analytic = np.loadtxt(fname)
+else:
+    depths_smooth = np.linspace(10, 550, 100)
+    recovery_analytic = []
+    for d in tqdm(depths_smooth):
+        recovery_analytic.append(Recovery(Tspan, d, twoFstar))
+    np.savetxt(fname, np.array([depths_smooth, recovery_analytic]))
+depths_smooth = np.concatenate(([0], depths_smooth))
+recovery_analytic = np.concatenate(([1], recovery_analytic))
+ax.plot(depths_smooth, recovery_analytic, '-k', label='Theoretical maximum')
 
-ax.set_xlabel(r'Signal depth', size=16)
-ax.set_ylabel('Recovered fraction [%]', size=12)
+
+ax.set_ylim(0, 1.05)
+ax.set_xlabel(r'Signal depth', size=10)
+ax.set_ylabel(r'Recovered fraction', size=10)
+ax.legend(loc=1, frameon=False)
+
+fig.tight_layout()
 fig.savefig('directed_recovery.png')
