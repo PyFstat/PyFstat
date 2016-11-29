@@ -421,7 +421,7 @@ d\blambda
 The right-hand-side expresses the average of the log-likelihood at $\beta$. As
 such, we have
 \begin{align}
-\frac{\partial \log Z}{\partial \beta} = 
+\frac{\partial \log Z}{\partial \beta} =
 \langle \log(\Bsn(x| \Pic, \blambda) \rangle_{\beta}
 \end{align}
 The log-likelihood are a calculated during the MCMC sampling. As such, one
@@ -440,163 +440,144 @@ temperatures during the search stage, and subsequently a larger number of
 temperatures (suitably initialised close to the target peak) when estimating
 the Bayes factor.
 
-\subsection{The topology of the likelihood}
-
-We intend to use the $\F$-statistic as our log-likelihood in MCMC simulations,
-but before continuing, it is worthwhile to acquaint ourselves with the typical
-behavior of the log-likelihood by considering a specific example.
-
-As shown in Equation~\eqref{eqn_twoF_expectation}, the expectation of
-$\widetilde{2\F}$ is 4 in Gaussian noise alone, but proportional to the square
-of the SNR in the presence of a signal.  To illustrate this, let us consider
-$\widetilde{2\F}$ as a function of $f$ (the template frequency) if there exists
-a signal in the data with frequency $f_0$. We will assume that all other
-Doppler parameters are perfectly matched.  Such an example can be calculated
-analytically, taking the matched-filtering amplitude (Equation~(11) of
-\citep{prix2005}) with $\Delta\Phi(t) = 2\pi(f - f_0) t$, the expectation of
-$\widetilde{2\F}$ as a function of the template frequency $f$ is given by
-\begin{equation}
-\textrm{E}[\widetilde{2\F}](f) = 4 + 
-(\textrm{E}[\widetilde{2\F_0}] -4)\textrm{sinc}^{2}(\pi(f-f_0)\Tcoh))
-\label{eqn_grid_prediction}
-\end{equation}
-where $\textrm{E}[\widetilde{2\F_0}]$ is the expected $\widetilde{2\F}$ for
-a perfectly matched signal (when $f=f_0$).
-
-In Figure~\ref{fig_grid_frequency} we compare the analytic prediction of
-Equation~\eqref{eqn_grid_prediction} with the value computed numerically
-from simulating a signal in Gaussian noise. As expected, close to the signal
-frequency $f_0$ the detection statistic peaks with a a few local secondary
-maxima. Away from this frequency, in Gaussian noise, we see many local maxima
-centered around the expected value of 4.
-\begin{figure}[htb]
-\centering \includegraphics[width=0.45\textwidth]{grided_frequency_search_1D}
-\caption{Comparison of the analytic prediction of
-Equation~\eqref{eqn_grid_prediction} (in red) with the value computed
-numerically from simulating a signal in Gaussian noise (in black).
-\comment{Need to explain ticks}}
-\label{fig_grid_frequency}
-\end{figure}
-
-\subsection{Limitations of use}
+\subsection{Evaluating the search space}
 
 In general, MCMC samplers are highly effective in generating samples of the
 posterior in multi-dimensional parameter spaces. However, they will perform
 poorly if the posterior has multiple small maxima with only a small number of
-large maxima which occupy a small fraction of the prior volume. Since we will
-use $\F$ as our log-likelihood, Figure~\ref{fig_grid_frequency} provides an
-example of the space we will ask the sampler to explore. Clearly, if the width
-of the signal peak is small compared to the prior volume, the sampler will get
-`stuck' on the local maxima and be inefficient at finding the global maxima.
-This problem is exacerbated in higher-dimensional search spaces where the volume
-fraction of the signal scales with the exponent of the number of dimensions.
+large maxima which occupy a small fraction of the prior volume. Later on, in
+Section~\ref{sec_topology} we will show that for a signal in Gaussian noise our
+log-likelihood $\F$ will have a single peak due to the signal which is
+surrounded by other peaks particular to given noise realisation. The relative
+size of the these peaks to the signal peak depends on the SNR.  Howeever,
+regardless of the strengt of the signal peak, if the width of the signal peak
+is small compared to the prior volume, the sampler will get `stuck' on the
+local maxima and be inefficient at finding the global maxima.  This problem is
+exacerbated in higher-dimensional search spaces where the volume fraction of
+the signal scales with the exponent of the number of dimensions.
+
+\subsubsection{The metric}
 
 In a traditional CW search which uses a grid of templates (also known as a
 template bank), the spacings of the grid are chosen such that the loss of
-signal to noise ratio (SNR) is bounded to less than $u$, the template-bank
-mismatch. The optimal choice of grid then consists of minimising the computing
-cost while respecting this minimum template-bank mismatch or vice-verse (for
-examples see \citet{pletsch2010, prix2012, wette2013, wette2015}). We will now
-discuss how the work on setting up these grids can be applied to the problem of
-determining whether the setup is appropriate for an MCMC method: i.e. given the
-prior volume do we expect a signal to occupy a non-negligible volume?
+signal to noise ratio (SNR) is bounded to less than $\mu$, the
+\emph{template-bank mismatch}. The optimal choice of grid then consists of
+minimising the computing cost while respecting this minimum template-bank
+mismatch or vice-verse (for examples see \citet{pletsch2010, prix2012,
+wette2013, wette2015}). We will now discuss how the work on setting up these
+grids can be applied to the problem of determining whether the setup is
+appropriate for an MCMC method: i.e. given the prior volume do we expect a
+signal to occupy a non-negligible volume?
 
 For a fully-coherent $\F$-statistic search on data containing Gaussian noise
 and a signal with Doppler parameters $\blambdaSignal$, the template-bank
-mismatch at the grid point $\blambda_{l}$ is defined to be
+mismatch at the grid point $\blambda_{l}$ we define as
 \begin{align}
-\mutilde(\blambdaSignal, \blambda_{l}) \equiv 1 - 
+\mutilde(\blambdaSignal, \blambda_{l}) \equiv 1 -
 \frac{\tilde{\rho}(\blambda_l;\blambdaSignal)^{2}}
 {\tilde{\rho}(\blambdaSignal; \blambdaSignal)^{2}},
 \end{align}
 where $\tilde{\rho}(\blambda_l; \blambdaSignal)$ is the non-centrality
 parameter (c.f. Equation~\ref{eqn_twoF_expectation}) at $\blambda_l$, given
-that the signal is at $\blambdaSignal$. As such
-$\widetilde{\textrm{SNR}}(\blambdaSignal; \blambdaSignal)$ is the
-perfectly-matched non-centrality parameter, for which the mismatch is zero.
-For a fully-coherent search, this non-centrality parameter is equivalent to
-fully-coherent matched-filter signal to noise ratio SNR. However,
-as noted by \citet{leaci2015}, this is true for the fully-coherent case only.
-Therefore, we will use the non-centrality parameter which easily generalised to
-the semi-coherent case.
+that the signal is at $\blambdaSignal$; as such $\tilde{\rho}(\blambdaSignal;
+\blambdaSignal)$ is the perfectly-matched non-centrality parameter.  For a
+fully-coherent search, this non-centrality parameter is equivalent to
+fully-coherent matched-filter signal to noise ratio (SNR). However, as noted by
+\citet{leaci2015}, this is true for the fully-coherent case only.  Therefore,
+we choose to use the non-centrality parameter which easily generalises to the
+semi-coherent case.
 
 To make analytic calculations of the mismatch possible, as first shown by
 \citet{brady1998}, the mismatch can be approximated by
 \begin{equation}
-\mutilde(\blambda, \Delta\blambda) \approx 
-\tilde{g}_{\alpha \beta}^{\phi} \Delta\lambda^{\alpha}\Delta\lambda^{\beta}
+\mutilde(\blambda, \Delta\blambda) \approx
+\tilde{g}_{ij}\Delta\lambda^{i}\Delta\lambda^{j}
 + \mathcal{O}\left(\Delta\blambda^{3}\right)
+\label{eqn_mutilde_expansion}
 \end{equation}
-where we switch to using index notation for which we sum over repeated indices.
-Here, $\tilde{g}_{\alpha\beta}^{\phi}$ is the `phase-metric' given by
+where we use index notation with an implicit summation over repeated indices.
+Here, $\tilde{g}_{ij}^{\phi}$ is the \emph{phase-metric} given by
 \begin{align}
-\tilde{g}^{\phi}_{\alpha \beta}(\blambda) = 
-\langle 
-\partial_{\Delta\lambda^{\alpha}}\phi
-\partial_{\Delta\lambda^{\beta}}\phi
+\tilde{g}_{ij}(\blambda) =
+\langle
+\partial_{\Delta\lambda^{i}}\phi
+\partial_{\Delta\lambda^{j}}\phi
 \rangle
 -
-\langle 
-\partial_{\Delta\lambda^{\alpha}}\phi
+\langle
+\partial_{\Delta\lambda^{i}}\phi
 \rangle
 \langle
-\partial_{\Delta\lambda^{\beta}}\phi
+\partial_{\Delta\lambda^{j}}\phi
 \rangle,
 \label{eqn_metric}
 \end{align}
 where $\langle \cdot \rangle$ denotes the time-average over $\Tcoh$ and
 $\phi(t; \blambda)$ is the phase evolution of the source. The phase metric is
 in fact an approximation of the full metric which includes modulations of the
-amplitude parameters $\A$; it was shown by \citet{prix2007metric} that it is a
-good approximation when using data spans longer than a day and data from
-multiple detectors. 
+amplitude parameters $\A$. It was shown by \citet{prix2007metric} that
+when using data spans longer than a day and data from multiple detectors, the
+difference between phase metric and full metric is negligible.
 
 The phase metric, Equation~\eqref{eqn_metric} provides the necessary tool to
 measure distances in the Doppler parameter space in units of mismatch. To
-calculate it's components, we define the phase evolution
+calculate components, we define the phase evolution
 of the source as \citep{wette2015}
 \begin{align}
 \phi(t; \blambda) \approx 2\pi\left(
 \sum_{s=0}^{\smax} f^{(s)}\frac{(t-\tref)^{s+1}}{(s+1)!}
-+ \frac{r(t)\cdot\mathbf{n}}{c} \fmax\right),
++ \frac{r(t)\cdot\mathbf{n}(\alpha, \delta)}{c} \fmax\right),
 \label{eqn_phi}
 \end{align}
 where $\mathbf{n}(\alpha, \delta)$ is the fixed position of the source with
-respect to the solar system barycenter (with coordinates $\alpha, \delta$ the
-right ascension and declination), $f^(s)\equiv d^{s}\phi/dt^s$, and $\fmax$
-a constant chosen conservatively to be the maximum frequency over the data
-span.
+respect to the solar system barycenter (with coordinates $\alpha$ and $\delta$,
+the right ascension and declination), $f^{(s)}\equiv d^{s}\phi/dt^s$, and
+$\fmax$ a constant approximating $f(t)$, chosen conservatively to be the
+maximum frequency over the data span \citep{wette2013}.
 
 The frequency and spin-down components of the metric can be easily calculated
 due to their linearity in Equation~\eqref{eqn_phi} and for the special case in
-which $\tref$ is in the middle of the data span, the frequency and spin-down
-parts of the metric are diagonal. Accurately approximating the sky components
-of the metric is non-trivial, but was accomplished by \citet{wette2013} for the
-fully-coherent case. In \citet{wette2015} it was shown how the calculate the
-equivalent semi-coherent metric $\hat{g}_{\alpha\beta}^{\phi}(\blambda,
-\Nseg)$.  In the following, we will work with this calculation with the
-understanding that $\hat{g}_{\alpha\beta}^{\phi}(\blambda, \Nseg{=}1)=
-\tilde{g}_{\alpha\beta}^{\phi}(\blambda)$.
+which $\tref$ is in the middle of the data span, the phase-evolution metric
+with $\smax{=}1$ (i.e. the frequency and spin-down components) are given by
+\begin{equation}
+\tilde{g}^{\textrm{PE}}_{ij} \equiv
+\left[
+\begin{array}{cc}
+\frac{\pi^{2}\Tcoh^{2}}{3} & 0 \\
+0 & \frac{4\pi^{2}\Tcoh^{4}}{45}
+\end{array}
+\right]
+\textrm{ for } i, j \in [f, \dot{f}].
+\end{equation}.
 
+Accurately approximating the sky components of the metric is non-trivial, but
+was accomplished by \citet{wette2013} for the fully-coherent case. In
+\citet{wette2015} it was shown how to calculate the equivalent semi-coherent
+metric $\hat{g}_{ij}(\blambda, \Nseg)$; in the following, we
+will work with this generalised semi-coherent method with the understanding
+that $\hat{g}_{ij}(\blambda, \Nseg{=}1)=
+\tilde{g}_{ij}(\blambda)$.
+
+\subsubsection{The metric volume}
 To understand the volume of parameter space which a true signal would occupy,
-we can make use of the \emph{metric-volume} \citep{prix2007}, given by
+we can make use of the \emph{metric-volume}, defined as \citep{prix2007}
 \begin{align}
-\mathcal{V} = \int 
-\sqrt{\textrm{det}\hat{g}^{\phi}_{\alpha\beta}(\blambda, \Nseg)} d\blambda \approx 
-\sqrt{\textrm{det}\hat{g}^{\phi}_{\alpha\beta}(\blambda, \Nseg)} \Delta\blambda
+\mathcal{V} = \int
+\sqrt{\textrm{det}\hat{g}_{ij}(\blambda, \Nseg)} d\blambda \approx
+\sqrt{\textrm{det}\hat{g}_{ij}(\blambda, \Nseg)} \Delta\blambda
 \end{align}
 where in the second step we assume a constant coefficient metric. Here, $\Delta
-\blambda$ is the volume element which is given by 
+\blambda$ is the volume element which is given by
 \begin{equation}
-\Delta\lambda = \frac{\Delta\Omega}{2}
+\Delta\lambda = \frac{\cos(\delta_0)\Delta\delta\Delta\alpha}{2}
 %\frac{1}{2}\sin\delta\Delta\delta\Delta\alpha
 \prod_{s=0}^{\smax} \Delta f^{(s)},
 \end{equation}
-where $\Delta\Omega$ is the solid angle of the sky-patch which is searched,
-$\Delta f^(s)$ is the extend of the frequency and spin-down range(s) searched,
-and the factor of $1/2$ comes from converting the normalised determinant which
-is computed over the whole sky to the solid angle of the directed search.
-\comment{Not sure I fully understand this yet, or have really derived it properly}.
+where the numerator of the prefactor is the solid angle of the sky-patch at a
+declination of $\delta_0$, the factor of $1/2$ comes from converting the
+normalised determinant (which is computed over the whole sky) to the solid angle
+of the directed search, and $\Delta f^{(s)}$ is the extent of the frequency and
+spin-down range(s) searched.
 
 The metric volume $\V$ is the approximate number of templates required to cover
 the the given Doppler parameter volume at a fixed mismatch of $\approx 1$. As
@@ -613,8 +594,8 @@ a particular block form:
 \begin{align}
 g_{ij} = \left[
 \begin{array}{cc}
-g^{\rm Sky} & 0 \\
-0 & g^{\rm PE}
+g^{\textrm{Sky}} & 0 \\
+0 & g^{\textrm{PE}}.
 \end{array}
 \right]
 \end{align}
@@ -635,6 +616,51 @@ nature of $g^{\rm PE}$ means that one can further identify
 = \prod_{s=0}^{\smax}\Vpe^{(s)}
 \end{align}
 This decomposition may be useful in setting up MCMC searches.
+
+\subsection{The topology of the likelihood}
+\label{sec_topology}
+
+We intend to use the $\F$-statistic as our log-likelihood in MCMC simulations,
+but before continuing, it is worthwhile to acquaint ourselves with the typical
+behavior of the log-likelihood by considering a specific example.
+
+As shown in Equation~\eqref{eqn_twoF_expectation}, the expectation of
+$\widetilde{2\F}$ is 4 in Gaussian noise alone, but proportional to the square
+of the non-centrality parameter (or SNR) in the presence of a signal. To
+illustrate this, let us consider $\widetilde{2\F}$ as a function of $f$ (the
+template frequency) if there exists a signal in the data with frequency $f_0$.
+
+We will fix all the other Doppler parameters so that they are perfectly
+matched.  Such an example can be calculated analytically, taking the
+matched-filtering amplitude (Equation~(11) of \citep{prix2005}) with
+$\Delta\Phi(t) = 2\pi(f - f_0) t$, the expectation of $\widetilde{2\F}$ as a
+function of the template frequency $f$ is given by
+\begin{equation}
+\textrm{E}[\widetilde{2\F}](f) = 4 +
+(\textrm{E}[\widetilde{2\F_0}] -4)\textrm{sinc}^{2}(\pi(f-f_0)\Tcoh))
+\label{eqn_grid_prediction}
+\end{equation}
+where $\textrm{E}[\widetilde{2\F_0}]$ is the expected $\widetilde{2\F}$ for
+a perfectly matched signal (when $f=f_0$).
+
+In Figure~\ref{fig_grid_frequency} we compare the analytic prediction of
+Equation~\eqref{eqn_grid_prediction} with the value computed numerically from
+simulating a signal in Gaussian noise. This is done over a frequency range of
+$\sim20\Delta f$ where $\Delta f$ is the frequency difference between a signal
+and the template with $\tilde{\mu}=1$ as calculated from
+Equation~\eqref{eqn_mutilde_expansion}. As expected, close to the signal
+frequency $f_0$ the detection statistic peaks with a a few local secondary
+maxima. Away from this frequency, in Gaussian noise, we see many local maxima
+centered around the expected value of 4.
+\begin{figure}[htb]
+\centering \includegraphics[width=0.45\textwidth]{grided_frequency_search_1D}
+\caption{Comparison of the analytic prediction of
+Equation~\eqref{eqn_grid_prediction} (in red) with the value computed
+numerically from simulating a signal with frequency $f_0$ in Gaussian noise (in
+black). $\Delta f$ is the frequency difference corresponding to a
+metric-mismatch of unity.}
+\label{fig_grid_frequency}
+\end{figure}
 
 \subsection{Example: signal in noise}
 
@@ -707,7 +733,7 @@ metric volume $\V$. The production samples, colored black, are only taken once
 the sampler has converged - these can be used to generate posterior plots.
 \begin{figure}[htb]
 \centering
-\includegraphics[width=0.5\textwidth]{fully_coherent_search_using_MCMC_walkers}
+\includegraphics[width=0.45\textwidth]{fully_coherent_search_using_MCMC_walkers}
 \caption{The progress of the MCMC simulation for a simulated signal in Gaussian
 noise, searching over the frequency and spin-down. The upper two panels show
 the position of all walkers as a function of the number of steps for the
@@ -717,8 +743,6 @@ as production samples. The bottom panel shows the distribution of
 $\widetilde{2\F}$ taken from the production samples.}
 \label{fig_MCMC_simple_example}
 \end{figure}
-
-\subsection{Example: noise-only}
 
 \section{Follow-up}
 \label{sec_follow_up}
@@ -826,7 +850,8 @@ similarly converge to this new solution. At times it can appear to be inconsiste
 however this is due to the changing way that the Gaussian noise adds to the signal.
 Eventually, the walkers all converge to the true signal.
 \begin{figure}[htb]
-\centering \includegraphics[width=0.5\textwidth]{weak_signal_follow_up_walkers}
+\centering
+\includegraphics[width=0.4\textwidth]{weak_signal_follow_up_walkers}
 \caption{In the top three panels we show the progress of the 500 parallel
 walkers (see Figure~\ref{fig_MCMC_simple_example} for a description) during the
 MCMC simulation for each of the search parameters, frequency $f$,
@@ -842,6 +867,33 @@ possible for this to occur during an ordinary MCMC simulation (with $\Tcoh$
 fixed at $\Tspan$), it would take substantially longer to converge as the
 chains explore the other `noise peaks' in the data.
 
+\section{Monte Carlo studies}
+
+In order to understand how well the MCMC follow-up method works, we will now
+study the recovery fraction as a function of signal depth. This will be done in
+a Monte Carlo study, with independent random realisations of the Guassian
+noise, amplitude, and Doppler parameters in suitable ranges. Such a method is
+analagous to the studies performed in \citet{shaltev2013}, except that we
+present results as a function of the fixed signal depth, rather than the
+squared SNR.
+
+\subsection{Follow-up candidates from a directed search}
+
+\begin{table}[htb]
+\caption{Run-setup for the directed follow-up Monte-Carlo study, generated with
+$\mathcal{R}=10$ and $\V^{\rm min}=100$}
+\label{tab_directed_MC_follow_up}
+\input{directed_setup_run_setup}
+\end{table}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.45\textwidth]{directed_recovery}
+\caption{Recovery fraction for the directed follow-up. The Monte-Carlo results
+come from random draws searches using the setup described in
+Table~\ref{tab_directed_MC_follow_up}.}
+\label{fig_directed_MC_follow_up}
+\end{figure}
 \section{Alternative waveform models}
 
 In a grided search, the template bank is constructed to ensure that a canonical
@@ -902,7 +954,7 @@ days there is an approximately linear increasing in $\widetilde{2\F}$ with time
 from the peak. Such a figure is characteristic of a transient signal.
 \begin{figure}[htb]
 \centering
-\includegraphics[width=0.5\textwidth]{transient_search_initial_stage_twoFcumulative}
+\includegraphics[width=0.45\textwidth]{transient_search_initial_stage_twoFcumulative}
 \caption{Plot of the cumulative $\widetilde{2\F}$ for a transient signal with a
 constant $h_0$ which lasts from 100 to 200 days from the observation start
 time.}
@@ -932,7 +984,7 @@ improvement in the evidence for the model.
 
 \begin{figure}[htb]
 \centering
-\includegraphics[width=0.5\textwidth]{transient_search_corner}
+\includegraphics[width=0.45\textwidth]{transient_search_corner}
 \caption{Posterior distributions for a targeted search of data containing
 a simulated transient signal and Gaussian noise.}
 \label{fig_transient_posterior}

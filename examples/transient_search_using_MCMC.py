@@ -1,5 +1,8 @@
 import pyfstat
 import numpy as np
+import matplotlib.pyplot as plt
+
+plt.style.use('thesis')
 
 F0 = 30.0
 F1 = -1e-10
@@ -21,6 +24,9 @@ transient = pyfstat.Writer(
     F2=F2, duration=duration, Alpha=Alpha, Delta=Delta, h0=h0, sqrtSX=sqrtSX,
     minStartTime=data_tstart, maxStartTime=data_tend)
 transient.make_data()
+print transient.predict_fstat()
+
+
 
 DeltaF0 = 6e-7
 DeltaF1 = 1e-13
@@ -52,6 +58,7 @@ mcmc = pyfstat.MCMCSearch(
     log10temperature_min=log10temperature_min)
 mcmc.run()
 mcmc.plot_cumulative_max()
+mcmc.print_summary()
 
 theta_prior = {'F0': {'type': 'unif',
                       'lower': F0-DeltaF0/2.,

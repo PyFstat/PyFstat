@@ -68,13 +68,12 @@ for depth in depths:
     ntemps = 1
     log10temperature_min = -1
     nwalkers = 100
-    nsteps = [50, 50]
 
     mcmc = pyfstat.MCMCFollowUpSearch(
         label=label, outdir=outdir,
         sftfilepath='{}/*{}*sft'.format(outdir, data_label),
         theta_prior=theta_prior,
-        tref=tref, minStartTime=tstart, maxStartTime=tend, nsteps=nsteps,
+        tref=tref, minStartTime=tstart, maxStartTime=tend,
         nwalkers=nwalkers, ntemps=ntemps,
         log10temperature_min=log10temperature_min)
     mcmc.run(run_setup=run_setup, create_plots=False, log_table=False,
