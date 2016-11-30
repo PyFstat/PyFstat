@@ -2232,8 +2232,13 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         except KeyError:
             return False
 
-    def init_run_setup(self, run_setup, log_table=True, gen_tex_table=True,
-                       R=10, Nsegs0=None):
+    def init_run_setup(self, run_setup=None, R=10, Nsegs0=None, log_table=True,
+                       gen_tex_table=True):
+
+        if run_setup is None and Nsegs0 is None:
+            raise ValueError(
+                'You must either specify the run_setup, or Nsegs0 from which '
+                'the optimial run_setup given R can be estimated')
         fiducial_freq, DeltaOmega, DeltaFs = self.init_V_estimate_parameters()
         if run_setup is None:
             logging.info('No run_setup provided')
