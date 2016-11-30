@@ -131,26 +131,24 @@ def read_par(label, outdir):
 
 
 def get_optimal_setup(
-        R0, Vmin, tref, minStartTime, maxStartTime, DeltaOmega,
+        R, Nsegs0, tref, minStartTime, maxStartTime, DeltaOmega,
         DeltaFs, fiducial_freq, detector_names, earth_ephem, sun_ephem):
-    logging.info('Calculating optimal setup for R0={}, Vmin={}'.format(
-        R0, Vmin))
+    logging.info('Calculating optimal setup for R={}, Nsegs0={}'.format(
+        R, Nsegs0))
 
-    log10R0 = np.log10(R0)
-    log10Vmin = np.log10(Vmin)
-    nsegs_i = 1
-    V_i = get_V_estimate(
-        nsegs_i, tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
+    V_0 = get_V_estimate(
+        Nsegs0, tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
         fiducial_freq, detector_names, earth_ephem, sun_ephem)
-    logging.info('Stage {}, nsegs={}, V={}'.format(0, nsegs_i, V_i))
+    logging.info('Stage {}, nsegs={}, V={}'.format(0, Nsegs0, V_0))
 
-    nsegs_vals = [1]
-    V_vals = [V_i]
+    nsegs_vals = [Nsegs0]
+    V_vals = [V_0]
 
     i = 0
-    while np.log10(V_i[0]) > log10Vmin:
+    nsegs_i = Nsegs0
+    while nsegs_i > 1:
         nsegs_i, V_i = get_nsegs_ip1(
-            nsegs_i, log10R0, tref, minStartTime, maxStartTime, DeltaOmega,
+            nsegs_i, R, tref, minStartTime, maxStartTime, DeltaOmega,
             DeltaFs, fiducial_freq, detector_names, earth_ephem, sun_ephem)
         nsegs_vals.append(nsegs_i)
         V_vals.append(V_i)
@@ -158,35 +156,42 @@ def get_optimal_setup(
         logging.info(
             'Stage {}, nsegs={}, V={}'.format(i, nsegs_i, V_i))
 
-    nsegs_vals.reverse()
-    V_vals.reverse()
     return nsegs_vals, V_vals
 
 
 def get_nsegs_ip1(
-        nsegs_i, log10R0, tref, minStartTime, maxStartTime, DeltaOmega,
+        nsegs_i, R, tref, minStartTime, maxStartTime, DeltaOmega,
         DeltaFs, fiducial_freq, detector_names, earth_ephem, sun_ephem):
 
+    log10R = np.log10(R)
     log10Vi = np.log10(get_V_estimate(
         nsegs_i, tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
         fiducial_freq, detector_names, earth_ephem, sun_ephem))
 
     def f(nsegs_ip1):
-        if nsegs_ip1[0] < 1:
+        if nsegs_ip1[0] > nsegs_i:
             return 1e6
+        if nsegs_ip1[0] < 0:
+            return 1e6
+        nsegs_ip1 = int(nsegs_ip1[0])
+        if nsegs_ip1 == 0:
+            nsegs_ip1 = 1
         Vip1 = get_V_estimate(
-            nsegs_ip1[0], tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
-            fiducial_freq, detector_names, earth_ephem, sun_ephem)
+            nsegs_ip1, tref, minStartTime, maxStartTime, DeltaOmega,
+            DeltaFs, fiducial_freq, detector_names, earth_ephem, sun_ephem)
         if Vip1[0] is None:
             return 1e6
         else:
             log10Vip1 = np.log10(Vip1)
-            return np.abs(log10R0 + log10Vip1[0] - log10Vi[0])
-    res = scipy.optimize.minimize(f, 2*nsegs_i, method='Powell', tol=0.1,
-                                  options={'maxiter':10})
+            return np.abs(log10Vi[0] + log10R - log10Vip1[0])
+    res = scipy.optimize.minimize(f, .5*nsegs_i, method='Powell', tol=0.1,
+                                  options={'maxiter': 10})
+    nsegs_ip1 = int(res.x)
+    if nsegs_ip1 == 0:
+        nsegs_ip1 = 1
     if res.success:
-        return int(res.x), get_V_estimate(
-            int(res.x), tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
+        return nsegs_ip1, get_V_estimate(
+            nsegs_ip1, tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
             fiducial_freq, detector_names, earth_ephem, sun_ephem)
     else:
         raise ValueError('Optimisation unsuccesful')
@@ -2210,9 +2215,9 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             d = pickle.load(f)
         return d
 
-    def write_setup_input_file(self, run_setup_input_file, R0, Vmin,
+    def write_setup_input_file(self, run_setup_input_file, R, Nsegs0,
                                nsegs_vals, V_vals, DeltaOmega, DeltaFs):
-        d = dict(R0=R0, Vmin=Vmin, nsegs_vals=nsegs_vals, V_vals=V_vals,
+        d = dict(R=R, Nsegs0=Nsegs0, nsegs_vals=nsegs_vals, V_vals=V_vals,
                  DeltaOmega=DeltaOmega, DeltaFs=DeltaFs)
         with open(run_setup_input_file, 'w+') as f:
             pickle.dump(d, f)
@@ -2225,7 +2230,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             return False
 
     def init_run_setup(self, run_setup, log_table=True, gen_tex_table=True,
-                       R0=10, Vmin=100):
+                       R=10, Nsegs0=None):
         fiducial_freq, DeltaOmega, DeltaFs = self.init_V_estimate_parameters()
         if run_setup is None:
             logging.info('No run_setup provided')
@@ -2237,27 +2242,28 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 logging.info('Checking old setup input file {}'.format(
                     run_setup_input_file))
                 old_setup = self.read_setup_input_file(run_setup_input_file)
-                if self.check_old_run_setup(old_setup, R0=R0, Vmin=Vmin,
+                if self.check_old_run_setup(old_setup, R=R,
+                                            Nsegs0=Nsegs0,
                                             DeltaOmega=DeltaOmega,
                                             DeltaFs=DeltaFs):
-                    logging.info('Using old setup with R0={}, Vmin={}'.format(
-                        R0, Vmin))
+                    logging.info('Using old setup with R={}, Nsegs0={}'.format(
+                        R, Nsegs0))
                     nsegs_vals = old_setup['nsegs_vals']
                     V_vals = old_setup['V_vals']
                     generate_setup = False
                 else:
-                    logging.info('Old setup does not match requested R0, Vmin')
+                    logging.info('Old setup does not match requested R, Nsegs0')
                     generate_setup = True
             else:
                 generate_setup = True
 
             if generate_setup:
                 nsegs_vals, V_vals = get_optimal_setup(
-                    R0, Vmin, self.tref, self.minStartTime,
+                    R, Nsegs0, self.tref, self.minStartTime,
                     self.maxStartTime, DeltaOmega, DeltaFs, fiducial_freq,
                     self.search.detector_names, self.earth_ephem,
                     self.sun_ephem)
-                self.write_setup_input_file(run_setup_input_file, R0, Vmin,
+                self.write_setup_input_file(run_setup_input_file, R, Nsegs0,
                                             nsegs_vals, V_vals, DeltaOmega,
                                             DeltaFs)
 
@@ -2359,8 +2365,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         else:
             return run_setup
 
-    def run(self, run_setup=None, proposal_scale_factor=2, R0=10,
-            Vmin=100, create_plots=True, log_table=True, gen_tex_table=True,
+    def run(self, run_setup=None, proposal_scale_factor=2, R=10, Nsegs0=None,
+            create_plots=True, log_table=True, gen_tex_table=True,
             **kwargs):
         """ Run the follow-up with the given run_setup
 
@@ -2373,7 +2379,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         self.nsegs = 1
         self.inititate_search_object()
         run_setup = self.init_run_setup(
-            run_setup, R0=R0, Vmin=Vmin, log_table=log_table,
+            run_setup, R=R, Nsegs0=Nsegs0, log_table=log_table,
             gen_tex_table=gen_tex_table)
         self.run_setup = run_setup
 

@@ -1,7 +1,7 @@
 import pyfstat
 
 F0 = 30.0
-F1 = 0
+F1 = -1e-10
 F2 = 0
 Alpha = 1.0
 Delta = 0.5
@@ -31,8 +31,8 @@ print 'Predicted twoF value: {}\n'.format(twoF)
 # Search
 theta_prior = {'F0': {'type': 'unif', 'lower': F0*(1-1e-6),
                       'upper': F0*(1+1e-6)},
-               'F1': F1, #{'type': 'unif', 'lower': F1*(1+1e-2),
-                      #'upper': F1*(1-1e-2)},
+               'F1': {'type': 'unif', 'lower': F1*(1+1e-2),
+                      'upper': F1*(1-1e-2)},
                'F2': F2,
                'Alpha': {'type': 'unif', 'lower': Alpha-1e-2,
                          'upper': Alpha+1e-2},
@@ -52,6 +52,6 @@ mcmc = pyfstat.MCMCFollowUpSearch(
     minStartTime=tstart, maxStartTime=tend, nwalkers=nwalkers, nsteps=nsteps,
     ntemps=ntemps, log10temperature_min=log10temperature_min,
     scatter_val=scatter_val)
-mcmc.run(R0=10, Vmin=100, subtractions=[F0, Alpha, Delta], context='paper')
+mcmc.run(R=10, Nsegs0=50, subtractions=[F0, Alpha, Delta], context='paper')
 mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()
