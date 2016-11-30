@@ -29,7 +29,7 @@ results_file_name = 'MCResults.txt'
 
 df = pd.read_csv(
     results_file_name, sep=' ', names=['depth', 'h0', 'dF0', 'dF1',
-                                       'twoF_predicted', 'twoF'])
+                                       'twoF_predicted', 'twoF', 'runTime'])
 
 twoFstar = 60
 depths = np.unique(df.depth.values)

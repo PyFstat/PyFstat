@@ -2,6 +2,8 @@ import pyfstat
 import numpy as np
 import os
 import sys
+import time
+
 
 ID = sys.argv[1]
 outdir = sys.argv[2]
@@ -32,15 +34,19 @@ DeltaF1 = VF1 * np.sqrt(45/4.)/(np.pi*Tspan**2)
 depths = np.linspace(100, 400, 7)
 depths = [125, 175]
 
-run_setup = [((10, 0), 16, False),
-             ((10, 0), 5, False),
-             ((10, 10), 1, False)]
+nsteps = 20
+run_setup = [((nsteps, 0), 20, False),
+             ((nsteps, 0), 7, False),
+             ((nsteps, 0), 2, False),
+             ((nsteps, nsteps), 1, False)]
+
 for depth in depths:
+    startTime = time.time()
     h0 = sqrtSX / float(depth)
     r = np.random.uniform(0, 1)
     theta = np.random.uniform(0, 2*np.pi)
-    F0 = F0_center + 3*np.sqrt(r)*np.cos(theta)/(np.pi**2 * Tspan**2)
-    F1 = F1_center + 45*np.sqrt(r)*np.sin(theta)/(4*np.pi**2 * Tspan**4)
+    F0 = F0_center + np.random.uniform(-0.5, 0.5)*DeltaF0
+    F1 = F1_center + np.random.uniform(-0.5, 0.5)*DeltaF1
 
     psi = np.random.uniform(-np.pi/4, np.pi/4)
     phi = np.random.uniform(0, 2*np.pi)
@@ -81,7 +87,8 @@ for depth in depths:
     d, maxtwoF = mcmc.get_max_twoF()
     dF0 = F0 - d['F0']
     dF1 = F1 - d['F1']
+    runTime = time.time() - startTime
     with open(results_file_name, 'a') as f:
-        f.write('{} {:1.8e} {:1.8e} {:1.8e} {:1.8e} {:1.8e}\n'
-                .format(depth, h0, dF0, dF1, predicted_twoF, maxtwoF))
+        f.write('{} {:1.8e} {:1.8e} {:1.8e} {:1.8e} {:1.8e} {}\n'
+                .format(depth, h0, dF0, dF1, predicted_twoF, maxtwoF, runTime))
     os.system('rm {}/*{}*'.format(outdir, label))
