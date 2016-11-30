@@ -1404,6 +1404,9 @@ class MCMCSearch(BaseSearchClass):
 
         if subtractions is None:
             subtractions = [0 for i in range(ndim)]
+        else:
+            if len(subtractions) != self.ndim:
+                raise ValueError('subtractions must be of length ndim')
 
         with plt.style.context((context)):
             if fig is None and axes is None:
