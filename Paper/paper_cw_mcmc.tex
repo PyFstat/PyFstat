@@ -824,13 +824,13 @@ in the noise.
 
 First, we must define the setup for the run. Using $\mathcal{R}=10$ and
 $\V^{\rm min}=100$ our optimisation procedure is run and proposes the setup
-layed out in Table~\ref{tab_weak_signal_follow_up}. In addition, we show the
+layed out in Table~\ref{tab_signal_follow_up}. In addition, we show the
 number of steps taken at each stage.
 \begin{table}[htb]
 \caption{The search setup used in Figure~\ref{fig_follow_up}, generated with
 $\mathcal{R}=10$ and $\V^{\rm min}=100$.}
-\label{tab_weak_signal_follow_up}
-\input{weak_signal_follow_up_run_setup}
+\label{tab_follow_up}
+\input{follow_up_run_setup}
 \end{table}
 
 The choice of $\mathcal{R}$ and $\V^{\rm min}$ is a compromise between the
@@ -842,7 +842,7 @@ found to result in the MCMC simulations `loosing' the peaks between stages, we
 conservatively opt for 10 here, but values as large as 100 where also successful.
 
 In Figure~\ref{fig_follow_up} we show the progress of the MCMC sampler during
-the follow-up.  As expected from Table~\ref{tab_weak_signal_follow_up}, during
+the follow-up.  As expected from Table~\ref{tab_follow_up}, during
 the initial stage the signal peak is broad with respect to the size of the
 prior volume, therefore the MCMC simulation quickly converges to it. Subsequently,
 each time the number of segments is reduced, the peak narrows and the samplers
@@ -851,13 +851,13 @@ however this is due to the changing way that the Gaussian noise adds to the sign
 Eventually, the walkers all converge to the true signal.
 \begin{figure}[htb]
 \centering
-\includegraphics[width=0.4\textwidth]{weak_signal_follow_up_walkers}
+\includegraphics[width=0.5\textwidth]{follow_up_walkers}
 \caption{In the top three panels we show the progress of the 500 parallel
 walkers (see Figure~\ref{fig_MCMC_simple_example} for a description) during the
 MCMC simulation for each of the search parameters, frequency $f$,
 right-ascension $\alpha$ and declination $\delta$. Each vertical dashed line
 indicates the start of a new stage of the search, the parameters for all stages
-are listed in Table~\ref{tab_weak_signal_follow_up}.}
+are listed in Table~\ref{tab_follow_up}.}
 \label{fig_follow_up}
 \end{figure}
 
@@ -877,7 +877,36 @@ analagous to the studies performed in \citet{shaltev2013}, except that we
 present results as a function of the fixed signal depth, rather than the
 squared SNR.
 
+In particular we will generate \comment{N} realisations of Gaussian noise data
+lasting for 100 days, each with a simulated CW signal. We choose the parameters
+of the signal in such a way to model the candidates generated from directed and
+all-sky searches by drawing the signal parameters from appropriate
+distributions. However, we do not draw $h_0$ randomly, but instead run the MC
+study at a number of selected values chosen such that given the fixed
+$\sqrt{S_n}=2\times10^{3}$, the signals are injected with a depth $\mathcal{D}
+\in [100, 400]$.
+
+To simulate an isotropic distribution of sources, we draw the remaining
+amplitude parameters for each signal uniformly from $\phi \in [0, 2\pi]$, $\psi
+\in [-\pi/4, \pi/4]$, and $\cos\iota \in [-1, 1]$.
+
+
+
 \subsection{Follow-up candidates from a directed search}
+
+In a directed search, the sky location parameters $\alpha$ and $\delta$ are
+fixed - in our study we fix them on the location of the Crab pulsar, but this
+choice is arbitrary and holds no particular significance. The ouput of a
+gridded directed search would provide the grid-point with the highest detection
+statistic, and some estimate of the iso-mismatch contours in which the
+candidate is expected to exist. To simulate this, we will define a frequency
+and spindown of $f_0=30$~Hz and $\dot{f}_0=10^{-10}$Hz/s and a surrounding box
+$\Delta f$ and $\Delta \dot{f}$ which correspoinds to a fully-coherent
+$\V=10^{4}$ with $\V_{f}=\V_{\dot{f}}$. Then, we pick a candidate we first pick
+a point randomly in the unit circle, then using the PE-phase-metric we convert
+this into a random point in an isomismatch contour. In addition, we also select
+the amplitude parameters We then select a set of particular values of
+
 
 \begin{table}[htb]
 \caption{Run-setup for the directed follow-up Monte-Carlo study, generated with
@@ -894,6 +923,25 @@ come from random draws searches using the setup described in
 Table~\ref{tab_directed_MC_follow_up}.}
 \label{fig_directed_MC_follow_up}
 \end{figure}
+
+\subsection{Follow-up candidates from an all-sky search}
+
+\begin{table}[htb]
+\caption{Run-setup for the all-sky follow-up Monte-Carlo study, generated with
+$\mathcal{R}=10$ and $\V^{\rm min}=100$}
+\label{tab_allsky_MC_follow_up}
+\input{AllSky_run_setup}
+\end{table}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.45\textwidth]{allsky_recovery}
+\caption{Recovery fraction for the all-sky follow-up. The Monte-Carlo results
+come from random draws searches using the setup described in
+Table~\ref{tab_directed_MC_follow_up}.}
+\label{fig_allsky_MC_follow_up}
+\end{figure}
+
 \section{Alternative waveform models}
 
 In a grided search, the template bank is constructed to ensure that a canonical
