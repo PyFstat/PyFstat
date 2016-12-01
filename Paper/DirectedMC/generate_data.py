@@ -31,8 +31,7 @@ VF0 = VF1 = 100
 DeltaF0 = VF0 * np.sqrt(3)/(np.pi*Tspan)
 DeltaF1 = VF1 * np.sqrt(45/4.)/(np.pi*Tspan**2)
 
-depths = np.linspace(100, 400, 7)
-depths = [125, 175]
+depths = np.linspace(100, 400, 9)
 
 nsteps = 20
 run_setup = [((nsteps, 0), 20, False),
@@ -41,10 +40,7 @@ run_setup = [((nsteps, 0), 20, False),
              ((nsteps, nsteps), 1, False)]
 
 for depth in depths:
-    startTime = time.time()
     h0 = sqrtSX / float(depth)
-    r = np.random.uniform(0, 1)
-    theta = np.random.uniform(0, 2*np.pi)
     F0 = F0_center + np.random.uniform(-0.5, 0.5)*DeltaF0
     F1 = F1_center + np.random.uniform(-0.5, 0.5)*DeltaF1
 
@@ -60,6 +56,7 @@ for depth in depths:
     data.make_data()
     predicted_twoF = data.predict_fstat()
 
+    startTime = time.time()
     theta_prior = {'F0': {'type': 'unif',
                           'lower': F0-DeltaF0/2.,
                           'upper': F0+DeltaF0/2.},

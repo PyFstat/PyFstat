@@ -7,6 +7,6 @@ Output=CollectedOutput/out.$(Process)
 Error=CollectedOutput/err.$(Process)
 Log=CollectedOutput/log.$(Process)
 request_cpus = 1
-request_memory = 16 GB
+request_memory = 8 GB
 
-Queue 100
+Queue 400

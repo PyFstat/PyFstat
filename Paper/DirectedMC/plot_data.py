@@ -71,3 +71,10 @@ ax.legend(loc=1, frameon=False)
 
 fig.tight_layout()
 fig.savefig('directed_recovery.png')
+
+
+fig, ax = plt.subplots()
+ax.hist(df.runTime, bins=50)
+ax.set_xlabel('runTime per follow-up [s]')
+fig.savefig('runTimeHist.png')
+
