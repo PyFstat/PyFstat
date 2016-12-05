@@ -9,4 +9,4 @@ Log=CollectedOutput/log.$(Process)
 request_cpus = 1
 request_memory = 16 GB
 
-Queue 10
+Queue 90

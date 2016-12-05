@@ -2,6 +2,7 @@ import pyfstat
 import numpy as np
 import os
 import sys
+import time
 
 ID = sys.argv[1]
 outdir = sys.argv[2]
@@ -29,21 +30,20 @@ DeltaF1 = VF1 * np.sqrt(45/4.)/(np.pi*Tspan**2)
 
 depths = np.linspace(100, 400, 7)
 
-run_setup = [((100, 0), 27, False),
-             ((100, 0), 15, False),
-             ((100, 0), 8, False),
-             ((100, 0), 4, False),
-             ((50, 50), 1, False)]
+nsteps = 50
+run_setup = [((nsteps, 0), 20, False),
+             ((nsteps, 0), 11, False),
+             ((nsteps, 0), 6, False),
+             ((nsteps, 0), 3, False),
+             ((nsteps, nsteps), 1, False)]
 
 DeltaAlpha = 0.05
 DeltaDelta = 0.05
 
 for depth in depths:
     h0 = sqrtSX / float(depth)
-    r = np.random.uniform(0, 1)
-    theta = np.random.uniform(0, 2*np.pi)
-    F0 = F0_center + 3*np.sqrt(r)*np.cos(theta)/(np.pi**2 * Tspan**2)
-    F1 = F1_center + 45*np.sqrt(r)*np.sin(theta)/(4*np.pi**2 * Tspan**4)
+    F0 = F0_center + np.random.uniform(-0.5, 0.5)*DeltaF0
+    F1 = F1_center + np.random.uniform(-0.5, 0.5)*DeltaF1
     Alpha = np.random.uniform(0, 2*np.pi)
     Delta = np.arccos(2*np.random.uniform(0, 1)-1)-np.pi/2
     fAlpha = np.random.uniform(0, 1)
@@ -65,6 +65,7 @@ for depth in depths:
     data.make_data()
     predicted_twoF = data.predict_fstat()
 
+    startTime = time.time()
     theta_prior = {'F0': {'type': 'unif',
                           'lower': F0-DeltaF0/2.,
                           'upper': F0+DeltaF0/2.},
@@ -96,7 +97,8 @@ for depth in depths:
     d, maxtwoF = mcmc.get_max_twoF()
     dF0 = F0 - d['F0']
     dF1 = F1 - d['F1']
+    runTime = time.time() - startTime
     with open(results_file_name, 'a') as f:
-        f.write('{} {:1.8e} {:1.8e} {:1.8e} {:1.8e} {:1.8e}\n'
-                .format(depth, h0, dF0, dF1, predicted_twoF, maxtwoF))
+        f.write('{} {:1.8e} {:1.8e} {:1.8e} {:1.8e} {:1.8e} {}\n'
+                .format(depth, h0, dF0, dF1, predicted_twoF, maxtwoF, runTime))
     os.system('rm {}/*{}*'.format(outdir, label))

@@ -3,7 +3,7 @@ import numpy as np
 
 outdir = 'data'
 
-label = 'AllSky'
+label = 'allsky_setup'
 data_label = '{}_data'.format(label)
 
 # Properties of the GW data
@@ -23,32 +23,30 @@ VF0 = VF1 = 100
 DeltaF0 = VF0 * np.sqrt(3)/(np.pi*Tspan)
 DeltaF1 = VF1 * np.sqrt(45/4.)/(np.pi*Tspan**2)
 
-depths = np.linspace(100, 400, 7)
-
-run_setup = [((100, 0), 27, False),
-             ((100, 0), 15, False),
-             ((100, 0), 8, False),
-             ((100, 0), 4, False),
-             ((50, 50), 1, False)]
-
 DeltaAlpha = 0.05
 DeltaDelta = 0.05
 
 depth = 100
 
+nsteps = 50
+run_setup = [((nsteps, 0), 20, False),
+             ((nsteps, 0), 11, False),
+             ((nsteps, 0), 6, False),
+             ((nsteps, 0), 3, False),
+             ((nsteps, nsteps), 1, False)]
+
 h0 = sqrtSX / float(depth)
-F0 = F0_center
-F1 = F1_center
+r = np.random.uniform(0, 1)
+theta = np.random.uniform(0, 2*np.pi)
+F0 = F0_center + 3*np.sqrt(r)*np.cos(theta)/(np.pi**2 * Tspan**2)
+F1 = F1_center + 45*np.sqrt(r)*np.sin(theta)/(4*np.pi**2 * Tspan**4)
+
 Alpha = 0
 Delta = 0
-Alpha_min = Alpha - DeltaAlpha/2
-Alpha_max = Alpha + DeltaAlpha/2
-Delta_min = Delta - DeltaDelta/2
-Delta_max = Delta + DeltaDelta/2
 
-psi = 0
-phi = 0
-cosi = 0
+psi = np.random.uniform(-np.pi/4, np.pi/4)
+phi = np.random.uniform(0, 2*np.pi)
+cosi = np.random.uniform(-1, 1)
 
 data = pyfstat.Writer(
     label=data_label, outdir=outdir, tref=tref,
@@ -66,11 +64,11 @@ theta_prior = {'F0': {'type': 'unif',
                       'upper': F1+DeltaF1/2.},
                'F2': F2,
                'Alpha': {'type': 'unif',
-                         'lower': Alpha_min,
-                         'upper': Alpha_max},
+                         'lower': Alpha-DeltaAlpha/2.,
+                         'upper': Alpha+DeltaAlpha/2.},
                'Delta': {'type': 'unif',
-                         'lower': Delta_min,
-                         'upper': Delta_max},
+                         'lower': Delta-DeltaDelta/2.,
+                         'upper': Delta+DeltaDelta/2.},
                }
 
 ntemps = 1
@@ -84,4 +82,4 @@ mcmc = pyfstat.MCMCFollowUpSearch(
     tref=tref, minStartTime=tstart, maxStartTime=tend,
     nwalkers=nwalkers, ntemps=ntemps,
     log10temperature_min=log10temperature_min)
-mcmc.run(run_setup=run_setup)
+mcmc.run(run_setup)
