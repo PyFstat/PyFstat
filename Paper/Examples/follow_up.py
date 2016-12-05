@@ -1,6 +1,7 @@
 import pyfstat
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 
 F0 = 30.0
 F1 = -1e-10
@@ -16,7 +17,7 @@ tend = tstart+duration
 tref = .5*(tstart+tend)
 
 depth = 50
-data_label = 'weak_signal_follow_up_depth_{:1.0f}'.format(depth)
+data_label = 'follow_up'
 
 h0 = sqrtSX / depth
 
@@ -51,19 +52,25 @@ ntemps = 3
 log10temperature_min = -0.5
 nwalkers = 100
 scatter_val = 1e-10
-nsteps = [100, 100]
+nsteps = [200, 200]
 
 mcmc = pyfstat.MCMCFollowUpSearch(
-    label='weak_signal_follow_up', outdir='data',
+    label='follow_up', outdir='data',
     sftfilepath='data/*'+data_label+'*sft', theta_prior=theta_prior, tref=tref,
     minStartTime=tstart, maxStartTime=tend, nwalkers=nwalkers, nsteps=nsteps,
     ntemps=ntemps, log10temperature_min=log10temperature_min,
     scatter_val=scatter_val)
 
 fig, axes = plt.subplots(nrows=2, ncols=2)
-mcmc.run(
-    R=10, Nsegs0=100, subtractions=[F0, F1, Alpha, Delta], context='paper',
+fig, axes = mcmc.run(
+    R=10, Nsegs0=100, subtractions=[F0, F1, Alpha, Delta], labelpad=0.01,
     fig=fig, axes=axes, plot_det_stat=False, return_fig=True)
+axes[3].set_xlabel(r'$\textrm{Number of steps}$', labelpad=0.1)
+for ax in axes:
+    ax.set_xlim(0, axes[0].get_xlim()[-1])
+    ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(5))
+fig.tight_layout()
+fig.savefig('{}/{}_walkers.png'.format(mcmc.outdir, mcmc.label), dpi=400)
 
 mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()

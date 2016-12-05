@@ -1386,8 +1386,11 @@ class MCMCSearch(BaseSearchClass):
     def plot_walkers(self, sampler, symbols=None, alpha=0.4, color="k", temp=0,
                      lw=0.1, burnin_idx=None, add_det_stat_burnin=False,
                      fig=None, axes=None, xoffset=0, plot_det_stat=True,
-                     context='classic', subtractions=None):
+                     context='classic', subtractions=None, labelpad=0.05):
         """ Plot all the chains from a sampler """
+
+        if np.ndim(axes) > 1:
+            axes = axes.flatten()
 
         shape = sampler.chain.shape
         if len(shape) == 3:
@@ -1419,8 +1422,6 @@ class MCMCSearch(BaseSearchClass):
             if ndim > 1:
                 for i in range(ndim):
                     axes[i].ticklabel_format(useOffset=False, axis='y')
-                    if i < ndim-1:
-                        axes[i].set_xticklabels([])
                     cs = chain[:, :, i].T
                     if burnin_idx:
                         axes[i].plot(xoffset+idxs[:burnin_idx],
@@ -1432,10 +1433,11 @@ class MCMCSearch(BaseSearchClass):
                                  color="k", alpha=alpha, lw=lw)
                     if symbols:
                         if subtractions[i] == 0:
-                            axes[i].set_ylabel(symbols[i])
+                            axes[i].set_ylabel(symbols[i], labelpad=labelpad)
                         else:
                             axes[i].set_ylabel(
-                                symbols[i]+'$-$'+symbols[i]+'$_0$')
+                                symbols[i]+'$-$'+symbols[i]+'$_0$',
+                                labelpad=labelpad)
 
             else:
                 axes[0].ticklabel_format(useOffset=False, axis='y')
@@ -1446,12 +1448,13 @@ class MCMCSearch(BaseSearchClass):
                 axes[0].plot(idxs[burnin_idx:], cs[burnin_idx:], color="k",
                              alpha=alpha, lw=lw)
                 if symbols:
-                    axes[0].set_ylabel(symbols[0])
+                    axes[0].set_ylabel(symbols[0], labelpad=labelpad)
 
-            if len(axes) == ndim:
-                axes.append(fig.add_subplot(ndim+1, 1, ndim+1))
 
             if plot_det_stat:
+                if len(axes) == ndim:
+                    axes.append(fig.add_subplot(ndim+1, 1, ndim+1))
+
                 lnl = sampler.lnlikelihood[temp, :, :]
                 if burnin_idx and add_det_stat_burnin:
                     burn_in_vals = lnl[:, :burnin_idx].flatten()
@@ -1478,7 +1481,7 @@ class MCMCSearch(BaseSearchClass):
                 xfmt.set_powerlimits((-4, 4)) 
                 axes[-1].xaxis.set_major_formatter(xfmt)
 
-            axes[-2].set_xlabel(r'$\textrm{Number of steps}$', labelpad=0.1)
+            axes[-2].set_xlabel(r'$\textrm{Number of steps}$', labelpad=0.2)
         return fig, axes
 
     def apply_corrections_to_p0(self, p0):
@@ -2374,8 +2377,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             return run_setup
 
     def run(self, run_setup=None, proposal_scale_factor=2, R=10, Nsegs0=None,
-            create_plots=True, log_table=True, gen_tex_table=True,
-            **kwargs):
+            create_plots=True, log_table=True, gen_tex_table=True, fig=None,
+            axes=None, return_fig=False, **kwargs):
         """ Run the follow-up with the given run_setup
 
         Parameters
@@ -2403,8 +2406,6 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             self.nsegs = run_setup[-1][1]
             return
 
-        fig = None
-        axes = None
         nsteps_total = 0
         for j, ((nburn, nprod), nseg, reset_p0) in enumerate(run_setup):
             if j == 0:
@@ -2445,17 +2446,10 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 fig, axes = self.plot_walkers(
                     sampler, symbols=self.theta_symbols, fig=fig, axes=axes,
                     burnin_idx=nburn, xoffset=nsteps_total, **kwargs)
-                for ax in axes[:-1]:
-                    ax.axvline(nsteps_total, color='k', ls='--')
-            nsteps_total += nburn+nprod
+                for ax in axes[:self.ndim]:
+                    ax.axvline(nsteps_total, color='k', ls='--', lw=0.25)
 
-        if create_plots:
-            try:
-                fig.tight_layout()
-            except ValueError as e:
-                logging.warning('Tight layout encountered {}'.format(e))
-            fig.savefig('{}/{}_walkers.png'.format(
-                self.outdir, self.label), dpi=200)
+            nsteps_total += nburn+nprod
 
         samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
         lnprobs = sampler.lnprobability[0, :, nburn:].reshape((-1))
@@ -2465,6 +2459,17 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes
         self.save_data(sampler, samples, lnprobs, lnlikes)
+
+        if create_plots:
+            try:
+                fig.tight_layout()
+            except (ValueError, RuntimeError) as e:
+                logging.warning('Tight layout encountered {}'.format(e))
+            if return_fig:
+                return fig, axes
+            else:
+                fig.savefig('{}/{}_walkers.png'.format(
+                    self.outdir, self.label), dpi=200)
 
 
 class MCMCTransientSearch(MCMCSearch):
