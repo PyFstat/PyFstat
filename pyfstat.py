@@ -2365,8 +2365,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                             nsteps = rs[0][0]
                         else:
                             nsteps = '{},{}'.format(*rs[0])
-                        line = line.format(i, rs[1], Tcoh, nsteps,
-                                           texify_float(Vpe))
+                        line = line.format(i, rs[1], '{:1.1f}'.format(Tcoh),
+                                           nsteps, texify_float(Vpe))
                         f.write(line)
                     f.write(r'\end{tabular}' + '\n')
 

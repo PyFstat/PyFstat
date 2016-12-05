@@ -27,7 +27,7 @@ DeltaF1 = VF1 * np.sqrt(45/4.)/(np.pi*Tspan**2)
 
 depth = 100
 
-nsteps = 50
+nsteps = 20
 run_setup = [((nsteps, 0), 20, False),
              ((nsteps, 0), 7, False),
              ((nsteps, 0), 2, False),
