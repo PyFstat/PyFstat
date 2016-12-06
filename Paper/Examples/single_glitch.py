@@ -80,8 +80,8 @@ theta_prior = {'F0': {'type': 'unif', 'lower': F0-DeltaF0/2.,
                'Delta': Delta,
                'tglitch': {'type': 'unif', 'lower': tstart+0.1*duration,
                            'upper': tend-0.1*duration},
-               'delta_F0': {'type': 'halfnorm', 'loc': 0, 'scale': 1e-3*F0},
-               'delta_F1': {'type': 'norm', 'loc': 0, 'scale': 1e-3*abs(F1)},
+               'delta_F0': {'type': 'halfnorm', 'loc': 0, 'scale': DeltaF0},
+               'delta_F1': {'type': 'norm', 'loc': 0, 'scale': DeltaF1},
                }
 ntemps = 3
 log10temperature_min = -0.1
@@ -94,6 +94,6 @@ glitch_mcmc = pyfstat.MCMCGlitchSearch(
     nwalkers=nwalkers, ntemps=ntemps,
     log10temperature_min=log10temperature_min)
 glitch_mcmc.run()
-glitch_mcmc.plot_corner(figsize=(3.2, 3.2))
+glitch_mcmc.plot_corner(figsize=(6, 6))
 glitch_mcmc.print_summary()
 

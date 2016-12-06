@@ -296,6 +296,7 @@ computed analytically as
 \int
 \mathcal{L}(x ;\A, \blambda)
 P(\A| \Hs, I) d\A
+\label{eqn_B_S_N}
 \\
 & = \frac{C (2\pi)^{2} e^{\F(x| \blambda)}}
 {\sqrt{\textrm{det} \mathcal{M}}},
@@ -1110,14 +1111,84 @@ a simulated transient signal and Gaussian noise.}
 
 
 \subsection{Glitches}
-
 \label{sec_glitches}
+
+Observations of radio pulsars show that occasionally neutron stars undergo
+sudden glitch events during which the pulsation frequency suddenly
+\emph{increases} quite distinct from the usual spin-down due to EM or GW
+torques (see \citet{espinoza2011} for a review). These events are typically
+Poisson distributed \citet{melatos2008}, but the exact mechanism is not yet
+fully understood. However, it seems plausible that the glitch mechanism will
+similarly effect any CW emission, i.e. CW signals will also undergo glitches.
+In \citet{ashton2016} we demonstrated that if this is the case, CW sources in
+directed and all-sky searches have a reasonable probability of undergoing one
+or more glitches during typical observations spans and that these glitches may
+be sufficiently large to disrupt the detection; this is particuarly true for
+areas of parameter space with large spindowns. However, the effect is mitigated
+by the use of incoherent searches. As such, we may expect all-sky and directed
+searches to correctly identify glitching signals as candidates, but
+subseuqnetly `loose' them during the follow-up process. As such, we will now
+discuss how the $\F$-statistic optimisation routine discussed in this work can
+be used to search for glitching signals.
+
+We will model a glitch as a sudden discontinuous change in the  Doppler
+parameters $\delta \blambda$ at some time $\tglitch$: that the change is only
+in the frequency and spin-down Doppler parameters, i.e. $\delta\blambda = [0,
+0, \delta f, \delta \fdot, \ldots]$. This is to be interpretted, as is done for
+radio-pulsar glitches, as the instantaneous change in frequency and spindown at
+the time of the glitch. Moreover, multiple glitches can be included (we will
+define $\Nglitches$ as the number of glitches) by adding
+an index to the glitch magnitude and glitch time.
+
+An ideal glitch search would include these new parameters into the phase model
+itself and compute the $\F$-statistic fully-coherently i.e. rewriting
+Equation~\eqref{eqn_B_S_N} as
+\begin{multline}
+\Bsn(x| \tglitch, \delta\blambda, \Pic, \blambda, I) \equiv \\
+\int
+\mathcal{L}(x ;\A, \blambda, \tglitch, \delta\blambda)
+P(\A| \Hs, I) d\A
+\end{multline}
+where $\tglitch, \delta\blambda$ modify the phase model. However, we propose the
+following pragmatic approach: let us instead use an semi-coherent detection
+statistic with the epoch between \emph{segments} as $\tglitch$, i.e.
+\begin{multline}
+\Bsn(x| \tglitch, \delta\blambda, \Pic, \blambda, I) \equiv \\
+\int_{\tstart}^{\tglitch}
+\mathcal{L}(x ;\A, \blambda)
+P(\A| \Hs, I) d\A \\ +
+\int_{\tglitch}^{\tend}
+\mathcal{L}(x ;\A, \blambda{+}\delta\blambda)
+P(\A| \Hs, I) d\A
+\end{multline}
+
+This simplistic method leverages readily available and tested code with a loss
+of sensitivity over the fully-coherent search by a factor
+$\sqrt{\Nglitches+1}$. Such a loss is acceptable, given that the signals must
+be sufficiently strong to have been identified by the initial all-sky or directed
+search.
+
+As an illustration of the use of this method, we simulate a signal in Gaussian
+noise which undergoes a glitch. Firstly in Figure~\ref{fig_glitch_grid} we show
+the fully-coherent $2\F$ value computed for a grid of points: this distinctly
+shows two peaks, a feature indicative of a glitching signal, with a maximum
+value of $\sim\CHECK{400}$. Using our incoherent glitch statistic, we plot
+the resulting posterior distributions in Figure~\ref{fig_glitch_posteriors}.
+
 \begin{figure}[htb]
 \centering
 \includegraphics[width=0.5\textwidth]{single_glitch_F0F1_grid_2D}
 \caption{}
-\label{fig:}
+\label{fig_glitch_grid}
 \end{figure}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.5\textwidth]{single_glitch_glitchSearch_corner}
+\caption{}
+\label{fig_glitch_posteriors}
+\end{figure}
+
 \section{Conclusion}
 \label{sec_conclusion}
 

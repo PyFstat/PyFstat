@@ -87,5 +87,5 @@ mcmc = pyfstat.MCMCTransientSearch(
     nwalkers=nwalkers, ntemps=ntemps,
     log10temperature_min=log10temperature_min)
 mcmc.run()
-mcmc.plot_corner(add_prior=True)
+mcmc.plot_corner()
 mcmc.print_summary()
