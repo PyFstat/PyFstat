@@ -79,8 +79,10 @@ fig.tight_layout()
 fig.savefig('allsky_recovery.png')
 
 
+total_number_steps = 6 * 50.
 fig, ax = plt.subplots()
-ax.hist(df.runTime, bins=20)
-ax.set_xlabel('runTime per follow-up [s]')
+ax.hist(df.runTime/total_number_steps, bins=50)
+ax.set_xlabel('run-time per step [s]')
+fig.tight_layout()
 fig.savefig('runTimeHist.png')
 

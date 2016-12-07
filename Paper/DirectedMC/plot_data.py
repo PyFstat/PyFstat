@@ -4,6 +4,9 @@ import numpy as np
 import os
 from tqdm import tqdm
 from oct2py import octave
+import glob
+
+filenames = glob.glob("CollectedOutput/*.txt")
 
 plt.style.use('paper')
 
@@ -22,14 +25,17 @@ def Recovery(Tspan, Depth, twoFstar=60, detectors='H1,L1'):
 def binomialConfidenceInterval(N, K, confidence=0.95):
     cmd = '[fLow, fUpper] = binomialConfidenceInterval({}, {}, {})'.format(
         N, K, confidence)
-    [l, u] =  octave.eval(cmd, verbose=False, return_both=True)[0].split('\n')
+    [l, u] = octave.eval(cmd, verbose=False, return_both=True)[0].split('\n')
     return float(l.split('=')[1]), float(u.split('=')[1])
 
-results_file_name = 'MCResults.txt'
-
-df = pd.read_csv(
-    results_file_name, sep=' ', names=['depth', 'h0', 'dF0', 'dF1',
-                                       'twoF_predicted', 'twoF', 'runTime'])
+df_list = []
+for fn in filenames:
+    df = pd.read_csv(
+        fn, sep=' ', names=['depth', 'h0', 'dF0', 'dF1', 'twoF_predicted',
+                            'twoF', 'runTime'])
+    df['CLUSTER_ID'] = fn.split('_')[1]
+    df_list.append(df)
+df = pd.concat(df_list)
 
 twoFstar = 60
 depths = np.unique(df.depth.values)
@@ -73,8 +79,11 @@ fig.tight_layout()
 fig.savefig('directed_recovery.png')
 
 
+total_number_steps = 5*20.
+df_clean = df[df.CLUSTER_ID == '969049']  # Hack due to a change in the code
 fig, ax = plt.subplots()
-ax.hist(df.runTime, bins=50)
-ax.set_xlabel('runTime per follow-up [s]')
+ax.hist(df_clean.runTime/total_number_steps, bins=50)
+ax.set_xlabel('run-time per step [s]')
+fig.tight_layout()
 fig.savefig('runTimeHist.png')
 
