@@ -296,6 +296,7 @@ computed analytically as
 \int
 \mathcal{L}(x ;\A, \blambda)
 P(\A| \Hs, I) d\A
+\label{eqn_B_S_N}
 \\
 & = \frac{C (2\pi)^{2} e^{\F(x| \blambda)}}
 {\sqrt{\textrm{det} \mathcal{M}}},
@@ -790,6 +791,13 @@ fraction of the volume at adjacent stages. That is we define
 \end{equation}
 where $\mathcal{R} \ge 1$ as $\Tcoh^{i+1} > \Tcoh^{i}$.
 
+For the MCMC simulations to be succesful, this initial bounding
+box, given the segment setup which produced the candidate, must be small
+compared to the width of the signal (at that segment setup). If we start out
+follow-up with the same search setup used in the source search, i.e.  we set
+$\Nseg^0$ equal to the number of segments used in the input search, then for
+the MCMC simulation to work, we require that $\V(\Nseg^{0}) \sim \mathcal{O}(100)$.
+
 Given a fixed prior on the Doppler parameters and a fixed span of data, the
 metric volume $\V_{\Nstages}$ for $\Tcoh^{\Nstages} = \Tspan$ is fixed, or in
 terms of the number of segments, $\Nseg^{\Nstages} = 1$.
@@ -824,12 +832,12 @@ in the noise.
 
 First, we must define the setup for the run. Using $\mathcal{R}=10$ and
 $\V^{\rm min}=100$ our optimisation procedure is run and proposes the setup
-layed out in Table~\ref{tab_signal_follow_up}. In addition, we show the
+layed out in Table~\ref{tab_follow_up_run_setup}. In addition, we show the
 number of steps taken at each stage.
 \begin{table}[htb]
 \caption{The search setup used in Figure~\ref{fig_follow_up}, generated with
 $\mathcal{R}=10$ and $\V^{\rm min}=100$.}
-\label{tab_follow_up}
+\label{tab_follow_up_run_setup}
 \input{follow_up_run_setup}
 \end{table}
 
@@ -842,7 +850,7 @@ found to result in the MCMC simulations `loosing' the peaks between stages, we
 conservatively opt for 10 here, but values as large as 100 where also successful.
 
 In Figure~\ref{fig_follow_up} we show the progress of the MCMC sampler during
-the follow-up.  As expected from Table~\ref{tab_follow_up}, during
+the follow-up.  As expected from Table~\ref{tab_follow_up_run_setup}, during
 the initial stage the signal peak is broad with respect to the size of the
 prior volume, therefore the MCMC simulation quickly converges to it. Subsequently,
 each time the number of segments is reduced, the peak narrows and the samplers
@@ -855,9 +863,8 @@ Eventually, the walkers all converge to the true signal.
 \caption{In the top three panels we show the progress of the 500 parallel
 walkers (see Figure~\ref{fig_MCMC_simple_example} for a description) during the
 MCMC simulation for each of the search parameters, frequency $f$,
-right-ascension $\alpha$ and declination $\delta$. Each vertical dashed line
-indicates the start of a new stage of the search, the parameters for all stages
-are listed in Table~\ref{tab_follow_up}.}
+right-ascension $\alpha$ and declination $\delta$. Each vertical dashed line indicates the start of a new stage of the search, the parameters for all stages
+are listed in Table~\ref{tab_follow_up_run_setup}.}
 \label{fig_follow_up}
 \end{figure}
 
@@ -869,52 +876,89 @@ chains explore the other `noise peaks' in the data.
 
 \section{Monte Carlo studies}
 
-In order to understand how well the MCMC follow-up method works, we will now
-study the recovery fraction as a function of signal depth. This will be done in
-a Monte Carlo study, with independent random realisations of the Guassian
-noise, amplitude, and Doppler parameters in suitable ranges. Such a method is
-analagous to the studies performed in \citet{shaltev2013}, except that we
-present results as a function of the fixed signal depth, rather than the
-squared SNR.
+In order to understand how well the MCMC follow-up method works, we will test
+its ability to succesfully identify simulated signals in Gaussian. This will be
+done in a Monte Carlo study, with independent random realisations of the
+Guassian noise, amplitude, and Doppler parameters in suitable ranges. Such a
+method is analagous to the studies performed in \citet{shaltev2013}, except
+that we present results as a function of the fixed injected signal depth,
+rather than the squared SNR.
 
-In particular we will generate \comment{N} realisations of Gaussian noise data
-lasting for 100 days, each with a simulated CW signal. We choose the parameters
-of the signal in such a way to model the candidates generated from directed and
-all-sky searches by drawing the signal parameters from appropriate
-distributions. However, we do not draw $h_0$ randomly, but instead run the MC
-study at a number of selected values chosen such that given the fixed
-$\sqrt{S_n}=2\times10^{3}$, the signals are injected with a depth $\mathcal{D}
-\in [100, 400]$.
+In particular we will generate a number of 100-day data sets containing
+independent realisations of Gaussian noise and a simulated CW signal. We choose
+the parameters of the signal in such a way to model the candidates generated
+from directed and all-sky searches by drawing the signal parameters from
+appropriate distributions. However, we do not draw $h_0$ randomly, but instead
+run the MC study at a number of selected values chosen such that given the
+fixed $\sqrt{S_n}=2\times10^{3}$, the signals are injected with a depth
+$\mathcal{D} \in [100, 400]$.  To simulate an isotropic distribution of
+sources, we draw the remaining amplitude parameters for each signal uniformly
+from $\phi \in [0, 2\pi]$, $\psi \in [-\pi/4, \pi/4]$, and $\cos\iota \in [-1,
+1]$.
 
-To simulate an isotropic distribution of sources, we draw the remaining
-amplitude parameters for each signal uniformly from $\phi \in [0, 2\pi]$, $\psi
-\in [-\pi/4, \pi/4]$, and $\cos\iota \in [-1, 1]$.
-
+To provide a reference, we will compare the MC follow-up study against the
+expected maximum theoretical detection probability for an infinitly dense
+fully-coherent search of data containing isotropically-distributed signals as
+calculated by \citet{wette2012}. Note however that we will parameterise with
+respect to the signal depth (i.e. using Equation~(3.8) of \citet{wette2012} to
+relate the averaged-SNR to the depth). The probability is maximal in the
+sense that signals are `lost' during the follow-up due simply to the fact that
+they are not sufficiently strong to rise above the noise.
 
 
 \subsection{Follow-up candidates from a directed search}
+\label{sec_directed_follow_up}
 
 In a directed search, the sky location parameters $\alpha$ and $\delta$ are
 fixed - in our study we fix them on the location of the Crab pulsar, but this
 choice is arbitrary and holds no particular significance. The ouput of a
-gridded directed search would provide the grid-point with the highest detection
-statistic, and some estimate of the iso-mismatch contours in which the
-candidate is expected to exist. To simulate this, we will define a frequency
-and spindown of $f_0=30$~Hz and $\dot{f}_0=10^{-10}$Hz/s and a surrounding box
-$\Delta f$ and $\Delta \dot{f}$ which correspoinds to a fully-coherent
-$\V=10^{4}$ with $\V_{f}=\V_{\dot{f}}$. Then, we pick a candidate we first pick
-a point randomly in the unit circle, then using the PE-phase-metric we convert
-this into a random point in an isomismatch contour. In addition, we also select
-the amplitude parameters We then select a set of particular values of
+semi-coherent gridded directed search would provide the grid-point with the
+highest detection statistic, and some box bounding the candidate given some
+uncertainty. We will assume in this section that given the search setup
+$\Nseg^{0}$ of the input search, the bounding box is sufficiently small to
+ensure that $\V(\Nseg^0)\sim \mathcal{O}(100)$. This is not a limiting
+assumption as any search can (quite cheaply) increase the density of grid
+points around any interesting candidates in order to better constrain their
+uncertainty.
 
+The behaviour of the follow-up is independent of the exact frequency and
+spin-down values used (this is not true for an all-sky follow-up as discussed
+in Section~\ref{sec_all_sky_follow_up}). As such, we can, without loss of
+generality define our Monte-Carlo follow-up in the following way. First, we
+select an arbitrary frequency and spindown of $f_0=30$~Hz and
+$\dot{f}_0=10^{-10}$Hz/s and a surrounding uncertainty box $\Delta f$ and
+$\Delta \dot{f}$ chosen such that the uncertainty in frequency and spindown are
+roughly equivalent in terms of mismatch. Then, we pick a candidate uniformly
+from within this uncertainty box; this choice reflects the fact that the grid
+is chosen such that the probability distribution of candidate signals is
+uniform.
+
+
+
+Having generated the data given the prescription above, we proceed to perform a
+hierarchical MCMC follow-up. Given the data span and initial bounding box, we
+compute the optimal heirarchical setup, the details of which are given in
+Table~\ref{tab_directed_MC_follow_up}, this setup was used for all MC
+simulations. This table also lists the number of steps, which in this case we
+chose to be 10 - quite a small number of steps for a typical MCMC simulation.
 
 \begin{table}[htb]
 \caption{Run-setup for the directed follow-up Monte-Carlo study, generated with
-$\mathcal{R}=10$ and $\V^{\rm min}=100$}
+$\mathcal{R}=10$ and $\Nseg^0=20$.}
 \label{tab_directed_MC_follow_up}
 \input{directed_setup_run_setup}
 \end{table}
 
+This process yeilds a maximum detection statistic $\widetilde{2\F}^{\rm max}$.
+The signal is considered `detected' if $\widetilde{2\F}^{\rm max} >
+\widetilde{2\F}^{\rm th}$, where we set the threshold at $2\F^{\rm th}=60$,
+corresponding to a p-value of \comment{Finish section}.  In
+Figure~\ref{fig_directed_MC_follow_up} we plot the the fraction of the MC
+simulations which where recovered and compare this against the theoretical
+maximum, given the threshold. The figure demonstrates that the recovery power
+of the MCMC follow-up shows only a small margin of loss compared to the
+theoretical maximum. \comment{Probably best to run with more steps and see if
+this doesn't remove the loss}
 \begin{figure}[htb]
 \centering
 \includegraphics[width=0.45\textwidth]{directed_recovery}
@@ -924,13 +968,39 @@ Table~\ref{tab_directed_MC_follow_up}.}
 \label{fig_directed_MC_follow_up}
 \end{figure}
 
+
 \subsection{Follow-up candidates from an all-sky search}
+\label{sec_all_sky_follow_up}
+
+We now test the follow-up method when applied to candidates from an all-sky
+search which, by definition, have uncertain sky-position parameters $\alpha$
+and $\delta$. Searching over these parameters, in addition to the frequency
+and spin-down not only increases the parameter space volume that needs to be
+searched, but also adds difficulty due to correlations between the sky-position
+and spin-down \comment{Does some of Karl's work discuss this?}.
+
+To replicate the condition of candidates from an all-sky search, we draw the
+candidate positions isotropically from the unit sphere (i.e. $\alpha$ uniform
+on $[0, 2\pi]$ and $\delta = \cos^{-1}(2u{-}1){- }\pi/2$ where $u$ is uniform
+on $[0, 1]$). We then place an uncertainty box containing the candidates with a
+width $\Delta\alpha=\Delta\delta=0.05$; this box is not centered on the
+candidate, but chosen in such a way that the location of the candidate has a
+uniform probability distrubution within the box. This neglects the non-uniform
+variation in $\delta$ over the sky-pacth, but given the small area should not
+cause any significant bias. The frequency, spin-down, and amplitude parameters
+are chosen in the same way as for the directed search
+(Section~\ref{sec_directed_follow_up}). 
+
+Producing \CHECK{1000} indepedant MC simulations we the perform a follow-up on
+each using the setup given in Table~\ref{tab_allsky_MC_follow_up}. The
+resulting recovery fraction as a function of the injected signal depth is given
+in Figure~\ref{fig_allsky_MC_follow_up}.
 
 \begin{table}[htb]
 \caption{Run-setup for the all-sky follow-up Monte-Carlo study, generated with
-$\mathcal{R}=10$ and $\V^{\rm min}=100$}
+$\mathcal{R}=10$ and $\Nseg^0=20$.}
 \label{tab_allsky_MC_follow_up}
-\input{AllSky_run_setup}
+\input{allsky_setup_run_setup}
 \end{table}
 
 \begin{figure}[htb]
@@ -1042,6 +1112,82 @@ a simulated transient signal and Gaussian noise.}
 
 \subsection{Glitches}
 \label{sec_glitches}
+
+Observations of radio pulsars show that occasionally neutron stars undergo
+sudden glitch events during which the pulsation frequency suddenly
+\emph{increases} quite distinct from the usual spin-down due to EM or GW
+torques (see \citet{espinoza2011} for a review). These events are typically
+Poisson distributed \citet{melatos2008}, but the exact mechanism is not yet
+fully understood. However, it seems plausible that the glitch mechanism will
+similarly effect any CW emission, i.e. CW signals will also undergo glitches.
+In \citet{ashton2016} we demonstrated that if this is the case, CW sources in
+directed and all-sky searches have a reasonable probability of undergoing one
+or more glitches during typical observations spans and that these glitches may
+be sufficiently large to disrupt the detection; this is particuarly true for
+areas of parameter space with large spindowns. However, the effect is mitigated
+by the use of incoherent searches. As such, we may expect all-sky and directed
+searches to correctly identify glitching signals as candidates, but
+subseuqnetly `loose' them during the follow-up process. As such, we will now
+discuss how the $\F$-statistic optimisation routine discussed in this work can
+be used to search for glitching signals.
+
+We will model a glitch as a sudden discontinuous change in the  Doppler
+parameters $\delta \blambda$ at some time $\tglitch$: that the change is only
+in the frequency and spin-down Doppler parameters, i.e. $\delta\blambda = [0,
+0, \delta f, \delta \fdot, \ldots]$. This is to be interpretted, as is done for
+radio-pulsar glitches, as the instantaneous change in frequency and spindown at
+the time of the glitch. Moreover, multiple glitches can be included (we will
+define $\Nglitches$ as the number of glitches) by adding
+an index to the glitch magnitude and glitch time.
+
+An ideal glitch search would include these new parameters into the phase model
+itself and compute the $\F$-statistic fully-coherently i.e. rewriting
+Equation~\eqref{eqn_B_S_N} as
+\begin{multline}
+\Bsn(x| \tglitch, \delta\blambda, \Pic, \blambda, I) \equiv \\
+\int
+\mathcal{L}(x ;\A, \blambda, \tglitch, \delta\blambda)
+P(\A| \Hs, I) d\A
+\end{multline}
+where $\tglitch, \delta\blambda$ modify the phase model. However, we propose the
+following pragmatic approach: let us instead use an semi-coherent detection
+statistic with the epoch between \emph{segments} as $\tglitch$, i.e.
+\begin{multline}
+\Bsn(x| \tglitch, \delta\blambda, \Pic, \blambda, I) \equiv \\
+\int_{\tstart}^{\tglitch}
+\mathcal{L}(x ;\A, \blambda)
+P(\A| \Hs, I) d\A \\ +
+\int_{\tglitch}^{\tend}
+\mathcal{L}(x ;\A, \blambda{+}\delta\blambda)
+P(\A| \Hs, I) d\A
+\end{multline}
+
+This simplistic method leverages readily available and tested code with a loss
+of sensitivity over the fully-coherent search by a factor
+$\sqrt{\Nglitches+1}$. Such a loss is acceptable, given that the signals must
+be sufficiently strong to have been identified by the initial all-sky or directed
+search.
+
+As an illustration of the use of this method, we simulate a signal in Gaussian
+noise which undergoes a glitch. Firstly in Figure~\ref{fig_glitch_grid} we show
+the fully-coherent $2\F$ value computed for a grid of points: this distinctly
+shows two peaks, a feature indicative of a glitching signal, with a maximum
+value of $\sim\CHECK{400}$. Using our incoherent glitch statistic, we plot
+the resulting posterior distributions in Figure~\ref{fig_glitch_posteriors}.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.5\textwidth]{single_glitch_F0F1_grid_2D}
+\caption{}
+\label{fig_glitch_grid}
+\end{figure}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.5\textwidth]{single_glitch_glitchSearch_corner}
+\caption{}
+\label{fig_glitch_posteriors}
+\end{figure}
 
 \section{Conclusion}
 \label{sec_conclusion}
