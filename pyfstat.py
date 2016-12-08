@@ -2728,8 +2728,9 @@ class GridSearch(BaseSearchClass):
 
         ax.set_xlim(x[0], x[-1])
         ax.set_ylim(y[0], y[-1])
-        ax.set_xlabel(xkey)
-        ax.set_ylabel(ykey)
+        labels = {'F0': '$f$', 'F1': '$\dot{f}$'}
+        ax.set_xlabel(labels[xkey])
+        ax.set_ylabel(labels[ykey])
 
         if xN:
             ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(xN))
