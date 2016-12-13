@@ -3030,7 +3030,8 @@ transientTauDays={:1.3f}\n""")
         cl.append('--fmin={}'.format(int(self.fmin)))
         cl.append('--Band={}'.format(self.Band))
         cl.append('--Tsft={}'.format(self.Tsft))
-        cl.append('--injectionSources="{}"'.format(self.config_file_name))
+        if self.h0 != 0:
+            cl.append('--injectionSources="{}"'.format(self.config_file_name))
 
         cl = " ".join(cl)
 
