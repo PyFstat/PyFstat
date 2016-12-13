@@ -1,15 +1,13 @@
 import pyfstat
 import numpy as np
 import os
-import sys
 import time
 
-ID = sys.argv[1]
-outdir = sys.argv[2]
+outdir = 'data'
 
-label = 'run_{}'.format(ID)
+label = 'run_failures'
 data_label = '{}_data'.format(label)
-results_file_name = '{}/MCResults_{}.txt'.format(outdir, ID)
+results_file_name = '{}/MCResults_failures.txt'.format(outdir)
 
 # Properties of the GW data
 sqrtSX = 2e-23
@@ -31,7 +29,7 @@ DeltaF1 = VF1 * np.sqrt(45/4.)/(np.pi*Tspan**2)
 DeltaAlpha = 0.02
 DeltaDelta = 0.02
 
-depths = np.linspace(100, 400, 7)
+depths = [140]
 
 nsteps = 50
 run_setup = [((nsteps, 0), 20, False),
@@ -76,6 +74,7 @@ for depth in depths:
                              'lower': Delta_center-DeltaDelta,
                              'upper': Delta_center+DeltaDelta},
                    }
+    theta_prior = {'F0': {'upper': 30.000006381121477, 'lower': 29.999993618878523, 'type': 'unif'}, 'F1': {'upper': 1.0143020701400378e-10, 'lower': 9.8569792985996225e-11, 'type': 'unif'}, 'F2': 0, 'Delta': {'upper': -0.20155527961896461, 'lower': -0.24155527961896459, 'type': 'unif'}, 'Alpha': {'upper': 2.8924321897264367, 'lower': 2.8524321897264366, 'type': 'unif'}}
 
     ntemps = 2
     log10temperature_min = -1
@@ -88,13 +87,7 @@ for depth in depths:
         tref=tref, minStartTime=tstart, maxStartTime=tend,
         nwalkers=nwalkers, ntemps=ntemps,
         log10temperature_min=log10temperature_min)
-    mcmc.run(run_setup=run_setup, create_plots=False, log_table=False,
+    mcmc.run(run_setup=run_setup, create_plots=True, log_table=False,
              gen_tex_table=False)
     d, maxtwoF = mcmc.get_max_twoF()
-    dF0 = F0 - d['F0']
-    dF1 = F1 - d['F1']
-    runTime = time.time() - startTime
-    with open(results_file_name, 'a') as f:
-        f.write('{} {:1.8e} {:1.8e} {:1.8e} {:1.8e} {:1.8e} {}\n'
-                .format(depth, h0, dF0, dF1, predicted_twoF, maxtwoF, runTime))
-    os.system('rm {}/*{}*'.format(outdir, label))
+    print 'MaxtwoF = {}'.format(maxtwoF)

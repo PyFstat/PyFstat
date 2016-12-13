@@ -23,8 +23,8 @@ VF0 = VF1 = 100
 DeltaF0 = VF0 * np.sqrt(3)/(np.pi*Tspan)
 DeltaF1 = VF1 * np.sqrt(45/4.)/(np.pi*Tspan**2)
 
-DeltaAlpha = 0.05
-DeltaDelta = 0.05
+DeltaAlpha = 0.02
+DeltaDelta = 0.02
 
 depth = 100
 
@@ -41,8 +41,10 @@ theta = np.random.uniform(0, 2*np.pi)
 F0 = F0_center + 3*np.sqrt(r)*np.cos(theta)/(np.pi**2 * Tspan**2)
 F1 = F1_center + 45*np.sqrt(r)*np.sin(theta)/(4*np.pi**2 * Tspan**4)
 
-Alpha = 0
-Delta = 0
+Alpha_center = 0
+Delta_center = 0
+Alpha = Alpha_center + np.random.uniform(-0.5, 0.5)*DeltaAlpha
+Delta = Delta_center + np.random.uniform(-0.5, 0.5)*DeltaDelta
 
 psi = np.random.uniform(-np.pi/4, np.pi/4)
 phi = np.random.uniform(0, 2*np.pi)
@@ -57,21 +59,21 @@ data.make_data()
 predicted_twoF = data.predict_fstat()
 
 theta_prior = {'F0': {'type': 'unif',
-                      'lower': F0-DeltaF0/2.,
-                      'upper': F0+DeltaF0/2.},
+                      'lower': F0_center-DeltaF0,
+                      'upper': F0_center+DeltaF0},
                'F1': {'type': 'unif',
-                      'lower': F1-DeltaF1/2.,
-                      'upper': F1+DeltaF1/2.},
+                      'lower': F1_center-DeltaF1,
+                      'upper': F1_center+DeltaF1},
                'F2': F2,
                'Alpha': {'type': 'unif',
-                         'lower': Alpha-DeltaAlpha/2.,
-                         'upper': Alpha+DeltaAlpha/2.},
+                         'lower': Alpha_center-DeltaAlpha,
+                         'upper': Alpha_center+DeltaAlpha},
                'Delta': {'type': 'unif',
-                         'lower': Delta-DeltaDelta/2.,
-                         'upper': Delta+DeltaDelta/2.},
+                         'lower': Delta_center-DeltaDelta,
+                         'upper': Delta_center+DeltaDelta},
                }
 
-ntemps = 1
+ntemps = 2
 log10temperature_min = -1
 nwalkers = 100
 
@@ -82,4 +84,5 @@ mcmc = pyfstat.MCMCFollowUpSearch(
     tref=tref, minStartTime=tstart, maxStartTime=tend,
     nwalkers=nwalkers, ntemps=ntemps,
     log10temperature_min=log10temperature_min)
-mcmc.run(run_setup)
+mcmc.run(Nsegs0=20, R=10)
+#mcmc.run(run_setup)
