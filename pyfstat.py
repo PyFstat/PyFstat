@@ -526,7 +526,7 @@ class ComputeFstat(object):
         self.FstatResults = lalpulsar.FstatResults()
 
         if self.BSGL:
-            if len(self.names) < 2:
+            if len(self.detector_names) < 2:
                 raise ValueError("Can't use BSGL with single detector data")
             else:
                 logging.info('Initialising BSGL')
