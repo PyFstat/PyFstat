@@ -1338,7 +1338,7 @@ class MCMCSearch(BaseSearchClass):
                 return p
 
         def halfnorm(x, loc, scale):
-            if x < 0:
+            if x < loc:
                 return -np.inf
             else:
                 return -0.5*((x-loc)**2/scale**2+np.log(0.5*np.pi*scale**2))
@@ -2488,12 +2488,11 @@ class MCMCTransientSearch(MCMCSearch):
     def logl(self, theta, search):
         for j, theta_i in enumerate(self.theta_idxs):
             self.fixed_theta[theta_i] = theta[j]
-        if self.fixed_theta[1] < 86400:
+        in_theta = copy.copy(self.fixed_theta)
+        in_theta[1] = in_theta[0] + in_theta[1]
+        if in_theta[1] > self.maxStartTime:
             return -np.inf
-        self.fixed_theta[1] += self.fixed_theta[0]
-        if self.fixed_theta[1] > self.maxStartTime:
-            return -np.inf
-        FS = search.run_computefstatistic_single_point(*self.fixed_theta)
+        FS = search.run_computefstatistic_single_point(*in_theta)
         return FS
 
     def unpack_input_theta(self):
