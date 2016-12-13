@@ -1458,13 +1458,23 @@ class MCMCSearch(BaseSearchClass):
                 lnl = sampler.lnlikelihood[temp, :, :]
                 if burnin_idx and add_det_stat_burnin:
                     burn_in_vals = lnl[:, :burnin_idx].flatten()
-                    axes[-1].hist(burn_in_vals[~np.isnan(burn_in_vals)], bins=50,
-                                  histtype='step', color='r')
+                    try:
+                        axes[-1].hist(burn_in_vals[~np.isnan(burn_in_vals)],
+                                      bins=50, histtype='step', color='r')
+                    except ValueError:
+                        logging.info('Det. Stat. hist failed, most likely all '
+                                     'values where the same')
+                        pass
                 else:
                     burn_in_vals = []
                 prod_vals = lnl[:, burnin_idx:].flatten()
-                axes[-1].hist(prod_vals[~np.isnan(prod_vals)], bins=50,
-                              histtype='step', color='k')
+                try:
+                    axes[-1].hist(prod_vals[~np.isnan(prod_vals)], bins=50,
+                                  histtype='step', color='k')
+                except ValueError:
+                    logging.info('Det. Stat. hist failed, most likely all '
+                                 'values where the same')
+                    pass
                 if self.BSGL:
                     axes[-1].set_xlabel(r'$\mathcal{B}_\mathrm{S/GL}$')
                 else:
