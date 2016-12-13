@@ -4,7 +4,6 @@ import os
 import sys
 import time
 
-
 ID = sys.argv[1]
 outdir = sys.argv[2]
 
@@ -31,9 +30,9 @@ VF0 = VF1 = 100
 DeltaF0 = VF0 * np.sqrt(3)/(np.pi*Tspan)
 DeltaF1 = VF1 * np.sqrt(45/4.)/(np.pi*Tspan**2)
 
-depths = np.linspace(100, 400, 9)
+depths = np.linspace(100, 400, 7)
 
-nsteps = 20
+nsteps = 50
 run_setup = [((nsteps, 0), 20, False),
              ((nsteps, 0), 7, False),
              ((nsteps, 0), 2, False),
@@ -58,17 +57,17 @@ for depth in depths:
 
     startTime = time.time()
     theta_prior = {'F0': {'type': 'unif',
-                          'lower': F0-DeltaF0/2.,
-                          'upper': F0+DeltaF0/2.},
+                          'lower': F0_center-DeltaF0,
+                          'upper': F0_center+DeltaF0},
                    'F1': {'type': 'unif',
-                          'lower': F1-DeltaF1/2.,
-                          'upper': F1+DeltaF1/2.},
+                          'lower': F1_center-DeltaF1,
+                          'upper': F1_center+DeltaF1},
                    'F2': F2,
                    'Alpha': Alpha,
                    'Delta': Delta
                    }
 
-    ntemps = 1
+    ntemps = 2
     log10temperature_min = -1
     nwalkers = 100
 

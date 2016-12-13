@@ -74,7 +74,6 @@ for depth in depths:
                              'lower': Delta_center-DeltaDelta,
                              'upper': Delta_center+DeltaDelta},
                    }
-    theta_prior = {'F0': {'upper': 30.000006381121477, 'lower': 29.999993618878523, 'type': 'unif'}, 'F1': {'upper': 1.0143020701400378e-10, 'lower': 9.8569792985996225e-11, 'type': 'unif'}, 'F2': 0, 'Delta': {'upper': -0.20155527961896461, 'lower': -0.24155527961896459, 'type': 'unif'}, 'Alpha': {'upper': 2.8924321897264367, 'lower': 2.8524321897264366, 'type': 'unif'}}
 
     ntemps = 2
     log10temperature_min = -1
