@@ -31,6 +31,7 @@
   \begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
 
 \input{definitions.tex}
+\input{macros}
 
 % For editing purposes: remove before submition
 \usepackage[normalem]{ulem}	%% only added for 'strikeout' \sout
@@ -881,7 +882,7 @@ chains explore the other `noise peaks' in the data.
 \section{Monte Carlo studies}
 
 In order to understand how well the MCMC follow-up method works, we will test
-its ability to succesfully identify simulated signals in Gaussian. This will be
+its ability to succesfully identify simulated signals in Gaussian noise. This will be
 done in a Monte Carlo study, with independent random realisations of the
 Guassian noise, amplitude, and Doppler parameters in suitable ranges. Such a
 method is analagous to the studies performed in \citet{shaltev2013}, except
@@ -894,7 +895,7 @@ the parameters of the signal in such a way to model the candidates generated
 from directed and all-sky searches by drawing the signal parameters from
 appropriate distributions. However, we do not draw $h_0$ randomly, but instead
 run the MC study at a number of selected values chosen such that given the
-fixed $\sqrt{S_n}=2\times10^{3}$, the signals are injected with a depth
+fixed $\sqrt{S_n}=1\times10^{3}$, the signals are injected with a depth
 $\mathcal{D} \in [100, 400]$.  To simulate an isotropic distribution of
 sources, we draw the remaining amplitude parameters for each signal uniformly
 from $\phi \in [0, 2\pi]$, $\psi \in [-\pi/4, \pi/4]$, and $\cos\iota \in [-1,
@@ -925,6 +926,24 @@ assumption as any search can (quite cheaply) increase the density of grid
 points around any interesting candidates in order to better constrain their
 uncertainty.
 
+Before applying the directed follow-up to simulated signals in noise, we need
+to characterise its behaviour in Gaussian noise alone. To do so, we simulate
+$\DirectedMCNoiseN$ realisations of Gaussian noise and peform the follow-up
+search on these. A histogram of the results is provided in
+Figure~\ref{fig_hist_DirectedMCNoiseOnly}, the largest observed value was
+found to be $\DirectedMCNoiseOnlyMaximum$. From this, we can set a threshold
+for the detection statistic of $\twoFtilde_{\rm th} = 60$, an arbitrary
+number chosen to be sufficiently larger than the maximum seen in noise and
+consistent with the value chosen in \citet{shaltev2013}.
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.5\textwidth]{directed_noise_twoF_histogram}
+\caption{Histogram of the recovered $\widetilde{2\F}$ values applying the
+directed follow-up routine to $\DirectedMCNoiseN$ simulated Gaussian noise
+realisations.}
+\label{fig_hist_DirectedMCNoiseOnly}
+\end{figure}
+
 The behaviour of the follow-up is independent of the exact frequency and
 spin-down values used (this is not true for an all-sky follow-up as discussed
 in Section~\ref{sec_all_sky_follow_up}). As such, we can, without loss of
@@ -936,8 +955,6 @@ roughly equivalent in terms of mismatch. Then, we pick a candidate uniformly
 from within this uncertainty box; this choice reflects the fact that the grid
 is chosen such that the probability distribution of candidate signals is
 uniform.
-
-
 
 Having generated the data given the prescription above, we proceed to perform a
 hierarchical MCMC follow-up. Given the data span and initial bounding box, we
@@ -953,10 +970,9 @@ $\mathcal{R}=10$ and $\Nseg^0=20$.}
 \input{directed_setup_run_setup}
 \end{table}
 
-This process yeilds a maximum detection statistic $\widetilde{2\F}^{\rm max}$.
+This process yeilds a maximum detection statistic $\widetilde{2\F}_{\rm max}$.
 The signal is considered `detected' if $\widetilde{2\F}^{\rm max} >
-\widetilde{2\F}^{\rm th}$, where we set the threshold at $2\F^{\rm th}=60$,
-corresponding to a p-value of \comment{Finish section}.  In
+\widetilde{2\F}_{\rm th}$, where we set the threshold at $2\F_{\rm th}=60$. In
 Figure~\ref{fig_directed_MC_follow_up} we plot the the fraction of the MC
 simulations which where recovered and compare this against the theoretical
 maximum, given the threshold. The figure demonstrates that the recovery power
@@ -994,6 +1010,25 @@ variation in $\delta$ over the sky-pacth, but given the small area should not
 cause any significant bias. The frequency, spin-down, and amplitude parameters
 are chosen in the same way as for the directed search
 (Section~\ref{sec_directed_follow_up}). 
+
+Again, we first characterise the behaviour of the all-sky follow-up by applying
+it to $\AllSkyMCNoiseN$ realisations of Gaussian noise. The resulting histogram
+is provided in Figure~\ref{fig_hist_AllSkyMCNoiseOnly} and the largest $\twoFtilde$
+value was found to be $\AllSkyMCNoiseOnlyMaximum$. This is larger than the
+value found for the directed search, although both use the same number of
+Gaussian noise trials, and therefore must result from the increased number of
+search parameters. \comment{Ask Reinhard about Miroslavs statement on number of
+templates}. As a result we will correspondinly increase our detection threshold
+for the all-sky search to $\twoFtilde_{\rm tr} = 70$; again this is an arbitary
+choise, but is consisent with the values chosen in \citet{shaltev2013}.
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.5\textwidth]{allsky_noise_twoF_histogram}
+\caption{Histogram of the recovered $\widetilde{2\F}$ values applying the
+all-sky follow-up routine to $\AllSkyMCNoiseN$ simulated Gaussian noise
+realisations.}
+\label{fig:}
+\end{figure}
 
 Producing \CHECK{1000} indepedant MC simulations we the perform a follow-up on
 each using the setup given in Table~\ref{tab_allsky_MC_follow_up}. The
