@@ -1,12 +1,12 @@
-Executable= repeat.sh
-Arguments= $(Cluster)_$(Process)
+Executable=DirectedMC_repeat.sh
+Arguments=$(Cluster)_$(Process)
 Universe=vanilla
 Input=/dev/null
 accounting_group = ligo.dev.o2.cw.explore.test
-Output=CollectedOutput/out.$(Process)
-Error=CollectedOutput/err.$(Process)
-Log=CollectedOutput/log.$(Process)
+Output=CollectedOutput/out.$(Cluster).$(Process)
+Error=CollectedOutput/err.$(Cluster).$(Process)
+Log=CollectedOutput/log.$(Cluster).$(Process)
 request_cpus = 1
-request_memory = 8 GB
+request_memory = 16 GB
 
-Queue 100
+Queue 6

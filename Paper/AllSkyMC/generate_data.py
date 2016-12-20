@@ -12,14 +12,14 @@ data_label = '{}_data'.format(label)
 results_file_name = '{}/MCResults_{}.txt'.format(outdir, ID)
 
 # Properties of the GW data
-sqrtSX = 2e-23
+sqrtSX = 1e-23
 tstart = 1000000000
 Tspan = 100*86400
 tend = tstart + Tspan
 
 # Fixed properties of the signal
 F0_center = 30
-F1_center = 1e-10
+F1_center = -1e-10
 F2 = 0
 tref = .5*(tstart+tend)
 
@@ -31,7 +31,7 @@ DeltaF1 = VF1 * np.sqrt(45/4.)/(np.pi*Tspan**2)
 DeltaAlpha = 0.02
 DeltaDelta = 0.02
 
-depths = np.linspace(100, 400, 7)
+depths = np.linspace(100, 400, 9)
 
 nsteps = 50
 run_setup = [((nsteps, 0), 20, False),
@@ -45,7 +45,7 @@ for depth in depths:
     h0 = sqrtSX / float(depth)
     F0 = F0_center + np.random.uniform(-0.5, 0.5)*DeltaF0
     F1 = F1_center + np.random.uniform(-0.5, 0.5)*DeltaF1
-    Alpha_center = np.random.uniform(0, 2*np.pi)
+    Alpha_center = np.random.uniform(DeltaAlpha, 2*np.pi-DeltaAlpha)
     Delta_center = np.arccos(2*np.random.uniform(0, 1)-1)-np.pi/2
     Alpha = Alpha_center + np.random.uniform(-0.5, 0.5)*DeltaAlpha
     Delta = Delta_center + np.random.uniform(-0.5, 0.5)*DeltaDelta
@@ -59,7 +59,6 @@ for depth in depths:
         Delta=Delta, h0=h0, sqrtSX=sqrtSX, psi=psi, phi=phi, cosi=cosi,
         detector='H1,L1')
     data.make_data()
-    predicted_twoF = data.predict_fstat()
 
     startTime = time.time()
     theta_prior = {'F0': {'type': 'unif',
@@ -95,6 +94,6 @@ for depth in depths:
     dF1 = F1 - d['F1']
     runTime = time.time() - startTime
     with open(results_file_name, 'a') as f:
-        f.write('{} {:1.8e} {:1.8e} {:1.8e} {:1.8e} {:1.8e} {}\n'
-                .format(depth, h0, dF0, dF1, predicted_twoF, maxtwoF, runTime))
+        f.write('{} {:1.8e} {:1.8e} {:1.8e} {:1.8e} {}\n'
+                .format(depth, h0, dF0, dF1, maxtwoF, runTime))
     os.system('rm {}/*{}*'.format(outdir, label))

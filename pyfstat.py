@@ -52,6 +52,8 @@ else:
 parser = argparse.ArgumentParser()
 parser.add_argument("-q", "--quite", help="Decrease output verbosity",
                     action="store_true")
+parser.add_argument("--no-interactive", help="Don't use interactive output",
+                    action="store_true")
 parser.add_argument("-c", "--clean", help="Don't use cached data",
                     action="store_true")
 parser.add_argument("-u", "--use-old-data", action="store_true")
@@ -61,7 +63,7 @@ parser.add_argument('unittest_args', nargs='*')
 args, unknown = parser.parse_known_args()
 sys.argv[1:] = args.unittest_args
 
-if args.quite:
+if args.quite or args.no_interactive:
     def tqdm(x, *args, **kwargs):
         return x
 
@@ -431,7 +433,7 @@ class ComputeFstat(object):
         detector_names = list(set([d.header.name for d in SFTCatalog.data]))
         self.detector_names = detector_names
         SFT_timestamps = [d.header.epoch for d in SFTCatalog.data]
-        if args.quite is False:
+        if args.quite is False and args.no_interactive is False:
             try:
                 from bashplotlib.histogram import plot_hist
                 print('Data timestamps histogram:')
@@ -1749,17 +1751,18 @@ class MCMCSearch(BaseSearchClass):
     def print_summary(self):
         max_twoFd, max_twoF = self.get_max_twoF()
         median_std_d = self.get_median_stds()
-        print('\nSummary:')
+        logging.info('Summary:')
         if hasattr(self, 'theta0_idx'):
-            print('theta0 index: {}'.format(self.theta0_idx))
-        print('Max twoF: {} with parameters:'.format(max_twoF))
+            logging.info('theta0 index: {}'.format(self.theta0_idx))
+        logging.info('Max twoF: {} with parameters:'.format(max_twoF))
         for k in np.sort(max_twoFd.keys()):
             print('  {:10s} = {:1.9e}'.format(k, max_twoFd[k]))
-        print('\nMedian +/- std for production values')
+        logging.info('Median +/- std for production values')
         for k in np.sort(median_std_d.keys()):
             if 'std' not in k:
-                print('  {:10s} = {:1.9e} +/- {:1.9e}'.format(
+                logging.info('  {:10s} = {:1.9e} +/- {:1.9e}'.format(
                     k, median_std_d[k], median_std_d[k+'_std']))
+        logging.info('\n')
 
     def CF_twoFmax(self, theta, twoFmax, ntrials):
         Fmax = twoFmax/2.0

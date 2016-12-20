@@ -24,11 +24,11 @@ def maxtwoFinNoise(twoF, Ntrials):
 df_list = []
 for fn in filenames:
     df = pd.read_csv(
-        fn, sep=' ', names=['dF0', 'dF1', 'twoF_predicted',
-                            'twoF', 'runTime'])
+        fn, sep=' ', names=['dF0', 'dF1', 'twoF', 'runTime'])
     df['CLUSTER_ID'] = fn.split('_')[1]
     df_list.append(df)
 df = pd.concat(df_list)
+print 'Number of samples = ', len(df)
 
 fig, ax = plt.subplots()
 ax.hist(df.twoF, bins=50, histtype='step', color='k', normed=True, linewidth=1)

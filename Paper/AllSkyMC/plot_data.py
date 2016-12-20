@@ -31,8 +31,7 @@ def binomialConfidenceInterval(N, K, confidence=0.95):
 df_list = []
 for fn in filenames:
     df = pd.read_csv(
-        fn, sep=' ', names=['depth', 'h0', 'dF0', 'dF1', 'twoF_predicted',
-                            'twoF', 'runTime'])
+        fn, sep=' ', names=['depth', 'h0', 'dF0', 'dF1', 'twoF', 'runTime'])
     df['CLUSTER_ID'] = fn.split('_')[1]
     df_list.append(df)
 df = pd.concat(df_list)
@@ -52,9 +51,9 @@ for d in depths:
 
 yerr = np.abs(recovery_fraction - np.array(recovery_fraction_CI).T)
 fig, ax = plt.subplots()
-ax.errorbar(depths, recovery_fraction, yerr=yerr, fmt='sk', marker='s', ms=2,
+ax.errorbar(depths, recovery_fraction, yerr=yerr, fmt='sr', marker='s', ms=2,
             capsize=1, capthick=0.5, elinewidth=0.5,
-            label='Monte-Carlo result')
+            label='Monte-Carlo result', zorder=10)
 
 fname = 'analytic_data.txt'
 if os.path.isfile(fname):
