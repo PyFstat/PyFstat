@@ -36,7 +36,7 @@ for fn in filenames:
     df_list.append(df)
 df = pd.concat(df_list)
 
-twoFstar = 60
+twoFstar = 70
 depths = np.unique(df.depth.values)
 recovery_fraction = []
 recovery_fraction_CI = []

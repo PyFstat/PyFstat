@@ -42,3 +42,4 @@ fig.savefig('allsky_noise_twoF_histogram.png')
 from latex_macro_generator import write_to_macro
 write_to_macro('AllSkyMCNoiseOnlyMaximum', '{:1.1f}'.format(np.max(df.twoF)),
                '../macros.tex')
+write_to_macro('AllSkyMCNoiseN', len(df), '../macros.tex')
