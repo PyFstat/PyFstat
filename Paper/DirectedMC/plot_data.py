@@ -58,7 +58,7 @@ ax.errorbar(depths, recovery_fraction, yerr=yerr, fmt='sr', marker='s', ms=2,
             capsize=1, capthick=0.5, elinewidth=0.5,
             label='Monte-Carlo result', zorder=10)
 
-fname = 'analytic_data.txt'
+fname = 'analytic_data_{}.txt'.format(twoFstar)
 if os.path.isfile(fname):
     depths_smooth, recovery_analytic = np.loadtxt(fname)
 else:
