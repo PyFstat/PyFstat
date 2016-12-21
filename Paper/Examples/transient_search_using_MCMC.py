@@ -16,7 +16,7 @@ data_tstart = tstart - duration
 data_tend = data_tstart + 3*duration
 tref = .5*(data_tstart+data_tend)
 
-h0 = 1e-23
+h0 = 5e-24
 sqrtSX = 1e-22
 
 transient = pyfstat.Writer(
@@ -26,9 +26,7 @@ transient = pyfstat.Writer(
 transient.make_data()
 print transient.predict_fstat()
 
-
-
-DeltaF0 = 6e-7
+DeltaF0 = 1e-7
 DeltaF1 = 1e-13
 VF0 = (np.pi * duration * DeltaF0)**2 / 3.0
 VF1 = (np.pi * duration**2 * DeltaF1)**2 * 4/45.
@@ -48,7 +46,7 @@ theta_prior = {'F0': {'type': 'unif',
 ntemps = 3
 log10temperature_min = -1
 nwalkers = 100
-nsteps = [750, 250]
+nsteps = [100, 100]
 
 mcmc = pyfstat.MCMCSearch(
     label='transient_search_initial_stage', outdir='data',

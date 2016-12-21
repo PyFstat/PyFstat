@@ -672,11 +672,12 @@ metric-mismatch of unity.}
 
 In order to familiarise the reader with the features of an MCMC search, we will
 now describe a simple directed search (over $f$ and $\dot{f}$) for a simulated
-signal in Gaussian noise. The signal will have a frequency of $30$~Hz and a
-spin-down of $-1{\times}10^{-10}$~Hz/s, all other Doppler parameters are
-`known' and so are irrelevant. Moreover, the signal has an amplitude
-$h_0=10^{-24}$~Hz$^{-1/2}$ while the Gaussian noise has
-$\Sn=10^{-23}$~Hz$^{-1/2}$ such that the signal has a depth of 10.
+signal in Gaussian noise. The signal will have a frequency of
+$\BasicExampleFzero$~Hz and a spin-down of $\BasicExampleFone$~Hz/s, all other
+Doppler parameters are known and so are irrelevant. Moreover, the signal has an
+amplitude $\BasicExamplehzero$~Hz$^{-1/2}$ while the Gaussian noise has
+$\sqrt{\Sn}=\BasicExampleSqrtSn$~Hz$^{-1/2}$ such that the signal has a depth
+of $\BasicExampleDepth$.
 
 First, we must define a prior for each search parameter Typically, we recommend
 either a uniform prior bounding the area of interest, or a normal distribution
@@ -684,23 +685,23 @@ centered on the target and with some well defined width. However, to ensure
 that the MCMC simulation has a reasonable chance at finding a peak, one should
 consider the corresponding metric-volume given in
 Equation~\eqref{eqn_metric_volume}. For this example, we will use a uniform
-prior with a frequency range of $\Delta f = 10^{-7}$~Hz and a spin-down range
-of $\Delta \fdot=10^{-13}$~Hz/s both centered on the simulated signal frequency
-and spin-down rate. We set the reference time to coincide with the middle of
-the data span, therefore the metric volume can be decomposed into the frequency
-contribution and spin-down contribution:
+prior with a frequency range of $\Delta f=\BasicExampleDeltaFzero$~Hz and a
+spin-down range of $\Delta \fdot=\BasicExampleDeltaFone$~Hz/s both centered on
+the simulated signal frequency and spin-down rate. We set the reference time to
+coincide with the middle of the data span, therefore the metric volume can be
+decomposed into the frequency contribution and spin-down contribution:
 frequency,
 \begin{align}
-\Vpe^{(0)} = \frac{(\pi\Tcoh\Delta f)^2}{3} \approx 2.46
+\Vpe^{(0)} = \frac{(\pi\Tcoh\Delta f)^2}{3} \approx \BasicExampleVFzero
 \end{align}
 and
 \begin{align}
-\Vpe^{(1)} = \frac{4(\pi\Delta \fdot)^2\Tcoh^{4}}{45} \approx 48.9
+\Vpe^{(1)} = \frac{4(\pi\Delta \fdot)^2\Tcoh^{4}}{45} \approx \BasicExampleVFone
 \end{align}
-such that $\V\approx120$ (note that $\Vsky$ does not contribute since we do
-not search over the sky parameters). This metric volume indicates that the
-signal will occupy about 1\% of the prior volume, therefore the MCMC is
-expected to work. Alternative priors will need careful thought about how to
+such that $\V\approx\BasicExampleV$ (note that $\Vsky$ does not contribute
+since we do not search over the sky parameters). This metric volume indicates
+that the signal will occupy about 1\% of the prior volume, therefore the MCMC
+is expected to work. Alternative priors will need careful thought about how to
 translate them into a metric volume: for example using a Gaussian one could use
 the standard deviation as a proxy for the allowed search region.
 

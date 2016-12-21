@@ -59,3 +59,18 @@ mcmc = pyfstat.MCMCSearch(
 mcmc.run(context='paper', subtractions=[30, -1e-10])
 mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()
+
+from latex_macro_generator import write_to_macro
+write_to_macro('BasicExampleF0', '{:1.0f}'.format(F0), '../macros.tex')
+write_to_macro('BasicExampleF1', F1, '../macros.tex')
+write_to_macro('BasicExampleh0', h0, '../macros.tex')
+write_to_macro('BasicExampleSqrtSn', sqrtSX, '../macros.tex')
+write_to_macro('BasicExampleDepth', depth, '../macros.tex')
+write_to_macro('BasicExampleDeltaF0', DeltaF0, '../macros.tex')
+write_to_macro('BasicExampleDeltaF1', DeltaF1, '../macros.tex')
+write_to_macro('BasicExampleVF0', VF0, '../macros.tex')
+write_to_macro('BasicExampleVF1', VF1, '../macros.tex')
+write_to_macro('BasicExampleV', VF0*VF1, '../macros.tex')
+write_to_macro('BasicExamplenburn', nsteps[0], '../macros.tex')
+write_to_macro('BasicExamplenprod', nsteps[1], '../macros.tex')
+
