@@ -1,0 +1,8 @@
+- Add macros for the directed MC results
+- Add macros for the all-sky MC results
+- Adds macros for the examples values
+- Investigate cause of all-sky losses again
+- Run the transient search for a weaker signal
+- Add results from Messenger et al for the transient - is there a fit?
+- Weaken basyes factor definitions since they are not used, just put it in the context
+
