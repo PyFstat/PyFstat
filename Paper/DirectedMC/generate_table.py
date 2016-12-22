@@ -7,7 +7,7 @@ label = 'directed_setup'
 data_label = '{}_data'.format(label)
 
 # Properties of the GW data
-sqrtSX = 2e-23
+sqrtSX = 1e-23
 tstart = 1000000000
 Tspan = 100*86400
 tend = tstart + Tspan
@@ -16,8 +16,8 @@ tend = tstart + Tspan
 F0_center = 30
 F1_center = 1e-10
 F2 = 0
-Alpha = 5e-3
-Delta = 6e-2
+Alpha = np.radians(83.6292)
+Delta = np.radians(22.0144)
 tref = .5*(tstart+tend)
 
 
@@ -52,11 +52,11 @@ data.make_data()
 predicted_twoF = data.predict_fstat()
 
 theta_prior = {'F0': {'type': 'unif',
-                      'lower': F0-DeltaF0/2.,
-                      'upper': F0+DeltaF0/2.},
+                      'lower': F0-DeltaF0,
+                      'upper': F0+DeltaF0},
                'F1': {'type': 'unif',
-                      'lower': F1-DeltaF1/2.,
-                      'upper': F1+DeltaF1/2.},
+                      'lower': F1-DeltaF1,
+                      'upper': F1+DeltaF1},
                'F2': F2,
                'Alpha': Alpha,
                'Delta': Delta
@@ -73,4 +73,5 @@ mcmc = pyfstat.MCMCFollowUpSearch(
     tref=tref, minStartTime=tstart, maxStartTime=tend,
     nwalkers=nwalkers, ntemps=ntemps, nsteps=[nsteps, nsteps],
     log10temperature_min=log10temperature_min)
+#mcmc.run(Nsegs0=20, R=10)
 mcmc.run(run_setup)
