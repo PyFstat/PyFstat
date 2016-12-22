@@ -27,7 +27,7 @@ DeltaF1 = VF1 * np.sqrt(45/4.)/(np.pi*Tspan**2)
 
 depth = 100
 
-nsteps = 20
+nsteps = 25
 run_setup = [((nsteps, 0), 20, False),
              ((nsteps, 0), 7, False),
              ((nsteps, 0), 2, False),
@@ -71,6 +71,6 @@ mcmc = pyfstat.MCMCFollowUpSearch(
     sftfilepath='{}/*{}*sft'.format(outdir, data_label),
     theta_prior=theta_prior,
     tref=tref, minStartTime=tstart, maxStartTime=tend,
-    nwalkers=nwalkers, ntemps=ntemps,
+    nwalkers=nwalkers, ntemps=ntemps, nsteps=[nsteps, nsteps],
     log10temperature_min=log10temperature_min)
 mcmc.run(run_setup)
