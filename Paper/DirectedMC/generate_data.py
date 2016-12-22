@@ -31,6 +31,7 @@ DeltaF0 = VF0 * np.sqrt(3)/(np.pi*Tspan)
 DeltaF1 = VF1 * np.sqrt(45/4.)/(np.pi*Tspan**2)
 
 depths = np.linspace(100, 400, 9)
+depths = [118.75, 156.25]
 
 nsteps = 25
 run_setup = [((nsteps, 0), 20, False),

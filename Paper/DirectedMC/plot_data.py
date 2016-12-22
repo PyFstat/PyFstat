@@ -33,10 +33,7 @@ for fn in filenames:
     df = pd.read_csv(
         fn, sep=' ', names=['depth', 'h0', 'dF0', 'dF1', 'twoF', 'runTime'])
     df['CLUSTER_ID'] = fn.split('_')[1]
-    if len(df) != 9:
-        print len(df), fn
-    else:
-        df_list.append(df)
+    df_list.append(df)
 df = pd.concat(df_list)
 
 twoFstar = 60
@@ -81,10 +78,9 @@ fig.tight_layout()
 fig.savefig('directed_recovery.png')
 
 
-total_number_steps = 5*20.
-df_clean = df[df.CLUSTER_ID == '969049']  # Hack due to a change in the code
+total_number_steps = 5*25.
 fig, ax = plt.subplots()
-ax.hist(df_clean.runTime/total_number_steps, bins=50)
+ax.hist(df.runTime/total_number_steps, bins=50)
 ax.set_xlabel('run-time per step [s]')
 fig.tight_layout()
 fig.savefig('runTimeHist.png')

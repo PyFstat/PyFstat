@@ -32,6 +32,7 @@ DeltaAlpha = 0.02
 DeltaDelta = 0.02
 
 depths = np.linspace(100, 400, 9)
+depths = [118.75, 156.25]
 
 nsteps = 50
 run_setup = [((nsteps, 0), 20, False),

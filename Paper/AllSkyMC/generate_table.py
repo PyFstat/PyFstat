@@ -82,7 +82,7 @@ mcmc = pyfstat.MCMCFollowUpSearch(
     sftfilepath='{}/*{}*sft'.format(outdir, data_label),
     theta_prior=theta_prior,
     tref=tref, minStartTime=tstart, maxStartTime=tend,
-    nwalkers=nwalkers, ntemps=ntemps, nsteps=[nsteps, nsteps]
+    nwalkers=nwalkers, ntemps=ntemps, nsteps=[nsteps, nsteps],
     log10temperature_min=log10temperature_min)
-#mcmc.run(Nsegs0=20, R=10)
-mcmc.run(run_setup)
+mcmc.run(Nsegs0=20, R=10)
+#mcmc.run(run_setup)

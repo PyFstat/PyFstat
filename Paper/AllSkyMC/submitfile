@@ -9,4 +9,4 @@ Log=CollectedOutput/log.$(Cluster).$(Process)
 request_cpus = 1
 request_memory = 16 GB
 
-Queue 70
+Queue 1
