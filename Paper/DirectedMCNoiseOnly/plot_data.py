@@ -1,3 +1,4 @@
+import pyfstat
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -33,14 +34,17 @@ df = pd.concat(df_list)
 print 'Number of samples = ', len(df)
 
 fig, ax = plt.subplots()
-ax.hist(df.twoF, bins=50, histtype='step', color='k', normed=True, linewidth=1)
+ax.hist(df.twoF, bins=50, histtype='step', color='k', normed=True, linewidth=1,
+        label='Monte-Carlo histogram')
 
 maxtwoFinNoise = maxtwoFinNoise_gen(a=0)
 Ntrials_effective, loc, scale = maxtwoFinNoise.fit(df.twoF.values, floc=0, fscale=1)
 print 'Ntrials effective = {:1.2e}'.format(Ntrials_effective)
 twoFsmooth = np.linspace(0, df.twoF.max(), 1000)
 best_fit_pdf = maxtwoFinNoise.pdf(twoFsmooth, Ntrials_effective)
-ax.plot(twoFsmooth, best_fit_pdf, '-r')
+ax.plot(twoFsmooth, best_fit_pdf, '-r',
+        label=r'$p(2\mathcal{{F}}_{{\rm max}})$ for {} $N_{{\rm trials}}$'
+        .format(pyfstat.texify_float(Ntrials_effective, d=2)))
 
 pval = 1e-6
 twoFsmooth_HD = np.linspace(
@@ -51,6 +55,7 @@ print twoFsmooth_HD[np.argmin(np.abs(best_fit_pdf_HD - pval))], spacing
 
 ax.set_xlabel('$\widetilde{2\mathcal{F}}$')
 ax.set_xlim(0, 60)
+ax.legend(frameon=False, fontsize=6)
 fig.tight_layout()
 fig.savefig('directed_noise_twoF_histogram.png')
 
