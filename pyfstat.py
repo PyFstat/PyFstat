@@ -87,7 +87,7 @@ def round_to_n(x, n):
     return round(x * factor) / factor
 
 
-def texify_float(x, d=1):
+def texify_float(x, d=2):
     if type(x) == str:
         return x
     x = round_to_n(x, d)
