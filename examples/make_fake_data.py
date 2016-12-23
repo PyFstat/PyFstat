@@ -1,4 +1,5 @@
 from pyfstat import Writer
+import numpy as np
 
 # First, we generate data with a reasonably strong smooth signal
 
@@ -6,8 +7,8 @@ from pyfstat import Writer
 F0 = 30.0
 F1 = -1e-10
 F2 = 0
-Alpha = 5e-3
-Delta = 6e-2
+Alpha = np.radians(83.6292)
+Delta = np.radians(22.0144)
 tref = 362750407.0
 
 # Signal strength

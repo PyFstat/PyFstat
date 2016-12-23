@@ -1,7 +1,7 @@
 # Fully coherent search using MCMC
 
-In this example, we will show the basics of setting up and running a MCMC
-search for a fully-coherent search. This is based on the example
+In this example, we will show the basics of setting up and running a
+fully-coherent MCMC search. This is based on the example
 [fully_coherent_search_using_MCMC.py](../example/fully_coherent_search_using_MCMC.py).
 We will run the search on the `basic` data generated in the
 [make_fake_data](make_fake_data.md) example.
@@ -21,8 +21,8 @@ in the data, and the start and end times:
 F0 = 30.0
 F1 = -1e-10
 F2 = 0
-Alpha = 5e-3
-Delta = 6e-2
+Alpha = np.radians(83.6292)
+Delta = np.radians(22.0144)
 tref = 362750407.0
 
 tstart = 1000000000
@@ -30,7 +30,7 @@ duration = 100*86400
 tend = tstart = duration
 ```
 
-Now, we need to specify out prior. This is a dictionary containing keys for
+Now, we need to specify our prior. This is a dictionary containing keys for
 each variable (in the `MCMCSearch` these are `F0`, `F1`, `F2`, `Alpha`, and
 `Delta`). In this example, we choose a uniform box in `F0` and `F1`:
 

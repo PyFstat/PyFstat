@@ -13,14 +13,15 @@ fake data, define the Crab parameters and create an instant of the `Writer`
 called `data`
 
 ```python
+import numpy as np
 from pyfstat import Writer
 
 # Define parameters of the Crab pulsar
 F0 = 30.0
 F1 = -1e-10
 F2 = 0
-Alpha = 5e-3
-Delta = 6e-2
+Alpha = np.radians(83.6292)
+Delta = np.radians(22.0144)
 tref = 362750407.0
 
 # Signal strength
@@ -167,4 +168,8 @@ two_glitch_data = Writer(
     delta_F1=delta_F1, delta_F2=delta_F2)
 two_glitch_data.make_data()
 ```
+
+So, having run `$ python make_fake_data.py` (from the `examples` directory), we
+will see that in the sub-directory `examples/data/` there are three `.sft`
+files.  These will be used throughout the other examples.
 
