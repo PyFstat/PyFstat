@@ -12,8 +12,8 @@ tref = .5*(tstart + tend)
 F0 = 30.0
 F1 = -1e-10
 F2 = 0
-Alpha = 5e-3
-Delta = 6e-2
+Alpha = np.radians(83.6292)
+Delta = np.radians(22.0144)
 
 # Signal strength
 depth = 10
