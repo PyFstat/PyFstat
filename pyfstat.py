@@ -13,7 +13,6 @@ from collections import OrderedDict
 
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import scipy.special
 import scipy.optimize
@@ -23,60 +22,73 @@ import dill as pickle
 import lal
 import lalpulsar
 
-try:
-    from tqdm import tqdm
-except ImportError:
-    def tqdm(x, *args, **kwargs):
-        return x
 
-plt.rcParams['text.usetex'] = True
-plt.rcParams['axes.formatter.useoffset'] = False
+def set_up_optional_tqdm():
+    try:
+        from tqdm import tqdm
+    except ImportError:
+        def tqdm(x, *args, **kwargs):
+            return x
 
-config_file = os.path.expanduser('~')+'/.pyfstat.conf'
-if os.path.isfile(config_file):
-    d = {}
-    with open(config_file, 'r') as f:
-        for line in f:
-            k, v = line.split('=')
-            k = k.replace(' ', '')
-            v = v.replace(' ', '').replace("'", "").replace('"', '').replace('\n', '')
-            d[k] = v
-    earth_ephem = d['earth_ephem']
-    sun_ephem = d['sun_ephem']
-else:
-    logging.warning('No ~/.pyfstat.conf file found please provide the paths '
-                    'when initialising searches')
-    earth_ephem = None
-    sun_ephem = None
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-q", "--quite", help="Decrease output verbosity",
-                    action="store_true")
-parser.add_argument("--no-interactive", help="Don't use interactive output",
-                    action="store_true")
-parser.add_argument("-c", "--clean", help="Don't use cached data",
-                    action="store_true")
-parser.add_argument("-u", "--use-old-data", action="store_true")
-parser.add_argument('-s', "--setup-only", action="store_true")
-parser.add_argument('-n', "--no-template-counting", action="store_true")
-parser.add_argument('unittest_args', nargs='*')
-args, unknown = parser.parse_known_args()
-sys.argv[1:] = args.unittest_args
+def set_up_matplotlib_defaults():
+    plt.switch_backend('Agg')
+    plt.rcParams['text.usetex'] = True
+    plt.rcParams['axes.formatter.useoffset'] = False
 
-if args.quite or args.no_interactive:
-    def tqdm(x, *args, **kwargs):
-        return x
 
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-stream_handler = logging.StreamHandler()
-if args.quite:
-    stream_handler.setLevel(logging.WARNING)
-else:
-    stream_handler.setLevel(logging.DEBUG)
-stream_handler.setFormatter(logging.Formatter(
-    '%(asctime)s %(levelname)-8s: %(message)s', datefmt='%H:%M'))
-logger.addHandler(stream_handler)
+def set_up_ephemeris_configuration():
+    config_file = os.path.expanduser('~')+'/.pyfstat.conf'
+    if os.path.isfile(config_file):
+        d = {}
+        with open(config_file, 'r') as f:
+            for line in f:
+                k, v = line.split('=')
+                k = k.replace(' ', '')
+                for item in [' ', "'", '"', '\n']:
+                    v = v.replace(item, '')
+                d[k] = v
+        earth_ephem = d['earth_ephem']
+        sun_ephem = d['sun_ephem']
+    else:
+        logging.warning('No ~/.pyfstat.conf file found please provide the '
+                        'paths when initialising searches')
+        earth_ephem = None
+        sun_ephem = None
+
+
+def set_up_command_line_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-q", "--quite", help="Decrease output verbosity",
+                        action="store_true")
+    parser.add_argument("--no-interactive", help="Don't use interactive",
+                        action="store_true")
+    parser.add_argument("-c", "--clean", help="Don't use cached data",
+                        action="store_true")
+    parser.add_argument("-u", "--use-old-data", action="store_true")
+    parser.add_argument('-s', "--setup-only", action="store_true")
+    parser.add_argument('-n', "--no-template-counting", action="store_true")
+    parser.add_argument('unittest_args', nargs='*')
+    args, unknown = parser.parse_known_args()
+    sys.argv[1:] = args.unittest_args
+    if args.quite or args.no_interactive:
+        def tqdm(x, *args, **kwargs):
+            return x
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    stream_handler = logging.StreamHandler()
+    if args.quite:
+        stream_handler.setLevel(logging.WARNING)
+    else:
+        stream_handler.setLevel(logging.DEBUG)
+    stream_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)-8s: %(message)s', datefmt='%H:%M'))
+    logger.addHandler(stream_handler)
+
+set_up_optional_tqdm()
+set_up_matplotlib_defaults()
+set_up_ephemeris_configuration()
+set_up_command_line_arguments()
 
 
 def round_to_n(x, n):

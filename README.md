@@ -35,11 +35,48 @@ the stripped down [miniconda](http://conda.pydata.org/miniconda.html)
 installation, or the full-featured
 [anaconda](https://www.continuum.io/downloads) (these are essentially the
 same, but the `anaconda` version installs a variety of useful packages such as
-`numpy` and `scipy` by default.
+`numpy` and `scipy` by default). Instructions to install miniconda/anaconda
+are provided in the links.
+
+### Dependencies
+
+`pyfstat` makes use of a variety python modules listed as the
+`imports` in the top of `pyfstat.py`. The first set are core modules (such as
+`os`, `sys`) while the second set are external and need to be installed for
+`pyfstat` to work properly. Please install the following widely available
+modules:
+
+* [numpy](http://www.numpy.org/)
+* [matplotlib](http://matplotlib.org/)
+* [scipy](https://www.scipy.org/)
+* [emcee](http://dan.iel.fm/emcee/current/)
+* [corner](https://pypi.python.org/pypi/corner/)
+* [dill](https://pypi.python.org/pypi/dill)
+* [tqdm](https://pypi.python.org/pypi/tqdm)(optional), if installed, this
+  provides a useful progress bar and estimate of the remaining run-time.
+
+For an introduction to installing modules see
+[here](https://docs.python.org/3.5/installing/index.html). If you are using
+`pip`, to install all of these modules, run
+```
+$ pip install -r /PATH/TO/THIS/DIRECTORY/requirements.txt
+```
+If you have installed python from conda then `pip` itself can be installed via
+`conda install pip`.
+
+In addition to these modules, you also need a working **swig-enabled**
+[`lalapps`](http://software.ligo.org/docs/lalsuite/lalsuite/) with
+  at least `lalpulsar`. A minimal confuration line to use when installing
+`lalapps` is
+
+```
+$ ./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpulsar --enable-lalapps --enable-swig
+```
+
 
 ### `pyfstat` installation
 
-The script can be installed system wide via
+The script can be installed system wide, assuming you are in this directory, via
 ```
 $ python setup.py install
 ```
@@ -55,8 +92,8 @@ the module will be installed to whichever python executable you call it from.
 
 The scripts require a path to ephemeris files in order to use the
 `lalpulsar.ComputeFstat` module. This can either be specified when initialising
-each search, or more simply by placing a file `~/.pyfstat.conf` into your home
-directory which looks like
+each search (as one of the arguments), or simply by placing a file
+`~/.pyfstat.conf` into your home directory which looks like
 
 ```
 earth_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/earth00-19-DE421.dat.gz'
@@ -64,34 +101,4 @@ sun_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/sun00-19-DE421.dat.gz
 ```
 here, we use the default ephemeris files provided with `lalsuite`.
 
-### Dependencies
-
-The installation above will complete succesfully without the following
-dependencies, but you will subsequently find various `ImportError` messages
-when running `pyfstat` scripts if you haven't installed the following modules.
-
-* swig-enabled [`lalapps`](http://software.ligo.org/docs/lalsuite/lalsuite/) with
-  at least `lalpulsar`. A minimal confuration line to use when installing
-`lalapps` is
-
-```
-$ ./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpulsar --enable-lalapps --enable-swig
-```
-
-* If using the MCMC tools, you will need to install the following python
-  modules
-  * [numpy](http://www.numpy.org/)
-  * [scipy](https://www.scipy.org/)
-  * [emcee](http://dan.iel.fm/emcee/current/)
-  * [corner](https://pypi.python.org/pypi/corner/)
-  * [dill](https://pypi.python.org/pypi/dill)
-  * [tqdm](https://pypi.python.org/pypi/tqdm)(optional), if installed, this
-  provides a useful progress bar and estimate of the remaining run-time.
-
-  To install all of these modules, run
-```
-$ pip install -r /PATH/TO/THIS/DIRECTORY/requirements.txt
-```
-  where `pip` is the python package installer, if you have installed python
-  from conda then it can be installed via `conda install pip`.
 
