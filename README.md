@@ -40,11 +40,7 @@ are provided in the links.
 
 ### Dependencies
 
-`pyfstat` makes use of a variety python modules listed as the
-`imports` in the top of `pyfstat.py`. The first set are core modules (such as
-`os`, `sys`) while the second set are external and need to be installed for
-`pyfstat` to work properly. Please install the following widely available
-modules:
+`pyfstat` makes uses the following external python modules:
 
 * [numpy](http://www.numpy.org/)
 * [matplotlib](http://matplotlib.org/)

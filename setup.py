@@ -3,8 +3,8 @@
 from distutils.core import setup
 
 setup(name='PyFstat',
-      version='0.1',
+      version='0.2',
       author='Gregory Ashton',
       author_email='gregory.ashton@ligo.org',
-      py_modules=['pyfstat'],
+      packages=['pyfstat'],
       )

@@ -208,7 +208,7 @@ class TestAuxillaryFunctions(Test):
 
     def test_get_V_estimate_sky_F0_F1(self):
 
-        out = pyfstat.get_V_estimate(
+        out = pyfstat.optimal_setup_functions.get_V_estimate(
             self.nsegs, self.tref, self.minStartTime, self.maxStartTime,
             self.DeltaOmega, self.DeltaFs, self.fiducial_freq,
             self.detector_names, self.earth_ephem, self.sun_ephem)
@@ -217,7 +217,7 @@ class TestAuxillaryFunctions(Test):
         self.__class__.Vpe_COMPUTED_WITH_SKY = Vpe
 
     def test_get_V_estimate_F0_F1(self):
-        out = pyfstat.get_V_estimate(
+        out = pyfstat.optimal_setup_functions.get_V_estimate(
             self.nsegs, self.tref, self.minStartTime, self.maxStartTime,
             self.DeltaOmega, self.DeltaFs, self.fiducial_freq,
             self.detector_names, self.earth_ephem, self.sun_ephem)
