@@ -45,6 +45,8 @@ def set_up_command_line_arguments():
     if args.quite or args.no_interactive:
         def tqdm(x, *args, **kwargs):
             return x
+    else:
+        tqdm = set_up_optional_tqdm()
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     stream_handler = logging.StreamHandler()
@@ -55,7 +57,7 @@ def set_up_command_line_arguments():
     stream_handler.setFormatter(logging.Formatter(
         '%(asctime)s %(levelname)-8s: %(message)s', datefmt='%H:%M'))
     logger.addHandler(stream_handler)
-    return args
+    return args, tqdm
 
 
 def set_up_ephemeris_configuration():
