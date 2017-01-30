@@ -132,6 +132,14 @@ class BaseSearchClass(object):
                     self.maxStartTime)
         subprocess.call([cmd], shell=True)
 
+    def get_list_of_matching_sfts(self):
+        matches = glob.glob(self.sftfilepath)
+        if len(matches) > 0:
+            return matches
+        else:
+            raise IOError('No sfts found matching {}'.format(
+                self.sftfilepath))
+
 
 class ComputeFstat(object):
     """ Base class providing interface to `lalpulsar.ComputeFstat` """
@@ -219,14 +227,6 @@ class ComputeFstat(object):
             subprocess.check_output('lalapps_tconvert {}'.format(
                 int(SFT_timestamps[-1])), shell=True).rstrip('\n')))
         self.SFTCatalog = SFTCatalog
-
-    def get_list_of_matching_sfts(self):
-        matches = glob.glob(self.sftfilepath)
-        if len(matches) > 0:
-            return matches
-        else:
-            raise IOError('No sfts found matching {}'.format(
-                self.sftfilepath))
 
     def init_computefstatistic_single_point(self):
         """ Initilisation step of run_computefstatistic for a single point """
