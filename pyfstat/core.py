@@ -706,10 +706,10 @@ class Writer(BaseSearchClass):
             self.minStartTime = self.tstart
         if self.maxStartTime is None:
             self.maxStartTime = self.tend
-        if self.dtglitch is None or all(self.dtglitch == self.duration):
+        if self.dtglitch is None or self.dtglitch == self.duration:
             self.tbounds = [self.tstart, self.tend]
         elif np.size(self.dtglitch) == 1:
-            self.dtglitch = np.array(dtglitch)
+            self.dtglitch = np.array([dtglitch])
             self.tbounds = np.concatenate((
                 [self.tstart], self.tstart+self.dtglitch, [self.tend]))
         else:
