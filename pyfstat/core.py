@@ -671,7 +671,7 @@ class Writer(BaseSearchClass):
                  delta_F2=0, tref=None, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
                  Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, phi=0, Tsft=1800,
                  outdir=".", sqrtSX=1, Band=4, detector='H1',
-                 minStartTime=None, maxStartTime=None, add_noise=False):
+                 minStartTime=None, maxStartTime=None, add_noise=True):
         """
         Parameters
         ----------
