@@ -163,7 +163,7 @@ class TestMCMCSearch(Test):
         Alpha = 5e-3
         Delta = 1.2
         tref = minStartTime
-        dtglitch = duration
+        dtglitch = None
         delta_F0 = 0
         Writer = pyfstat.Writer(F0=F0, F1=F1, F2=F2, label=self.label,
                                 h0=h0, sqrtSX=sqrtSX,

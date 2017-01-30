@@ -681,7 +681,7 @@ class Writer(BaseSearchClass):
             start and end times (in gps seconds) of the total observation span
         dtglitch: float
             time (in gps seconds) of the glitch after tstart. To create data
-            without a glitch, set dtglitch=tend-tstart or leave as None
+            without a glitch, set dtglitch=None
         delta_phi, delta_F0, delta_F1: float
             instanteneous glitch magnitudes in rad, Hz, and Hz/s respectively
         tref: float or None
@@ -706,17 +706,14 @@ class Writer(BaseSearchClass):
             self.minStartTime = self.tstart
         if self.maxStartTime is None:
             self.maxStartTime = self.tend
-        if self.dtglitch is None or self.dtglitch == self.duration:
+        if self.dtglitch is None:
             self.tbounds = [self.tstart, self.tend]
-        elif np.size(self.dtglitch) == 1:
-            self.dtglitch = np.array([dtglitch])
-            self.tbounds = np.concatenate((
-                [self.tstart], self.tstart+self.dtglitch, [self.tend]))
         else:
-            self.dtglitch = np.array(dtglitch)
+            self.dtglitch = np.atleast_1d(self.dtglitch)
             self.tglitch = self.tstart + self.dtglitch
             self.tbounds = np.concatenate((
                 [self.tstart], self.tglitch, [self.tend]))
+        logging.info('Using segment boundaries {}'.format(self.tbounds))
 
         self.check_inputs()
 
