@@ -13,7 +13,8 @@ import emcee
 import corner
 import dill as pickle
 
-from core import BaseSearchClass, ComputeFstat
+from core import BaseSearchClass, ComputeFstat, SemiCoherentSearch
+from optimal_setup_functions import get_V_estimate
 from core import tqdm, args, earth_ephem, sun_ephem
 from optimal_setup_functions import get_optimal_setup
 import helper_functions
@@ -28,7 +29,7 @@ class MCMCSearch(BaseSearchClass):
                  theta_initial=None, scatter_val=1e-10,
                  binary=False, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, detector=None, earth_ephem=None,
-                 sun_ephem=None, injectSources=None):
+                 sun_ephem=None, injectSources=None, assumeSqrtSX=None):
         """
         Parameters
         label, outdir: str
@@ -113,7 +114,8 @@ class MCMCSearch(BaseSearchClass):
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detector=self.detector, BSGL=self.BSGL, transient=False,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-            binary=self.binary, injectSources=self.injectSources)
+            binary=self.binary, injectSources=self.injectSources,
+            assumeSqrtSX=self.assumeSqrtSX)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [self.generic_lnprior(**theta_prior[key])(p) for p, key in
@@ -1247,7 +1249,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
                  scatter_val=1e-10, detector=None, BSGL=False,
                  minStartTime=None, maxStartTime=None, minCoverFreq=None,
                  maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
-                 injectSources=None):
+                 injectSources=None, assumeSqrtSX=None):
         """
 
         """
@@ -1284,7 +1286,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, detector=self.detector,
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
-            injectSources=self.injectSources)
+            injectSources=self.injectSources, assumeSqrtSX=self.assumeSqrtSX)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [self.generic_lnprior(**theta_prior[key])(p) for p, key in

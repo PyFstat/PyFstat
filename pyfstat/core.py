@@ -151,8 +151,8 @@ class ComputeFstat(object):
     def __init__(self, tref, sftfilepath=None, minStartTime=None,
                  maxStartTime=None, binary=False, transient=True, BSGL=False,
                  detector=None, minCoverFreq=None, maxCoverFreq=None,
-                 earth_ephem=None, sun_ephem=None, injectSources=None
-                 ):
+                 earth_ephem=None, sun_ephem=None, injectSources=None,
+                 assumeSqrtSX=None):
         """
         Parameters
         ----------
@@ -180,6 +180,10 @@ class ComputeFstat(object):
             Paths of the two files containing positions of Earth and Sun,
             respectively at evenly spaced times, as passed to CreateFstatInput.
             If None defaults defined in BaseSearchClass will be used.
+        assumeSqrtSX: float
+            Don't estimate noise-floors but assume (stationary) per-IFO
+            sqrt{SX} (if single value: use for all IFOs). If signal only,
+            set sqrtSX=1
 
         """
 
@@ -250,7 +254,14 @@ class ComputeFstat(object):
         FstatOAs.runningMedianWindow = lalpulsar.FstatOptionalArgsDefaults.runningMedianWindow
         FstatOAs.FstatMethod = lalpulsar.FstatOptionalArgsDefaults.FstatMethod
         FstatOAs.InjectSqrtSX = lalpulsar.FstatOptionalArgsDefaults.injectSqrtSX
-        FstatOAs.assumeSqrtSX = lalpulsar.FstatOptionalArgsDefaults.assumeSqrtSX
+        if self.assumeSqrtSX is None:
+            FstatOAs.assumeSqrtSX = lalpulsar.FstatOptionalArgsDefaults.assumeSqrtSX
+        else:
+            mnf = lalpulsar.MultiNoiseFloor()
+            assumeSqrtSX = np.atleast_1d(self.assumeSqrtSX)
+            mnf.sqrtSn[:len(assumeSqrtSX)] = assumeSqrtSX
+            mnf.length = len(assumeSqrtSX)
+            FstatOAs.assumeSqrtSX = mnf
         FstatOAs.prevInput = lalpulsar.FstatOptionalArgsDefaults.prevInput
         FstatOAs.collectTiming = lalpulsar.FstatOptionalArgsDefaults.collectTiming
 
@@ -460,7 +471,7 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
                  binary=False, BSGL=False, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
                  detector=None, earth_ephem=None, sun_ephem=None,
-                 injectSources=None):
+                 injectSources=None, assumeSqrtSX=None):
         """
         Parameters
         ----------
@@ -570,7 +581,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
     @helper_functions.initializer
     def __init__(self, label, outdir, tref, minStartTime, maxStartTime,
                  nglitch=0, sftfilepath=None, theta0_idx=0, BSGL=False,
-                 minCoverFreq=None, maxCoverFreq=None,
+                 minCoverFreq=None, maxCoverFreq=None, assumeSqrtSX=None,
                  detector=None, earth_ephem=None, sun_ephem=None):
         """
         Parameters
