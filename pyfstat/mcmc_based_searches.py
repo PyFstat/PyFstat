@@ -851,6 +851,26 @@ class MCMCSearch(BaseSearchClass):
             d[k+'_std'] = np.std(s)
         return d
 
+    def check_if_samples_are_railing(self, threshold=0.01):
+        return_flag = False
+        for s, k in zip(self.samples.T, self.theta_keys):
+            prior = self.theta_prior[k]
+            if prior['type'] == 'unif':
+                prior_range = prior['upper'] - prior['lower']
+                edges = []
+                fracs = []
+                for l in ['lower', 'upper']:
+                    bools = np.abs(s - prior[l])/prior_range < threshold
+                    if np.any(bools):
+                        edges.append(l)
+                        fracs.append(str(100*float(np.sum(bools))/len(bools)))
+                if len(edges) > 0:
+                    logging.warning(
+                        '{}% of the {} posterior is railing on the {} edges'
+                        .format('% & '.join(fracs), k, ' & '.join(edges)))
+                    return_flag = True
+        return return_flag
+
     def write_par(self, method='med'):
         """ Writes a .par of the best-fit params with an estimated std """
         logging.info('Writing {}/{}.par using the {} method'.format(

@@ -116,6 +116,7 @@ class BaseSearchClass(object):
                 post_theta_at_ith_glitch = pre_theta_at_ith_glitch + dt
                 thetas.append(self.shift_coefficients(
                     post_theta_at_ith_glitch, self.tref - tbounds[i+1]))
+        self.thetas_at_tref = thetas
         return thetas
 
     def generate_loudest(self):
