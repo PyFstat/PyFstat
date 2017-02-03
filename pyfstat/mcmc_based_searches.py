@@ -28,7 +28,7 @@ class MCMCSearch(BaseSearchClass):
                  nwalkers=100, ntemps=1, log10temperature_min=-5,
                  theta_initial=None, scatter_val=1e-10,
                  binary=False, BSGL=False, minCoverFreq=None,
-                 maxCoverFreq=None, detector=None, earth_ephem=None,
+                 maxCoverFreq=None, detectors=None, earth_ephem=None,
                  sun_ephem=None, injectSources=None, assumeSqrtSX=None):
         """
         Parameters
@@ -60,7 +60,7 @@ class MCMCSearch(BaseSearchClass):
             generated from np.logspace(0, log10temperature_min, ntemps).
         binary: Bool
             If true, search over binary parameters
-        detector: str
+        detectors: str
             Two character reference to the data to use, specify None for no
             contraint.
         minCoverFreq, maxCoverFreq: float
@@ -112,7 +112,7 @@ class MCMCSearch(BaseSearchClass):
             tref=self.tref, sftfilepath=self.sftfilepath,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
-            detector=self.detector, BSGL=self.BSGL, transient=False,
+            detectors=self.detectors, BSGL=self.BSGL, transient=False,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             binary=self.binary, injectSources=self.injectSources,
             assumeSqrtSX=self.assumeSqrtSX)
@@ -1016,7 +1016,7 @@ class MCMCGlitchSearch(MCMCSearch):
                  minStartTime, maxStartTime, nglitch=1, nsteps=[100, 100],
                  nwalkers=100, ntemps=1, log10temperature_min=-5,
                  theta_initial=None, scatter_val=1e-10, dtglitchmin=1*86400,
-                 theta0_idx=0, detector=None, BSGL=False, minCoverFreq=None,
+                 theta0_idx=0, detectors=None, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, earth_ephem=None, sun_ephem=None):
         """
         Parameters
@@ -1060,7 +1060,7 @@ class MCMCGlitchSearch(MCMCSearch):
             Index (zero-based) of which segment the theta refers to - uyseful
             if providing a tight prior on theta to allow the signal to jump
             too theta (and not just from)
-        detector: str
+        detectors: str
             Two character reference to the data to use, specify None for no
             contraint.
         minCoverFreq, maxCoverFreq: float
@@ -1104,7 +1104,7 @@ class MCMCGlitchSearch(MCMCSearch):
             tref=self.tref, minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
-            sun_ephem=self.sun_ephem, detector=self.detector, BSGL=self.BSGL,
+            sun_ephem=self.sun_ephem, detectors=self.detectors, BSGL=self.BSGL,
             nglitch=self.nglitch, theta0_idx=self.theta0_idx)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
@@ -1263,10 +1263,10 @@ class MCMCGlitchSearch(MCMCSearch):
 class MCMCSemiCoherentSearch(MCMCSearch):
     """ MCMC search for a signal using the semi-coherent ComputeFstat """
     @helper_functions.initializer
-    def __init__(self, label, outdir, sftfilepath, theta_prior, tref,
+    def __init__(self, label, outdir, theta_prior, tref, sftfilepath=None,
                  nsegs=None, nsteps=[100, 100, 100], nwalkers=100, binary=False,
                  ntemps=1, log10temperature_min=-5, theta_initial=None,
-                 scatter_val=1e-10, detector=None, BSGL=False,
+                 scatter_val=1e-10, detectors=None, BSGL=False,
                  minStartTime=None, maxStartTime=None, minCoverFreq=None,
                  maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
                  injectSources=None, assumeSqrtSX=None):
@@ -1304,7 +1304,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             nsegs=self.nsegs, sftfilepath=self.sftfilepath, binary=self.binary,
             BSGL=self.BSGL, minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
-            maxCoverFreq=self.maxCoverFreq, detector=self.detector,
+            maxCoverFreq=self.maxCoverFreq, detectors=self.detectors,
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             injectSources=self.injectSources, assumeSqrtSX=self.assumeSqrtSX)
 
@@ -1641,7 +1641,7 @@ class MCMCTransientSearch(MCMCSearch):
             tref=self.tref, sftfilepath=self.sftfilepath,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
-            detector=self.detector, transient=True,
+            detectors=self.detectors, transient=True,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL, binary=self.binary)
 

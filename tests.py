@@ -123,6 +123,29 @@ class TestComputeFstat(Test):
         print predicted_FS, FS
         self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.2)
 
+    def test_injectSources_from_file(self):
+        Writer = pyfstat.Writer(self.label, outdir=outdir, add_noise=False)
+        Writer.make_cff()
+        injectSources = Writer.config_file_name
+
+        search = pyfstat.ComputeFstat(
+            tref=Writer.tref, assumeSqrtSX=1, injectSources=injectSources,
+            minCoverFreq=28, maxCoverFreq=32, minStartTime=Writer.tstart,
+            maxStartTime=Writer.tstart+Writer.duration,
+            detectors=Writer.detectors)
+        FS = search.run_computefstatistic_single_point(Writer.tstart,
+                                                       Writer.tend,
+                                                       Writer.F0,
+                                                       Writer.F1,
+                                                       Writer.F2,
+                                                       Writer.Alpha,
+                                                       Writer.Delta)
+        Writer.make_data()
+        predicted_FS = Writer.predict_fstat()
+        print predicted_FS, FS
+        self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.2)
+
+
 class TestSemiCoherentGlitchSearch(Test):
     label = "Test"
 

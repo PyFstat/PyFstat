@@ -151,9 +151,9 @@ class ComputeFstat(object):
     @helper_functions.initializer
     def __init__(self, tref, sftfilepath=None, minStartTime=None,
                  maxStartTime=None, binary=False, transient=True, BSGL=False,
-                 detector=None, minCoverFreq=None, maxCoverFreq=None,
+                 detectors=None, minCoverFreq=None, maxCoverFreq=None,
                  earth_ephem=None, sun_ephem=None, injectSources=None,
-                 assumeSqrtSX=None):
+                 injectSqrtSX=None, assumeSqrtSX=None):
         """
         Parameters
         ----------
@@ -170,9 +170,9 @@ class ComputeFstat(object):
             If true, allow for the Fstat to be computed over a transient range.
         BSGL: bool
             If true, compute the BSGL rather than the twoF value.
-        detector: str
+        detectors: str
             Two character reference to the data to use, specify None for no
-            contraint.
+            contraint. If multiple-separate by comma.
         minCoverFreq, maxCoverFreq: float
             The min and max cover frequency passed to CreateFstatInput, if
             either is None the range of frequencies in the SFT less 1Hz is
@@ -181,6 +181,11 @@ class ComputeFstat(object):
             Paths of the two files containing positions of Earth and Sun,
             respectively at evenly spaced times, as passed to CreateFstatInput.
             If None defaults defined in BaseSearchClass will be used.
+        injectSources: dict or str
+            Either a dictionary of the values to inject, or a string pointing
+            to the .cff file to inject
+        injectSqrtSX:
+            Not yet implemented
         assumeSqrtSX: float
             Don't estimate noise-floors but assume (stationary) per-IFO
             sqrt{SX} (if single value: use for all IFOs). If signal only,
@@ -198,10 +203,32 @@ class ComputeFstat(object):
     def get_SFTCatalog(self):
         if hasattr(self, 'SFTCatalog'):
             return
+        if self.sftfilepath is None:
+            for k in ['minStartTime', 'maxStartTime', 'detectors']:
+                if getattr(self, k) is None:
+                    raise ValueError('You must provide "{}" to injectSources'
+                                     .format(k))
+            C1 = getattr(self, 'injectSources', None) is None
+            C2 = getattr(self, 'injectSqrtSX', None) is None
+            if C1 and C2:
+                raise ValueError('You must specify either one of injectSources'
+                                 ' or injectSqrtSX')
+            SFTCatalog = lalpulsar.SFTCatalog()
+            Tsft = 1800
+            Toverlap = 0
+            Tspan = self.maxStartTime - self.minStartTime
+            detNames = lal.CreateStringVector(
+                *[d for d in self.detectors.split(',')])
+            multiTimestamps = lalpulsar.MakeMultiTimestamps(
+                self.minStartTime, Tspan, Tsft, Toverlap, detNames.length)
+            SFTCatalog = lalpulsar.MultiAddToFakeSFTCatalog(
+                SFTCatalog, detNames, multiTimestamps)
+            return SFTCatalog
+
         logging.info('Initialising SFTCatalog')
         constraints = lalpulsar.SFTConstraints()
-        if self.detector:
-            constraints.detector = self.detector
+        if self.detectors:
+            constraints.detectors = self.detectors
         if self.minStartTime:
             constraints.minStartTime = lal.LIGOTimeGPS(self.minStartTime)
         if self.maxStartTime:
@@ -231,12 +258,12 @@ class ComputeFstat(object):
             int(SFT_timestamps[-1]),
             subprocess.check_output('lalapps_tconvert {}'.format(
                 int(SFT_timestamps[-1])), shell=True).rstrip('\n')))
-        self.SFTCatalog = SFTCatalog
+        return SFTCatalog
 
     def init_computefstatistic_single_point(self):
         """ Initilisation step of run_computefstatistic for a single point """
 
-        self.get_SFTCatalog()
+        SFTCatalog = self.get_SFTCatalog()
 
         logging.info('Initialising ephems')
         ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
@@ -254,7 +281,6 @@ class ComputeFstat(object):
         FstatOAs.Dterms = lalpulsar.FstatOptionalArgsDefaults.Dterms
         FstatOAs.runningMedianWindow = lalpulsar.FstatOptionalArgsDefaults.runningMedianWindow
         FstatOAs.FstatMethod = lalpulsar.FstatOptionalArgsDefaults.FstatMethod
-        FstatOAs.InjectSqrtSX = lalpulsar.FstatOptionalArgsDefaults.injectSqrtSX
         if self.assumeSqrtSX is None:
             FstatOAs.assumeSqrtSX = lalpulsar.FstatOptionalArgsDefaults.assumeSqrtSX
         else:
@@ -282,20 +308,28 @@ class ComputeFstat(object):
             if 't0' not in self.injectSources:
                 PP.Transient.type = lalpulsar.TRANSIENT_NONE
             FstatOAs.injectSources = PPV
+        if hasattr(self, 'injectSources') and type(self.injectSources) == str:
+            logging.info('Injecting source from param file: {}'.format(
+                self.injectSources))
+            PPV = lalpulsar.PulsarParamsFromFile(self.injectSources, self.tref)
+            FstatOAs.injectSources = PPV
         else:
             FstatOAs.injectSources = lalpulsar.FstatOptionalArgsDefaults.injectSources
-
+        if hasattr(self, 'injectSqrtSX') and self.injectSqrtSX is not None:
+            raise ValueError('injectSqrtSX not implemented')
+        else:
+            FstatOAs.InjectSqrtSX = lalpulsar.FstatOptionalArgsDefaults.injectSqrtSX
         if self.minCoverFreq is None or self.maxCoverFreq is None:
-            fAs = [d.header.f0 for d in self.SFTCatalog.data]
+            fAs = [d.header.f0 for d in SFTCatalog.data]
             fBs = [d.header.f0 + (d.numBins-1)*d.header.deltaF
-                   for d in self.SFTCatalog.data]
+                   for d in SFTCatalog.data]
             self.minCoverFreq = np.min(fAs) + 0.5
             self.maxCoverFreq = np.max(fBs) - 0.5
             logging.info('Min/max cover freqs not provided, using '
                          '{} and {}, est. from SFTs'.format(
                              self.minCoverFreq, self.maxCoverFreq))
 
-        self.FstatInput = lalpulsar.CreateFstatInput(self.SFTCatalog,
+        self.FstatInput = lalpulsar.CreateFstatInput(SFTCatalog,
                                                      self.minCoverFreq,
                                                      self.maxCoverFreq,
                                                      dFreq,
@@ -316,7 +350,7 @@ class ComputeFstat(object):
 
         if self.BSGL:
             if len(self.detector_names) < 2:
-                raise ValueError("Can't use BSGL with single detector data")
+                raise ValueError("Can't use BSGL with single detectors data")
             else:
                 logging.info('Initialising BSGL')
 
@@ -471,7 +505,7 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
     def __init__(self, label, outdir, tref, nsegs=None, sftfilepath=None,
                  binary=False, BSGL=False, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
-                 detector=None, earth_ephem=None, sun_ephem=None,
+                 detectors=None, earth_ephem=None, sun_ephem=None,
                  injectSources=None, assumeSqrtSX=None):
         """
         Parameters
@@ -583,7 +617,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
     def __init__(self, label, outdir, tref, minStartTime, maxStartTime,
                  nglitch=0, sftfilepath=None, theta0_idx=0, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, assumeSqrtSX=None,
-                 detector=None, earth_ephem=None, sun_ephem=None):
+                 detectors=None, earth_ephem=None, sun_ephem=None):
         """
         Parameters
         ----------
@@ -682,7 +716,7 @@ class Writer(BaseSearchClass):
                  dtglitch=None, delta_phi=0, delta_F0=0, delta_F1=0,
                  delta_F2=0, tref=None, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
                  Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, phi=0, Tsft=1800,
-                 outdir=".", sqrtSX=1, Band=4, detector='H1',
+                 outdir=".", sqrtSX=1, Band=4, detectors='H1',
                  minStartTime=None, maxStartTime=None, add_noise=True):
         """
         Parameters
@@ -888,7 +922,7 @@ transientTauDays={:1.3f}\n""")
         cl.append('--outSingleSFT=TRUE')
         cl.append('--outSFTdir="{}"'.format(self.outdir))
         cl.append('--outLabel="{}"'.format(self.label))
-        cl.append('--IFOs="{}"'.format(self.detector))
+        cl.append('--IFOs="{}"'.format(self.detectors))
         if self.add_noise:
             cl.append('--sqrtSX="{}"'.format(self.sqrtSX))
         if self.minStartTime is None:
