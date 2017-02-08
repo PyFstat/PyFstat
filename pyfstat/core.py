@@ -292,7 +292,7 @@ class ComputeFstat(object):
         FstatOAs.prevInput = lalpulsar.FstatOptionalArgsDefaults.prevInput
         FstatOAs.collectTiming = lalpulsar.FstatOptionalArgsDefaults.collectTiming
 
-        if hasattr(self, 'injectSource') and type(self.injectSources) == dict:
+        if hasattr(self, 'injectSources') and type(self.injectSources) == dict:
             logging.info('Injecting source with params: {}'.format(
                 self.injectSources))
             PPV = lalpulsar.CreatePulsarParamsVector(1)
@@ -308,7 +308,7 @@ class ComputeFstat(object):
             if 't0' not in self.injectSources:
                 PP.Transient.type = lalpulsar.TRANSIENT_NONE
             FstatOAs.injectSources = PPV
-        if hasattr(self, 'injectSources') and type(self.injectSources) == str:
+        elif hasattr(self, 'injectSources') and type(self.injectSources) == str:
             logging.info('Injecting source from param file: {}'.format(
                 self.injectSources))
             PPV = lalpulsar.PulsarParamsFromFile(self.injectSources, self.tref)

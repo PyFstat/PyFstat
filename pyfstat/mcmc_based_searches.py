@@ -23,8 +23,8 @@ import helper_functions
 class MCMCSearch(BaseSearchClass):
     """ MCMC search using ComputeFstat"""
     @helper_functions.initializer
-    def __init__(self, label, outdir, sftfilepath, theta_prior, tref,
-                 minStartTime, maxStartTime, nsteps=[100, 100],
+    def __init__(self, label, outdir, theta_prior, tref, minStartTime,
+                 maxStartTime, sftfilepath=None, nsteps=[100, 100],
                  nwalkers=100, ntemps=1, log10temperature_min=-5,
                  theta_initial=None, scatter_val=1e-10,
                  binary=False, BSGL=False, minCoverFreq=None,
@@ -748,11 +748,12 @@ class MCMCSearch(BaseSearchClass):
             logging.info('No pickled data found')
             return False
 
-        oldest_sft = min([os.path.getmtime(f) for f in
-                          self.get_list_of_matching_sfts()])
-        if os.path.getmtime(self.pickle_path) < oldest_sft:
-            logging.info('Pickled data outdates sft files')
-            return False
+        if self.sftfilepath is not None:
+            oldest_sft = min([os.path.getmtime(f) for f in
+                              self.get_list_of_matching_sfts()])
+            if os.path.getmtime(self.pickle_path) < oldest_sft:
+                logging.info('Pickled data outdates sft files')
+                return False
 
         old_d = self.get_saved_data().copy()
         new_d = self.get_save_data_dictionary().copy()
