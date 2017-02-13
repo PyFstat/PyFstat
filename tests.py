@@ -192,7 +192,7 @@ class TestMCMCSearch(Test):
     label = "Test"
 
     def test_fully_coherent(self):
-        h0 = 1e-24
+        h0 = 1e-27
         sqrtSX = 1e-22
         F0 = 30
         F1 = -1e-10
@@ -203,27 +203,26 @@ class TestMCMCSearch(Test):
         Alpha = 5e-3
         Delta = 1.2
         tref = minStartTime
-        dtglitch = None
         delta_F0 = 0
         Writer = pyfstat.Writer(F0=F0, F1=F1, F2=F2, label=self.label,
                                 h0=h0, sqrtSX=sqrtSX,
                                 outdir=outdir, tstart=minStartTime,
                                 Alpha=Alpha, Delta=Delta, tref=tref,
-                                duration=duration, dtglitch=dtglitch,
+                                duration=duration,
                                 delta_F0=delta_F0, Band=4)
 
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
 
-        theta = {'F0': {'type': 'norm', 'loc': F0, 'scale': np.abs(1e-9*F0)},
-                 'F1': {'type': 'norm', 'loc': F1, 'scale': np.abs(1e-9*F1)},
+        theta = {'F0': {'type': 'norm', 'loc': F0, 'scale': np.abs(1e-8*F0)},
+                 'F1': {'type': 'norm', 'loc': F1, 'scale': np.abs(1e-3*F1)},
                  'F2': F2, 'Alpha': Alpha, 'Delta': Delta}
 
         search = pyfstat.MCMCSearch(
             label=self.label, outdir=outdir, theta_prior=theta, tref=tref,
             sftfilepath='{}/*{}*sft'.format(Writer.outdir, Writer.label),
             minStartTime=minStartTime, maxStartTime=maxStartTime,
-            nsteps=[100, 100], nwalkers=100, ntemps=1)
+            nsteps=[500, 100], nwalkers=100, ntemps=2)
         search.run()
         search.plot_corner(add_prior=True)
         _, FS = search.get_max_twoF()

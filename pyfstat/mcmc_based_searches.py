@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import emcee
+import pymc3
 import corner
 import dill as pickle
 
@@ -208,9 +209,67 @@ class MCMCSearch(BaseSearchClass):
 
         return p0
 
-    def run_sampler_with_progress_bar(self, sampler, ns, p0):
+    def OLD_run_sampler_with_progress_bar(self, sampler, ns, p0):
         for result in tqdm(sampler.sample(p0, iterations=ns), total=ns):
             pass
+        return sampler
+
+    #def run_sampler(self, sampler, ns, p0):
+    #    convergence_period = 200
+    #    convergence_diagnostic = []
+    #    convergence_diagnosticx = []
+    #    for i, result in enumerate(tqdm(
+    #            sampler.sample(p0, iterations=ns), total=ns)):
+    #        if np.mod(i+1, convergence_period) == 0:
+    #            s = sampler.chain[0, :, i-convergence_period+1:i+1, :]
+    #            score_per_parameter = []
+    #            for j in range(self.ndim):
+    #                scores = []
+    #                for k in range(self.nwalkers):
+    #                    out = pymc3.geweke(
+    #                        s[k, :, j].reshape((convergence_period)),
+    #                        intervals=2, first=0.4, last=0.4)
+    #                    scores.append(out[0][1])
+    #                score_per_parameter.append(np.median(scores))
+    #            convergence_diagnostic.append(score_per_parameter)
+    #            convergence_diagnosticx.append(i - convergence_period/2)
+    #    self.convergence_diagnostic = np.array(np.abs(convergence_diagnostic))
+    #    self.convergence_diagnosticx = convergence_diagnosticx
+    #    return sampler
+
+    #def run_sampler(self, sampler, ns, p0):
+    #    convergence_period = 200
+    #    convergence_diagnostic = []
+    #    convergence_diagnosticx = []
+    #    for i, result in enumerate(tqdm(
+    #            sampler.sample(p0, iterations=ns), total=ns)):
+    #        if np.mod(i+1, convergence_period) == 0:
+    #            s = sampler.chain[0, :, i-convergence_period+1:i+1, :]
+    #            mean_per_chain = np.mean(s, axis=1)
+    #            std_per_chain = np.std(s, axis=1)
+    #            mean = np.mean(mean_per_chain, axis=0)
+    #            B = convergence_period * np.sum((mean_per_chain - mean)**2, axis=0) / (self.nwalkers - 1)
+    #            W = np.sum(std_per_chain**2, axis=0) / self.nwalkers
+    #            print B, W
+    #            convergence_diagnostic.append(W/B)
+    #            convergence_diagnosticx.append(i - convergence_period/2)
+    #    self.convergence_diagnostic = np.array(np.abs(convergence_diagnostic))
+    #    self.convergence_diagnosticx = convergence_diagnosticx
+    #    return sampler
+
+    def run_sampler(self, sampler, ns, p0):
+        convergence_period = 200
+        convergence_diagnostic = []
+        convergence_diagnosticx = []
+        for i, result in enumerate(tqdm(
+                sampler.sample(p0, iterations=ns), total=ns)):
+            if np.mod(i+1, convergence_period) == 0:
+                s = sampler.chain[0, :, i-convergence_period+1:i+1, :]
+                Z = (s - np.mean(s, axis=(0, 1)))/np.std(s, axis=(0, 1))
+                convergence_diagnostic.append(np.mean(Z, axis=(0, 1)))
+                convergence_diagnosticx.append(i - convergence_period/2)
+        self.convergence_diagnostic = np.array(np.abs(convergence_diagnostic))
+        self.convergence_diagnosticx = convergence_diagnosticx
         return sampler
 
     def run(self, proposal_scale_factor=2, create_plots=True, **kwargs):
@@ -241,7 +300,7 @@ class MCMCSearch(BaseSearchClass):
         for j, n in enumerate(self.nsteps[:-2]):
             logging.info('Running {}/{} initialisation with {} steps'.format(
                 j, ninit_steps, n))
-            sampler = self.run_sampler_with_progress_bar(sampler, n, p0)
+            sampler = self.run_sampler(sampler, n, p0)
             logging.info("Mean acceptance fraction: {}"
                          .format(np.mean(sampler.acceptance_fraction, axis=1)))
             if self.ntemps > 1:
@@ -267,7 +326,7 @@ class MCMCSearch(BaseSearchClass):
         nprod = self.nsteps[-1]
         logging.info('Running final burn and prod with {} steps'.format(
             nburn+nprod))
-        sampler = self.run_sampler_with_progress_bar(sampler, nburn+nprod, p0)
+        sampler = self.run_sampler(sampler, nburn+nprod, p0)
         logging.info("Mean acceptance fraction: {}"
                      .format(np.mean(sampler.acceptance_fraction, axis=1)))
         if self.ntemps > 1:
@@ -575,6 +634,10 @@ class MCMCSearch(BaseSearchClass):
                                 symbols[i]+'$-$'+symbols[i]+'$_0$',
                                 labelpad=labelpad)
 
+                    if hasattr(self, 'convergence_diagnostic'):
+                        ax = axes[i].twinx()
+                        ax.plot(self.convergence_diagnosticx,
+                                self.convergence_diagnostic[:, i], '-b')
             else:
                 axes[0].ticklabel_format(useOffset=False, axis='y')
                 cs = chain[:, :, temp].T
@@ -623,7 +686,7 @@ class MCMCSearch(BaseSearchClass):
                     axes[-1].set_xlim(minv-0.1*Range, maxv+0.1*Range)
 
                 xfmt = matplotlib.ticker.ScalarFormatter()
-                xfmt.set_powerlimits((-4, 4)) 
+                xfmt.set_powerlimits((-4, 4))
                 axes[-1].xaxis.set_major_formatter(xfmt)
 
             axes[-2].set_xlabel(r'$\textrm{Number of steps}$', labelpad=0.2)
@@ -1593,8 +1656,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             logging.info(('Running {}/{} with {} steps and {} nsegs '
                           '(Tcoh={:1.2f} days)').format(
                 j+1, len(run_setup), (nburn, nprod), nseg, Tcoh))
-            sampler = self.run_sampler_with_progress_bar(
-                sampler, nburn+nprod, p0)
+            sampler = self.run_sampler(sampler, nburn+nprod, p0)
             logging.info("Mean acceptance fraction: {}"
                          .format(np.mean(sampler.acceptance_fraction, axis=1)))
             if self.ntemps > 1:
