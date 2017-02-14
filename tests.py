@@ -214,15 +214,15 @@ class TestMCMCSearch(Test):
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
 
-        theta = {'F0': {'type': 'norm', 'loc': F0, 'scale': np.abs(1e-7*F0)},
-                 'F1': {'type': 'norm', 'loc': F1, 'scale': np.abs(1e-3*F1)},
+        theta = {'F0': {'type': 'norm', 'loc': F0, 'scale': np.abs(1e-9*F0)},
+                 'F1': {'type': 'norm', 'loc': F1, 'scale': np.abs(1e-9*F1)},
                  'F2': F2, 'Alpha': Alpha, 'Delta': Delta}
 
         search = pyfstat.MCMCSearch(
             label=self.label, outdir=outdir, theta_prior=theta, tref=tref,
             sftfilepath='{}/*{}*sft'.format(Writer.outdir, Writer.label),
             minStartTime=minStartTime, maxStartTime=maxStartTime,
-            nsteps=[500, 100], nwalkers=100, ntemps=2, log10temperature_min=-1)
+            nsteps=[100, 100], nwalkers=100, ntemps=2, log10temperature_min=-1)
         search.setup_convergence_testing()
         search.run(create_plots=True)
         search.plot_corner(add_prior=True)
