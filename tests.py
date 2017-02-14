@@ -224,8 +224,7 @@ class TestMCMCSearch(Test):
             minStartTime=minStartTime, maxStartTime=maxStartTime,
             nsteps=[100, 100], nwalkers=100, ntemps=2, log10temperature_min=-1)
         search.setup_convergence_testing()
-        search.run(create_plots=True)
-        search.plot_corner(add_prior=True)
+        search.run(create_plots=False)
         _, FS = search.get_max_twoF()
 
         print('Predicted twoF is {} while recovered is {}'.format(
