@@ -192,7 +192,7 @@ class TestMCMCSearch(Test):
     label = "Test"
 
     def test_fully_coherent(self):
-        h0 = 1e-27
+        h0 = 1e-24
         sqrtSX = 1e-22
         F0 = 30
         F1 = -1e-10
@@ -214,7 +214,7 @@ class TestMCMCSearch(Test):
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
 
-        theta = {'F0': {'type': 'norm', 'loc': F0, 'scale': np.abs(1e-8*F0)},
+        theta = {'F0': {'type': 'norm', 'loc': F0, 'scale': np.abs(1e-7*F0)},
                  'F1': {'type': 'norm', 'loc': F1, 'scale': np.abs(1e-3*F1)},
                  'F2': F2, 'Alpha': Alpha, 'Delta': Delta}
 
@@ -222,8 +222,9 @@ class TestMCMCSearch(Test):
             label=self.label, outdir=outdir, theta_prior=theta, tref=tref,
             sftfilepath='{}/*{}*sft'.format(Writer.outdir, Writer.label),
             minStartTime=minStartTime, maxStartTime=maxStartTime,
-            nsteps=[500, 100], nwalkers=100, ntemps=2)
-        search.run()
+            nsteps=[500, 100], nwalkers=100, ntemps=2, log10temperature_min=-1)
+        search.setup_convergence_testing()
+        search.run(create_plots=True)
         search.plot_corner(add_prior=True)
         _, FS = search.get_max_twoF()
 
