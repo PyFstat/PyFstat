@@ -384,6 +384,7 @@ such, this sampler requires little in the way of tuning: a single proposal
 scale and the number of steps to take.
 
 \subsection{Parallel tempering: sampling multimodal posteriors}
+\label{sec_parallel_tempering}
 Beyond the standard ensemble sampler, we will also use one further
 modification, the parallel-tempered ensemble sampler. A parallel
 tempered MCMC simulation, first proposed by \citet{swendsen1986}, runs
@@ -750,6 +751,89 @@ as production samples. The bottom panel shows the distribution of
 $\widetilde{2\F}$ taken from the production samples.}
 \label{fig_MCMC_simple_example}
 \end{figure}
+
+\section{Testing convergence}
+
+In Figure~\ref{fig_MCMC_simple_example}, it is easy to see by eye that that the
+MCMC simulation has converged during the burn-in. However, choosing the number
+of steps, balancing the extra computing cost against ensuring the chains have
+converged, is often a matter of trial and error. So, while graphical methods
+for assesing convergence are the most robust and informative, quantitative
+methods (diagnostics) also exist to test convergence and can therefore provide
+the utility to prematurely stop the burn-in period. As such one can then simply
+choose a large number of steps (as compared to a typical burn-in for the given
+problem) and expect that in most cases these will not all be used. Moreover, if
+such a large number of searches are to be run such that inspection of each MCMC
+simulation is impossible, the convergence tests can easily be checked
+numerically.
+
+\subsection{The Gelman \& Rubin statistic}
+We will use the ``Gelman \& Rubin statistic" \citep{gelman1992} to assess
+convergence. This method, developed in the context of single-walker samplers
+(i.e. not ensemble samplers) requires multiple independent simulations to be
+run, each initialised from an overdispersed estimate of the target
+distribution. The statistic, the \emph{potential scale reduction factor}
+(PSRF), is calculated for each scalar quantity of interest and estimates the
+amount by which the scale factor of the target distribition (approximated by a
+Student t distribution) might shrink if the simulation where run indefinitely.
+This method makes a normality assumption on the posterior distribution, which
+in testing appears to be reasonble for all parameters except the transient
+start time and durations (discussed later in Sec.~\ref{sec_transients}).
+However, paraphrasing \citet{brooks1998}, Gelman and Rubin's approach is
+generally applicable to any situation where the posterior inference can be
+summarized by the mean and variance (or standard deviation), even if the
+posterior distributions are not themselves believed to be normally distributed.
+
+\comment{Note I have not yet fully implemented the method, for simplicity I'm
+         assuming df -> infty}
+
+In this setting, we depart from the original description by using the walkers
+of the ensemble sampler in place of independent MCMC simulations. Moreover,
+this is done periodicically checking the last $n$ steps of the simulation. As
+such, testing convergence requires only a small overhead in calculating the
+variances: there is no requirement to run multiple independent simulations.
+At each periodic check, the statistic is computed for each model parameter
+and if all model parameters are less than the threshold (with a default value
+of 1.2), the simulation is considered converged. However, the burn-in period is
+only prematurely stopped if convergence is reached a pre-specific number of
+times (the default value is 10). This is a conservative system to prevent
+misdiagnosis of convergence.
+
+While in testing this method was found to agree well with graphical
+determination convergence, but we echo the conclusions of \citet{cowles1996markov}
+that no convergence diagnostic can say with certainty that the posterior
+samples are truly representative of the underlying stationary distribution.
+
+\subsection{Example}
+
+In Figure~\ref{fig_MCMC_convergence_example}, we illustrate our implementation
+of the Rubin-Gelman statistic for a fully-coherent search of data including
+a strong continuous signal. In essense this repeats the simulation in
+Figure~\ref{fig_MCMC_simple_example}, but we have expanded the prior ranges
+on $f$ and $\fdot$. As a result, the sampler takes many more steps to reach
+convergence: it can be seen by eye that the traces of a few walkers remain
+isolated from the bulk of walkers. When this is the case, the PSRF is much
+larger than unity, since the between-walker variance is much larger than the
+within-walker variance. Once that walker joins the main bulk, the PSRF tends
+to unity for several periods and hence the burn-in period is prematurely
+halted. The sampler is then continued, with all samples saved as production
+samples. In the figure, the gap indicates the `missing' samples which would
+have been taken if convergence had not been obtained before the end of the
+maximum burn-in period.
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.5\textwidth]{fully_coherent_search_using_MCMC_convergence_walkers}
+\caption{Demonstration of the Potential Scale Reduction Face (PSRF) convergence
+statistic (in blue) calculated separately for each parameter: values below 1.2
+are considered converged.}
+\label{fig_MCMC_convergence_example}
+\end{figure}
+
+It is worth noting that this type of long convergence, when a small number of
+chains remain isolated from the main bulk can be easily countered by the use
+of parallel tempering (see Sec.~\ref{sec_parallel_tempering}). This was intenionally
+not used here to highlight the utility of the convergence statistic.
+
 
 \section{Follow-up}
 \label{sec_follow_up}
