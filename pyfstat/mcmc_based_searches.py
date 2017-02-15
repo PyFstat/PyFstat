@@ -10,7 +10,6 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import emcee
-import pymc3
 import corner
 import dill as pickle
 
