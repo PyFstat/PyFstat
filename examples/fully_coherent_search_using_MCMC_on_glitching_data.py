@@ -1,10 +1,12 @@
+import numpy as np
 from pyfstat import MCMCSearch
 
 F0 = 30.0
 F1 = -1e-10
 F2 = 0
-Alpha = 5e-3
-Delta = 6e-2
+Alpha = np.radians(83.6292)
+Delta = np.radians(22.0144)
+
 tref = 362750407.0
 
 tstart = 1000000000
@@ -21,11 +23,11 @@ theta_prior = {'F0': {'type': 'unif', 'lower': F0-1e-4, 'upper': F0+1e-4},
 ntemps = 2
 log10temperature_min = -0.01
 nwalkers = 100
-nsteps = [5000, 10000]
+nsteps = [500, 500]
 
 mcmc = MCMCSearch('fully_coherent_search_using_MCMC_on_glitching_data', 'data',
                   sftfilepath='data/*_glitch*.sft',
-                  theta_prior=theta_prior, tref=tref, tstart=tstart, tend=tend,
+                  theta_prior=theta_prior, tref=tref, minStartTime=tstart, maxStartTime=tend,
                   nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps,
                   log10temperature_min=log10temperature_min)
 mcmc.run()

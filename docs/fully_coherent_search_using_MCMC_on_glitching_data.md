@@ -39,7 +39,7 @@ between the different peaks in the posterior).
 ntemps = 2
 log10temperature_min = -0.01
 nwalkers = 100
-nsteps = [5000, 10000]
+nsteps = [500, 500]
 
 mcmc = MCMCSearch('fully_coherent_search_using_MCMC_on_glitching_data', 'data',
                   sftfilepath='data/*_glitch*.sft',
