@@ -638,7 +638,7 @@ class MCMCSearch(BaseSearchClass):
             raise ValueError("dist_type {} unknown".format(dist_type))
 
     def plot_walkers(self, sampler, symbols=None, alpha=0.4, color="k", temp=0,
-                     lw=0.1, nprod=None, add_det_stat_burnin=False,
+                     lw=0.1, nprod=0, add_det_stat_burnin=False,
                      fig=None, axes=None, xoffset=0, plot_det_stat=True,
                      context='classic', subtractions=None, labelpad=0.05):
         """ Plot all the chains from a sampler """

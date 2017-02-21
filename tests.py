@@ -232,6 +232,21 @@ class TestMCMCSearch(Test):
         self.assertTrue(
             FS > predicted_FS or np.abs((FS-predicted_FS))/predicted_FS < 0.3)
 
+    def test_multi_stage(self):
+        Writer = pyfstat.Writer()
+        Writer.make_cff()
+
+        theta = {'F0': {'type': 'norm', 'loc': 10, 'scale': 1e-2},
+                 'F1': 0, 'F2': 0, 'Alpha': 0, 'Delta': 0}
+
+        search = pyfstat.MCMCSearch(
+            label=self.label, outdir=outdir, theta_prior=theta,
+            tref=Writer.tref, injectSources=Writer.config_file_name,
+            minStartTime=Writer.minStartTime, maxStartTime=Writer.maxStartTime,
+            nsteps=[5, 5], nwalkers=20, ntemps=1, detectors='H1',
+            minCoverFreq=9, maxCoverFreq=11)
+        search.run(create_plots=False)
+
 
 class TestAuxillaryFunctions(Test):
     nsegs = 10
