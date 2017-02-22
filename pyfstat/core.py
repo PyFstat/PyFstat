@@ -228,7 +228,7 @@ class ComputeFstat(object):
         logging.info('Initialising SFTCatalog')
         constraints = lalpulsar.SFTConstraints()
         if self.detectors:
-            constraints.detectors = self.detectors
+            constraints.detector = self.detectors
         if self.minStartTime:
             constraints.minStartTime = lal.LIGOTimeGPS(self.minStartTime)
         if self.maxStartTime:

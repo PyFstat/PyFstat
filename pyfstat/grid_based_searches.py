@@ -21,7 +21,7 @@ class GridSearch(BaseSearchClass):
                  Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
                  maxStartTime=None, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
-                 detector=None):
+                 detectors=None):
         """
         Parameters
         ----------
@@ -54,7 +54,7 @@ class GridSearch(BaseSearchClass):
             tref=self.tref, sftfilepath=self.sftfilepath,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
-            detector=self.detector, transient=False,
+            detectors=self.detectors, transient=False,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL)
 
@@ -154,7 +154,7 @@ class GridSearch(BaseSearchClass):
 
     def plot_2D(self, xkey, ykey, ax=None, save=True, vmin=None, vmax=None,
                 add_mismatch=None, xN=None, yN=None, flat_keys=[],
-                rel_flat_idxs=[], flatten_method=np.max,
+                rel_flat_idxs=[], flatten_method=np.max, title=None,
                 predicted_twoF=None, cm=None, cbarkwargs={}):
         """ Plots a 2D grid of 2F values
 
@@ -205,6 +205,9 @@ class GridSearch(BaseSearchClass):
         ax.set_xlabel(labels[xkey])
         ax.set_ylabel(labels[ykey])
 
+        if title:
+            ax.set_title(title)
+
         if xN:
             ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(xN))
         if yN:
@@ -229,6 +232,23 @@ class GridSearch(BaseSearchClass):
         print('Max twoF values for {}:'.format(self.label))
         for k, v in d.iteritems():
             print('  {}={}'.format(k, v))
+
+
+class GridUniformPriorSearch():
+    def __init__(self, theta_prior, NF0, NF1, label, outdir, sftfilepath,
+                 tref, minStartTime, maxStartTime, BSGL=False, detectors=None,
+                 **kwargs):
+        dF0 = (theta_prior['F0']['upper'] - theta_prior['F0']['lower'])/NF0
+        dF1 = (theta_prior['F1']['upper'] - theta_prior['F1']['lower'])/NF1
+        F0s = [theta_prior['F0']['lower'], theta_prior['F0']['upper'], dF0]
+        F1s = [theta_prior['F1']['lower'], theta_prior['F1']['upper'], dF1]
+        search = GridSearch(
+            label, outdir, sftfilepath, F0s=F0s, F1s=F1s, tref=tref,
+            Alphas=[theta_prior['Alpha']], Deltas=[theta_prior['Delta']],
+            minStartTime=minStartTime, maxStartTime=maxStartTime, BSGL=BSGL,
+            detectors=detectors)
+        search.run()
+        search.plot_2D('F0', 'F1', **kwargs)
 
 
 class GridGlitchSearch(GridSearch):
