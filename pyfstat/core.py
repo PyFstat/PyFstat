@@ -562,16 +562,15 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
                                self.whatToCompute
                                )
 
-        if self.transient is False:
-            if self.BSGL is False:
-                return self.FstatResults.twoF[0]
-
-            twoF = np.float(self.FstatResults.twoF[0])
-            self.twoFX[0] = self.FstatResults.twoFPerDet(0)
-            self.twoFX[1] = self.FstatResults.twoFPerDet(1)
-            log10_BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX,
-                                               self.BSGLSetup)
-            return log10_BSGL/np.log10(np.exp(1))
+        #if self.transient is False:
+        #    if self.BSGL is False:
+        #        return self.FstatResults.twoF[0]
+        #    twoF = np.float(self.FstatResults.twoF[0])
+        #    self.twoFX[0] = self.FstatResults.twoFPerDet(0)
+        #    self.twoFX[1] = self.FstatResults.twoFPerDet(1)
+        #    log10_BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX,
+        #                                       self.BSGLSetup)
+        #    return log10_BSGL/np.log10(np.exp(1))
 
         detStat = 0
         for tstart, tend in zip(self.tboundaries[:-1], self.tboundaries[1:]):
