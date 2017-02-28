@@ -1432,6 +1432,14 @@ class MCMCSemiCoherentSearch(MCMCSearch):
 
         self.log_input()
 
+    def get_save_data_dictionary(self):
+        d = dict(nsteps=self.nsteps, nwalkers=self.nwalkers,
+                 ntemps=self.ntemps, theta_keys=self.theta_keys,
+                 theta_prior=self.theta_prior, scatter_val=self.scatter_val,
+                 log10temperature_min=self.log10temperature_min,
+                 BSGL=self.BSGL, nsegs=self.nsegs)
+        return d
+
     def inititate_search_object(self):
         logging.info('Setting up search object')
         self.search = SemiCoherentSearch(
