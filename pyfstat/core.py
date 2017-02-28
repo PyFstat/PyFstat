@@ -542,7 +542,8 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
 
     def run_semi_coherent_computefstatistic_single_point(
             self, F0, F1, F2, Alpha, Delta, asini=None,
-            period=None, ecc=None, tp=None, argp=None):
+            period=None, ecc=None, tp=None, argp=None,
+            record_segments=False):
         """ Returns twoF or ln(BSGL) semi-coherently at a single point """
 
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
@@ -573,6 +574,8 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
         #    return log10_BSGL/np.log10(np.exp(1))
 
         detStat = 0
+        if record_segments:
+            self.detStat_per_segment = []
         for tstart, tend in zip(self.tboundaries[:-1], self.tboundaries[1:]):
             self.windowRange.t0 = int(tstart)  # TYPE UINT4
             self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
@@ -581,24 +584,25 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
                 self.FstatResults.multiFatoms[0], self.windowRange, False)
 
             if self.BSGL is False:
-                detStat += 2*FS.F_mn.data[0][0]
-                continue
+                d_detStat = 2*FS.F_mn.data[0][0]
+            else:
+                FstatResults_single = copy.copy(self.FstatResults)
+                FstatResults_single.lenth = 1
+                FstatResults_single.data = self.FstatResults.multiFatoms[0].data[0]
+                FS0 = lalpulsar.ComputeTransientFstatMap(
+                    FstatResults_single.multiFatoms[0], self.windowRange, False)
+                FstatResults_single.data = self.FstatResults.multiFatoms[0].data[1]
+                FS1 = lalpulsar.ComputeTransientFstatMap(
+                    FstatResults_single.multiFatoms[0], self.windowRange, False)
 
-            FstatResults_single = copy.copy(self.FstatResults)
-            FstatResults_single.lenth = 1
-            FstatResults_single.data = self.FstatResults.multiFatoms[0].data[0]
-            FS0 = lalpulsar.ComputeTransientFstatMap(
-                FstatResults_single.multiFatoms[0], self.windowRange, False)
-            FstatResults_single.data = self.FstatResults.multiFatoms[0].data[1]
-            FS1 = lalpulsar.ComputeTransientFstatMap(
-                FstatResults_single.multiFatoms[0], self.windowRange, False)
-
-            self.twoFX[0] = 2*FS0.F_mn.data[0][0]
-            self.twoFX[1] = 2*FS1.F_mn.data[0][0]
-            log10_BSGL = lalpulsar.ComputeBSGL(
-                    2*FS.F_mn.data[0][0], self.twoFX, self.BSGLSetup)
-
-            detStat += log10_BSGL/np.log10(np.exp(1))
+                self.twoFX[0] = 2*FS0.F_mn.data[0][0]
+                self.twoFX[1] = 2*FS1.F_mn.data[0][0]
+                log10_BSGL = lalpulsar.ComputeBSGL(
+                        2*FS.F_mn.data[0][0], self.twoFX, self.BSGLSetup)
+                d_detStat = log10_BSGL/np.log10(np.exp(1))
+            detStat += d_detStat
+            if record_segments:
+                self.detStat_per_segment.append(d_detStat)
 
         return detStat
 
