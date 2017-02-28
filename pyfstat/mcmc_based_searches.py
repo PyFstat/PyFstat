@@ -106,7 +106,7 @@ class MCMCSearch(BaseSearchClass):
         logging.info('log10temperature_min = {}'.format(
             self.log10temperature_min))
 
-    def inititate_search_object(self):
+    def initiate_search_object(self):
         logging.info('Setting up search object')
         self.search = ComputeFstat(
             tref=self.tref, sftfilepath=self.sftfilepath,
@@ -345,7 +345,7 @@ class MCMCSearch(BaseSearchClass):
             self.lnlikes = d['lnlikes']
             return
 
-        self.inititate_search_object()
+        self.initiate_search_object()
 
         sampler = emcee.PTSampler(
             self.ntemps, self.nwalkers, self.ndim, self.logl, self.logp,
@@ -553,7 +553,7 @@ class MCMCSearch(BaseSearchClass):
                 d[key] = val
 
         if hasattr(self, 'search') is False:
-            self.inititate_search_object()
+            self.initiate_search_object()
         if self.binary is False:
             self.search.plot_twoF_cumulative(
                 self.label, self.outdir, F0=d['F0'], F1=d['F1'], F2=d['F2'],
@@ -941,7 +941,7 @@ class MCMCSearch(BaseSearchClass):
 
         if self.BSGL:
             if hasattr(self, 'search') is False:
-                self.inititate_search_object()
+                self.initiate_search_object()
             p = self.samples[jmax]
             self.search.BSGL = False
             maxtwoF = self.logl(p, self.search)
@@ -1232,7 +1232,7 @@ class MCMCGlitchSearch(MCMCSearch):
         self.old_data_is_okay_to_use = self.check_old_data_is_okay_to_use()
         self.log_input()
 
-    def inititate_search_object(self):
+    def initiate_search_object(self):
         logging.info('Setting up search object')
         self.search = SemiCoherentGlitchSearch(
             label=self.label, outdir=self.outdir, sftfilepath=self.sftfilepath,
@@ -1440,7 +1440,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
                  BSGL=self.BSGL, nsegs=self.nsegs)
         return d
 
-    def inititate_search_object(self):
+    def initiate_search_object(self):
         logging.info('Setting up search object')
         self.search = SemiCoherentSearch(
             label=self.label, outdir=self.outdir, tref=self.tref,
@@ -1691,7 +1691,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         """
 
         self.nsegs = 1
-        self.inititate_search_object()
+        self.initiate_search_object()
         run_setup = self.init_run_setup(
             run_setup, R=R, Nsegs0=Nsegs0, log_table=log_table,
             gen_tex_table=gen_tex_table)
@@ -1777,7 +1777,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 class MCMCTransientSearch(MCMCSearch):
     """ MCMC search for a transient signal using the ComputeFstat """
 
-    def inititate_search_object(self):
+    def initiate_search_object(self):
         logging.info('Setting up search object')
         self.search = ComputeFstat(
             tref=self.tref, sftfilepath=self.sftfilepath,
