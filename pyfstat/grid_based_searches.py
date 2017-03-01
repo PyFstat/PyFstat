@@ -10,7 +10,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 import helper_functions
-from core import BaseSearchClass, ComputeFstat, SemiCoherentGlitchSearch
+from core import BaseSearchClass, ComputeFstat, SemiCoherentGlitchSearch, SemiCoherentSearch
 from core import tqdm, args, earth_ephem, sun_ephem
 
 
@@ -18,7 +18,7 @@ class GridSearch(BaseSearchClass):
     """ Gridded search using ComputeFstat """
     @helper_functions.initializer
     def __init__(self, label, outdir, sftfilepath, F0s=[0], F1s=[0], F2s=[0],
-                 Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
+                 Alphas=[0], Deltas=[0], tref=None, minStartTime=None, nsegs=1,
                  maxStartTime=None, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
                  detectors=None):
@@ -50,13 +50,27 @@ class GridSearch(BaseSearchClass):
 
     def inititate_search_object(self):
         logging.info('Setting up search object')
-        self.search = ComputeFstat(
-            tref=self.tref, sftfilepath=self.sftfilepath,
-            minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
-            earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
-            detectors=self.detectors, transient=False,
-            minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-            BSGL=self.BSGL)
+        if self.nsegs == 1:
+            self.search = ComputeFstat(
+                tref=self.tref, sftfilepath=self.sftfilepath,
+                minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
+                earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
+                detectors=self.detectors, transient=False,
+                minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
+                BSGL=self.BSGL)
+            self.search.get_det_stat = self.search.run_computefstatistic_single_point
+        else:
+            self.search = SemiCoherentSearch(
+                label=self.label, outdir=self.outdir, tref=self.tref,
+                nsegs=self.nsegs, sftfilepath=self.sftfilepath,
+                BSGL=self.BSGL, minStartTime=self.minStartTime,
+                maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
+                maxCoverFreq=self.maxCoverFreq, detectors=self.detectors,
+                earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem)
+
+            def cut_out_tstart_tend(*vals):
+                return self.search.run_semi_coherent_computefstatistic_single_point(*vals[2:])
+            self.search.get_det_stat = cut_out_tstart_tend
 
     def get_array_from_tuple(self, x):
         if len(x) == 1:
@@ -107,7 +121,7 @@ class GridSearch(BaseSearchClass):
 
         data = []
         for vals in tqdm(self.input_data):
-            FS = self.search.run_computefstatistic_single_point(*vals)
+            FS = self.search.get_det_stat(*vals)
             data.append(list(vals) + [FS])
 
         data = np.array(data)
@@ -236,7 +250,8 @@ class GridSearch(BaseSearchClass):
 
 class GridUniformPriorSearch():
     def __init__(self, theta_prior, NF0, NF1, label, outdir, sftfilepath,
-                 tref, minStartTime, maxStartTime, BSGL=False, detectors=None):
+                 tref, minStartTime, maxStartTime, minCoverFreq=None,
+                 maxCoverFreq=None, BSGL=False, detectors=None, nsegs=1):
         dF0 = (theta_prior['F0']['upper'] - theta_prior['F0']['lower'])/NF0
         dF1 = (theta_prior['F1']['upper'] - theta_prior['F1']['lower'])/NF1
         F0s = [theta_prior['F0']['lower'], theta_prior['F0']['upper'], dF0]
@@ -245,7 +260,8 @@ class GridUniformPriorSearch():
             label, outdir, sftfilepath, F0s=F0s, F1s=F1s, tref=tref,
             Alphas=[theta_prior['Alpha']], Deltas=[theta_prior['Delta']],
             minStartTime=minStartTime, maxStartTime=maxStartTime, BSGL=BSGL,
-            detectors=detectors)
+            detectors=detectors, minCoverFreq=minCoverFreq,
+            maxCoverFreq=maxCoverFreq, nsegs=nsegs)
 
     def run(self, **kwargs):
         self.search.run()
