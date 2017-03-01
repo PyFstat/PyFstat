@@ -240,6 +240,7 @@ class ComputeFstat(object):
         detector_names = list(set([d.header.name for d in SFTCatalog.data]))
         self.detector_names = detector_names
         SFT_timestamps = [d.header.epoch for d in SFTCatalog.data]
+        self.SFT_timestamps = [float(s) for s in SFT_timestamps]
         if args.quite is False and args.no_interactive is False:
             try:
                 from bashplotlib.histogram import plot_hist
@@ -546,6 +547,15 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
             record_segments=False):
         """ Returns twoF or ln(BSGL) semi-coherently at a single point """
 
+        if self.tboundaries[0] < self.SFT_timestamps[0]:
+            logging.debug(
+                'Semi-coherent start time {} before first SFT timestamp {}'
+                .format(self.tboundaries[0], self.SFT_timestamps[0]))
+        if self.tboundaries[-1] > self.SFT_timestamps[-1]:
+            logging.debug(
+                'Semi-coherent end time {} after last SFT timestamp {}'
+                .format(self.tboundaries[-1], self.SFT_timestamps[-1]))
+
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
         self.PulsarDopplerParams.Alpha = Alpha
         self.PulsarDopplerParams.Delta = Delta
@@ -600,6 +610,9 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
                 log10_BSGL = lalpulsar.ComputeBSGL(
                         2*FS.F_mn.data[0][0], self.twoFX, self.BSGLSetup)
                 d_detStat = log10_BSGL/np.log10(np.exp(1))
+            if np.isnan(d_detStat):
+                logging.debug('NaNs in semi-coherent twoF treated as zero')
+                d_detStat = 0
             detStat += d_detStat
             if record_segments:
                 self.detStat_per_segment.append(d_detStat)
