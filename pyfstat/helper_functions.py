@@ -32,6 +32,8 @@ def set_up_command_line_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-q", "--quite", help="Decrease output verbosity",
                         action="store_true")
+    parser.add_argument("-v", "--verbose", help="Increase output verbosity",
+                        action="store_true")
     parser.add_argument("--no-interactive", help="Don't use interactive",
                         action="store_true")
     parser.add_argument("-c", "--clean", help="Don't use cached data",
@@ -48,12 +50,14 @@ def set_up_command_line_arguments():
     else:
         tqdm = set_up_optional_tqdm()
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     stream_handler = logging.StreamHandler()
     if args.quite:
         stream_handler.setLevel(logging.WARNING)
-    else:
+    elif args.verbose:
         stream_handler.setLevel(logging.DEBUG)
+    else:
+        stream_handler.setLevel(logging.INFO)
     stream_handler.setFormatter(logging.Formatter(
         '%(asctime)s %(levelname)-8s: %(message)s', datefmt='%H:%M'))
     logger.addHandler(stream_handler)
