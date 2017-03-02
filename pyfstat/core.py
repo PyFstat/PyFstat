@@ -547,14 +547,15 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
             record_segments=False):
         """ Returns twoF or ln(BSGL) semi-coherently at a single point """
 
-        if self.tboundaries[0] < self.SFT_timestamps[0]:
-            logging.debug(
-                'Semi-coherent start time {} before first SFT timestamp {}'
-                .format(self.tboundaries[0], self.SFT_timestamps[0]))
-        if self.tboundaries[-1] > self.SFT_timestamps[-1]:
-            logging.debug(
-                'Semi-coherent end time {} after last SFT timestamp {}'
-                .format(self.tboundaries[-1], self.SFT_timestamps[-1]))
+        if hasattr(self, 'SFT_timestamps'):
+            if self.tboundaries[0] < self.SFT_timestamps[0]:
+                logging.debug(
+                    'Semi-coherent start time {} before first SFT timestamp {}'
+                    .format(self.tboundaries[0], self.SFT_timestamps[0]))
+            if self.tboundaries[-1] > self.SFT_timestamps[-1]:
+                logging.debug(
+                    'Semi-coherent end time {} after last SFT timestamp {}'
+                    .format(self.tboundaries[-1], self.SFT_timestamps[-1]))
 
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
         self.PulsarDopplerParams.Alpha = Alpha
