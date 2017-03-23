@@ -59,7 +59,7 @@ glitch_data.make_data()
 
 
 startTime = time.time()
-theta_prior = {'F0': {'type': 'unif', 'lower': F0-DeltaF0/2.,
+theta_prior = {'F0': {'type': 'unif', 'lower': F0-DeltaF0/2., # PROBLEM
                       'upper': F0+DeltaF0/2},
                'F1': {'type': 'unif', 'lower': F1-DeltaF1/2.,
                       'upper': F1+DeltaF1/2},

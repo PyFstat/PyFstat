@@ -835,7 +835,7 @@ of parallel tempering (see Sec.~\ref{sec_parallel_tempering}). This was intenion
 not used here to highlight the utility of the convergence statistic.
 
 
-\section{Follow-up}
+\section{Zoom follow-up}
 \label{sec_follow_up}
 
 Incoherent detection statistics trade significance (the height of the peak) for
@@ -964,11 +964,12 @@ possible for this to occur during an ordinary MCMC simulation (with $\Tcoh$
 fixed at $\Tspan$), it would take substantially longer to converge as the
 chains explore the other `noise peaks' in the data.
 
-\section{Monte Carlo studies}
+\subsection{Monte-Carlo studies}
+\label{sec_MCS_zoom}
 
 In order to understand how well the MCMC follow-up method works, we will test
 its ability to succesfully identify simulated signals in Gaussian noise. This will be
-done in a Monte Carlo study, with independent random realisations of the
+done in a Monte-Carlo study, with independent random realisations of the
 Guassian noise, amplitude, and Doppler parameters in suitable ranges. Such a
 method is analagous to the studies performed in \citet{shaltev2013}, except
 that we present results as a function of the fixed injected signal depth,
@@ -996,7 +997,7 @@ sense that signals are `lost' during the follow-up due simply to the fact that
 they are not sufficiently strong to rise above the noise.
 
 
-\subsection{Follow-up candidates from a directed search}
+\subsubsection{Follow-up candidates from a directed search}
 \label{sec_directed_follow_up}
 
 In a directed search, the sky location parameters $\alpha$ and $\delta$ are
@@ -1074,7 +1075,7 @@ Table~\ref{tab_directed_MC_follow_up}.}
 \end{figure}
 
 
-\subsection{Follow-up candidates from an all-sky search}
+\subsubsection{Follow-up candidates from an all-sky search}
 \label{sec_all_sky_follow_up}
 
 We now test the follow-up method when applied to candidates from an all-sky
@@ -1139,23 +1140,22 @@ Table~\ref{tab_directed_MC_follow_up}.}
 \label{fig_allsky_MC_follow_up}
 \end{figure}
 
-\section{Alternative waveform models}
+\section{Alternative waveform models: transients}
+\label{sec_transients}
 
 In a grided search, the template bank is constructed to ensure that a canonical
 CW signal (i.e. when it lasts much longer than the observation span and has a
-phase evolution well-described by a Equation~\eqref{eqn_phi}) will be
-recovered with a fixed maximum loss of detection statistic; this loss can be
-described as the `template-bank mismatch'. In addition to this mismatch, CW
-searches may experience a mismatch if the waveform model differs from the
-matched-filter template. There are of course an unlimited number of ways this
-may manifest given our ignorance of neutron stars, but from studying pulsars
-three obvious mechanisms present themselves: transient, glitching, and noisy
-waveforms. In the following sections we will discuss the first two of these, we
-discussed the effect of random jitters in the phase evolution (noisy waveforms)
-in \citet{ashton2015} and concluded it was unlikely to be of immediate concern.
-
-\subsection{Transients}
-\label{sec_transients}
+phase evolution well-described by a Equation~\eqref{eqn_phi}) will be recovered
+with a fixed maximum loss of detection statistic; this loss can be described as
+the `template-bank mismatch'. In addition to this mismatch, CW searches may
+experience a mismatch if the waveform model differs from the matched-filter
+template. There are of course an unlimited number of ways this may manifest
+given our ignorance of neutron stars, but from studying pulsars three obvious
+mechanisms present themselves: transient, glitching, and noisy waveforms. In
+the this section we will discuss the first of these, then in
+Section~\ref{sec_glitches} the second, we discussed the effect of random
+jitters in the phase evolution (noisy waveforms) in \citet{ashton2015} and
+concluded it was unlikely to be of immediate concern.
 
 The term \emph{transient-CWs} refers to periodic gravitational wave signals
 with a duration $\mathcal{O}(\textrm{hours-weeks})$ which have a
@@ -1237,84 +1237,179 @@ a simulated transient signal and Gaussian noise.}
 
 
 
-\subsection{Glitches}
+\section{Alternative waveform models: Glitch-robust follow-up search}
 \label{sec_glitches}
 
-Observations of radio pulsars show that occasionally neutron stars undergo
-sudden glitch events during which the pulsation frequency suddenly
-\emph{increases} quite distinct from the usual spin-down due to EM or GW
-torques (see \citet{espinoza2011} for a review). These events are typically
-Poisson distributed \citet{melatos2008}, but the exact mechanism is not yet
-fully understood. However, it seems plausible that the glitch mechanism will
-similarly effect any CW emission, i.e. CW signals will also undergo glitches.
-In \citet{ashton2016} we demonstrated that if this is the case, CW sources in
-directed and all-sky searches have a reasonable probability of undergoing one
-or more glitches during typical observations spans and that these glitches may
-be sufficiently large to disrupt the detection; this is particuarly true for
-areas of parameter space with large spindowns. However, the effect is mitigated
-by the use of incoherent searches. As such, we may expect all-sky and directed
-searches to correctly identify glitching signals as candidates, but
-subseuqnetly `loose' them during the follow-up process. As such, we will now
+Observations of radio pulsars show that occasionally the regular spin-down of a
+neutron stars due to electromagnetic and (potentially) gravitational torques is
+interrupted by sudden glitch events during which the rotation frequency
+suddenly \emph{increases} (see for example \citet{espinoza2011} for an
+observational review). The glitch mechanism is not yet fully understood, but as
+argued in \citet{ashton2017}, it seems plausable that the glitch mechanism, as
+it effects the radio pulsars, will also effect gravitars. As such, wide
+parameter space searches which look for unknown neutron stars spinning down
+primarily by gravitational wave emission (i.e. gravitars), could be hampered by
+the existence of glitches in the signals. This was investigated by
+\citet{ashton2017} and it was found that for many recent and ongoing searches,
+there exists a reasonable probability of one or more glitches occuring in the
+signal during typical observations spans and that these glitches may be
+sufficiently large such that the loss of detection statistic could be of order
+unity. This is particuarly true for searches looking for signals with a large
+spin-down and over long data span ($\gtrsim 100$~days). Semi-coherent searches
+are less effected (in terms of the loss of detection statistic) such that,
+provided the number of glitches in a signal during a search is less than say
+3, the initial search should still find the signal. However, that signal may
+look like a transient signal, or be `lost' during the follow up process.
+
+This work motivates the existence of a \emph{glitch-robust} follow-up search
+which is capable of fitting for the glitch parameters.  As such, we will now
 discuss how the $\F$-statistic optimisation routine discussed in this work can
 be used to search for glitching signals.
 
-We will model a glitch as a sudden discontinuous change in the  Doppler
-parameters $\delta \blambda$ at some time $\tglitch$: that the change is only
-in the frequency and spin-down Doppler parameters, i.e. $\delta\blambda = [0,
-0, \delta f, \delta \fdot, \ldots]$. This is to be interpretted, as is done for
-radio-pulsar glitches, as the instantaneous change in frequency and spindown at
-the time of the glitch. Moreover, multiple glitches can be included (we will
-define $\Nglitches$ as the number of glitches) by adding
-an index to the glitch magnitude and glitch time.
+\subsection{Glitch-robust detection statistic}
+In our analysis, we consider a signal which undergoes $\Nglitches$ glitches.
+We will model a glitch $\ell$ as a sudden discontinuous change in the frequency
+and spin-down Doppler parameters $\delta \blambda^\ell = [0, 0, \delta f,
+\delta \fdot, \ldots]$ at some time $\tglitch^\ell$. This is to be
+interpretted, as is done for radio-pulsar glitches, as the instantaneous change
+in frequency and spindown at the time of the glitch. For convienience, we
+define $\delta\blambda^0 = [0, 0, 0, 0 \ldots]$, $\tglitch^0 =
+t_\mathrm{start}$ (i.e. the start time of the observation), and
+$\tglitch^{\Nglitches+1}=t_\mathrm{end}$ (i.e. the end time of the
+observation).  We refer to $\{\delta\blambda^{\ell}\}, \{\tglitch^\ell\}$ as
+the set of all glitch parameters.
 
 An ideal glitch search would include these new parameters into the phase model
 itself and compute the $\F$-statistic fully-coherently i.e. rewriting
 Equation~\eqref{eqn_B_S_N} as
 \begin{multline}
-\Bsn(x| \tglitch, \delta\blambda, \Pic, \blambda, I) \equiv \\
+\Bsn(x| \{\tglitch^\ell\}, \{\delta\blambda^\ell\}, \Pic, \blambda, I) \equiv \\
 \int
-\mathcal{L}(x ;\A, \blambda, \tglitch, \delta\blambda)
+\mathcal{L}(x ;\A, \blambda, \{\tglitch^\ell\}, \{\delta\blambda^\ell\})
 P(\A| \Hs, I) d\A
 \end{multline}
-where $\tglitch, \delta\blambda$ modify the phase model. However, we propose the
-following pragmatic approach: let us instead use an semi-coherent detection
-statistic with the epoch between \emph{segments} as $\tglitch$, i.e.
+where the glitch parameters subsequently modify the phase model. However, we
+propose instead the following pragmatic approach: let us instead use a
+semi-coherent detection statistic with the epoch between \emph{segments} as
+$\tglitch^\ell$, i.e.
 \begin{multline}
 \Bsn(x| \tglitch, \delta\blambda, \Pic, \blambda, I) \equiv \\
-\int_{\tstart}^{\tglitch}
-\mathcal{L}(x ;\A, \blambda)
-P(\A| \Hs, I) d\A \\ +
-\int_{\tglitch}^{\tend}
-\mathcal{L}(x ;\A, \blambda{+}\delta\blambda)
+\sum_{\ell=0}^{\Nglitches}
+\int_{\tglitch^\ell}^{\tglitch^{\ell+1}}
+\mathcal{L}(x ;\A, \blambda+\delta\blambda^\ell)
 P(\A| \Hs, I) d\A
 \end{multline}
+or, written in terms of the $\mathcal{F}$-statistic,
+\begin{multline}
+\twoFhat(N_{\rm glitch}, \lambda, \{\tglitch^\ell\}, \{\delta\blambda^{\ell}\})= \\
+\sum_{\ell=0}^{N_{\rm glitch}}
+\twoFtilde(\alpha, \delta, \blambda+\delta\blambda^\ell;
+t_{\rm glitch}^\ell, t_{\rm glitch}^{\ell+1})
+\label{eqn_glitch_likelihood}
+\end{multline}
+\comment{Need to think about how to connect these two statements and if the
+first one is required}
 
 This simplistic method leverages readily available and tested code with a loss
-of sensitivity over the fully-coherent search by a factor
-$\sqrt{\Nglitches+1}$. Such a loss is acceptable, given that the signals must
-be sufficiently strong to have been identified by the initial all-sky or directed
+of sensitivity over the fully-coherent search by a factor $\sqrt{\Nglitches+1}$
+\citep{wette2015}. Such a loss is acceptable, given that the signals must be
+sufficiently strong to have been identified by the initial all-sky or directed
 search.
 
+The general methodology for a glitch-robust statistic (i.e.
+Eq.\eqref{eqn_glitch_likelihood}) could be implemented in any number of ways,
+the most straightforward of course beging a gridded search over the glitch
+parameters. However, for each glitch this introduces at least two new
+parameters to search over. For reasonable priors on the unknown glitch
+parameters, the likelihood peak occupies a small fraction of the total search
+space and so a gridded search will spend the majority of the compute time in
+exploring the empty regions of parameter space. However, provided that the
+initial Doppler parameters $\blambda$ are well constrained, the fraction of the
+search space occupied should not be so small as to make application of the MCMC
+procedures described in this work inefficient. On the contrary, we find in
+practise that the MCMC parameter estimation to be highly efficient. 
+
+\subsection{Case study: directed glitching signals}
+
 As an illustration of the use of this method, we simulate a signal in Gaussian
-noise which undergoes a glitch. Firstly in Figure~\ref{fig_glitch_grid} we show
-the fully-coherent $2\F$ value computed for a grid of points: this distinctly
-shows two peaks, a feature indicative of a glitching signal, with a maximum
-value of $\sim\CHECK{400}$. Using our incoherent glitch statistic, we plot
-the resulting posterior distributions in Figure~\ref{fig_glitch_posteriors}.
+noise which undergoes a single glitch; the properties of this signal and the
+data are given in Table~\ref{tab_single_glitch}.
+
+\begin{table}
+\caption{Values used to generate the simulated glitching signal}
+\label{tab_single_glitch}
+\begin{tabular}{c|c}
+& \\ \hline
+$T$ & \SingleGlitchTspan~days \\
+$\sqrt{X}/h0$ & \SingleGlitchDepth \\
+$f$ & \SingleGlitchFzero~Hz \\
+$\dot{f}$ & \SingleGlitchFone~Hz/s \\
+$\delta f$ & \SingleGlitchdeltaFzero~Hz \\
+$\delta \dot{f}$ & \SingleGlitchdeltaFone~Hz/s \\
+$\frac{\tglitch - \tstart}{T}$ & \SingleGlitchR
+\end{tabular}
+\end{table}
+
+In Figure~\ref{fig_glitch_grid} we show the fully-coherent $\twoFtilde$ value
+computed on a grid over $f$ and $\dot{f}$ (i.e. with a non-glitching template).
+The maximum computed $\twoFtilde$ value is found to be $\SingleGlitchFCtwoF$.
+This can be compared to the expected $\twoFtilde$ for a perfectly matched
+signal in the same data which is $\SingleGlitchFCtwoFPM$: the glitch results in
+the loss of $\SingleGlitchFCMismatch$ of the detection statistic. The figure
+distinctly shows two peaks, a feature indicative of a glitching signal.
 
 \begin{figure}[htb]
 \centering
 \includegraphics[width=0.5\textwidth]{single_glitch_F0F1_grid_2D}
-\caption{}
+\caption{The fully-coherent $\twoFtilde$ computed over a grid in $f$ and
+$\dot{f}$ for the simulated glitching signal with the properties described in
+Table~\ref{tab_single_glitch}.}
 \label{fig_glitch_grid}
 \end{figure}
 
+To perform the glitch-robust search we define a prior as follows. Uniform in
+$f$ and $\dot{f}$ (over the range shown in Figure~\ref{fig_glitch_grid}; for
+$\tglitch$ we define a uniform prior over the entire duration except the first
+and last 10\%; then for $\delta f$ we asign a prior of $\CHECK{\mathcal{N}(0,
+10^{-7} f_0)}$ and for $\delta\dot{f}$ a prior of $\CHECK{|\mathcal{N}(0,
+10^{-3}\dot{f})|}$ (i.e. a range of physical reasonable values preferring no
+glitch, but allowing an arbitrarily large glitch). Running the MCMC simulation
+with such a prior, we find the walkers converge to a single solution after
+$\sim 1000$ steps. Taking the converged sample (after the burn-period), in
+Figure~\ref{fig_glitch_posteriors} we plot the resulting posteriors. Finally,
+the maximum recovered $\twoFhat$ was found to be $\SingleGlitchGlitchtwoF$.
+Comparing this to the fully-coherent $\twoFtilde=\SingleGlitchFCtwoFPM$, we see
+that we have recovered the signal with negligible mismatch.
+
+\begin{figure*}[htb]
+\centering
+\includegraphics[width=0.8\textwidth]{single_glitch_glitchSearch_corner}
+\caption{The posterior distributions for the Doppler and glitch parameters
+applied to a simulated glitching signal. The simulation parameters are listed
+in Table~\ref{tab_single_glitch}. The extent of these plots does not correspond
+to the prior range.}
+\label{fig_glitch_posteriors}
+\end{figure*}
+
+\subsection{Monte-Carlo studies}
+\label{sec_MCS_glitch}
+
+The glitch-robust statistic is similar to a semi-coherent
+$\mathcal{F}$-statistic, but with additional degrees of freedom due to the
+glitch parameters. As such, to compute a $p$-value (or false alarm rate) for a
+given $\twoFhat$ we must understand the distribution of $\twoFhat(\Nglitches)$ in
+noise. We follow the same prescription laid out in Sec.~\ref{sec_MCS_zoom},
+namely we repeatedly run a single glitch search on independent 100~day data
+span with Gaussian noise. Taking the maximum $\twoFhat$ from each search, we
+plot the resulting histogram in Figure~\ref{fig_single_glitch_twoFhat_histgram}.
+
 \begin{figure}[htb]
 \centering
-\includegraphics[width=0.5\textwidth]{single_glitch_glitchSearch_corner}
-\caption{}
-\label{fig_glitch_posteriors}
+\includegraphics[width=0.5\textwidth]{single_glitch_noise_twoF_histogram}
+\caption{The distribution of $\twoFhat$ }
+\label{fig_single_glitch_twoFhat_histgram}
 \end{figure}
+
 
 \section{Conclusion}
 \label{sec_conclusion}
