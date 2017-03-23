@@ -29,7 +29,7 @@ fig, ax = plt.subplots()
 ax.hist(df.twoF, bins=50, histtype='step', color='k', normed=True, linewidth=1,
         label='Monte-Carlo histogram')
 
-ax.set_xlabel('$\widetilde{2\mathcal{F}}$')
+ax.set_xlabel('$\widehat{2\mathcal{F}}$ for 2 glitches')
 ax.set_xlim(0, 90)
 ax.legend(frameon=False, fontsize=6)
 fig.tight_layout()
