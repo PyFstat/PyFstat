@@ -18,8 +18,8 @@ class GridSearch(BaseSearchClass):
     """ Gridded search using ComputeFstat """
     @helper_functions.initializer
     def __init__(self, label, outdir, sftfilepath, F0s=[0], F1s=[0], F2s=[0],
-                 Alphas=[0], Deltas=[0], tref=None, minStartTime=None, nsegs=1,
-                 maxStartTime=None, BSGL=False, minCoverFreq=None,
+                 Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
+                 maxStartTime=None, nsegs=1, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
                  detectors=None):
         """

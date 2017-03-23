@@ -94,6 +94,8 @@ def round_to_n(x, n):
 
 
 def texify_float(x, d=2):
+    if x == 0:
+        return 0
     if type(x) == str:
         return x
     x = round_to_n(x, d)

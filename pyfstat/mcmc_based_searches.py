@@ -95,6 +95,12 @@ class MCMCSearch(core.BaseSearchClass):
         if args.clean and os.path.isfile(self.pickle_path):
             os.rename(self.pickle_path, self.pickle_path+".old")
 
+        self.symbol_dictionary = dict(
+            F0='$f$', F1='$\dot{f}$', F2='$\ddot{f}$', alpha=r'$\alpha$',
+            delta='$\delta$')
+        self.unit_dictionary = dict(
+            F0='Hz', F1='Hz/s', F2='Hz/s$^2$', alpha=r'rad', delta='rad')
+
         self.log_input()
 
     def log_input(self):
@@ -1028,6 +1034,35 @@ class MCMCSearch(core.BaseSearchClass):
                 for key, val in max_twoF_d.iteritems():
                     f.write('{} = {:1.16e}\n'.format(key, val))
 
+    def write_prior_table(self):
+        with open('{}/{}_prior.tex'.format(self.outdir, self.label), 'w') as f:
+            f.write(r"\begin{tabular}{c l c} \hline" + '\n'
+                    r"Parameter & & &  \\ \hhline{====}")
+
+            for key, prior in self.theta_prior.iteritems():
+                if type(prior) is dict:
+                    Type = prior['type']
+                    if Type == "unif":
+                        a = prior['lower']
+                        b = prior['upper']
+                        line = r"{} & $\mathrm{{Unif}}$({}, {}) & {}\\"
+                    elif Type == "norm":
+                        a = prior['loc']
+                        b = prior['scale']
+                        line = r"{} & $\mathcal{{N}}$({}, {}) & {}\\"
+                    elif Type == "halfnorm":
+                        a = prior['loc']
+                        b = prior['scale']
+                        line = r"{} & $|\mathcal{{N}}$({}, {})| & {}\\"
+
+                    u = self.unit_dictionary[key]
+                    s = self.symbol_dictionary[key]
+                    f.write("\n")
+                    a = helper_functions.texify_float(a)
+                    b = helper_functions.texify_float(b)
+                    f.write(" " + line.format(s, a, b, u) + r" \\")
+            f.write("\n\end{tabular}\n")
+
     def print_summary(self):
         max_twoFd, max_twoF = self.get_max_twoF()
         median_std_d = self.get_median_stds()
@@ -1231,6 +1266,13 @@ class MCMCGlitchSearch(MCMCSearch):
             os.rename(self.pickle_path, self.pickle_path+".old")
 
         self.old_data_is_okay_to_use = self.check_old_data_is_okay_to_use()
+        self.symbol_dictionary = dict(
+            F0='$f$', F1='$\dot{f}$', F2='$\ddot{f}$', alpha=r'$\alpha$',
+            delta='$\delta$', delta_F0='$\delta f$',
+            delta_F1='$\delta \dot{f}$', tglitch='$t_\mathrm{glitch}$')
+        self.unit_dictionary = dict(
+            F0='Hz', F1='Hz/s', F2='Hz/s$^2$', alpha=r'rad', delta='rad',
+            delta_F0='Hz', delta_F1='Hz/s', tglitch='s')
         self.log_input()
 
     def initiate_search_object(self):
@@ -1778,6 +1820,14 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
 class MCMCTransientSearch(MCMCSearch):
     """ MCMC search for a transient signal using the ComputeFstat """
+
+    symbol_dictionary = dict(
+        F0='$f$', F1='$\dot{f}$', F2='$\ddot{f}$',
+        alpha=r'$\alpha$', delta='$\delta$', tstart='$t_\mathrm{start}$',
+        tend='$t_\mathrm{end}$')
+    unit_dictionary = dict(
+        F0='Hz', F1='Hz/s', F2='Hz/s$^2$', alpha=r'rad', delta='rad',
+        tstart='s', tend='s')
 
     def initiate_search_object(self):
         logging.info('Setting up search object')
