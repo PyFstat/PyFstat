@@ -4,6 +4,7 @@ import os
 import sys
 import time
 
+nglitch = 2
 
 ID = sys.argv[1]
 outdir = sys.argv[2]
@@ -80,7 +81,7 @@ glitch_mcmc = pyfstat.MCMCGlitchSearch(
     sftfilepath='{}/*{}*sft'.format(outdir, data_label),
     theta_prior=theta_prior,
     tref=tref, minStartTime=tstart, maxStartTime=tend, nsteps=nsteps,
-    nwalkers=nwalkers, ntemps=ntemps,
+    nwalkers=nwalkers, ntemps=ntemps, nglitch=nglitch,
     log10temperature_min=log10temperature_min)
 glitch_mcmc.run(run_setup=run_setup, create_plots=False, log_table=False,
                 gen_tex_table=False)
@@ -88,12 +89,12 @@ glitch_mcmc.print_summary()
 d, maxtwoF = glitch_mcmc.get_max_twoF()
 dF0 = F0 - d['F0']
 dF1 = F1 - d['F1']
-tglitch = d['tglitch']
-R = (tglitch - tstart) / Tspan
-delta_F0 = d['delta_F0']
-delta_F1 = d['delta_F1']
+#tglitch = d['tglitch']
+#R = (tglitch - tstart) / Tspan
+#delta_F0 = d['delta_F0']
+#delta_F1 = d['delta_F1']
 runTime = time.time() - startTime
 with open(results_file_name, 'a') as f:
-    f.write('{:1.8e} {:1.8e} {} {:1.8e} {:1.8e} {:1.8e} {}\n'
-            .format(dF0, dF1, R, delta_F0, delta_F1, maxtwoF, runTime))
+    f.write('{} {:1.8e} {:1.8e} {:1.8e} {:1.1f}\n'
+            .format(nglitch, dF0, dF1, maxtwoF, runTime))
 os.system('rm {}/*{}*'.format(outdir, label))

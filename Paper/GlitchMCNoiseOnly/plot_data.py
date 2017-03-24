@@ -17,8 +17,7 @@ Tspan = 100 * 86400
 df_list = []
 for fn in filenames:
     df = pd.read_csv(
-        fn, sep=' ', names=['dF0', 'dF1', 'R', 'delta_F0', 'delta_F1',
-                            'twoF', 'runTime'])
+        fn, sep=' ', names=['nglitches', 'dF0', 'dF1', 'twoF', 'runTime'])
     df['CLUSTER_ID'] = fn.split('_')[1]
     df_list.append(df)
 df = pd.concat(df_list)
@@ -26,8 +25,9 @@ print 'Number of samples = ', len(df)
 print 'Max twoF', df.twoF.max()
 
 fig, ax = plt.subplots()
-ax.hist(df.twoF, bins=50, histtype='step', color='k', normed=True, linewidth=1,
-        label='Monte-Carlo histogram')
+for ng in np.unique(df.nglitches.values):
+    ax.hist(df[df.nglitches==ng].twoF, bins=20, histtype='step', normed=True,
+            linewidth=1, label='$N_\mathrm{{glitches}}={}$'.format(ng))
 
 ax.set_xlabel('$\widehat{2\mathcal{F}}$ for 1 glitch')
 ax.set_xlim(0, 90)
