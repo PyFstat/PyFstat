@@ -16,7 +16,7 @@ data_tstart = tstart - duration
 data_tend = data_tstart + 3*duration
 tref = .5*(data_tstart+data_tend)
 
-h0 = 5e-24
+h0 = 3e-24
 sqrtSX = 1e-22
 
 transient = pyfstat.Writer(
