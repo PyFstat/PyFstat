@@ -28,10 +28,10 @@ data = pyfstat.Writer(
     Delta=Delta, h0=h0, sqrtSX=sqrtSX)
 data.make_data()
 
-m = 0.001
+m = 1
 dF0 = np.sqrt(12*m)/(np.pi*duration)
-DeltaF0 = 800*dF0
-F0s = [F0-DeltaF0/2., F0+DeltaF0/2., dF0]
+DeltaF0 = 30*dF0
+F0s = [F0-DeltaF0/2., F0+DeltaF0/2., 1e-2*dF0]
 F1s = [F1]
 F2s = [F2]
 Alphas = [Alpha]
@@ -47,18 +47,19 @@ frequencies = np.unique(search.data[:, xidx])
 twoF = search.data[:, -1]
 
 #mismatch = np.sign(x-F0)*(duration * np.pi * (x - F0))**2 / 12.0
-ax.plot(frequencies, twoF, 'k', lw=1)
+ax.plot(frequencies, twoF, 'k', lw=0.8)
 DeltaF = frequencies - F0
 sinc = np.sin(np.pi*DeltaF*duration)/(np.pi*DeltaF*duration)
 A = np.abs((np.max(twoF)-4)*sinc**2 + 4)
-ax.plot(frequencies, A, '-r', lw=1)
+ax.plot(frequencies, A, 'r', lw=1.2, dashes=(0.2, 0.2))
 ax.set_ylabel('$\widetilde{2\mathcal{F}}$')
 ax.set_xlabel('Frequency')
 ax.set_xlim(F0s[0], F0s[1])
 dF0 = np.sqrt(12*1)/(np.pi*duration)
 xticks = [F0-10*dF0, F0, F0+10*dF0]
 ax.set_xticks(xticks)
-xticklabels = ['$f_0 {-} 10\Delta f$', '$f_0$', '$f_0 {+} 10\Delta f$']
+xticklabels = [r'$f_0 {-} 10\Delta f(\tilde{\mu}=1)$', '$f_0$',
+               r'$f_0 {+} 10\Delta f(\tilde{\mu}=1)$']
 ax.set_xticklabels(xticklabels)
 plt.tight_layout()
 fig.savefig('{}/{}_1D.png'.format(search.outdir, search.label), dpi=300)
