@@ -242,6 +242,8 @@ class ComputeFstat(object):
         self.detector_names = detector_names
         SFT_timestamps = [d.header.epoch for d in SFTCatalog.data]
         self.SFT_timestamps = [float(s) for s in SFT_timestamps]
+        if len(SFT_timestamps) == 0:
+            raise ValueError('Failed to load any data')
         if args.quite is False and args.no_interactive is False:
             try:
                 from bashplotlib.histogram import plot_hist
