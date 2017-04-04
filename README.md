@@ -1,27 +1,9 @@
 # PyFstat
 
 This is a python package providing an interface to perform F-statistic based
-continuous gravitational wave (CW) searches. At its core, this is a simple
-wrapper of selected tools in
-['lalpulsar'](http://software.ligo.org/docs/lalsuite/lalpulsar/). The general
-idea is to allow easy scripting of new search pipelines, we focus
-primarily on interfacing the CW routines with
-[emcee](http://dan.iel.fm/emcee/current/) a python MCMC sampler.
+continuous gravitational wave (CW) searches.
 
-
-## Examples
-
-We include a variety of example search scripts [here](examples), for each
-example there is also a more descriptive write-up containing examples of the
-output which we list below. Before running any of the search examples, be sure
-to have run the [script to generate fake data](examples/make_fake_data.py).
-
-* [Making fake data with and without glitches](docs/make_fake_data.md)
-* [Fully-coherent MCMC search](docs/fully_coherent_search_using_MCMC.md)
-* [Fully-coherent MCMC search on data containing a single glitch](docs/fully_coherent_search_using_MCMC_on_glitching_data.md)
-* [Semi-coherent MCMC glitch-search on data containing a single glitch](docs/semi_coherent_glitch_search_using_MCMC_on_glitching_data.md)
-* [Semi-coherent MCMC glitch-search on data containing two glitches](docs/semi_coherent_glitch_search_with_two_glitches_using_MCMC_on_glitching_data.md)
-* [Semi-coherent Follow-Up MCMC search (dynamically changing the coherence time)](docs/follow_up.md)
+For documentation, please use the [wiki](https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat/wikis/home).
 
 ## Installation
 
@@ -35,8 +17,27 @@ the stripped down [miniconda](http://conda.pydata.org/miniconda.html)
 installation, or the full-featured
 [anaconda](https://www.continuum.io/downloads) (these are essentially the
 same, but the `anaconda` version installs a variety of useful packages such as
-`numpy` and `scipy` by default). Instructions to install miniconda/anaconda
-are provided in the links.
+`numpy` and `scipy` by default).
+
+The fastest/easiest method is to follow your OS instructions
+[here](https://conda.io/docs/install/quick.html) which will install Miniconda.
+
+For the rest of this tutorial, we will make use of `pip` to install modules (
+not all packages can be installed with `conda` and for those using alternatives
+to `conda`, `pip` is more universal).
+
+This can be installed with
+```
+$ conda install pip
+```
+
+### Clone the repository
+
+In a terminal, to clone the directory:
+
+```
+$ git clone git@gitlab.aei.uni-hannover.de:GregAshton/PyFstat.git
+```
 
 ### Dependencies
 
@@ -57,8 +58,6 @@ For an introduction to installing modules see
 ```
 $ pip install -r /PATH/TO/THIS/DIRECTORY/requirements.txt
 ```
-If you have installed python from conda then `pip` itself can be installed via
-`conda install pip`.
 
 In addition to these modules, you also need a working **swig-enabled**
 [`lalapps`](http://software.ligo.org/docs/lalsuite/lalsuite/) with
@@ -72,7 +71,7 @@ $ ./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpu
 
 ### `pyfstat` installation
 
-The script can be installed system wide, assuming you are in this directory, via
+The script can be installed system wide, assuming you are in the source directory, via
 ```
 $ python setup.py install
 ```
