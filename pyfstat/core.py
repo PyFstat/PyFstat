@@ -134,7 +134,8 @@ class BaseSearchClass(object):
         subprocess.call([cmd], shell=True)
 
     def get_list_of_matching_sfts(self):
-        matches = glob.glob(self.sftfilepath)
+        matches = [glob.glob(p) for p in self.sftfilepath]
+        matches = [item for sublist in matches for item in sublist]
         if len(matches) > 0:
             return matches
         else:
