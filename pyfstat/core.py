@@ -440,7 +440,11 @@ class ComputeFstat(object):
             self.FstatResults.multiFatoms[0], self.windowRange, False)
 
         if self.BSGL is False:
-            return 2*FS.F_mn.data[0][0]
+            twoF = 2*FS.F_mn.data[0][0]
+            if np.isnan(twoF):
+                return 0
+            else:
+                return twoF
 
         FstatResults_single = copy.copy(self.FstatResults)
         FstatResults_single.lenth = 1
