@@ -735,7 +735,7 @@ class MCMCSearch(core.BaseSearchClass):
 
     def plot_walkers(self, sampler, symbols=None, alpha=0.4, color="k", temp=0,
                      lw=0.1, nprod=0, add_det_stat_burnin=False,
-                     fig=None, axes=None, xoffset=0, plot_det_stat=True,
+                     fig=None, axes=None, xoffset=0, plot_det_stat=False,
                      context='classic', subtractions=None, labelpad=0.05):
         """ Plot all the chains from a sampler """
 
@@ -761,12 +761,16 @@ class MCMCSearch(core.BaseSearchClass):
             if len(subtractions) != self.ndim:
                 raise ValueError('subtractions must be of length ndim')
 
+        if plot_det_stat:
+            extra_subplots = 1
+        else:
+            extra_subplots = 0
         with plt.style.context((context)):
             plt.rcParams['text.usetex'] = True
             if fig is None and axes is None:
                 fig = plt.figure(figsize=(4, 3.0*ndim))
-                ax = fig.add_subplot(ndim+1, 1, 1)
-                axes = [ax] + [fig.add_subplot(ndim+1, 1, i)
+                ax = fig.add_subplot(ndim+extra_subplots, 1, 1)
+                axes = [ax] + [fig.add_subplot(ndim+extra_subplots, 1, i)
                                for i in range(2, ndim+1)]
 
             idxs = np.arange(chain.shape[1])
