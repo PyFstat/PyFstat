@@ -24,10 +24,10 @@ class MCMCSearch(core.BaseSearchClass):
     """ MCMC search using ComputeFstat"""
 
     symbol_dictionary = dict(
-        F0='$f$', F1='$\dot{f}$', F2='$\ddot{f}$', alpha=r'$\alpha$',
-        delta='$\delta$')
+        F0='$f$', F1='$\dot{f}$', F2='$\ddot{f}$', Alpha=r'$\alpha$',
+        Delta='$\delta$')
     unit_dictionary = dict(
-        F0='Hz', F1='Hz/s', F2='Hz/s$^2$', alpha=r'rad', delta='rad')
+        F0='Hz', F1='Hz/s', F2='Hz/s$^2$', Alpha=r'rad', Delta='rad')
     rescale_dictionary = {}
 
 
@@ -1330,11 +1330,11 @@ class MCMCGlitchSearch(MCMCSearch):
     """ MCMC search using the SemiCoherentGlitchSearch """
 
     symbol_dictionary = dict(
-        F0='$f$', F1='$\dot{f}$', F2='$\ddot{f}$', alpha=r'$\alpha$',
-        delta='$\delta$', delta_F0='$\delta f$',
+        F0='$f$', F1='$\dot{f}$', F2='$\ddot{f}$', Alpha=r'$\alpha$',
+        Delta='$\delta$', delta_F0='$\delta f$',
         delta_F1='$\delta \dot{f}$', tglitch='$t_\mathrm{glitch}$')
     unit_dictionary = dict(
-        F0='Hz', F1='Hz/s', F2='Hz/s$^2$', alpha=r'rad', delta='rad',
+        F0='Hz', F1='Hz/s', F2='Hz/s$^2$', Alpha=r'rad', Delta='rad',
         delta_F0='Hz', delta_F1='Hz/s', tglitch='s')
     rescale_dictionary = dict(
         tglitch={
@@ -1978,10 +1978,10 @@ class MCMCTransientSearch(MCMCSearch):
 
     symbol_dictionary = dict(
         F0='$f$', F1='$\dot{f}$', F2='$\ddot{f}$',
-        alpha=r'$\alpha$', delta='$\delta$',
+        Alpha=r'$\alpha$', Delta='$\delta$',
         transient_tstart='$t_\mathrm{start}$', transient_duration='$\Delta T$')
     unit_dictionary = dict(
-        F0='Hz', F1='Hz/s', F2='Hz/s$^2$', alpha=r'rad', delta='rad',
+        F0='Hz', F1='Hz/s', F2='Hz/s$^2$', Alpha=r'rad', Delta='rad',
         transient_tstart='s', transient_duration='s')
 
     rescale_dictionary = dict(
