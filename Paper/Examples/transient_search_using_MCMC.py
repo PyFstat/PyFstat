@@ -55,7 +55,10 @@ mcmc = pyfstat.MCMCSearch(
     nwalkers=nwalkers, ntemps=ntemps,
     log10temperature_min=log10temperature_min)
 mcmc.run()
-mcmc.plot_cumulative_max()
+fig, ax = plt.subplots()
+mcmc.plot_cumulative_max(ax=ax)
+ax.set_xlabel('Days from $t_\mathrm{start}$')
+fig.savefig('data/transient_search_initial_stage_twoFcumulative')
 mcmc.print_summary()
 
 theta_prior = {'F0': {'type': 'unif',
@@ -69,9 +72,9 @@ theta_prior = {'F0': {'type': 'unif',
                'Delta': Delta,
                'transient_tstart': {'type': 'unif',
                                     'lower': data_tstart,
-                                    'upper': data_tend},
+                                    'upper': data_tend-0.2*duration},
                'transient_duration': {'type': 'halfnorm',
-                                      'loc': 0,
+                                      'loc': 0.01*duration,
                                       'scale': 0.5*duration}
                }
 
