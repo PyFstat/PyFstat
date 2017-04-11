@@ -784,10 +784,12 @@ class MCMCSearch(core.BaseSearchClass):
                     axes[i].ticklabel_format(useOffset=False, axis='y')
                     cs = chain[:, :, i].T
                     if burnin_idx > 0:
-                        axes[i].plot(xoffset+idxs[:convergence_idx],
-                                     cs[:convergence_idx]-subtractions[i],
+                        axes[i].plot(xoffset+idxs[:convergence_idx+1],
+                                     cs[:convergence_idx+1]-subtractions[i],
                                      color="r", alpha=alpha,
                                      lw=lw)
+                        axes[i].axvline(xoffset+idxs[convergence_idx],
+                                        color='k', ls='--', lw=0.25)
                     axes[i].plot(xoffset+idxs[burnin_idx:],
                                  cs[burnin_idx:]-subtractions[i],
                                  color="k", alpha=alpha, lw=lw)
