@@ -44,7 +44,7 @@ $ git clone git@gitlab.aei.uni-hannover.de:GregAshton/PyFstat.git
 `pyfstat` makes uses the following external python modules:
 
 * [numpy](http://www.numpy.org/)
-* [matplotlib](http://matplotlib.org/)
+* [matplotlib](http://matplotlib.org/) >= 1.4
 * [scipy](https://www.scipy.org/)
 * [emcee](http://dan.iel.fm/emcee/current/)
 * [corner](https://pypi.python.org/pypi/corner/)

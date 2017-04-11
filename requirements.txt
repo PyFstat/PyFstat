@@ -1,5 +1,5 @@
 numpy
-matplotlib
+matplotlib>=1.4
 scipy
 emcee
 corner
