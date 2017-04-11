@@ -49,8 +49,12 @@ $ git clone git@gitlab.aei.uni-hannover.de:GregAshton/PyFstat.git
 * [emcee](http://dan.iel.fm/emcee/current/)
 * [corner](https://pypi.python.org/pypi/corner/)
 * [dill](https://pypi.python.org/pypi/dill)
+
+*Optional*
 * [tqdm](https://pypi.python.org/pypi/tqdm)(optional), if installed, this
   provides a useful progress bar and estimate of the remaining run-time.
+* [bashplotlib](https://github.com/glamp/bashplotlib), if installed, presents
+  a histogram of the loaded SFT data
 
 For an introduction to installing modules see
 [here](https://docs.python.org/3.5/installing/index.html). If you are using

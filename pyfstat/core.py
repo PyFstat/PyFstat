@@ -249,7 +249,7 @@ class ComputeFstat(object):
                 from bashplotlib.histogram import plot_hist
                 print('Data timestamps histogram:')
                 plot_hist(SFT_timestamps, height=5, bincount=50)
-            except IOError:
+            except ImportError:
                 pass
         if len(detector_names) == 0:
             raise ValueError('No data loaded.')
