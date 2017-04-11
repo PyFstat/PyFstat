@@ -571,7 +571,7 @@ class MCMCSearch(core.BaseSearchClass):
             fig.subplots_adjust(hspace=0.05, wspace=0.05)
 
             if add_prior:
-                self.add_prior_to_corner(axes, samples_plt)
+                self.add_prior_to_corner(axes, self.samples)
 
             fig_triangle.savefig('{}/{}_corner.png'.format(
                 self.outdir, self.label), dpi=dpi)
@@ -587,8 +587,8 @@ class MCMCSearch(core.BaseSearchClass):
             subtractor = self.get_rescale_subtractor_for_key(key)
             ax2 = ax.twinx()
             ax2.get_yaxis().set_visible(False)
-            ax2.plot(x, [(prior(xi)-subtractor)*multiplier for xi in x], '-r')
-            ax.set_xlim(xlim)
+            ax2.plot((x-subtractor)*multiplier, [prior(xi) for xi in x], '-r')
+            ax2.set_xlim(xlim)
 
     def plot_prior_posterior(self, normal_stds=2):
         """ Plot the posterior in the context of the prior """
@@ -1286,7 +1286,13 @@ class MCMCGlitchSearch(MCMCSearch):
     unit_dictionary = dict(
         F0='Hz', F1='Hz/s', F2='Hz/s$^2$', alpha=r'rad', delta='rad',
         delta_F0='Hz', delta_F1='Hz/s', tglitch='s')
-    rescale_dictionary = dict()
+    rescale_dictionary = dict(
+        tglitch={
+            'multiplier': 1/86400.,
+            'subtractor': 'minStartTime',
+            'unit': 'day',
+            'label': 'Glitch time \n days after minStartTime'}
+            )
 
     @helper_functions.initializer
     def __init__(self, label, outdir, sftfilepath, theta_prior, tref,
