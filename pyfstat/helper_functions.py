@@ -65,6 +65,7 @@ def set_up_command_line_arguments():
 
 
 def set_up_ephemeris_configuration():
+    """ Returns the earth_ephem and sun_ephem """
     config_file = os.path.expanduser('~')+'/.pyfstat.conf'
     if os.path.isfile(config_file):
         d = {}

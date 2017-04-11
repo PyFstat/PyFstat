@@ -49,7 +49,7 @@ class TestBaseSearchClass(Test):
     def test_shift_matrix(self):
         BSC = pyfstat.BaseSearchClass()
         dT = 10
-        a = BSC.shift_matrix(4, dT)
+        a = BSC._shift_matrix(4, dT)
         b = np.array([[1, 2*np.pi*dT, 2*np.pi*dT**2/2.0, 2*np.pi*dT**3/6.0],
                       [0, 1, dT, dT**2/2.0],
                       [0, 0, 1, dT],
@@ -71,16 +71,16 @@ class TestBaseSearchClass(Test):
 
         self.assertTrue(
             np.array_equal(
-                thetaB, BSC.shift_coefficients(thetaA, dT)))
+                thetaB, BSC._shift_coefficients(thetaA, dT)))
 
     def test_shift_coefficients_loop(self):
         BSC = pyfstat.BaseSearchClass()
         thetaA = np.array([10., 1e2, 10., 1e2])
         dT = 1e1
-        thetaB = BSC.shift_coefficients(thetaA, dT)
+        thetaB = BSC._shift_coefficients(thetaA, dT)
         self.assertTrue(
             np.allclose(
-                thetaA, BSC.shift_coefficients(thetaB, -dT),
+                thetaA, BSC._shift_coefficients(thetaB, -dT),
                 rtol=1e-9, atol=1e-9))
 
 
@@ -257,8 +257,7 @@ class TestAuxillaryFunctions(Test):
     DeltaFs = [1e-4, 1e-14]
     fiducial_freq = 100
     detector_names = ['H1', 'L1']
-    earth_ephem = pyfstat.earth_ephem
-    sun_ephem = pyfstat.sun_ephem
+    earth_ephem, sun_ephem = pyfstat.helper_functions.set_up_ephemeris_configuration()
 
     def test_get_V_estimate_sky_F0_F1(self):
 

@@ -37,7 +37,7 @@ class BaseSearchClass(object):
     earth_ephem_default = earth_ephem
     sun_ephem_default = sun_ephem
 
-    def add_log_file(self):
+    def _add_log_file(self):
         """ Log output to a file, requires class to have outdir and label """
         logfilename = '{}/{}.log'.format(self.outdir, self.label)
         fh = logging.FileHandler(logfilename)
@@ -47,7 +47,7 @@ class BaseSearchClass(object):
             datefmt='%y-%m-%d %H:%M'))
         logging.getLogger().addHandler(fh)
 
-    def shift_matrix(self, n, dT):
+    def _shift_matrix(self, n, dT):
         """ Generate the shift matrix
 
         Parameters
@@ -78,7 +78,7 @@ class BaseSearchClass(object):
                         m[i, j] = float(dT)**(j-i) / factorial(j-i)
         return m
 
-    def shift_coefficients(self, theta, dT):
+    def _shift_coefficients(self, theta, dT):
         """ Shift a set of coefficients by dT
 
         Parameters
@@ -96,30 +96,30 @@ class BaseSearchClass(object):
         """
 
         n = len(theta)
-        m = self.shift_matrix(n, dT)
+        m = self._shift_matrix(n, dT)
         return np.dot(m, theta)
 
-    def calculate_thetas(self, theta, delta_thetas, tbounds, theta0_idx=0):
+    def _calculate_thetas(self, theta, delta_thetas, tbounds, theta0_idx=0):
         """ Calculates the set of coefficients for the post-glitch signal """
         thetas = [theta]
         for i, dt in enumerate(delta_thetas):
             if i < theta0_idx:
-                pre_theta_at_ith_glitch = self.shift_coefficients(
+                pre_theta_at_ith_glitch = self._shift_coefficients(
                     thetas[0], tbounds[i+1] - self.tref)
                 post_theta_at_ith_glitch = pre_theta_at_ith_glitch - dt
-                thetas.insert(0, self.shift_coefficients(
+                thetas.insert(0, self._shift_coefficients(
                     post_theta_at_ith_glitch, self.tref - tbounds[i+1]))
 
             elif i >= theta0_idx:
-                pre_theta_at_ith_glitch = self.shift_coefficients(
+                pre_theta_at_ith_glitch = self._shift_coefficients(
                     thetas[i], tbounds[i+1] - self.tref)
                 post_theta_at_ith_glitch = pre_theta_at_ith_glitch + dt
-                thetas.append(self.shift_coefficients(
+                thetas.append(self._shift_coefficients(
                     post_theta_at_ith_glitch, self.tref - tbounds[i+1]))
         self.thetas_at_tref = thetas
         return thetas
 
-    def generate_loudest(self):
+    def _generate_loudest(self):
         params = read_par(self.label, self.outdir)
         for key in ['Alpha', 'Delta', 'F0', 'F1']:
             if key not in params:
@@ -133,7 +133,7 @@ class BaseSearchClass(object):
                     self.maxStartTime)
         subprocess.call([cmd], shell=True)
 
-    def get_list_of_matching_sfts(self):
+    def _get_list_of_matching_sfts(self):
         matches = [glob.glob(p) for p in self.sftfilepath]
         matches = [item for sublist in matches for item in sublist]
         if len(matches) > 0:
@@ -685,7 +685,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
         delta_thetas = np.atleast_2d(
                 np.array([delta_phi, delta_F0s, delta_F1s, delta_F2]).T)
 
-        thetas = self.calculate_thetas(theta, delta_thetas, tboundaries,
+        thetas = self._calculate_thetas(theta, delta_thetas, tboundaries,
                                        theta0_idx=self.theta0_idx)
 
         twoFSum = 0
@@ -713,9 +713,9 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
         delta_theta = [delta_F0, delta_F1, 0]
         tref = self.tref
 
-        theta_at_glitch = self.shift_coefficients(theta, tglitch - tref)
+        theta_at_glitch = self._shift_coefficients(theta, tglitch - tref)
         theta_post_glitch_at_glitch = theta_at_glitch + delta_theta
-        theta_post_glitch = self.shift_coefficients(
+        theta_post_glitch = self._shift_coefficients(
             theta_post_glitch_at_glitch, tref - tglitch)
 
         twoFsegA = self.run_computefstatistic_single_point(
@@ -849,7 +849,7 @@ transientTauDays={:1.3f}\n""")
 
         """
 
-        thetas = self.calculate_thetas(self.theta, self.delta_thetas,
+        thetas = self._calculate_thetas(self.theta, self.delta_thetas,
                                        self.tbounds)
 
         content = ''
