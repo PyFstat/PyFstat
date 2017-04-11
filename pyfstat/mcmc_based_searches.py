@@ -1284,7 +1284,13 @@ class MCMCGlitchSearch(MCMCSearch):
     unit_dictionary = dict(
         F0='Hz', F1='Hz/s', F2='Hz/s$^2$', alpha=r'rad', delta='rad',
         delta_F0='Hz', delta_F1='Hz/s', tglitch='s')
-    rescale_dictionary = dict()
+    rescale_dictionary = dict(
+        tglitch={
+            'multiplier': 1/86400.,
+            'subtractor': 'minStartTime',
+            'unit': 'day',
+            'label': 'Glitch time \n days after minStartTime'}
+            )
 
     @helper_functions.initializer
     def __init__(self, label, outdir, sftfilepath, theta_prior, tref,
