@@ -350,7 +350,6 @@ class MCMCSearch(core.BaseSearchClass):
             logging.warning('Using saved data from {}'.format(
                 self.pickle_path))
             d = self.get_saved_data_dictionary()
-            self.sampler = d['sampler']
             self.samples = d['samples']
             self.lnprobs = d['lnprobs']
             self.lnlikes = d['lnlikes']
@@ -414,11 +413,12 @@ class MCMCSearch(core.BaseSearchClass):
         samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
         lnprobs = sampler.lnprobability[0, :, nburn:].reshape((-1))
         lnlikes = sampler.lnlikelihood[0, :, nburn:].reshape((-1))
-        self.sampler = sampler
+        all_lnlikelihood = sampler.lnlikelihood
         self.samples = samples
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes
-        self._save_data(sampler, samples, lnprobs, lnlikes)
+        self.all_lnlikelihood = all_lnlikelihood
+        self._save_data(sampler, samples, lnprobs, lnlikes, all_lnlikelihood)
 
     def _get_rescale_multiplier_for_key(self, key):
         """ Get the rescale multiplier from the rescale_dictionary
@@ -996,12 +996,12 @@ class MCMCSearch(core.BaseSearchClass):
                  BSGL=self.BSGL)
         return d
 
-    def _save_data(self, sampler, samples, lnprobs, lnlikes):
+    def _save_data(self, sampler, samples, lnprobs, lnlikes, all_lnlikelihood):
         d = self._get_data_dictionary_to_save()
-        d['sampler'] = sampler
         d['samples'] = samples
         d['lnprobs'] = lnprobs
         d['lnlikes'] = lnlikes
+        d['all_lnlikelihood'] = all_lnlikelihood
 
         if os.path.isfile(self.pickle_path):
             logging.info('Saving backup of {} as {}.old'.format(
@@ -1036,7 +1036,6 @@ class MCMCSearch(core.BaseSearchClass):
         new_d = self._get_data_dictionary_to_save().copy()
 
         old_d.pop('samples')
-        old_d.pop('sampler')
         old_d.pop('lnprobs')
         old_d.pop('lnlikes')
 
@@ -1273,21 +1272,10 @@ class MCMCSearch(core.BaseSearchClass):
         print('p-value = {}'.format(p_val))
         return p_val
 
-    def get_evidence(self):
-        """ Get the log10 evidence and error estimate """
-        fburnin = float(self.nsteps[-2])/np.sum(self.nsteps[-2:])
-        lnev, lnev_err = self.sampler.thermodynamic_integration_log_evidence(
-            fburnin=fburnin)
-
-        log10evidence = lnev/np.log(10)
-        log10evidence_err = lnev_err/np.log(10)
-        return log10evidence, log10evidence_err
-
-    def _compute_evidence_long(self):
+    def compute_evidence(self):
         """ Computes the evidence/marginal likelihood for the model """
         betas = self.betas
-        alllnlikes = self.sampler.lnlikelihood[:, :, self.nsteps[-2]:]
-        mean_lnlikes = np.mean(np.mean(alllnlikes, axis=1), axis=1)
+        mean_lnlikes = np.mean(np.mean(self.all_lnlikelihood, axis=1), axis=1)
 
         mean_lnlikes = mean_lnlikes[::-1]
         betas = betas[::-1]
@@ -1300,11 +1288,12 @@ class MCMCSearch(core.BaseSearchClass):
             idxs = np.isinf(mean_lnlikes)
             mean_lnlikes = mean_lnlikes[~idxs]
             betas = betas[~idxs]
-            log10evidence = np.trapz(mean_lnlikes, betas)/np.log(10)
-            z1 = np.trapz(mean_lnlikes, betas)
-            z2 = np.trapz(mean_lnlikes[::-1][::2][::-1],
-                          betas[::-1][::2][::-1])
-            log10evidence_err = np.abs(z1 - z2) / np.log(10)
+
+        log10evidence = np.trapz(mean_lnlikes, betas)/np.log(10)
+        z1 = np.trapz(mean_lnlikes, betas)
+        z2 = np.trapz(mean_lnlikes[::-1][::2][::-1],
+                      betas[::-1][::2][::-1])
+        log10evidence_err = np.abs(z1 - z2) / np.log(10)
 
         ax1.semilogx(betas, mean_lnlikes, "-o")
         ax1.set_xlabel(r"$\beta$")
@@ -1901,7 +1890,6 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             logging.warning('Using saved data from {}'.format(
                 self.pickle_path))
             d = self.get_saved_data_dictionary()
-            self.sampler = d['sampler']
             self.samples = d['samples']
             self.lnprobs = d['lnprobs']
             self.lnlikes = d['lnlikes']
@@ -1955,11 +1943,12 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
         lnprobs = sampler.lnprobability[0, :, nburn:].reshape((-1))
         lnlikes = sampler.lnlikelihood[0, :, nburn:].reshape((-1))
-        self.sampler = sampler
+        all_lnlikelihood = sampler.lnlikelihood
         self.samples = samples
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes
-        self._save_data(sampler, samples, lnprobs, lnlikes)
+        self.all_lnlikelihood = all_lnlikelihood
+        self._save_data(sampler, samples, lnprobs, lnlikes, all_lnlikelihood)
 
         if create_plots:
             try:
