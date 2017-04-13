@@ -484,11 +484,18 @@ class ComputeFstat(object):
 
     def plot_twoF_cumulative(self, label, outdir, ax=None, c='k', savefig=True,
                              title=None, **kwargs):
-
-        taus, twoFs = self.calculate_twoF_cumulative(**kwargs)
         if ax is None:
             fig, ax = plt.subplots()
-        ax.plot(taus/86400., twoFs, label=label, color=c)
+
+        taus, twoFs = self.calculate_twoF_cumulative(**kwargs)
+        ax.plot(taus/86400., twoFs, label='All detectors', color=c)
+        if len(self.detector_names) > 1:
+            for d in self.detector_names:
+                self.detectors = d
+                self.init_computefstatistic_single_point()
+                taus, twoFs = self.calculate_twoF_cumulative(**kwargs)
+                ax.plot(taus/86400., twoFs, label='{}'.format(d))
+
         ax.set_xlabel(r'Days from $t_{{\rm start}}={:.0f}$'.format(
             kwargs['tstart']))
         if self.BSGL:
@@ -496,6 +503,7 @@ class ComputeFstat(object):
         else:
             ax.set_ylabel(r'$\widetilde{2\mathcal{F}}_{\rm cumulative}$')
         ax.set_xlim(0, taus[-1]/86400)
+        ax.legend(frameon=False)
         if title:
             ax.set_title(title)
         if savefig:
