@@ -18,16 +18,25 @@ args, tqdm = helper_functions.set_up_command_line_arguments()
 earth_ephem, sun_ephem = helper_functions.set_up_ephemeris_configuration()
 
 
-def read_par(label, outdir):
-    """ Read in a .par file, returns a dictionary of the values """
-    filename = '{}/{}.par'.format(outdir, label)
+def read_par(label=None, outdir=None, filename=None, suffix='par'):
+    """ Read in a .par file, returns a dictionary of the values
+
+    Note, can also read in .loudest files
+    """
+    if filename is None:
+        filename = '{}/{}.{}'.format(outdir, label, suffix)
+    if os.path.isfile(filename) is False:
+        raise ValueError("No file ({}) found".format(filename))
     d = {}
     with open(filename, 'r') as f:
         for line in f:
-            if len(line.split('=')) > 1:
-                key, val = line.rstrip('\n').split(' = ')
-                key = key.strip()
-                d[key] = np.float64(eval(val.rstrip('; ')))
+            if line[0] not in ['%', '#'] and len(line.split('=')) == 2:
+                try:
+                    key, val = line.rstrip('\n').split('=')
+                    key = key.strip()
+                    d[key] = np.float64(eval(val.rstrip('; ')))
+                except SyntaxError:
+                    pass
     return d
 
 
@@ -119,7 +128,7 @@ class BaseSearchClass(object):
         self.thetas_at_tref = thetas
         return thetas
 
-    def _generate_loudest(self):
+    def generate_loudest(self):
         params = read_par(self.label, self.outdir)
         for key in ['Alpha', 'Delta', 'F0', 'F1']:
             if key not in params:

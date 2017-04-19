@@ -507,7 +507,7 @@ class MCMCSearch(core.BaseSearchClass):
 
     def plot_corner(self, figsize=(7, 7), add_prior=False, nstds=None,
                     label_offset=0.4, dpi=300, rc_context={},
-                    tglitch_ratio=False, fig_and_axes=None, save_fig=False,
+                    tglitch_ratio=False, fig_and_axes=None, save_fig=True,
                     **kwargs):
         """ Generate a corner plot of the posterior
 
