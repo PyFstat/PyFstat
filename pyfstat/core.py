@@ -963,13 +963,14 @@ transientTauDays={:1.3f}\n""")
         cl.append('--outSingleSFT=TRUE')
         cl.append('--outSFTdir="{}"'.format(self.outdir))
         cl.append('--outLabel="{}"'.format(self.label))
-        cl.append('--IFOs="{}"'.format(self.detectors))
+        cl.append('--IFOs={}'.format(
+            ",".join(['"{}"'.format(d) for d in self.detectors.split(",")])))
         if self.add_noise:
             cl.append('--sqrtSX="{}"'.format(self.sqrtSX))
         if self.minStartTime is None:
-            cl.append('--startTime={:10.9f}'.format(float(self.tstart)))
+            cl.append('--startTime={:10.0f}'.format(float(self.tstart)))
         else:
-            cl.append('--startTime={:10.9f}'.format(float(self.minStartTime)))
+            cl.append('--startTime={:10.0f}'.format(float(self.minStartTime)))
         if self.maxStartTime is None:
             cl.append('--duration={}'.format(int(self.duration)))
         else:
