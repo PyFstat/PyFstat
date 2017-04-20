@@ -16,6 +16,7 @@ import helper_functions
 helper_functions.set_up_matplotlib_defaults()
 args, tqdm = helper_functions.set_up_command_line_arguments()
 earth_ephem, sun_ephem = helper_functions.set_up_ephemeris_configuration()
+detector_colors = {'h1': 'C0', 'l1': 'C1'}
 
 
 def read_par(label=None, outdir=None, filename=None, suffix='par'):
@@ -29,15 +30,49 @@ def read_par(label=None, outdir=None, filename=None, suffix='par'):
         raise ValueError("No file ({}) found".format(filename))
     d = {}
     with open(filename, 'r') as f:
-        for line in f:
-            if line[0] not in ['%', '#'] and len(line.split('=')) == 2:
-                try:
-                    key, val = line.rstrip('\n').split('=')
-                    key = key.strip()
-                    d[key] = np.float64(eval(val.rstrip('; ')))
-                except SyntaxError:
-                    pass
+        d = get_dictionary_from_lines(f)
     return d
+
+
+def get_dictionary_from_lines(lines):
+    d = {}
+    for line in lines:
+        if line[0] not in ['%', '#'] and len(line.split('=')) == 2:
+            try:
+                key, val = line.rstrip('\n').split('=')
+                key = key.strip()
+                d[key] = np.float64(eval(val.rstrip('; ')))
+            except SyntaxError:
+                pass
+    return d
+
+
+def predict_fstat(h0, cosi, psi, Alpha, Delta, Freq, sftfilepattern,
+                  minStartTime, maxStartTime, IFO=None, assumeSqrtSX=None):
+    """ Wrapper to lalapps_PredictFstat """
+    c_l = []
+    c_l.append("lalapps_PredictFstat")
+    c_l.append("--h0={}".format(h0))
+    c_l.append("--cosi={}".format(cosi))
+    c_l.append("--psi={}".format(psi))
+    c_l.append("--Alpha={}".format(Alpha))
+    c_l.append("--Delta={}".format(Delta))
+    c_l.append("--Freq={}".format(Freq))
+
+    c_l.append("--DataFiles='{}'".format(sftfilepattern))
+    if assumeSqrtSX:
+        c_l.append("--assumeSqrtSX={}".format(assumeSqrtSX))
+    if IFO:
+        c_l.append("--IFO={}".format(IFO))
+
+    c_l.append("--minStartTime={}".format(int(minStartTime)))
+    c_l.append("--maxStartTime={}".format(int(maxStartTime)))
+    c_l.append("--outputFstat=/tmp/fs")
+
+    logging.debug("Executing: " + " ".join(c_l) + "\n")
+    subprocess.check_output(" ".join(c_l), shell=True)
+    d = read_par(filename='/tmp/fs')
+    return float(d['twoF_expected']), float(d['twoF_sigma'])
 
 
 class BaseSearchClass(object):
@@ -491,19 +526,57 @@ class ComputeFstat(object):
 
         return taus, np.array(twoFs)
 
+    def calculatate_pfs(self, label, outdir, N=15, IFO=None):
+        if os.path.isfile('{}/{}.loudest'.format(outdir, label)) is False:
+            raise ValueError('Need a loudest file to add the predicted Fstat')
+        loudest = read_par(label, outdir, suffix='loudest')
+        pfs_input = {key: loudest[key] for key in
+                     ['h0', 'cosi', 'psi', 'Alpha', 'Delta', 'Freq']}
+        times = np.linspace(self.minStartTime, self.maxStartTime, N+1)[1:]
+        times = np.insert(times, 0, self.minStartTime + 86400/2.)
+        out = [predict_fstat(minStartTime=self.minStartTime, maxStartTime=t,
+                             sftfilepattern=self.sftfilepath, IFO=IFO,
+                             **pfs_input) for t in times]
+        pfs, pfs_sigma = np.array(out).T
+        return times, pfs, pfs_sigma
+
     def plot_twoF_cumulative(self, label, outdir, ax=None, c='k', savefig=True,
-                             title=None, **kwargs):
+                             title=None, add_pfs=False, N=15, **kwargs):
         if ax is None:
             fig, ax = plt.subplots()
 
         taus, twoFs = self.calculate_twoF_cumulative(**kwargs)
         ax.plot(taus/86400., twoFs, label='All detectors', color=c)
         if len(self.detector_names) > 1:
+            detector_names = self.detector_names
+            detectors = self.detectors
             for d in self.detector_names:
                 self.detectors = d
                 self.init_computefstatistic_single_point()
                 taus, twoFs = self.calculate_twoF_cumulative(**kwargs)
-                ax.plot(taus/86400., twoFs, label='{}'.format(d))
+                ax.plot(taus/86400., twoFs, label='{}'.format(d),
+                        color=detector_colors[d.lower()])
+            self.detectors = detectors
+            self.detector_names = detector_names
+
+        if add_pfs:
+            times, pfs, pfs_sigma = self.calculatate_pfs(label, outdir, N=N)
+            ax.fill_between(
+                (times-self.minStartTime)/86400., pfs-pfs_sigma, pfs+pfs_sigma,
+                color=c, label='Predicted $2\mathcal{F}$ 1-$\sigma$ band',
+                zorder=-10, alpha=0.2)
+            if len(self.detector_names) > 1:
+                for d in self.detector_names:
+                    times, pfs, pfs_sigma = self.calculatate_pfs(
+                        label, outdir, IFO=d.upper(), N=N)
+                    ax.fill_between(
+                        (times-self.minStartTime)/86400., pfs-pfs_sigma,
+                        pfs+pfs_sigma, color=detector_colors[d.lower()],
+                        alpha=0.5,
+                        label=(
+                            'Predicted $2\mathcal{{F}}$ 1-$\sigma$ band ({})'
+                            .format(d.upper())),
+                        zorder=-10)
 
         ax.set_xlabel(r'Days from $t_{{\rm start}}={:.0f}$'.format(
             kwargs['tstart']))
