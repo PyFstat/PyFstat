@@ -192,7 +192,7 @@ class TestMCMCSearch(Test):
     label = "Test"
 
     def test_fully_coherent(self):
-        h0 = 1e-24
+        h0 = 5e-24
         sqrtSX = 1e-22
         F0 = 30
         F1 = -1e-10
@@ -233,7 +233,7 @@ class TestMCMCSearch(Test):
             FS > predicted_FS or np.abs((FS-predicted_FS))/predicted_FS < 0.3)
 
     def test_multi_stage(self):
-        Writer = pyfstat.Writer()
+        Writer = pyfstat.Writer(F0=10)
         Writer.make_cff()
 
         theta = {'F0': {'type': 'norm', 'loc': 10, 'scale': 1e-2},

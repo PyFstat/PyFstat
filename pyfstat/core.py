@@ -1041,9 +1041,9 @@ transientTauDays={:1.3f}\n""")
         if self.add_noise:
             cl.append('--sqrtSX="{}"'.format(self.sqrtSX))
         if self.minStartTime is None:
-            cl.append('--startTime={:10.0f}'.format(float(self.tstart)))
+            cl.append('--startTime={:0.0f}'.format(float(self.tstart)))
         else:
-            cl.append('--startTime={:10.0f}'.format(float(self.minStartTime)))
+            cl.append('--startTime={:0.0f}'.format(float(self.minStartTime)))
         if self.maxStartTime is None:
             cl.append('--duration={}'.format(int(self.duration)))
         else:
