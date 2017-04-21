@@ -399,7 +399,7 @@ class FrequencySlidingWindow(GridSearch):
         self.input_data = np.array(input_data)
 
     def plot_sliding_window(self, F0=None, ax=None, savefig=True,
-                            colorbar=True):
+                            colorbar=True, timestamps=False):
         data = self.data
         if ax is None:
             ax = plt.subplot()
@@ -411,7 +411,7 @@ class FrequencySlidingWindow(GridSearch):
         dts = (tmids - self.minStartTime) / 86400.
         if F0:
             frequencies = frequencies - F0
-            ax.set_ylabel('Frequency - $f_0$ [Hz]')
+            ax.set_ylabel('Frequency - $f_0$ [Hz] \n $f_0={:0.2f}$'.format(F0))
         else:
             ax.set_ylabel('Frequency [Hz]')
         twoF = twoF.reshape((len(tmids), len(frequencies)))
@@ -421,10 +421,17 @@ class FrequencySlidingWindow(GridSearch):
             cb = plt.colorbar(pax, ax=ax)
             cb.set_label('$2\mathcal{F}$')
         ax.set_xlabel(
-            r'Days from $t_\mathrm{{start}}$={}'.format(self.minStartTime))
+            r'Mid-point (days after $t_\mathrm{{start}}$={})'.format(
+                self.minStartTime))
         ax.set_title(
             'Sliding window length = {} days in increments of {} days'
-            .format(self.window_size/86400, self.window_delta/86400))
+            .format(self.window_size/86400, self.window_delta/86400),
+            )
+        if timestamps:
+            axT = ax.twiny()
+            axT.set_xlim(tmids[0]*1e-9, tmids[-1]*1e-9)
+            axT.set_xlabel('Mid-point timestamp [GPS $10^{9}$ s]')
+            ax.set_title(ax.get_title(), y=1.18)
         if savefig:
             plt.tight_layout()
             plt.savefig(

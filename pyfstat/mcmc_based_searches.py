@@ -544,6 +544,10 @@ class MCMCSearch(core.BaseSearchClass):
 
         """
 
+        if 'truths' in kwargs and len(kwargs['truths']) != self.ndim:
+            logging.warning('len(Truths) != ndim, Truths will be ignored')
+            kwargs['truths'] = None
+
         if self.ndim < 2:
             with plt.rc_context(rc_context):
                 if fig_and_axes is None:
