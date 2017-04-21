@@ -326,4 +326,108 @@ class GridGlitchSearch(GridSearch):
         self.input_data = np.array(input_data)
 
 
+class FrequencySlidingWindow(GridSearch):
+    """ A sliding-window search over the Frequency """
+    @helper_functions.initializer
+    def __init__(self, label, outdir, sftfilepath, F0s, F1, F2,
+                 Alpha, Delta, tref, minStartTime=None,
+                 maxStartTime=None, window_size=10*86400, window_delta=86400,
+                 BSGL=False, minCoverFreq=None, maxCoverFreq=None,
+                 earth_ephem=None, sun_ephem=None, detectors=None):
+        """
+        Parameters
+        ----------
+        label, outdir: str
+            A label and directory to read/write data from/to
+        sftfilepath: str
+            File patern to match SFTs
+        F0s: array
+            Frequency range
+        F1, F2, Alpha, Delta: float
+            Fixed values to compute twoF(F) over
+        tref, minStartTime, maxStartTime: int
+            GPS seconds of the reference time, start time and end time
 
+        For all other parameters, see `pyfstat.ComputeFStat` for details
+        """
+
+        if earth_ephem is None:
+            self.earth_ephem = self.earth_ephem_default
+        if sun_ephem is None:
+            self.sun_ephem = self.sun_ephem_default
+
+        if os.path.isdir(outdir) is False:
+            os.mkdir(outdir)
+        self.out_file = '{}/{}_gridFS.txt'.format(self.outdir, self.label)
+        self.nsegs = 1
+        self.F1s = [F1]
+        self.F2s = [F2]
+        self.Alphas = [Alpha]
+        self.Deltas = [Delta]
+
+    def inititate_search_object(self):
+        logging.info('Setting up search object')
+        self.search = ComputeFstat(
+            tref=self.tref, sftfilepath=self.sftfilepath,
+            minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
+            earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
+            detectors=self.detectors, transient=True,
+            minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
+            BSGL=self.BSGL)
+        self.search.get_det_stat = (
+            self.search.run_computefstatistic_single_point)
+
+    def get_input_data_array(self):
+        arrays = []
+        tstarts = [self.minStartTime]
+        while tstarts[-1] + self.window_size < self.maxStartTime:
+            tstarts.append(tstarts[-1]+self.window_delta)
+        arrays = [tstarts]
+        for tup in (self.F0s, self.F1s, self.F2s,
+                    self.Alphas, self.Deltas):
+            arrays.append(self.get_array_from_tuple(tup))
+
+        input_data = []
+        for vals in itertools.product(*arrays):
+            input_data.append(vals)
+
+        input_data = np.array(input_data)
+        input_data = np.insert(
+            input_data, 1, input_data[:, 0] + self.window_size, axis=1)
+
+        self.arrays = arrays
+        self.input_data = np.array(input_data)
+
+    def plot_sliding_window(self, F0=None, ax=None, savefig=True,
+                            colorbar=True):
+        data = self.data
+        if ax is None:
+            ax = plt.subplot()
+        tstarts = np.unique(data[:, 0])
+        tends = np.unique(data[:, 1])
+        frequencies = np.unique(data[:, 2])
+        twoF = data[:, -1]
+        tmids = (tstarts + tends) / 2.0
+        dts = (tmids - self.minStartTime) / 86400.
+        if F0:
+            frequencies = frequencies - F0
+            ax.set_ylabel('Frequency - $f_0$ [Hz]')
+        else:
+            ax.set_ylabel('Frequency [Hz]')
+        twoF = twoF.reshape((len(tmids), len(frequencies)))
+        Y, X = np.meshgrid(frequencies, dts)
+        pax = ax.pcolormesh(X, Y, twoF)
+        if colorbar:
+            cb = plt.colorbar(pax, ax=ax)
+            cb.set_label('$2\mathcal{F}$')
+        ax.set_xlabel(
+            r'Days from $t_\mathrm{{start}}$={}'.format(self.minStartTime))
+        ax.set_title(
+            'Sliding window length = {} days in increments of {} days'
+            .format(self.window_size/86400, self.window_delta/86400))
+        if savefig:
+            plt.tight_layout()
+            plt.savefig(
+                '{}/{}_sliding_window.png'.format(self.outdir, self.label))
+        else:
+            return ax
