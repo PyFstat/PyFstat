@@ -512,7 +512,6 @@ class ComputeFstat(object):
                                   minfraction=0.01, maxfraction=1):
         """ Calculate the cumulative twoF along the obseration span """
         duration = tend - tstart
-        tstart = tstart + minfraction*duration
         taus = np.linspace(minfraction*duration, maxfraction*duration, npoints)
         twoFs = []
         if self.transient is False:
@@ -526,12 +525,15 @@ class ComputeFstat(object):
 
         return taus, np.array(twoFs)
 
-    def calculatate_pfs(self, label, outdir, N=15, IFO=None):
-        if os.path.isfile('{}/{}.loudest'.format(outdir, label)) is False:
-            raise ValueError('Need a loudest file to add the predicted Fstat')
-        loudest = read_par(label, outdir, suffix='loudest')
-        pfs_input = {key: loudest[key] for key in
-                     ['h0', 'cosi', 'psi', 'Alpha', 'Delta', 'Freq']}
+    def calculate_pfs(self, label, outdir, N=15, IFO=None, pfs_input=None):
+
+        if pfs_input is None:
+            if os.path.isfile('{}/{}.loudest'.format(outdir, label)) is False:
+                raise ValueError(
+                    'Need a loudest file to add the predicted Fstat')
+            loudest = read_par(label, outdir, suffix='loudest')
+            pfs_input = {key: loudest[key] for key in
+                         ['h0', 'cosi', 'psi', 'Alpha', 'Delta', 'Freq']}
         times = np.linspace(self.minStartTime, self.maxStartTime, N+1)[1:]
         times = np.insert(times, 0, self.minStartTime + 86400/2.)
         out = [predict_fstat(minStartTime=self.minStartTime, maxStartTime=t,
@@ -560,14 +562,15 @@ class ComputeFstat(object):
             self.detector_names = detector_names
 
         if add_pfs:
-            times, pfs, pfs_sigma = self.calculatate_pfs(label, outdir, N=N)
+            times, pfs, pfs_sigma = self.calculate_pfs(label, outdir, N=N)
             ax.fill_between(
                 (times-self.minStartTime)/86400., pfs-pfs_sigma, pfs+pfs_sigma,
-                color=c, label='Predicted $2\mathcal{F}$ 1-$\sigma$ band',
+                color=c,
+                label=r'Predicted $\langle 2\mathcal{F} \rangle\pm $ 1-$\sigma$ band',
                 zorder=-10, alpha=0.2)
             if len(self.detector_names) > 1:
                 for d in self.detector_names:
-                    times, pfs, pfs_sigma = self.calculatate_pfs(
+                    times, pfs, pfs_sigma = self.calculate_pfs(
                         label, outdir, IFO=d.upper(), N=N)
                     ax.fill_between(
                         (times-self.minStartTime)/86400., pfs-pfs_sigma,
@@ -585,7 +588,7 @@ class ComputeFstat(object):
         else:
             ax.set_ylabel(r'$\widetilde{2\mathcal{F}}_{\rm cumulative}$')
         ax.set_xlim(0, taus[-1]/86400)
-        ax.legend(frameon=False)
+        ax.legend(frameon=False, loc=2, fontsize=6)
         if title:
             ax.set_title(title)
         if savefig:

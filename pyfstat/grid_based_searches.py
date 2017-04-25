@@ -75,8 +75,11 @@ class GridSearch(BaseSearchClass):
     def get_array_from_tuple(self, x):
         if len(x) == 1:
             return np.array(x)
+        elif len(x) == 3:
+            return np.arange(x[0], x[1], x[2])
         else:
-            return np.arange(x[0], x[1]*(1+1e-15), x[2])
+            logging.info('Using tuple as is')
+            return np.array(x)
 
     def get_input_data_array(self):
         arrays = []

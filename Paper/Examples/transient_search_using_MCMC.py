@@ -16,7 +16,7 @@ data_tstart = tstart - duration
 data_tend = data_tstart + 3*duration
 tref = .5*(data_tstart+data_tend)
 
-h0 = 3e-24
+h0 = 4e-24
 sqrtSX = 1e-22
 
 transient = pyfstat.Writer(
@@ -56,8 +56,11 @@ mcmc = pyfstat.MCMCSearch(
     log10temperature_min=log10temperature_min)
 mcmc.run()
 fig, ax = plt.subplots()
+mcmc.write_par()
+mcmc.generate_loudest()
 mcmc.plot_cumulative_max(ax=ax)
 ax.set_xlabel('Days from $t_\mathrm{start}$')
+ax.legend_.remove()
 fig.savefig('data/transient_search_initial_stage_twoFcumulative')
 mcmc.print_summary()
 
