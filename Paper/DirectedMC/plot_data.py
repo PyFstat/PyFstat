@@ -70,7 +70,7 @@ ax.plot(depths_smooth, recovery_analytic, '-k', label='Theoretical maximum')
 
 
 ax.set_ylim(0, 1.05)
-ax.set_xlabel(r'Signal depth', size=10)
+ax.set_xlabel(r'Sensitivity depth', size=10)
 ax.set_ylabel(r'Recovered fraction', size=10)
 ax.legend(loc=1, frameon=False)
 
