@@ -25,9 +25,11 @@ class MCMCSearch(core.BaseSearchClass):
 
     symbol_dictionary = dict(
         F0='$f$', F1='$\dot{f}$', F2='$\ddot{f}$', Alpha=r'$\alpha$',
-        Delta='$\delta$')
+        Delta='$\delta$', asini='asini', period='P', ecc='ecc', tp='tp',
+        argp='argp')
     unit_dictionary = dict(
-        F0='Hz', F1='Hz/s', F2='Hz/s$^2$', Alpha=r'rad', Delta='rad')
+        F0='Hz', F1='Hz/s', F2='Hz/s$^2$', Alpha=r'rad', Delta='rad',
+        asini='', period='s', ecc='', tp='', argp='')
     rescale_dictionary = {}
 
 
@@ -150,7 +152,7 @@ class MCMCSearch(core.BaseSearchClass):
                               r'$\delta$']
         if self.binary:
             full_theta_symbols += [
-                'asini', 'period', 'period', 'ecc', 'tp', 'argp']
+                'asini', 'period', 'ecc', 'tp', 'argp']
 
         self.theta_keys = []
         fixed_theta_dict = {}
