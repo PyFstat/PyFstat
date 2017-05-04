@@ -358,6 +358,7 @@ class MCMCSearch(core.BaseSearchClass):
             self.samples = d['samples']
             self.lnprobs = d['lnprobs']
             self.lnlikes = d['lnlikes']
+            self.all_lnlikelihood = d['all_lnlikelihood']
             return
 
         self._initiate_search_object()
@@ -418,7 +419,7 @@ class MCMCSearch(core.BaseSearchClass):
         samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
         lnprobs = sampler.lnprobability[0, :, nburn:].reshape((-1))
         lnlikes = sampler.lnlikelihood[0, :, nburn:].reshape((-1))
-        all_lnlikelihood = sampler.lnlikelihood
+        all_lnlikelihood = sampler.lnlikelihood[:, :, nburn:]
         self.samples = samples
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes
@@ -1064,6 +1065,7 @@ class MCMCSearch(core.BaseSearchClass):
         old_d.pop('samples')
         old_d.pop('lnprobs')
         old_d.pop('lnlikes')
+        old_d.pop('all_lnlikelihood')
 
         mod_keys = []
         for key in new_d.keys():
@@ -1321,11 +1323,12 @@ class MCMCSearch(core.BaseSearchClass):
                       betas[::-1][::2][::-1])
         log10evidence_err = np.abs(z1 - z2) / np.log(10)
 
+        print("log10 evidence for {} = {} +/- {}".format(
+              self.label, log10evidence, log10evidence_err))
+
         ax1.semilogx(betas, mean_lnlikes, "-o")
         ax1.set_xlabel(r"$\beta$")
         ax1.set_ylabel(r"$\langle \log(\mathcal{L}) \rangle$")
-        print("log10 evidence for {} = {} +/- {}".format(
-              self.label, log10evidence, log10evidence_err))
         min_betas = []
         evidence = []
         for i in range(len(betas)/2):
@@ -1919,6 +1922,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             self.samples = d['samples']
             self.lnprobs = d['lnprobs']
             self.lnlikes = d['lnlikes']
+            self.all_lnlikelihood = d['all_lnlikelihood']
             self.nsegs = run_setup[-1][1]
             return
 
