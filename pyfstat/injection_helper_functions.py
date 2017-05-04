@@ -4,9 +4,13 @@
 """
 
 import numpy as np
-from astropy import units as u
-from astropy.coordinates import SkyCoord
-from astropy.time import Time
+import logging
+try:
+    from astropy import units as u
+    from astropy.coordinates import SkyCoord
+    from astropy.time import Time
+except ImportError:
+    logging.warning('Python module astropy not installed')
 
 # Assume Earth goes around Sun in a non-wobbling circle at constant speed;
 # Still take the zero longitude to be the Earth's position during the March
