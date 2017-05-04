@@ -552,6 +552,7 @@ The frequency and spin-down components of the metric can be easily calculated
 due to their linearity in Equation~\eqref{eqn_phi} and for the special case in
 which $\tref$ is in the middle of the data span, the phase-evolution metric
 with $\smax{=}1$ (i.e. the frequency and spin-down components) are given by
+\meta{This is not explained properly - just link to a previous paper (I used Eqn (33) of RP's frequency metrix notes}
 \begin{equation}
 \tilde{g}^{\textrm{PE}}_{ij} \equiv
 \left[
@@ -635,44 +636,45 @@ This decomposition may be useful in setting up MCMC searches.
 
 We intend to use the $\F$-statistic as our log-likelihood in MCMC simulations,
 but before continuing, it is worthwhile to acquaint ourselves with the typical
-behavior of the log-likelihood by considering a specific example.
+behavior of the log-likelihood by considering a specific example.  In
+particular, let us consider the frequency-domain `topology' of the $\twoFtilde$
+likelihood that our MCMC simulations will need to explore.
+
+We simulate a signal with $h_0=$\GridedFrequencyhzero\; in data lasting
+\GridedFrequencyT~days with $\sqrt{S_{x}}=$\GridedFrequencySqrtSx.  In
+Figure~\ref{fig_grid_frequency}, we plot the numerically computed $\twoFtilde$
+for this data as a function of the template frequency (all other parameters are
+held fixed at the simulation values). Three clear peaks can be observed: a
+central peak at $f_0$ (the simulated signal frequency), and two `Doppler lobes'
+at $f_0\pm 4/(1\textrm{-day})$. \comment{Need to understand the cause of
+these}.
 
 As shown in Equation~\eqref{eqn_twoF_expectation}, the expectation of
-$\widetilde{2\F}$ is 4 in Gaussian noise alone, but proportional to the square
-of the non-centrality parameter (or SNR) in the presence of a signal. To
-illustrate this, let us consider $\widetilde{2\F}$ as a function of $f$ (the
-template frequency) if there exists a signal in the data with frequency $f_0$.
-We will fix all the other Doppler parameters so that they are perfectly
-matched.  Such an example can be calculated analytically, taking the
-matched-filtering amplitude (Equation~(11) of \citep{prix2005}) with
-$\Delta\Phi(t) = 2\pi(f - f_0) t$, the expectation of $\widetilde{2\F}$ as a
-function of the template frequency $f$ is given by
-\begin{equation}
-\textrm{E}[\widetilde{2\F}](f) = 4 +
-(\textrm{E}[\widetilde{2\F_0}] -4)\textrm{sinc}^{2}(\pi(f-f_0)\Tcoh))
-\label{eqn_grid_prediction}
-\end{equation}
-where $\textrm{E}[\widetilde{2\F_0}]$ is the expected $\widetilde{2\F}$ for
-a perfectly matched signal (when $f=f_0$).
+$\widetilde{2\F}$ is $4$ in Gaussian noise alone, but proportional to the
+square of the non-centrality parameter (or SNR) in the presence of a signal.
+This behaviour is exactly seen in Figure~\ref{fig_grid_frequency}: between the
+peaks one finds noise fluctations.
 
-In Figure~\ref{fig_grid_frequency} we compare the analytic prediction of
-Equation~\eqref{eqn_grid_prediction} with the value computed numerically from
-simulating a signal in Gaussian noise. This is done over a frequency range of
-$\sim20\Delta f$ where $\Delta f(\mutilde=1)$ is the frequency difference between a signal
-and the template with the metric-mismatch $\tilde{\mu}=1$ as calculated from
-Equation~\eqref{eqn_mutilde_expansion}. As expected, close to the signal
-frequency $f_0$ the detection statistic peaks with a few local secondary
-maxima. Away from this frequency, in Gaussian noise, we see many local maxima
-centered around the expected value of 4.
 \begin{figure}[htb]
 \centering \includegraphics[width=0.45\textwidth]{grided_frequency_search_1D}
-\caption{Comparison of the analytic prediction of
-Equation~\eqref{eqn_grid_prediction} (in red) with the value computed
-numerically from simulating a signal with frequency $f_0$ in Gaussian noise (in
-black). $\Delta f(\mutilde=1)$ is the frequency difference corresponding to a
-metric-mismatch of unity.}
+\caption{Numerically computed $\twoFtilde$ for a
+simulated signal with frequency $f_0$ in Gaussian noise.}
 \label{fig_grid_frequency}
 \end{figure}
+
+The widths of the peaks can be estimated by using the metric, inverting
+Eqn.~\ref{eqn_mutilde_expansion} for the frequency component alone one finds
+that $\Delta f \approx \sqrt{3}/{\pi\Tcoh}$ (taking a mismatch of 1 as a proxy
+for the peak width). In Figure~\ref{fig_grid_frequency} the coherence time is
+short enough that the width of the peak is about an order of magnitude smaller
+than the Doppler window $\sim 1/(1\mathrm{-day}$. In general, CW searches are
+performs on much longer stretches of data and therefore the peak width will
+be much narrower.
+
+When running an MCMC simulation we must therefore be aware that in addition to
+the signal peak, the likelihood can contain multiple modes which may be either
+noise fluctuations, secondary peaks of the signal, or the signal peak itself.
+
 
 \subsection{Example: MCMC optimisation for a signal in noise}
 
@@ -737,22 +739,24 @@ calculate the marginal likelihood.
 Using these choices, the simulation is run. To illustrate the full MCMC
 process, in Figure~\ref{fig_MCMC_simple_example} we plot the progress of all
 the individual walkers (each represented by an individual line) as a function
-of the total number of steps. The red portion of steps are burn-in and hence
-discarded, from this plot we see why: the walkers are initialised from the
-uniform prior and initially spend some time exploring the whole parameter space
-before converging. The fact that they converge to a single unique point is due
-to the strength of the signal (substantially elevating the likelihood above
-that of Gaussian fluctuations) and the tight prior which was quantified through the
-metric volume $\V$. The production samples, colored black, are only taken once
-the sampler has converged - these can be used to generate posterior plots.
+of the total number of steps. The portion of steps before the dashed vertical
+line are ``burn-in'' samples and hence discarded, from this plot we see why:
+the walkers are initialised from the uniform prior and initially spend some
+time exploring the whole parameter space before converging. The fact that they
+converge to a single unique point is due to the strength of the signal
+(substantially elevating the likelihood above that of Gaussian fluctuations)
+and the tight prior which was quantified through the metric volume $\V$. The
+``production'' samples, those after the black dashed vertical line, can be used
+to generate posterior plots. In this instance, the number of burn-in and
+production samples was pre-specified by hand.
 \begin{figure}[htb]
 \centering
 \includegraphics[width=0.45\textwidth]{fully_coherent_search_using_MCMC_walkers}
 \caption{The progress of the MCMC simulation for a simulated signal in Gaussian
 noise, searching over the frequency and spin-down. The upper two panels show
 the position of all walkers as a function of the number of steps for the
-frequency and spin-down; when they are colored red the samples are discarded as
-burn-in (the first 100 steps), while when they are colored black they are used
+frequency and spin-down; samples to the left of the dashed vertical line are discarded as
+burn-in (the first 100 steps), while the rest are used
 as production samples.}
 \label{fig_MCMC_simple_example}
 \end{figure}
@@ -845,41 +849,44 @@ not used here to highlight the utility of the convergence statistic.
 
 Incoherent detection statistics trade significance (the height of the peak) for
 sensitivity (the width of the peak). We will now discuss the advantages of
-using an MCMC sampler to follow-up a candidate found incoherently, increasing
-the coherence time until finally estimating its parameters and significance
+using an MCMC sampler to follow-up a candidate found incoherently, decreasing
+the number of segments (of increasing
+the coherence time) until finally estimating its parameters and significance
 fully-coherently. We begin by rewriting Equation~\eqref{eqn_lambda_posterior},
 the posterior distribution of the Doppler parameters, with the explicit
-dependence on the coherence time $\Tcoh$:
+dependence on the $\Nseg$:
 \begin{equation}
 P(\blambda | \Tcoh, x, \AmplitudePrior, \Hs, I)
 %=\Bsn(x| \Tcoh, \AmplitudePrior, \blambda) P(\blambda| \Hs I).
-\propto e^{\hat{\F}(x| \Tcoh, \blambda)} P(\blambda| \Hs I).
+\propto e^{\hat{\F}(x| \Nseg, \blambda)} P(\blambda| \Hs I).
 \end{equation}
 
-Introducing the coherence time $\Tcoh$ as a variable provides a free parameter
-which adjusts the width of signal peaks in the likelihood. Therefore, a natural way
-to perform a follow-up is to start the MCMC simulations with a short coherence
-time (such that the signal peak occupies a substantial fraction of the prior
-volume) and then subsequently incrementally increasing this coherence time in a
-controlled manner, aiming to allow the MCMC walkers to converge to the new
-likelihood before again increasing the coherence time. Ultimately, this
-coherence time will be increased until $\Tcoh = \Tspan$. If this is done in
-$\Nstages$ discreet \emph{stages}, this introduces a further set of tuning
-parameters, namely the ladder of coherence times $\Tcoh^{i}$, where $i \in [0,
-\Nstages]$.
+Introducing the coherence time $\Nseg$ as a variable provides a free parameter
+which adjusts the width of signal peaks in the likelihood. Given a candidate
+found from a semi-coherent search with $\Nseg^{0}$ segments, , a natural way to
+perform a follow-up is to start the MCMC simulations with $\Nseg^{0}$ segments
+(such that the signal peak occupies a substantial fraction of the prior volume)
+and then subsequently incrementally decrease the number of segments in a
+controlled manner. The aim being at each decrease in the number of segments to
+allow the MCMC walkrs to converge to the narrower likelihood before again
+decreasing the number of segments. Ultimately, this process continuous until
+$\Nseg^{\Nstages}=1$, where $\Nstages$ is the total number of stages in  a
+ladder of segment-numbers $\Nseg^{j}$. Choosing the ladder of segment-numbers
+is a tuning balancing computation time against allowing sufficient
+time for the MCMC walkers to converge at each stage so that the signal is not
+lost.
 
-In some ways, this bears a resemblance to `simulated annealing', a method in
-which the likelihood is raised to a power (the inverse temperature) and
-subsequently `cooled' \comment{Add citation?}. The important difference being
-that the semi-coherent likelihood is wider at short coherence times, rather
-than flatter as in the case of high-temperature simulated annealing stages. For
-a discussion and examples of using simulated annealing in the context of CW
-searches see \citet{veitch2007}.
+Before discussing how to choose the ladder, we remain that in some ways, this
+method bears a resemblance to `simulated annealing', a method in which the
+likelihood is raised to a power (the inverse temperature) and subsequently
+`cooled' \comment{Add citation?}. The important difference being that the
+semi-coherent likelihood is wider at short coherence times, rather than flatter
+as in the case of high-temperature simulated annealing stages. For a discussion
+and examples of using simulated annealing in the context of CW searches see
+\citet{veitch2007}.
 
-In practice, we can't arbitrarily vary $\Tcoh^i$, but rather the
-number of segments at each stage $\Nseg^{i}\equiv \Tspan/\Tcoh^{i} \in
-\mathbb{N}$. For an efficient zoom follow-up, we want to choose the ladder of
-coherence times to ensure that
+For an efficient zoom follow-up, we want to choose the ladder of
+segments-numbers to ensure that
 the metric volume at the $i^{th}$ stage $\V_i \equiv \V(\Nseg^i)$ is a constant
 fraction of the volume at adjacent stages. That is we define
 \begin{equation}
@@ -889,7 +896,7 @@ where $\mathcal{R} \ge 1$ as $\Tcoh^{i+1} > \Tcoh^{i}$.
 
 Assuming then that the candidate comes with a suitably small prior bounding box,
 such that $\V(\Nseg^{0}) \sim \mathcal{O}(100)$, we define $\Nseg^0$ as the
-number of segments used in the searc which found the candidate.
+number of segments used in the search which found the candidate.
 
 We can therefore define a minimisation problem for $\Nseg^{i+1}$ given $\Nseg^{i}$:
 \begin{align}
@@ -969,7 +976,7 @@ its ability to succesfully identify simulated signals in Gaussian noise. This wi
 done in a Monte-Carlo study, with independent random realisations of the
 Guassian noise, amplitude, and Doppler parameters in suitable ranges. Such a
 method is analagous to the studies performed in \citet{shaltev2013}, except
-that we present results as a function of the fixed injected signal depth,
+that we present results as a function of the fixed injected sensitivity depth,
 rather than the squared SNR.
 
 In particular we will generate a number of 100-day data sets containing
@@ -988,7 +995,7 @@ To provide a reference, we will compare the MC follow-up study against the
 expected maximum theoretical detection probability for an infinitly dense
 fully-coherent search of data containing isotropically-distributed signals as
 calculated by \citet{wette2012}. Note however that we will parameterise with
-respect to the signal depth (i.e. using Equation~(3.8) of \citet{wette2012} to
+respect to the sensitivity depth (i.e. using Equation~(3.8) of \citet{wette2012} to
 relate the averaged-SNR to the depth). The probability is maximal in the
 sense that signals are `lost' during the follow-up due simply to the fact that
 they are not sufficiently strong to rise above the noise.
@@ -1115,7 +1122,7 @@ realisations.}
 
 Producing \CHECK{1000} indepedant MC simulations we then perform a follow-up on
 each using the setup given in Table~\ref{tab_allsky_MC_follow_up}. The
-resulting recovery fraction as a function of the injected signal depth is given
+resulting recovery fraction as a function of the injected sensitivity depth is given
 in Figure~\ref{fig_allsky_MC_follow_up}.
 
 \begin{table}[htb]
@@ -1181,7 +1188,7 @@ Figure~\ref{fig_transient_cumulative_twoF}, demonstrates that the first 100
 days contributes no power to the detection statistic, during the middle 100
 days there is an approximately linear increasing in $\widetilde{2\F}$ with time
 (as expected for a signal), while in the last 100 days this is a gradual decay
-from the peak. Such a figure is characteristic of a transient signal.
+from the peak as discussed in \citet{prix2011} \meta{Mention 1/t specifically?}. Such a figure is characteristic of a transient signal.
 \begin{figure}[htb]
 \centering
 \includegraphics[width=0.45\textwidth]{transient_search_initial_stage_twoFcumulative}
