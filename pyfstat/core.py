@@ -509,10 +509,31 @@ class ComputeFstat(object):
     def calculate_twoF_cumulative(self, F0, F1, F2, Alpha, Delta, asini=None,
                                   period=None, ecc=None, tp=None, argp=None,
                                   tstart=None, tend=None, npoints=1000,
-                                  minfraction=0.01, maxfraction=1):
-        """ Calculate the cumulative twoF along the obseration span """
-        duration = tend - tstart
-        taus = np.linspace(minfraction*duration, maxfraction*duration, npoints)
+                                  ):
+        """ Calculate the cumulative twoF along the obseration span
+        Params
+        ------
+        F0, F1, F2, Alpha, Delta: float
+            Parameters at which to compute the cumulative twoF
+        asini, period, ecc, tp, argp: float
+            Binary parameters at which to compute the cumulative twoF (default
+            to None)
+        tstart, tend: int
+            GPS times to restrict the range of data used - automatically
+            truncated to the span of data available
+        npoints: int
+            Number of points to compute twoF along the span
+
+        Note: the minimum cumulatibe twoF is hard-coded to be computed over
+        the first 6 hours from either the first timestampe in the data (if
+        tstart is smaller than it) or tstart.
+
+        """
+        SFTminStartTime = self.SFT_timestamps[0]
+        SFTmaxStartTime = self.SFT_timestamps[-1]
+        min_tau = np.max([SFTminStartTime - tstart, 0]) + 3600*6
+        max_tau = SFTmaxStartTime - tstart
+        taus = np.linspace(min_tau, max_tau, npoints)
         twoFs = []
         if self.transient is False:
             self.transient = True
