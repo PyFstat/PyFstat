@@ -531,6 +531,7 @@ class ComputeFstat(object):
         """
         SFTminStartTime = self.SFT_timestamps[0]
         SFTmaxStartTime = self.SFT_timestamps[-1]
+        tstart = np.max([SFTminStartTime, tstart])
         min_tau = np.max([SFTminStartTime - tstart, 0]) + 3600*6
         max_tau = SFTmaxStartTime - tstart
         taus = np.linspace(min_tau, max_tau, npoints)
