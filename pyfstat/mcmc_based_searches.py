@@ -662,6 +662,11 @@ class MCMCSearch(core.BaseSearchClass):
                 prior = prior_func(x)
                 prior[0] = 0
                 prior[-1] = 0
+            elif prior_dict['type'] == 'log10unif':
+                upper = prior_dict['log10upper']
+                lower = prior_dict['log10lower']
+                x = np.linspace(lower, upper, N)
+                prior = [prior_func(xi) for xi in x]
             elif prior_dict['type'] == 'norm':
                 lower = prior_dict['loc'] - normal_stds * prior_dict['scale']
                 upper = prior_dict['loc'] + normal_stds * prior_dict['scale']
@@ -735,7 +740,7 @@ class MCMCSearch(core.BaseSearchClass):
 
         """
 
-        def logunif(x, a, b):
+        def log_of_unif(x, a, b):
             above = x < b
             below = x > a
             if type(above) is not np.ndarray:
@@ -749,7 +754,22 @@ class MCMCSearch(core.BaseSearchClass):
                 p[idxs] = -np.log(b-a)
                 return p
 
-        def halfnorm(x, loc, scale):
+        def log_of_log10unif(x, log10lower, log10upper):
+            log10x = np.log10(x)
+            above = log10x < log10upper
+            below = log10x > log10lower
+            if type(above) is not np.ndarray:
+                if above and below:
+                    return -np.log(x*np.log(10)*(log10upper-log10lower))
+                else:
+                    return -np.inf
+            else:
+                idxs = np.array([all(tup) for tup in zip(above, below)])
+                p = np.zeros(len(x)) - np.inf
+                p[idxs] = -np.log(x*np.log(10)*(log10upper-log10lower))
+                return p
+
+        def log_of_halfnorm(x, loc, scale):
             if x < loc:
                 return -np.inf
             else:
@@ -765,11 +785,15 @@ class MCMCSearch(core.BaseSearchClass):
                 return -np.inf
 
         if kwargs['type'] == 'unif':
-            return lambda x: logunif(x, kwargs['lower'], kwargs['upper'])
+            return lambda x: log_of_unif(x, kwargs['lower'], kwargs['upper'])
+        if kwargs['type'] == 'log10unif':
+            return lambda x: log_of_log10unif(
+                x, kwargs['log10lower'], kwargs['log10upper'])
         elif kwargs['type'] == 'halfnorm':
-            return lambda x: halfnorm(x, kwargs['loc'], kwargs['scale'])
+            return lambda x: log_of_halfnorm(x, kwargs['loc'], kwargs['scale'])
         elif kwargs['type'] == 'neghalfnorm':
-            return lambda x: halfnorm(-x, kwargs['loc'], kwargs['scale'])
+            return lambda x: log_of_halfnorm(
+                -x, kwargs['loc'], kwargs['scale'])
         elif kwargs['type'] == 'norm':
             return lambda x: -0.5*((x - kwargs['loc'])**2/kwargs['scale']**2
                                    + np.log(2*np.pi*kwargs['scale']**2))
@@ -781,6 +805,9 @@ class MCMCSearch(core.BaseSearchClass):
         dist_type = kwargs.pop('type')
         if dist_type == "unif":
             return np.random.uniform(low=kwargs['lower'], high=kwargs['upper'])
+        if dist_type == "log10unif":
+            return 10**(np.random.uniform(low=kwargs['log10lower'],
+                                          high=kwargs['log10upper']))
         if dist_type == "norm":
             return np.random.normal(loc=kwargs['loc'], scale=kwargs['scale'])
         if dist_type == "halfnorm":
