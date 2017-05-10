@@ -1327,7 +1327,7 @@ class MCMCSearch(core.BaseSearchClass):
         print('p-value = {}'.format(p_val))
         return p_val
 
-    def compute_evidence(self):
+    def compute_evidence(self, write_to_file='Evidences.txt'):
         """ Computes the evidence/marginal likelihood for the model """
         betas = self.betas
         mean_lnlikes = np.mean(np.mean(self.all_lnlikelihood, axis=1), axis=1)
@@ -1350,8 +1350,13 @@ class MCMCSearch(core.BaseSearchClass):
                       betas[::-1][::2][::-1])
         log10evidence_err = np.abs(z1 - z2) / np.log(10)
 
-        print("log10 evidence for {} = {} +/- {}".format(
+        logging.info("log10 evidence for {} = {} +/- {}".format(
               self.label, log10evidence, log10evidence_err))
+
+        if write_to_file:
+            EvidenceDict = self.read_evidence_file_to_dict(write_to_file)
+            EvidenceDict[self.label] = [log10evidence, log10evidence_err]
+            self.write_evidence_file_from_dict(EvidenceDict, write_to_file)
 
         ax1.semilogx(betas, mean_lnlikes, "-o")
         ax1.set_xlabel(r"$\beta$")
@@ -1369,6 +1374,22 @@ class MCMCSearch(core.BaseSearchClass):
         ax2.set_xlabel(r"$\beta_{\textrm{min}}$")
         plt.tight_layout()
         fig.savefig("{}/{}_beta_lnl.png".format(self.outdir, self.label))
+
+    @staticmethod
+    def read_evidence_file_to_dict(evidence_file_name='Evidences.txt'):
+        EvidenceDict = OrderedDict()
+        if os.path.isfile(evidence_file_name):
+            with open(evidence_file_name, 'r') as f:
+                for line in f:
+                    key, log10evidence, log10evidence_err = line.split(' ')
+                    EvidenceDict[key] = [
+                        float(log10evidence), float(log10evidence_err)]
+        return EvidenceDict
+
+    def write_evidence_file_from_dict(self, EvidenceDict, evidence_file_name):
+        with open(evidence_file_name, 'w+') as f:
+            for key, val in EvidenceDict.iteritems():
+                f.write('{} {} {}\n'.format(key, val[0], val[1]))
 
 
 class MCMCGlitchSearch(MCMCSearch):
