@@ -203,172 +203,217 @@ its efficient. In Sections~\ref{sec_transients} and \ref{sec_glitches} we
 demonstrate how searches can be performed for either transient or glitches CWs
 before we finally conclude in Section~\ref{sec_conclusion}.
 
-\section{Hypothesis testing}
+\section{MCMC and the $\F$-statistic}
+\label{sec_MCMC_and_the_F_statistic}
+
+In this section, we will give a brief introduction to the use of the
+$\F$-statistic in a hypothesis testing framework, introduce conceptual ideas
+about the use of Markov-Chain Monte-Carlo (MCMC) algorithms in this context,
+and develop the idea of using MCMC routines in CW searches.
+
+\subsection{Hypothesis testing framework}
 \label{sec_hypothesis_testing}
 
-\subsection{Bayes factors}
-Given some data $x$ and a set of background assumptions $I$, we formulate
-two hypotheses: $\Hn$, the data contains solely Gaussian noise and $\Hs$, the
-data contains an additive mixture of noise and a signal $h(t; \A, \blambda)$.
-In order to make a quantitative comparison, we use Bayes theorem in the usual
-way to write the odds as
+In \citet{prix2009}, a framework was introduced demonstrating the use of the
+$\F$-statistic (first discussed in \citet{jks1998}) in defining the \emph{Bayes
+factor} $\Bsn(\boldsymbol{x})$ between the signal hypothesis and the noise
+hypothesis computed on some data $\boldsymbol{x}$.  It was shown that for an
+unphysical uniform prior on the amplitude parameters, the log-Bayes factor was
+proportional to the $\F$-statistic. In this work, we will use the modification
+proposed in \citet{prix2011}, which removed the antenna-pattern weighting
+factor; let us now briefly review this framework.
+
+The Bayes-factor between the signal and noise hypothesis, given the
+`$\F$-statistic prior', is
 \begin{equation}
-O_{\rm S/N} \equiv \frac{P(\Hs| x, I)}{P(\Hn| x, I)} =
-\Bsn(x| I) \frac{P(\Hs| I)}{P(\Hn | I)},
+\Bsn(\boldsymbol{x}) = \int \Bsn(\boldsymbol{x}| \blambda)P(\blambda) d\blambda
+\label{eqn_Bsn_x}
 \end{equation}
-where the second factor is the \emph{prior odds} while the first is the
-\emph{Bayes factor}:
+where $\Bsn(\boldsymbol{x}| \blambda)$ is the
+targeted Bayes factor (i.e. computed at a set of
+Doppler parameters $\blambda$):
 \begin{equation}
-\Bsn(x| I) = \frac{P(x| \Hs, I)}{P(x| \Hn, I)}.
+\Bsn(\boldsymbol{x}|\blambda) = \frac{70}{\rhohatmax^{4}}
+e^{\F(\boldsymbol{x}; \blambda)}.
+\label{eqn_CW_likelihood}
 \end{equation}
-Typically, we set the prior odds to unity such that it is the Bayes factor
-which determines our confidence in the signal hypothesis. In this work, we will
-therefore discuss the Bayes factor with the implied assumption this is
-equivalent to the odds, unless we have a good reason to change the prior odds.
+Here, $\rhohatmax$ is a maximum cutoff SNR required to normalise the prior.
+The original calculation was done for a transient-CW, in Eqn~\eqref{eqn_CW_likelihood}
+we constrain the system to the special case of standard CW signals for which the
+marginalisation over the transient parameters yields unity.
 
-We can rewrite the Bayes factor in terms of the two sets of signal parameters
-as
+Furthermore, \citet{prix2011} also demonstrated that the semi-coherent Bayes
+factor naturally arrises by splitting the likelihood into $N$ independent
+\emph{segment} resulting in
 \begin{equation}
-\Bsn(x| I) = \frac{P(x, \A, \blambda|\Hs, I)}
-{P(\A| \Hs, I)P(\blambda| \Hs, I)P(x| \Hn, I)}.
+\Bsn^{\textrm{SC}}(\boldsymbol{x}|\blambda) =
+\left(\frac{70}{\rhohatmax^{4}}\right)^{N}
+e^{\sum_{\ell=1}^{N}\F(\boldsymbol{x}_{(\ell)}; \blambda)},
+\label{eqn_SC_CW_likelihood}
 \end{equation}
-Marginalising over the two sets of parameters we find that
-\begin{equation}
-\Bsn(x| I)= \iint
-\mathcal{L}(x; \A, \blambda)
-P(\A| \Hs, I)P(\blambda| \Hs, I)
-d\blambda d\A
-\label{eqn_full_bayes}
-\end{equation}
-where
-\begin{equation}
-\mathcal{L}(x; \A, \blambda) \equiv \frac{P(x |\A, \blambda, \Hs, I)}{P(x| \Hn, I)},
-\label{eqn_likelihood}
-\end{equation}
-is the \emph{likelihood-ratio}.
-
-At this point, we can appreciate the problems of searching for unknown signals:
-one has four amplitude parameters and several Doppler parameters over which
-this integral must be performed. If a single signal exists in the data, this
-corresponds to a single peak in the likelihood-ratio, but at an unknown
-location. Therefore, one must must first search for peaks (candidates), and
-then subsequently analyse their significance. If one has prior knowledge this
-can be used; for example in targeted searches for gravitational waves from
-known pulsars emitting CWs from a mountain the Doppler parameters are
-considered known collapsing their integral to a single evaluation (see for
-example the method proposed by \citet{dupuis2005}).
-\comment{Should we cite other known-pulsar methodologies?}
-
-\subsection{The $\F$-statistic: a frequentist perspective}
-
-For directed and all-sky searches, a common method introduced by
-\citet{jks1998} to reduce the parameter space is the maximum-likelihood
-approach. In this approach (often referred to as `frequentist'), one starts by
-defining the likelihood-ratio, Equation~\eqref{eqn_likelihood}, which in this
-context is a \emph{matched-filtering} amplitude. Then, analytically maximising
-this likelihood-ratio with respect to the four amplitude parameters results
-(c.f.~\citet{prix2009}) in a maximised log-likelihood given by $\F(x|
-\blambda)$: the so-called $\F$-statistic. Picking a particular set of Doppler
-parameters $\blambda$ (the template) one can then compute a detection statistic
-(typically $\twoFtilde$ is used\footnote{Note that the `tilde' denote that it
-is a fully-coherent quantity while we use a `hat' to denote a semi-coherent
-quantity}) which can be used to quantify the significance of the template.
-Usually this is done by calculating a corresponding false alarm rate, the
-probability of seeing such a detection statistic in Gaussian noise.
-
-Calculations of the significance are possible due to the properties of the
-detection statistic: in Gaussian noise, it can be shown \citep{jks1998,
-cutlershutz2005} that $\widetilde{2\F}$ follows a chi-squared distribution with
-4 degrees of freedom. In the presence of a signal, $\widetilde{2\F}$ is
-still chi-squared with 4 degrees of freedom, but has a non-centrality parameter
-$\tilde{\rho}^{2}$ such that its expectation value is
-\begin{equation}
-\textrm{E}[\widetilde{2\F}(x; \blambda)] = 4 + \tilde{\rho}(x; \blambda)^2.
-\label{eqn_twoF_expectation}
-\end{equation}
-The non-centrality parameter in this context is the SNR of the matched-filter
-given by
-\begin{equation}
-\rho^{2} = (h | h) \propto \frac{h_0^2}{\Sn}\Tcoh \mathcal{N}
-\end{equation}
-where $(h|h)$ is the inner product of the signal with itself (see for example
-\citet{prix2009}), $\Sn$ is a (frequency-dependent) measure of the noise in
-the detector and $\mathcal{N}$ is the number of detectors.
+where $\boldsymbol{x}_{(\ell)}$ refers to the data in the $\ell^{\mathrm{th}}$
+segment. As such, this can replace the relevant term in
 
 
-\subsection{The $\F$-statistic: a Bayesian perspective}
 
-At first, it
-appears that the $\F$-statistic is independent of the Bayesian framework since
-it was first derived directly from the likelihood. However, it was shown in
-\citet{prix2009, prix2011} that if we marginalise over the four amplitude parameters of
-Equation~\eqref{eqn_full_bayes} (using the ``$\F$-statistic prior'' \citep{prix2011},
-which we denote by $\AmplitudePrior$)
-then the integral, when $\homax \gg 1$, is a Gaussian integral and can be
-computed analytically as
-\begin{align}
-\begin{split}
-\Bsn(x| \blambda, \AmplitudePrior, I) & \equiv
-\int
-\mathcal{L}(x ;\A, \blambda)
-P(\A| \Hs, \AmplitudePrior, I) d\A
-\label{eqn_B_S_N}
-\\
-& \propto e^{\tilde{\F}(x| \blambda)}
-\end{split}
-\end{align}
-where $\mathcal{F}$ is exactly the $\F$-statistic, first derived
-as a maximised log-likelihood \citep{jks1998}. This result
-demonstrates that the $\mathcal{F}$-statistic is proportional to the log-Bayes
-factors when calculated with a uniform prior on the amplitude parameters and
-fixed Doppler parameters.
-
-As such, we can define the Bayes-factor of Equation~\eqref{eqn_full_bayes} as
-\begin{equation}
-\Bsn(x| \AmplitudePrior, I) = \int
-\Bsn(x| \AmplitudePrior, \blambda, I) P(\blambda| \Hs, I)
- d\blambda,
-\end{equation}
-or neglecting the constants
-\begin{equation}
-\Bsn(x| \AmplitudePrior, I) \propto \int
-e^{\tilde{\F}(x| \blambda)} P(\blambda| \Hs, I)
- d\blambda.
-\label{eqn_bayes_over_F}
-\end{equation}
-
-Formulating the significance of a CW candidate in this way is pragmatic in that
-there exists a wealth of well-tested tools (i.e. \texttt{LALSuite}
-\citep{lalsuite}) capable of computing the $\mathcal{F}$-statistic for CW
-signals, transient-CWs, and CW signals from binary systems; these can be
-leveraged to compute Equation~\eqref{eqn_bayes_over_F}.
-
-\section{MCMC and the $\mathcal{F}$-statistic}
-\label{sec_MCMC_and_the_F_statistic}
+%\section{Hypothesis testing}
+%\label{sec_hypothesis_testing}
+%
+%\subsection{Bayes factors}
+%Given some data $x$ and a set of background assumptions $I$, we formulate
+%two hypotheses: $\Hn$, the data contains solely Gaussian noise and $\Hs$, the
+%data contains an additive mixture of noise and a signal $h(t; \A, \blambda)$.
+%In order to make a quantitative comparison, we use Bayes theorem in the usual
+%way to write the odds as
+%\begin{equation}
+%O_{\rm S/N} \equiv \frac{P(\Hs| x, I)}{P(\Hn| x, I)} =
+%\Bsn(x| I) \frac{P(\Hs| I)}{P(\Hn | I)},
+%\end{equation}
+%where the second factor is the \emph{prior odds} while the first is the
+%\emph{Bayes factor}:
+%\begin{equation}
+%\Bsn(x| I) = \frac{P(x| \Hs, I)}{P(x| \Hn, I)}.
+%\end{equation}
+%Typically, we set the prior odds to unity such that it is the Bayes factor
+%which determines our confidence in the signal hypothesis. In this work, we will
+%therefore discuss the Bayes factor with the implied assumption this is
+%equivalent to the odds, unless we have a good reason to change the prior odds.
+%
+%We can rewrite the Bayes factor in terms of the two sets of signal parameters
+%as
+%\begin{equation}
+%\Bsn(x| I) = \frac{P(x, \A, \blambda|\Hs, I)}
+%{P(\A| \Hs, I)P(\blambda| \Hs, I)P(x| \Hn, I)}.
+%\end{equation}
+%Marginalising over the two sets of parameters we find that
+%\begin{equation}
+%\Bsn(x| I)= \iint
+%\mathcal{L}(x; \A, \blambda)
+%P(\A| \Hs, I)P(\blambda| \Hs, I)
+%d\blambda d\A
+%\label{eqn_full_bayes}
+%\end{equation}
+%where
+%\begin{equation}
+%\mathcal{L}(x; \A, \blambda) \equiv \frac{P(x |\A, \blambda, \Hs, I)}{P(x| \Hn, I)},
+%\label{eqn_likelihood}
+%\end{equation}
+%is the \emph{likelihood-ratio}.
+%
+%At this point, we can appreciate the problems of searching for unknown signals:
+%one has four amplitude parameters and several Doppler parameters over which
+%this integral must be performed. If a single signal exists in the data, this
+%corresponds to a single peak in the likelihood-ratio, but at an unknown
+%location. Therefore, one must must first search for peaks (candidates), and
+%then subsequently analyse their significance. If one has prior knowledge this
+%can be used; for example in targeted searches for gravitational waves from
+%known pulsars emitting CWs from a mountain the Doppler parameters are
+%considered known collapsing their integral to a single evaluation (see for
+%example the method proposed by \citet{dupuis2005}).
+%\comment{Should we cite other known-pulsar methodologies?}
+%
+%\subsection{The $\F$-statistic: a frequentist perspective}
+%
+%For directed and all-sky searches, a common method introduced by
+%\citet{jks1998} to reduce the parameter space is the maximum-likelihood
+%approach. In this approach (often referred to as `frequentist'), one starts by
+%defining the likelihood-ratio, Equation~\eqref{eqn_likelihood}, which in this
+%context is a \emph{matched-filtering} amplitude. Then, analytically maximising
+%this likelihood-ratio with respect to the four amplitude parameters results
+%(c.f.~\citet{prix2009}) in a maximised log-likelihood given by $\F(x|
+%\blambda)$: the so-called $\F$-statistic. Picking a particular set of Doppler
+%parameters $\blambda$ (the template) one can then compute a detection statistic
+%(typically $\twoFtilde$ is used\footnote{Note that the `tilde' denote that it
+%is a fully-coherent quantity while we use a `hat' to denote a semi-coherent
+%quantity}) which can be used to quantify the significance of the template.
+%Usually this is done by calculating a corresponding false alarm rate, the
+%probability of seeing such a detection statistic in Gaussian noise.
+%
+%Calculations of the significance are possible due to the properties of the
+%detection statistic: in Gaussian noise, it can be shown \citep{jks1998,
+%cutlershutz2005} that $\widetilde{2\F}$ follows a chi-squared distribution with
+%4 degrees of freedom. In the presence of a signal, $\widetilde{2\F}$ is
+%still chi-squared with 4 degrees of freedom, but has a non-centrality parameter
+%$\tilde{\rho}^{2}$ such that its expectation value is
+%\begin{equation}
+%\textrm{E}[\widetilde{2\F}(x; \blambda)] = 4 + \tilde{\rho}(x; \blambda)^2.
+%\label{eqn_twoF_expectation}
+%\end{equation}
+%The non-centrality parameter in this context is the SNR of the matched-filter
+%given by
+%\begin{equation}
+%\rho^{2} = (h | h) \propto \frac{h_0^2}{\Sn}\Tcoh \mathcal{N}
+%\end{equation}
+%where $(h|h)$ is the inner product of the signal with itself (see for example
+%\citet{prix2009}), $\Sn$ is a (frequency-dependent) measure of the noise in
+%the detector and $\mathcal{N}$ is the number of detectors.
+%
+%
+%\subsection{The $\F$-statistic: a Bayesian perspective}
+%
+%At first, it
+%appears that the $\F$-statistic is independent of the Bayesian framework since
+%it was first derived directly from the likelihood. However, it was shown in
+%\citet{prix2009, prix2011} that if we marginalise over the four amplitude parameters of
+%Equation~\eqref{eqn_full_bayes} (using the ``$\F$-statistic prior'' \citep{prix2011},
+%which we denote by $\AmplitudePrior$)
+%then the integral, when $\homax \gg 1$, is a Gaussian integral and can be
+%computed analytically as
+%\begin{align}
+%\begin{split}
+%\Bsn(x| \blambda, \AmplitudePrior, I) & \equiv
+%\int
+%\mathcal{L}(x ;\A, \blambda)
+%P(\A| \Hs, \AmplitudePrior, I) d\A
+%\label{eqn_B_S_N}
+%\\
+%& \propto e^{\tilde{\F}(x| \blambda)}
+%\end{split}
+%\end{align}
+%where $\mathcal{F}$ is exactly the $\F$-statistic, first derived
+%as a maximised log-likelihood \citep{jks1998}. This result
+%demonstrates that the $\mathcal{F}$-statistic is proportional to the log-Bayes
+%factors when calculated with a uniform prior on the amplitude parameters and
+%fixed Doppler parameters.
+%
+%As such, we can define the Bayes-factor of Equation~\eqref{eqn_full_bayes} as
+%\begin{equation}
+%\Bsn(x| \AmplitudePrior, I) = \int
+%\Bsn(x| \AmplitudePrior, \blambda, I) P(\blambda| \Hs, I)
+% d\blambda,
+%\end{equation}
+%or neglecting the constants
+%\begin{equation}
+%\Bsn(x| \AmplitudePrior, I) \propto \int
+%e^{\tilde{\F}(x| \blambda)} P(\blambda| \Hs, I)
+% d\blambda.
+%\label{eqn_bayes_over_F}
+%\end{equation}
+%
+%Formulating the significance of a CW candidate in this way is pragmatic in that
+%there exists a wealth of well-tested tools (i.e. \texttt{LALSuite}
+%\citep{lalsuite}) capable of computing the $\mathcal{F}$-statistic for CW
+%signals, transient-CWs, and CW signals from binary systems; these can be
+%leveraged to compute Equation~\eqref{eqn_bayes_over_F}.
 
 The MCMC class of optimisation tools are formulated to solve the problem of
 inferring the posterior distribution of some general model parameters $\theta$
-given given some data $x$ for some hypothesis $\H$. Namely, Bayes rule
+given given some data $x$. We will not give a full description here, but
+refer the reader to the literature, e.g. \citet{mackay2003information}.
+In this case, we will be concerned with the posterior
+distribution of $\blambda$, the Doppler parameters. From Bayes theorem, we
+see that this is proportional to the integrand of Eqn.~\eqref{eqn_Bsn_x}:
 \begin{equation}
-P(\theta| x, \H, I) \propto P(x| \theta, \H, I)P(\theta| \H, I),
-\label{eqn_bayes_for_theta}
+\Bsn(\blambda | \boldsymbol{x}) \propto \Bsn(\boldsymbol{x}| \blambda)P(\blambda).
 \end{equation}
-is used to evaluate proposed steps in parameter space. After some
-initilisations, the samples (points visited during the stepping process) can be
-used as samples of the posterior distribution. The algorithm is highly
-efficient at resolving peaks in high-dimension parameter spaces.
 
-At this point, we note the equivalence of Equation~\eqref{eqn_bayes_for_theta}
-to the integrand of Equation~\eqref{eqn_bayes_over_F}:
-\begin{equation}
-P(\blambda | x, \AmplitudePrior, \Hs, I)
-%=\Bsn(x| \AmplitudePrior, \blambda) P(\blambda| \Hs I).
-\propto e^{\F(x| \blambda)} P(\blambda| \Hs I),
-\label{eqn_lambda_posterior}
-\end{equation}
-where $e^{\F}$ is the likelihood.
-In this work, we will focus on using MCMC methods to sample this, the
-posterior distribution of the Doppler parameters.
+The likelihood function (either for the fully-coherent of semi-coherent case)
+and the prior distributions can be passed to any optimisation routine in order
+to maximise over the unknown signal parameters. In this paper, we will discuss
+the use of an ensemble MCMC optimization routine, this has the advantage of
+being efficient in high-dimensional spaces, the ability to sampler multi-modal
+posteriors, and to calculate the marginalised Bayes factor (i.e.
+Eqn~\ref{eqn_Bsn_x}).
 
 \subsection{The \texttt{emcee} sampler}
 
