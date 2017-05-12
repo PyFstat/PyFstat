@@ -888,6 +888,61 @@ chains remain isolated from the main bulk can be easily countered by the use
 of parallel tempering (see Sec.~\ref{sec_parallel_tempering}). This was intenionally
 not used here to highlight the utility of the convergence statistic.
 
+\section{Choice of the prior metric volume}
+
+The prior volume estimates the approximate size of the parameter space relative
+to the size of a signal; any optimization routine, given finite resources,
+will fail if this volume is too large. We will now investigate precisely what
+this means for an MCMC search given a fixed search setup.
+
+In a data set of 100 days, we simulate Gaussian noise and a signal with a
+sensitivity depth of 100. Then, we perform a directed search (over $f$ and
+$\fdot$) with 500 burn-in and 500 production steps, 100 walkers, and using
+parallel tempering with $\Ntemps=3, \logmintemp=-3$. The prior for the search
+is uniform in frequency and spin-down with the width defined by an equal and
+fixed metric volume (i.e. $\Vpe^{(0)}=\Vpe^{(1)}$). This process is repeated
+500 times for a range of prior volumes so that we can infer the statistical
+behaviour. In the upper panel of Fig.~\ref{fig_volume_convergence} we plot the
+PSRF (calculated for a subset of the production samples) averaged over the two
+search dimensions fo each simulation; this demonstrates that for $\sqrt{\V}
+\gtrsim 200$, the majority of simulations where not converged (i.e. having
+PSRF < 1.2). For $\sqrt{\V}=100$, only one simulation of the 500 failed, while
+for $\sqrt{V}=50$ all simulations reached convergence.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.5\textwidth]{VolumeConvergenceInvestigation}
+\caption{Results of a study into the convergence of MCMC simulations as a
+function of the prior volume}
+\label{fig_volume_convergence}
+\end{figure}
+
+It is reasonable to ask ``what happens for these cases that don't converge?''.
+For all the simulations considered here, the MCMC algorithim did find the peak
+in the likelhood: this was demonstrated by checking that the minimum mismatch
+for each simulation was $\lesssim 0.1$. However, for those simulations which
+where not converged, this was true only for a small subset of the walkers, the
+other walkers where sampling other points in the parameter space (away from the
+signal) and hence had not converged. This is demonstrated in the lower panel of
+Fig.~\ref{fig_volume_convergence} where we plot the ratio of the posterior
+standard deviation to the prior width (averaged over the two search
+dimensions). For the converged solutions, this is small indicating that the
+posterior is narrower than the prior. However, for the solution which did not
+converge, this ratio is larger; if none of the walkers had converged and hence
+the posterior samples where equivalent to the prior (i.e. uniform over some
+range), we would expect this ratio to be $\sim 0.29$. For the largest prior
+volumes considered here the ratio approaches this value.
+This equivalence of the posterior to the prior is expected behaviour since the
+walkers are initialised from the uniform prior (which is much wider than the
+signal); if we had extended the burn-in period, we would expect eventually for
+these walkers to converge: the performance at a fixed prior volume will depend
+on the setup.
+
+For a given setup, one can choose the optimal prior volume (i.e. balancing the
+risk of loosing the signal due to non-convergence against computing cost) by
+stipulating a failure rate; for this example one may choose $\sqrt{\V}=100$ based
+on an estimated failure rate of 1 in 500.
+
 
 \section{Zoom follow-up}
 \label{sec_follow_up}
