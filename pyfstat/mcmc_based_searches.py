@@ -37,7 +37,7 @@ class MCMCSearch(core.BaseSearchClass):
     def __init__(self, label, outdir, theta_prior, tref, minStartTime,
                  maxStartTime, sftfilepath=None, nsteps=[100, 100],
                  nwalkers=100, ntemps=1, log10temperature_min=-5,
-                 theta_initial=None, scatter_val=1e-10,
+                 theta_initial=None, scatter_val=1e-10, rhohatmax=1000,
                  binary=False, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, detectors=None, earth_ephem=None,
                  sun_ephem=None, injectSources=None, assumeSqrtSX=None):
@@ -70,6 +70,10 @@ class MCMCSearch(core.BaseSearchClass):
         log10temperature_min float < 0
             The  log_10(tmin) value, the set of betas passed to PTSampler are
             generated from np.logspace(0, log10temperature_min, ntemps).
+        rhohatmax: float
+            Upper bound for the SNR scale parameter (required to normalise the
+            Bayes factor) - this needs to be carefully set when using the
+            evidence.
         binary: Bool
             If true, search over binary parameters
         detectors: str
@@ -107,6 +111,8 @@ class MCMCSearch(core.BaseSearchClass):
         if args.clean and os.path.isfile(self.pickle_path):
             os.rename(self.pickle_path, self.pickle_path+".old")
 
+        self.lnlikelihoodcoef = np.log(70./self.rhohatmax**4)
+
         self._log_input()
 
     def _log_input(self):
@@ -139,7 +145,7 @@ class MCMCSearch(core.BaseSearchClass):
             self.fixed_theta[theta_i] = theta[j]
         FS = search.compute_fullycoherent_det_stat_single_point(
             *self.fixed_theta)
-        return FS
+        return FS + self.lnlikelihoodcoef
 
     def _unpack_input_theta(self):
         full_theta_keys = ['F0', 'F1', 'F2', 'Alpha', 'Delta']
@@ -1161,7 +1167,7 @@ class MCMCSearch(core.BaseSearchClass):
             maxtwoF = self.logl(p, self.search)
             self.search.BSGL = self.BSGL
         else:
-            maxtwoF = maxlogl
+            maxtwoF = maxlogl - self.lnlikelihoodcoef
 
         repeats = []
         for i, k in enumerate(self.theta_keys):
@@ -1431,9 +1437,10 @@ class MCMCGlitchSearch(MCMCSearch):
     def __init__(self, label, outdir, sftfilepath, theta_prior, tref,
                  minStartTime, maxStartTime, nglitch=1, nsteps=[100, 100],
                  nwalkers=100, ntemps=1, log10temperature_min=-5,
-                 theta_initial=None, scatter_val=1e-10, dtglitchmin=1*86400,
-                 theta0_idx=0, detectors=None, BSGL=False, minCoverFreq=None,
-                 maxCoverFreq=None, earth_ephem=None, sun_ephem=None):
+                 theta_initial=None, scatter_val=1e-10, rhohatmax=1000,
+                 dtglitchmin=1*86400, theta0_idx=0, detectors=None,
+                 BSGL=False, minCoverFreq=None, maxCoverFreq=None,
+                 earth_ephem=None, sun_ephem=None):
         """
         Parameters
         ----------
@@ -1466,6 +1473,10 @@ class MCMCGlitchSearch(MCMCSearch):
         dtglitchmin: int
             The minimum duration (in seconds) of a segment between two glitches
             or a glitch and the start/end of the data
+        rhohatmax: float
+            Upper bound for the SNR scale parameter (required to normalise the
+            Bayes factor) - this needs to be carefully set when using the
+            evidence.
         nwalkers, ntemps: int,
             The number of walkers and temperates to use in the parallel
             tempered PTSampler.
@@ -1513,6 +1524,8 @@ class MCMCGlitchSearch(MCMCSearch):
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
         self._log_input()
 
+        self.lnlikelihoodcoef = (self.nglitch+1)*np.log(70./self.rhohatmax**4)
+
     def _initiate_search_object(self):
         logging.info('Setting up search object')
         self.search = core.SemiCoherentGlitchSearch(
@@ -1546,7 +1559,7 @@ class MCMCGlitchSearch(MCMCSearch):
         for j, theta_i in enumerate(self.theta_idxs):
             self.fixed_theta[theta_i] = theta[j]
         FS = search.compute_nglitch_fstat(*self.fixed_theta)
-        return FS
+        return FS + self.lnlikelihoodcoef
 
     def _unpack_input_theta(self):
         glitch_keys = ['delta_F0', 'delta_F1', 'tglitch']
@@ -1682,10 +1695,11 @@ class MCMCSemiCoherentSearch(MCMCSearch):
     def __init__(self, label, outdir, theta_prior, tref, sftfilepath=None,
                  nsegs=None, nsteps=[100, 100, 100], nwalkers=100,
                  binary=False, ntemps=1, log10temperature_min=-5,
-                 theta_initial=None, scatter_val=1e-10, detectors=None,
-                 BSGL=False, minStartTime=None, maxStartTime=None,
-                 minCoverFreq=None, maxCoverFreq=None, earth_ephem=None,
-                 sun_ephem=None, injectSources=None, assumeSqrtSX=None):
+                 theta_initial=None, scatter_val=1e-10, rhohatmax=1000,
+                 detectors=None, BSGL=False, minStartTime=None,
+                 maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
+                 earth_ephem=None, sun_ephem=None, injectSources=None,
+                 assumeSqrtSX=None):
         """
 
         """
@@ -1712,6 +1726,8 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             os.rename(self.pickle_path, self.pickle_path+".old")
 
         self._log_input()
+
+        self.lnlikelihoodcoef = self.nsegs * np.log(70./self.rhohatmax**4)
 
     def _get_data_dictionary_to_save(self):
         d = dict(nsteps=self.nsteps, nwalkers=self.nwalkers,
@@ -1742,7 +1758,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             self.fixed_theta[theta_i] = theta[j]
         FS = search.run_semi_coherent_computefstatistic_single_point(
             *self.fixed_theta)
-        return FS
+        return FS + self.lnlikelihoodcoef
 
 
 class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
@@ -2097,7 +2113,7 @@ class MCMCTransientSearch(MCMCSearch):
         if in_theta[1] > self.maxStartTime:
             return -np.inf
         FS = search.run_computefstatistic_single_point(*in_theta)
-        return FS
+        return FS + self.lnlikelihoodcoef
 
     def _unpack_input_theta(self):
         full_theta_keys = ['transient_tstart',
