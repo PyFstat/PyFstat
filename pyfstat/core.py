@@ -198,7 +198,7 @@ class ComputeFstat(object):
                  maxStartTime=None, binary=False, transient=True, BSGL=False,
                  detectors=None, minCoverFreq=None, maxCoverFreq=None,
                  earth_ephem=None, sun_ephem=None, injectSources=None,
-                 injectSqrtSX=None, assumeSqrtSX=None):
+                 injectSqrtSX=None, assumeSqrtSX=None, SSBprec=None):
         """
         Parameters
         ----------
@@ -235,6 +235,9 @@ class ComputeFstat(object):
             Don't estimate noise-floors but assume (stationary) per-IFO
             sqrt{SX} (if single value: use for all IFOs). If signal only,
             set sqrtSX=1
+        SSBprec: int
+            Flag to set the SSB calculation: 0=Newtonian, 1=relativistic,
+            2=relativisitic optimised, 3=DMoff, 4=NO_SPIN
 
         """
 
@@ -325,7 +328,11 @@ class ComputeFstat(object):
 
         FstatOAs = lalpulsar.FstatOptionalArgs()
         FstatOAs.randSeed = lalpulsar.FstatOptionalArgsDefaults.randSeed
-        FstatOAs.SSBprec = lalpulsar.FstatOptionalArgsDefaults.SSBprec
+        if self.SSBprec:
+            logging.info('Using SSBprec={}'.format(self.SSBprec))
+            FstatOAs.SSBprec = self.SSBprec
+        else:
+            FstatOAs.SSBprec = lalpulsar.FstatOptionalArgsDefaults.SSBprec
         FstatOAs.Dterms = lalpulsar.FstatOptionalArgsDefaults.Dterms
         FstatOAs.runningMedianWindow = lalpulsar.FstatOptionalArgsDefaults.runningMedianWindow
         FstatOAs.FstatMethod = lalpulsar.FstatOptionalArgsDefaults.FstatMethod
@@ -629,7 +636,7 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
                  binary=False, BSGL=False, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
                  detectors=None, earth_ephem=None, sun_ephem=None,
-                 injectSources=None, assumeSqrtSX=None):
+                 injectSources=None, assumeSqrtSX=None, SSBprec=None):
         """
         Parameters
         ----------
@@ -756,7 +763,8 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
     def __init__(self, label, outdir, tref, minStartTime, maxStartTime,
                  nglitch=0, sftfilepath=None, theta0_idx=0, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, assumeSqrtSX=None,
-                 detectors=None, earth_ephem=None, sun_ephem=None):
+                 detectors=None, earth_ephem=None, sun_ephem=None,
+                 SSBprec=None):
         """
         Parameters
         ----------
