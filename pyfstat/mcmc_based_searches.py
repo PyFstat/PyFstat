@@ -1440,7 +1440,7 @@ class MCMCGlitchSearch(MCMCSearch):
                  theta_initial=None, scatter_val=1e-10, rhohatmax=1000,
                  dtglitchmin=1*86400, theta0_idx=0, detectors=None,
                  BSGL=False, minCoverFreq=None, maxCoverFreq=None,
-                 earth_ephem=None, sun_ephem=None):
+                 earth_ephem=None, sun_ephem=None, injectSources=None):
         """
         Parameters
         ----------
@@ -1534,7 +1534,8 @@ class MCMCGlitchSearch(MCMCSearch):
             maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem, detectors=self.detectors, BSGL=self.BSGL,
-            nglitch=self.nglitch, theta0_idx=self.theta0_idx)
+            nglitch=self.nglitch, theta0_idx=self.theta0_idx,
+            injectSources=self.injectSources)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         if self.nglitch > 1:
@@ -2103,7 +2104,8 @@ class MCMCTransientSearch(MCMCSearch):
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detectors=self.detectors, transient=True,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-            BSGL=self.BSGL, binary=self.binary)
+            BSGL=self.BSGL, binary=self.binary,
+            injectSources=self.injectSources)
 
     def logl(self, theta, search):
         for j, theta_i in enumerate(self.theta_idxs):

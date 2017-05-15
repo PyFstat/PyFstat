@@ -337,7 +337,7 @@ class FrequencySlidingWindow(GridSearch):
                  maxStartTime=None, window_size=10*86400, window_delta=86400,
                  BSGL=False, minCoverFreq=None, maxCoverFreq=None,
                  earth_ephem=None, sun_ephem=None, detectors=None,
-                 SSBprec=None):
+                 SSBprec=None, injectSources=None):
         """
         Parameters
         ----------
@@ -377,7 +377,8 @@ class FrequencySlidingWindow(GridSearch):
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detectors=self.detectors, transient=True,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-            BSGL=self.BSGL, SSBprec=self.SSBprec)
+            BSGL=self.BSGL, SSBprec=self.SSBprec,
+            injectSources=self.injectSources)
         self.search.get_det_stat = (
             self.search.run_computefstatistic_single_point)
 

@@ -48,7 +48,8 @@ def get_dictionary_from_lines(lines):
 
 
 def predict_fstat(h0, cosi, psi, Alpha, Delta, Freq, sftfilepattern,
-                  minStartTime, maxStartTime, IFO=None, assumeSqrtSX=None):
+                  minStartTime, maxStartTime, IFO=None, assumeSqrtSX=None,
+                  **kwargs):
     """ Wrapper to lalapps_PredictFstat """
     c_l = []
     c_l.append("lalapps_PredictFstat")
@@ -572,9 +573,17 @@ class ComputeFstat(object):
         return times, pfs, pfs_sigma
 
     def plot_twoF_cumulative(self, label, outdir, ax=None, c='k', savefig=True,
-                             title=None, add_pfs=False, N=15, **kwargs):
+                             title=None, add_pfs=False, N=15,
+                             injectSources=None, **kwargs):
         if ax is None:
             fig, ax = plt.subplots()
+        if injectSources:
+            pfs_input = dict(
+                h0=injectSources['h0'], cosi=injectSources['cosi'],
+                psi=injectSources['psi'], Alpha=injectSources['Alpha'],
+                Delta=injectSources['Delta'], Freq=injectSources['fkdot'][0])
+        else:
+            pfs_input = None
 
         taus, twoFs = self.calculate_twoF_cumulative(**kwargs)
         ax.plot(taus/86400., twoFs, label='All detectors', color=c)
@@ -591,7 +600,8 @@ class ComputeFstat(object):
             self.detector_names = detector_names
 
         if add_pfs:
-            times, pfs, pfs_sigma = self.calculate_pfs(label, outdir, N=N)
+            times, pfs, pfs_sigma = self.calculate_pfs(
+                label, outdir, N=N, pfs_input=pfs_input)
             ax.fill_between(
                 (times-self.minStartTime)/86400., pfs-pfs_sigma, pfs+pfs_sigma,
                 color=c,
@@ -600,7 +610,7 @@ class ComputeFstat(object):
             if len(self.detector_names) > 1:
                 for d in self.detector_names:
                     times, pfs, pfs_sigma = self.calculate_pfs(
-                        label, outdir, IFO=d.upper(), N=N)
+                        label, outdir, IFO=d.upper(), N=N, pfs_input=pfs_input)
                     ax.fill_between(
                         (times-self.minStartTime)/86400., pfs-pfs_sigma,
                         pfs+pfs_sigma, color=detector_colors[d.lower()],
@@ -764,7 +774,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
                  nglitch=0, sftfilepath=None, theta0_idx=0, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, assumeSqrtSX=None,
                  detectors=None, earth_ephem=None, sun_ephem=None,
-                 SSBprec=None):
+                 SSBprec=None, injectSources=None):
         """
         Parameters
         ----------
