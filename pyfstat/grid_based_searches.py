@@ -21,7 +21,7 @@ class GridSearch(BaseSearchClass):
                  Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
                  maxStartTime=None, nsegs=1, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
-                 detectors=None, SSBprec=None):
+                 detectors=None, SSBprec=None, injectSources=None):
         """
         Parameters
         ----------
@@ -57,7 +57,8 @@ class GridSearch(BaseSearchClass):
                 earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
                 detectors=self.detectors, transient=False,
                 minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
-                BSGL=self.BSGL, SSBprec=self.SSBprec)
+                BSGL=self.BSGL, SSBprec=self.SSBprec,
+                injectSources=self.injectSources)
             self.search.get_det_stat = self.search.run_computefstatistic_single_point
         else:
             self.search = SemiCoherentSearch(
