@@ -939,6 +939,8 @@ class MCMCSearch(core.BaseSearchClass):
                 if symbols:
                     axes[0].set_ylabel(symbols[0], labelpad=labelpad)
 
+            axes[-1].set_xlabel(r'$\textrm{Number of steps}$', labelpad=0.2)
+
             if plot_det_stat:
                 if len(axes) == ndim:
                     axes.append(fig.add_subplot(ndim+1, 1, ndim+1))
@@ -979,7 +981,6 @@ class MCMCSearch(core.BaseSearchClass):
                 xfmt.set_powerlimits((-4, 4))
                 axes[-1].xaxis.set_major_formatter(xfmt)
 
-            axes[-2].set_xlabel(r'$\textrm{Number of steps}$', labelpad=0.2)
         return fig, axes
 
     def _apply_corrections_to_p0(self, p0):
