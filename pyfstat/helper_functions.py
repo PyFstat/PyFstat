@@ -7,6 +7,7 @@ import sys
 import argparse
 import logging
 import inspect
+import peakutils
 from functools import wraps
 
 import matplotlib.pyplot as plt
@@ -126,4 +127,27 @@ def initializer(func):
         func(self, *args, **kargs)
 
     return wrapper
+
+
+def get_peak_values(frequencies, twoF, threshold_2F, F0=None, F0range=None):
+    if F0:
+        cut_idxs = np.abs(frequencies - F0) < F0range
+        frequencies = frequencies[cut_idxs]
+        twoF = twoF[cut_idxs]
+    idxs = peakutils.indexes(twoF, thres=1.*threshold_2F/np.max(twoF))
+    F0maxs = frequencies[idxs]
+    twoFmaxs = twoF[idxs]
+    freq_err = frequencies[1] - frequencies[0]
+    return F0maxs, twoFmaxs, freq_err*np.ones(len(idxs))
+
+
+def get_comb_values(F0, frequencies, twoF, period, N=4):
+    if period == 'sidereal':
+        period = 23*60*60 + 56*60 + 4.0616
+    elif period == 'terrestrial':
+        period = 86400
+    freq_err = frequencies[1] - frequencies[0]
+    comb_frequencies = [n*1/period for n in range(-N, N+1)]
+    comb_idxs = [np.argmin(np.abs(frequencies-F0-F)) for F in comb_frequencies]
+    return comb_frequencies, twoF[comb_idxs], freq_err*np.ones(len(comb_idxs))
 

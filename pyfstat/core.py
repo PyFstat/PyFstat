@@ -164,20 +164,6 @@ class BaseSearchClass(object):
         self.thetas_at_tref = thetas
         return thetas
 
-    def generate_loudest(self):
-        params = read_par(self.label, self.outdir)
-        for key in ['Alpha', 'Delta', 'F0', 'F1']:
-            if key not in params:
-                params[key] = self.theta_prior[key]
-        cmd = ('lalapps_ComputeFstatistic_v2 -a {} -d {} -f {} -s {} -D "{}"'
-               ' --refTime={} --outputLoudest="{}/{}.loudest" '
-               '--minStartTime={} --maxStartTime={}').format(
-                    params['Alpha'], params['Delta'], params['F0'],
-                    params['F1'], self.sftfilepath, params['tref'],
-                    self.outdir, self.label, self.minStartTime,
-                    self.maxStartTime)
-        subprocess.call([cmd], shell=True)
-
     def _get_list_of_matching_sfts(self):
         matches = [glob.glob(p) for p in self.sftfilepath]
         matches = [item for sublist in matches for item in sublist]
@@ -277,7 +263,10 @@ class ComputeFstat(object):
         logging.info('Initialising SFTCatalog')
         constraints = lalpulsar.SFTConstraints()
         if self.detectors:
-            constraints.detector = self.detectors
+            if ',' in self.detectors:
+                logging.info('Using all detector data')
+            else:
+                constraints.detector = self.detectors
         if self.minStartTime:
             constraints.minStartTime = lal.LIGOTimeGPS(self.minStartTime)
         if self.maxStartTime:
