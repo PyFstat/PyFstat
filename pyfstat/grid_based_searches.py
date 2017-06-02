@@ -21,7 +21,8 @@ class GridSearch(BaseSearchClass):
                  Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
                  maxStartTime=None, nsegs=1, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
-                 detectors=None, SSBprec=None, injectSources=None):
+                 detectors=None, SSBprec=None, injectSources=None,
+                 input_arrays=False):
         """
         Parameters
         ----------
@@ -31,9 +32,12 @@ class GridSearch(BaseSearchClass):
             File patern to match SFTs
         F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
             Length 3 tuple describing the grid for each parameter, e.g
-            [F0min, F0max, dF0], for a fixed value simply give [F0].
+            [F0min, F0max, dF0], for a fixed value simply give [F0]. Unless
+            input_arrays == True, then these are the values to search at.
         tref, minStartTime, maxStartTime: int
             GPS seconds of the reference time, start time and end time
+        input_arrays: bool
+            if true, use the F0s, F1s, etc as is
 
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
@@ -76,7 +80,7 @@ class GridSearch(BaseSearchClass):
     def get_array_from_tuple(self, x):
         if len(x) == 1:
             return np.array(x)
-        elif len(x) == 3:
+        elif len(x) == 3 and self.input_arrays is False:
             return np.arange(x[0], x[1], x[2])
         else:
             logging.info('Using tuple as is')
