@@ -133,7 +133,7 @@ class GridSearch(BaseSearchClass):
             FS = self.search.get_det_stat(*vals)
             data.append(list(vals) + [FS])
 
-        data = np.array(data)
+        data = np.array(data, dtype=np.float)
         if return_data:
             return data
         else:
@@ -454,15 +454,16 @@ class FrequencySlidingWindow(GridSearch):
 class DMoff_NO_SPIN(GridSearch):
     """ DMoff test using SSBPREC_NO_SPIN """
     @helper_functions.initializer
-    def __init__(self, par_file, label, outdir, sftfilepath, minStartTime=None,
+    def __init__(self, par, label, outdir, sftfilepath, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
                  earth_ephem=None, sun_ephem=None, detectors=None,
                  injectSources=None, assumeSqrtSX=None):
         """
         Parameters
         ----------
-        par_file: str
-            Path to a .par file to read in the F0, F1 etc
+        par: dict, str
+            Either a par dictionary (containing 'F0', 'F1', 'Alpha', 'Delta'
+            and 'tref') or a path to a .par file to read in the F0, F1 etc
         label, outdir: str
             A label and directory to read/write data from/to
         sftfilepath: str
@@ -481,8 +482,10 @@ class DMoff_NO_SPIN(GridSearch):
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
 
-        if os.path.isfile(par_file):
-            self.par = read_par(filename=par_file)
+        if type(par) == dict:
+            self.par = par
+        elif type(par) == str and os.path.isfile(par):
+            self.par = read_par(filename=par)
         else:
             raise ValueError('The .par file does not exist')
 
