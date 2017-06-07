@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 import helper_functions
 from core import BaseSearchClass, ComputeFstat, SemiCoherentGlitchSearch, SemiCoherentSearch
-from core import tqdm, args, earth_ephem, sun_ephem
+from core import tqdm, args, earth_ephem, sun_ephem, read_par
 
 
 class GridSearch(BaseSearchClass):
@@ -449,3 +449,87 @@ class FrequencySlidingWindow(GridSearch):
                 '{}/{}_sliding_window.png'.format(self.outdir, self.label))
         else:
             return ax
+
+
+class DMoff_NO_SPIN(GridSearch):
+    """ DMoff test using SSBPREC_NO_SPIN """
+    @helper_functions.initializer
+    def __init__(self, par_file, label, outdir, sftfilepath, minStartTime=None,
+                 maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
+                 earth_ephem=None, sun_ephem=None, detectors=None,
+                 injectSources=None, assumeSqrtSX=None):
+        """
+        Parameters
+        ----------
+        par_file: str
+            Path to a .par file to read in the F0, F1 etc
+        label, outdir: str
+            A label and directory to read/write data from/to
+        sftfilepath: str
+            File patern to match SFTs
+        minStartTime, maxStartTime: int
+            GPS seconds of the start time and end time
+
+        For all other parameters, see `pyfstat.ComputeFStat` for details
+        """
+
+        if earth_ephem is None:
+            self.earth_ephem = self.earth_ephem_default
+        if sun_ephem is None:
+            self.sun_ephem = self.sun_ephem_default
+
+        if os.path.isdir(outdir) is False:
+            os.mkdir(outdir)
+
+        if os.path.isfile(par_file):
+            self.par = read_par(filename=par_file)
+        else:
+            raise ValueError('The .par file does not exist')
+
+        self.nsegs = 1
+        self.BSGL = False
+
+        self.tref = self.par['tref']
+        self.F1s = [self.par.get('F1', 0)]
+        self.F2s = [self.par.get('F2', 0)]
+        self.Alphas = [self.par['Alpha']]
+        self.Deltas = [self.par['Delta']]
+        self.Re = 6.371e6
+        self.c = 2.998e8
+        self.SIDEREAL_DAY = 23*60*60 + 56*60 + 4.0916
+        self.TERRESTRIAL_DAY = 86400.
+        a0 = self.Re/self.c*np.cos(self.par['Delta'])
+        self.m0 = np.max([4, int(np.ceil(2*np.pi*self.par['F0']*a0))])
+        logging.info('m0 = {}'.format(self.m0))
+
+    def get_results(self):
+        """ Compute the three summed detection statistics
+
+        Returns
+        -------
+            m0, twoF_SUM, twoFstar_SUM_SIDEREAL, twoFstar_SUM_TERRESTRIAL
+
+        """
+        self.SSBprec = 2
+        self.out_file = '{}/{}_gridFS_SSBPREC2.txt'.format(
+            self.outdir, self.label)
+        self.F0s = [self.par['F0']+j/self.SIDEREAL_DAY for j in range(-4, 5)]
+        self.run()
+        twoF_SUM = np.sum(self.data[:, -1])
+
+        self.SSBprec = 4
+        self.out_file = '{}/{}_gridFS_SSBPREC4_SIDEREAL.txt'.format(
+            self.outdir, self.label)
+        self.F0s = [self.par['F0']+j/self.SIDEREAL_DAY
+                    for j in range(-self.m0, self.m0+1)]
+        self.run()
+        twoFstar_SUM = np.sum(self.data[:, -1])
+
+        self.out_file = '{}/{}_gridFS_SSBPREC4_TERRESTIAL.txt'.format(
+            self.outdir, self.label)
+        self.F0s = [self.par['F0']+j/self.TERRESTRIAL_DAY
+                    for j in range(-self.m0, self.m0+1)]
+        self.run()
+        twoFstar_SUM_terrestrial = np.sum(self.data[:, -1])
+
+        return self.m0, twoF_SUM, twoFstar_SUM, twoFstar_SUM_terrestrial
