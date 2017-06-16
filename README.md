@@ -49,6 +49,7 @@ $ git clone git@gitlab.aei.uni-hannover.de:GregAshton/PyFstat.git
 * [emcee](http://dan.iel.fm/emcee/current/)
 * [corner](https://pypi.python.org/pypi/corner/)
 * [dill](https://pypi.python.org/pypi/dill)
+* [peakutils](https://pypi.python.org/pypi/PeakUtils)
 
 *Optional*
 * [tqdm](https://pypi.python.org/pypi/tqdm)(optional), if installed, this
