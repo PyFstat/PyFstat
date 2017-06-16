@@ -6,5 +6,4 @@ corner
 dill
 tqdm
 bashplotlib
-
-
+peakutils
