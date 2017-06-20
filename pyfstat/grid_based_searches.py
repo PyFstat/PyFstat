@@ -501,7 +501,7 @@ class DMoff_NO_SPIN(GridSearch):
         self.c = 2.998e8
         self.SIDEREAL_DAY = 23*60*60 + 56*60 + 4.0916
         self.TERRESTRIAL_DAY = 86400.
-        a0 = self.Re/self.c*np.cos(self.par['Delta'])
+        a0 = self.Re/self.c  # *np.cos(self.par['Delta'])
         self.m0 = np.max([4, int(np.ceil(2*np.pi*self.par['F0']*a0))])
         logging.info('m0 = {}'.format(self.m0))
 
@@ -516,7 +516,8 @@ class DMoff_NO_SPIN(GridSearch):
         self.SSBprec = 2
         self.out_file = '{}/{}_gridFS_SSBPREC2.txt'.format(
             self.outdir, self.label)
-        self.F0s = [self.par['F0']+j/self.SIDEREAL_DAY for j in range(-4, 5)]
+        self.F0s = [self.par['F0']+j/self.SIDEREAL_DAY
+                    for j in range(-self.m0, self.m0+1)]
         self.run()
         twoF_SUM = np.sum(self.data[:, -1])
 
