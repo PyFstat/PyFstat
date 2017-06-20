@@ -101,4 +101,13 @@ sun_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/sun00-19-DE421.dat.gz
 ```
 here, we use the default ephemeris files provided with `lalsuite`.
 
+### Contributors
 
+* Greg Ashton
+* David Keitel
+* Reinhard Prix
+* Karl Wette
+* Sylvia Zhu
+
+This project is open to development, please feel free to contact us
+for advice or just jump in and submit a pull request.
