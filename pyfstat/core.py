@@ -6,7 +6,17 @@ import glob
 import subprocess
 
 import numpy as np
-import matplotlib.pyplot as plt
+
+# workaround for matplotlib on X-less remote logins
+if os.environ.has_key('DISPLAY'):
+    import matplotlib.pyplot as plt
+else:
+    logging.info('No $DISPLAY environment variable found, \
+                  so importing matplotlib.pyplot with non-interactive "Agg" backend.')
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
 import scipy.special
 import scipy.optimize
 import lal
