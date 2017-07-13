@@ -3,7 +3,6 @@ import os
 import logging
 import copy
 import glob
-import subprocess
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -51,27 +50,27 @@ def predict_fstat(h0, cosi, psi, Alpha, Delta, Freq, sftfilepattern,
                   minStartTime, maxStartTime, IFO=None, assumeSqrtSX=None,
                   **kwargs):
     """ Wrapper to lalapps_PredictFstat """
-    c_l = []
-    c_l.append("lalapps_PredictFstat")
-    c_l.append("--h0={}".format(h0))
-    c_l.append("--cosi={}".format(cosi))
-    c_l.append("--psi={}".format(psi))
-    c_l.append("--Alpha={}".format(Alpha))
-    c_l.append("--Delta={}".format(Delta))
-    c_l.append("--Freq={}".format(Freq))
+    cl_pfs = []
+    cl_pfs.append("lalapps_PredictFstat")
+    cl_pfs.append("--h0={}".format(h0))
+    cl_pfs.append("--cosi={}".format(cosi))
+    cl_pfs.append("--psi={}".format(psi))
+    cl_pfs.append("--Alpha={}".format(Alpha))
+    cl_pfs.append("--Delta={}".format(Delta))
+    cl_pfs.append("--Freq={}".format(Freq))
 
-    c_l.append("--DataFiles='{}'".format(sftfilepattern))
+    cl_pfs.append("--DataFiles='{}'".format(sftfilepattern))
     if assumeSqrtSX:
-        c_l.append("--assumeSqrtSX={}".format(assumeSqrtSX))
+        cl_pfs.append("--assumeSqrtSX={}".format(assumeSqrtSX))
     if IFO:
-        c_l.append("--IFO={}".format(IFO))
+        cl_pfs.append("--IFO={}".format(IFO))
 
-    c_l.append("--minStartTime={}".format(int(minStartTime)))
-    c_l.append("--maxStartTime={}".format(int(maxStartTime)))
-    c_l.append("--outputFstat=/tmp/fs")
+    cl_pfs.append("--minStartTime={}".format(int(minStartTime)))
+    cl_pfs.append("--maxStartTime={}".format(int(maxStartTime)))
+    cl_pfs.append("--outputFstat=/tmp/fs")
 
-    logging.debug("Executing: " + " ".join(c_l) + "\n")
-    subprocess.check_output(" ".join(c_l), shell=True)
+    cl_pfs = " ".join(cl_pfs)
+    helper_functions.run_commandline(cl_pfs)
     d = read_par(filename='/tmp/fs')
     return float(d['twoF_expected']), float(d['twoF_sigma'])
 
@@ -292,13 +291,17 @@ class ComputeFstat(object):
             raise ValueError('No data loaded.')
         logging.info('Loaded {} data files from detectors {}'.format(
             len(SFT_timestamps), detector_names))
+        cl_tconv1 = 'lalapps_tconvert {}'.format(int(SFT_timestamps[0]))
+        output    = helper_functions.run_commandline(cl_tconv1)
+        tconvert1 = output.rstrip('\n')
+        cl_tconv2 = 'lalapps_tconvert {}'.format(int(SFT_timestamps[-1]))
+        output    = helper_functions.run_commandline(cl_tconv2)
+        tconvert2 = output.rstrip('\n')
         logging.info('Data spans from {} ({}) to {} ({})'.format(
             int(SFT_timestamps[0]),
-            subprocess.check_output('lalapps_tconvert {}'.format(
-                int(SFT_timestamps[0])), shell=True).rstrip('\n'),
+            tconvert1,
             int(SFT_timestamps[-1]),
-            subprocess.check_output('lalapps_tconvert {}'.format(
-                int(SFT_timestamps[-1])), shell=True).rstrip('\n')))
+            tconvert2))
         return SFTCatalog
 
     def init_computefstatistic_single_point(self):
@@ -1014,12 +1017,9 @@ transientTauDays={:1.3f}\n""")
             'The config file {} is older than the sft file {}'.format(
                 self.config_file_name, self.sftfilepath))
         logging.info('Checking contents of cff file')
-        logging.info('Execute: {}'.format(
-            'lalapps_SFTdumpheader {} | head -n 20'.format(self.sftfilepath)))
-        output = subprocess.check_output(
-            'lalapps_SFTdumpheader {} | head -n 20'.format(self.sftfilepath),
-            shell=True)
-        calls = [line for line in output.split('\n') if line[:3] == 'lal']
+        cl_dump = 'lalapps_SFTdumpheader {} | head -n 20'.format(self.sftfilepath)
+        output  = helper_functions.run_commandline(cl_dump)
+        calls   = [line for line in output.split('\n') if line[:3] == 'lal']
         if calls[0] == cl:
             logging.info('Contents matched, use old sft file')
             return True
@@ -1063,56 +1063,54 @@ transientTauDays={:1.3f}\n""")
         except OSError:
             pass
 
-        cl = []
-        cl.append('lalapps_Makefakedata_v5')
-        cl.append('--outSingleSFT=TRUE')
-        cl.append('--outSFTdir="{}"'.format(self.outdir))
-        cl.append('--outLabel="{}"'.format(self.label))
-        cl.append('--IFOs={}'.format(
+        cl_mfd = []
+        cl_mfd.append('lalapps_Makefakedata_v5')
+        cl_mfd.append('--outSingleSFT=TRUE')
+        cl_mfd.append('--outSFTdir="{}"'.format(self.outdir))
+        cl_mfd.append('--outLabel="{}"'.format(self.label))
+        cl_mfd.append('--IFOs={}'.format(
             ",".join(['"{}"'.format(d) for d in self.detectors.split(",")])))
         if self.add_noise:
-            cl.append('--sqrtSX="{}"'.format(self.sqrtSX))
+            cl_mfd.append('--sqrtSX="{}"'.format(self.sqrtSX))
         if self.minStartTime is None:
-            cl.append('--startTime={:0.0f}'.format(float(self.tstart)))
+            cl_mfd.append('--startTime={:0.0f}'.format(float(self.tstart)))
         else:
-            cl.append('--startTime={:0.0f}'.format(float(self.minStartTime)))
+            cl_mfd.append('--startTime={:0.0f}'.format(float(self.minStartTime)))
         if self.maxStartTime is None:
-            cl.append('--duration={}'.format(int(self.duration)))
+            cl_mfd.append('--duration={}'.format(int(self.duration)))
         else:
             data_duration = self.maxStartTime - self.minStartTime
-            cl.append('--duration={}'.format(int(data_duration)))
-        cl.append('--fmin={}'.format(int(self.fmin)))
-        cl.append('--Band={}'.format(self.Band))
-        cl.append('--Tsft={}'.format(self.Tsft))
+            cl_mfd.append('--duration={}'.format(int(data_duration)))
+        cl_mfd.append('--fmin={}'.format(int(self.fmin)))
+        cl_mfd.append('--Band={}'.format(self.Band))
+        cl_mfd.append('--Tsft={}'.format(self.Tsft))
         if self.h0 != 0:
-            cl.append('--injectionSources="{}"'.format(self.config_file_name))
+            cl_mfd.append('--injectionSources="{}"'.format(self.config_file_name))
 
-        cl = " ".join(cl)
+        cl_mfd = " ".join(cl_mfd)
 
-        if self.check_cached_data_okay_to_use(cl) is False:
-            logging.info("Executing: " + cl)
-            os.system(cl)
-            os.system('\n')
+        if self.check_cached_data_okay_to_use(cl_mfd) is False:
+            helper_functions.run_commandline(cl_mfd)
 
     def predict_fstat(self):
         """ Wrapper to lalapps_PredictFstat """
-        c_l = []
-        c_l.append("lalapps_PredictFstat")
-        c_l.append("--h0={}".format(self.h0))
-        c_l.append("--cosi={}".format(self.cosi))
-        c_l.append("--psi={}".format(self.psi))
-        c_l.append("--Alpha={}".format(self.Alpha))
-        c_l.append("--Delta={}".format(self.Delta))
-        c_l.append("--Freq={}".format(self.F0))
+        cl_pfs = []
+        cl_pfs.append("lalapps_PredictFstat")
+        cl_pfs.append("--h0={}".format(self.h0))
+        cl_pfs.append("--cosi={}".format(self.cosi))
+        cl_pfs.append("--psi={}".format(self.psi))
+        cl_pfs.append("--Alpha={}".format(self.Alpha))
+        cl_pfs.append("--Delta={}".format(self.Delta))
+        cl_pfs.append("--Freq={}".format(self.F0))
 
-        c_l.append("--DataFiles='{}'".format(
+        cl_pfs.append("--DataFiles='{}'".format(
             self.outdir+"/*SFT_"+self.label+"*sft"))
-        c_l.append("--assumeSqrtSX={}".format(self.sqrtSX))
+        cl_pfs.append("--assumeSqrtSX={}".format(self.sqrtSX))
 
-        c_l.append("--minStartTime={}".format(int(self.minStartTime)))
-        c_l.append("--maxStartTime={}".format(int(self.maxStartTime)))
+        cl_pfs.append("--minStartTime={}".format(int(self.minStartTime)))
+        cl_pfs.append("--maxStartTime={}".format(int(self.maxStartTime)))
 
-        logging.info("Executing: " + " ".join(c_l) + "\n")
-        output = subprocess.check_output(" ".join(c_l), shell=True)
+        cl_pfs = " ".join(cl_pfs)
+        output = helper_functions.run_commandline(cl_pfs)
         twoF = float(output.split('\n')[-2])
         return float(twoF)

@@ -4,6 +4,7 @@ Provides helpful functions to facilitate ease-of-use of pyfstat
 
 import os
 import sys
+import subprocess
 import argparse
 import logging
 import inspect
@@ -183,3 +184,22 @@ def compute_pstar(twoFcheck_obs, twoFstarcheck_obs, m0, plot=False):
         fig.savefig('test')
     pstar_l = np.trapz(P_twoFstarcheck[:idx+1]/C, twoFstarcheck_vals[:idx+1])
     return 2*np.min([pstar_l, 1-pstar_l])
+
+
+def run_commandline (cl):
+    """Run a string commandline as a subprocess, check for errors and return output."""
+
+    logging.info('Now executing: ' + cl)
+    try:
+        out = subprocess.check_output(cl,                       # what to run
+                                      stderr=subprocess.STDOUT, # catch errors
+                                      shell=True,               # proper environment etc
+                                      universal_newlines=True   # properly display linebreaks in error/output printing
+                                     )
+    except subprocess.CalledProcessError as e:
+        logging.error('Execution failed:')
+        logging.error(e.output)
+        raise
+    os.system('\n')
+
+    return(out)
