@@ -994,7 +994,7 @@ transientTauDays={:1.3f}\n""")
     def calculate_fmin_Band(self):
         self.fmin = self.F0 - .5 * self.Band
 
-    def check_cached_data_okay_to_use(self, cl):
+    def check_cached_data_okay_to_use(self, cl_mfd):
         """ Check if cached data exists and, if it does, if it can be used """
 
         getmtime = os.path.getmtime
@@ -1020,7 +1020,7 @@ transientTauDays={:1.3f}\n""")
         cl_dump = 'lalapps_SFTdumpheader {} | head -n 20'.format(self.sftfilepath)
         output  = helper_functions.run_commandline(cl_dump)
         calls   = [line for line in output.split('\n') if line[:3] == 'lal']
-        if calls[0] == cl:
+        if calls[0] == cl_mfd:
             logging.info('Contents matched, use old sft file')
             return True
         else:
