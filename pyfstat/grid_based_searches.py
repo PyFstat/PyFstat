@@ -106,6 +106,13 @@ class GridSearch(BaseSearchClass):
         if os.path.isfile(self.out_file) is False:
             logging.info('No old data found, continuing with grid search')
             return False
+        if self.sftfilepath is not None:
+            oldest_sft = min([os.path.getmtime(f) for f in
+                              self._get_list_of_matching_sfts()])
+            if os.path.getmtime(self.out_file) < oldest_sft:
+                logging.info('Search output data outdates sft files,'
+                             + ' continuing with grid search')
+                return False
         data = np.atleast_2d(np.genfromtxt(self.out_file, delimiter=' '))
         if np.all(data[:, 0:-1] == self.input_data):
             logging.info(

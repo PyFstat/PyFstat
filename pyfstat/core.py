@@ -165,7 +165,10 @@ class BaseSearchClass(object):
         return thetas
 
     def _get_list_of_matching_sfts(self):
-        matches = [glob.glob(p) for p in self.sftfilepath]
+        # first make sure we have a list of paths, to avoid
+        # list comprehension trying to glob each single character
+        sftfilepathlist = np.atleast_1d(self.sftfilepath)
+        matches = [glob.glob(p) for p in sftfilepathlist]
         matches = [item for sublist in matches for item in sublist]
         if len(matches) > 0:
             return matches
