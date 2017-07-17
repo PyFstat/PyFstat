@@ -279,8 +279,10 @@ class GridUniformPriorSearch():
             detectors=detectors, minCoverFreq=minCoverFreq,
             maxCoverFreq=maxCoverFreq, nsegs=nsegs)
 
-    def run(self, **kwargs):
+    def run(self):
         self.search.run()
+
+    def get_2D_plot(self, **kwargs):
         return self.search.plot_2D('F0', 'F1', **kwargs)
 
 
@@ -510,7 +512,8 @@ class DMoff_NO_SPIN(GridSearch):
         self.TERRESTRIAL_DAY = 86400.
         a0 = self.Re/self.c  # *np.cos(self.par['Delta'])
         self.m0 = np.max([4, int(np.ceil(2*np.pi*self.par['F0']*a0))])
-        logging.info('m0 = {}'.format(self.m0))
+        logging.info(
+            'Setting up DMoff_NO_SPIN search with m0 = {}'.format(self.m0))
 
     def get_results(self):
         """ Compute the three summed detection statistics
@@ -523,8 +526,7 @@ class DMoff_NO_SPIN(GridSearch):
         self.SSBprec = 2
         self.out_file = '{}/{}_gridFS_SSBPREC2.txt'.format(
             self.outdir, self.label)
-        self.F0s = [self.par['F0']+j/self.SIDEREAL_DAY
-                    for j in range(-self.m0, self.m0+1)]
+        self.F0s = [self.par['F0']+j/self.SIDEREAL_DAY for j in range(-4, 5)]
         self.run()
         twoF_SUM = np.sum(self.data[:, -1])
 

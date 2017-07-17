@@ -93,9 +93,13 @@ class MCMCSearch(core.BaseSearchClass):
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self._add_log_file()
-        logging.info(
-            'Set-up MCMC search for model {} on data {}'.format(
-                self.label, self.sftfilepath))
+        logging.info('Set-up MCMC search for model {}'.format(self.label))
+        if sftfilepath:
+            logging.info('Using data {}'.format(self.sftfilepath))
+        else:
+            logging.info('No sftfilepath given')
+        if injectSources:
+            logging.info('Inject sources: {}'.format(injectSources))
         self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
         self._unpack_input_theta()
         self.ndim = len(self.theta_keys)
