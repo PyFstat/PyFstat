@@ -940,10 +940,13 @@ class Writer(BaseSearchClass):
 
         self.data_duration = self.maxStartTime - self.minStartTime
         numSFTs = int(float(self.data_duration) / self.Tsft)
-        self.sftfilename = lalpulsar.OfficialSFTFilename(
-            'H', '1', numSFTs, self.Tsft, self.minStartTime,
-            self.data_duration, self.label)
-        self.sftfilepath = '{}/{}'.format(self.outdir, self.sftfilename)
+        self.sftfilenames = [
+            lalpulsar.OfficialSFTFilename(
+                dets[0], dets[1], numSFTs, self.Tsft, self.minStartTime,
+                self.data_duration, self.label)
+            for dets in self.detectors.split(',')]
+        self.sftfilepath = ';'.join([
+            '{}/{}'.format(self.outdir, fn) for fn in self.sftfilenames])
         self.calculate_fmin_Band()
 
     def check_inputs(self):
