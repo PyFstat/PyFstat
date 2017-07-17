@@ -49,7 +49,7 @@ class GridSearch(BaseSearchClass):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
-        self.out_file = '{}/{}_gridFS.txt'.format(self.outdir, self.label)
+        self.set_out_file()
         self.keys = ['_', '_', 'F0', 'F1', 'F2', 'Alpha', 'Delta']
 
     def inititate_search_object(self):
@@ -263,6 +263,16 @@ class GridSearch(BaseSearchClass):
         for k, v in d.iteritems():
             print('  {}={}'.format(k, v))
 
+    def set_out_file(self, extra_label=None):
+        dets = self.detectors.replace(',', '')
+        if extra_label:
+            self.out_file = '{}/{}_{}_{}_{}.txt'.format(
+                self.outdir, self.label, dets, type(self).__name__,
+                extra_label)
+        else:
+            self.out_file = '{}/{}_{}_{}.txt'.format(
+                self.outdir, self.label, dets, type(self).__name__)
+
 
 class GridUniformPriorSearch():
     def __init__(self, theta_prior, NF0, NF1, label, outdir, sftfilepath,
@@ -326,7 +336,7 @@ class GridGlitchSearch(GridSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
-        self.out_file = '{}/{}_gridFS.txt'.format(self.outdir, self.label)
+        self.set_out_file()
         self.keys = ['F0', 'F1', 'F2', 'Alpha', 'Delta', 'delta_F0',
                      'delta_F1', 'tglitch']
 
@@ -377,7 +387,7 @@ class FrequencySlidingWindow(GridSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
-        self.out_file = '{}/{}_gridFS.txt'.format(self.outdir, self.label)
+        self.set_out_file()
         self.nsegs = 1
         self.F1s = [F1]
         self.F2s = [F2]
@@ -524,22 +534,19 @@ class DMoff_NO_SPIN(GridSearch):
 
         """
         self.SSBprec = 2
-        self.out_file = '{}/{}_gridFS_SSBPREC2.txt'.format(
-            self.outdir, self.label)
+        self.set_out_file('SSBPREC2')
         self.F0s = [self.par['F0']+j/self.SIDEREAL_DAY for j in range(-4, 5)]
         self.run()
         twoF_SUM = np.sum(self.data[:, -1])
 
         self.SSBprec = 4
-        self.out_file = '{}/{}_gridFS_SSBPREC4_SIDEREAL.txt'.format(
-            self.outdir, self.label)
+        self.set_out_file('SSBPREC4')
         self.F0s = [self.par['F0']+j/self.SIDEREAL_DAY
                     for j in range(-self.m0, self.m0+1)]
         self.run()
         twoFstar_SUM = np.sum(self.data[:, -1])
 
-        self.out_file = '{}/{}_gridFS_SSBPREC4_TERRESTIAL.txt'.format(
-            self.outdir, self.label)
+        self.set_out_file('SSBPREC4_TERRESTRIAL')
         self.F0s = [self.par['F0']+j/self.TERRESTRIAL_DAY
                     for j in range(-self.m0, self.m0+1)]
         self.run()
