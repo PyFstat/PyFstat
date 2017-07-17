@@ -31,9 +31,10 @@ class TestWriter(Test):
             './TestData/H-4800_H1_1800SFT_Test-700000000-8640000.sft'))
 
     def test_makefakedata_usecached(self):
-        Writer = pyfstat.Writer(self.label, outdir=outdir)
+        Writer = pyfstat.Writer(self.label, outdir=outdir, duration=86400)
         if os.path.isfile(Writer.sftfilepath):
             os.remove(Writer.sftfilepath)
+        Writer.make_cff()
         Writer.run_makefakedata()
         time_first = os.path.getmtime(Writer.sftfilepath)
         Writer.run_makefakedata()

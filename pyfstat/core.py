@@ -1094,8 +1094,8 @@ transientTauDays={:1.3f}\n""")
         else:
             data_duration = self.maxStartTime - self.minStartTime
             cl_mfd.append('--duration={}'.format(int(data_duration)))
-        cl_mfd.append('--fmin={}'.format(self.fmin))
-        cl_mfd.append('--Band={}'.format(self.Band))
+        cl_mfd.append('--fmin={:.16g}'.format(self.fmin))
+        cl_mfd.append('--Band={:.16g}'.format(self.Band))
         cl_mfd.append('--Tsft={}'.format(self.Tsft))
         if self.h0 != 0:
             cl_mfd.append('--injectionSources="{}"'.format(self.config_file_name))
