@@ -25,7 +25,7 @@ nsteps = [500, 500, 500]
 
 mcmc = pyfstat.MCMCSemiCoherentSearch(
     label='semi_coherent_search_using_MCMC', outdir='data', nsegs=20,
-    sftfilepath='data/*basic*sft', theta_prior=theta_prior, tref=tref,
+    sftfilepattern='data/*basic*sft', theta_prior=theta_prior, tref=tref,
     minStartTime=tstart, maxStartTime=tend, nsteps=nsteps, nwalkers=nwalkers,
     ntemps=ntemps, log10temperature_min=log10temperature_min)
 mcmc.run()

@@ -174,16 +174,15 @@ class BaseSearchClass(object):
         return thetas
 
     def _get_list_of_matching_sfts(self):
-        # first make sure we have a list of paths, to avoid
-        # list comprehension trying to glob each single character
-        sftfilepathlist = np.atleast_1d(self.sftfilepath)
-        matches = [glob.glob(p) for p in sftfilepathlist]
+        """ Returns a list of sfts matching the sftfilepattern """
+        sftfilepatternlist = np.atleast_1d(self.sftfilepattern.split(';'))
+        matches = [glob.glob(p) for p in sftfilepatternlist]
         matches = [item for sublist in matches for item in sublist]
         if len(matches) > 0:
             return matches
         else:
             raise IOError('No sfts found matching {}'.format(
-                self.sftfilepath))
+                self.sftfilepattern))
 
 
 class ComputeFstat(object):
@@ -193,7 +192,7 @@ class ComputeFstat(object):
     sun_ephem_default = sun_ephem
 
     @helper_functions.initializer
-    def __init__(self, tref, sftfilepath=None, minStartTime=None,
+    def __init__(self, tref, sftfilepattern=None, minStartTime=None,
                  maxStartTime=None, binary=False, transient=True, BSGL=False,
                  detectors=None, minCoverFreq=None, maxCoverFreq=None,
                  earth_ephem=None, sun_ephem=None, injectSources=None,
@@ -203,8 +202,9 @@ class ComputeFstat(object):
         ----------
         tref: int
             GPS seconds of the reference time.
-        sftfilepath: str
-            File patern to match SFTs
+        sftfilepattern: str
+            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            mutiple patterns can be given separated by colons.
         minStartTime, maxStartTime: float GPStime
             Only use SFTs with timestemps starting from (including, excluding)
             this epoch
@@ -250,7 +250,7 @@ class ComputeFstat(object):
     def get_SFTCatalog(self):
         if hasattr(self, 'SFTCatalog'):
             return
-        if self.sftfilepath is None:
+        if self.sftfilepattern is None:
             for k in ['minStartTime', 'maxStartTime', 'detectors']:
                 if getattr(self, k) is None:
                     raise ValueError('You must provide "{}" to injectSources'
@@ -285,8 +285,8 @@ class ComputeFstat(object):
             constraints.maxStartTime = lal.LIGOTimeGPS(self.maxStartTime)
 
         logging.info('Loading data matching pattern {}'.format(
-                     self.sftfilepath))
-        SFTCatalog = lalpulsar.SFTdataFind(self.sftfilepath, constraints)
+                     self.sftfilepattern))
+        SFTCatalog = lalpulsar.SFTdataFind(self.sftfilepattern, constraints)
         detector_names = list(set([d.header.name for d in SFTCatalog.data]))
         self.detector_names = detector_names
         SFT_timestamps = [d.header.epoch for d in SFTCatalog.data]
@@ -572,7 +572,7 @@ class ComputeFstat(object):
         times = np.linspace(self.minStartTime, self.maxStartTime, N+1)[1:]
         times = np.insert(times, 0, self.minStartTime + 86400/2.)
         out = [predict_fstat(minStartTime=self.minStartTime, maxStartTime=t,
-                             sftfilepattern=self.sftfilepath, IFO=IFO,
+                             sftfilepattern=self.sftfilepattern, IFO=IFO,
                              **pfs_input) for t in times]
         pfs, pfs_sigma = np.array(out).T
         return times, pfs, pfs_sigma
@@ -647,7 +647,7 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
     """ A semi-coherent search """
 
     @helper_functions.initializer
-    def __init__(self, label, outdir, tref, nsegs=None, sftfilepath=None,
+    def __init__(self, label, outdir, tref, nsegs=None, sftfilepattern=None,
                  binary=False, BSGL=False, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
                  detectors=None, earth_ephem=None, sun_ephem=None,
@@ -661,8 +661,9 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
             GPS seconds of the reference time, and start and end of the data.
         nsegs: int
             The (fixed) number of segments
-        sftfilepath: str
-            File patern to match SFTs
+        sftfilepattern: str
+            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            mutiple patterns can be given separated by colons.
 
         For all other parameters, see pyfstat.ComputeFStat.
         """
@@ -776,7 +777,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
 
     @helper_functions.initializer
     def __init__(self, label, outdir, tref, minStartTime, maxStartTime,
-                 nglitch=0, sftfilepath=None, theta0_idx=0, BSGL=False,
+                 nglitch=0, sftfilepattern=None, theta0_idx=0, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, assumeSqrtSX=None,
                  detectors=None, earth_ephem=None, sun_ephem=None,
                  SSBprec=None, injectSources=None):
@@ -790,8 +791,9 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
         nglitch: int
             The (fixed) number of glitches; this can zero, but occasionally
             this causes issue (in which case just use ComputeFstat).
-        sftfilepath: str
-            File patern to match SFTs
+        sftfilepattern: str
+            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            mutiple patterns can be given separated by colons.
         theta0_idx, int
             Index (zero-based) of which segment the theta refers to - uyseful
             if providing a tight prior on theta to allow the signal to jump

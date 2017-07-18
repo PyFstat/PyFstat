@@ -95,7 +95,7 @@ class TestComputeFstat(Test):
 
         search = pyfstat.ComputeFstat(
             tref=Writer.tref,
-            sftfilepath='{}/*{}*sft'.format(Writer.outdir, Writer.label))
+            sftfilepattern='{}/*{}*sft'.format(Writer.outdir, Writer.label))
         FS = search.run_computefstatistic_single_point(Writer.tstart,
                                                        Writer.tend,
                                                        Writer.F0,
@@ -113,7 +113,7 @@ class TestComputeFstat(Test):
 
         search = pyfstat.ComputeFstat(
             tref=Writer.tref, assumeSqrtSX=1,
-            sftfilepath='{}/*{}*sft'.format(Writer.outdir, Writer.label))
+            sftfilepattern='{}/*{}*sft'.format(Writer.outdir, Writer.label))
         FS = search.run_computefstatistic_single_point(Writer.tstart,
                                                        Writer.tend,
                                                        Writer.F0,
@@ -162,7 +162,7 @@ class TestSemiCoherentGlitchSearch(Test):
 
         search = pyfstat.SemiCoherentGlitchSearch(
             label=self.label, outdir=outdir,
-            sftfilepath='{}/*{}*sft'.format(Writer.outdir, Writer.label),
+            sftfilepattern='{}/*{}*sft'.format(Writer.outdir, Writer.label),
             tref=Writer.tref, minStartTime=Writer.tstart,
             maxStartTime=Writer.tend, nglitch=1)
 
@@ -221,7 +221,7 @@ class TestMCMCSearch(Test):
 
         search = pyfstat.MCMCSearch(
             label=self.label, outdir=outdir, theta_prior=theta, tref=tref,
-            sftfilepath='{}/*{}*sft'.format(Writer.outdir, Writer.label),
+            sftfilepattern='{}/*{}*sft'.format(Writer.outdir, Writer.label),
             minStartTime=minStartTime, maxStartTime=maxStartTime,
             nsteps=[100, 100], nwalkers=100, ntemps=2, log10temperature_min=-1)
         search.setup_convergence_testing()

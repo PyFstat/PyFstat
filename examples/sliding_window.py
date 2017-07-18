@@ -27,7 +27,7 @@ data.make_data()
 
 DeltaF0 = 1e-5
 search = pyfstat.FrequencySlidingWindow(
-        label='sliding_window', outdir='data', sftfilepath='data/*sliding_window*sft',
+        label='sliding_window', outdir='data', sftfilepattern='data/*sliding_window*sft',
         F0s=[F0-DeltaF0, F0+DeltaF0, DeltaF0/100.], F1=F1, F2=0,
         Alpha=Alpha, Delta=Delta, tref=tref, minStartTime=tstart,
         maxStartTime=tend, window_size=25*86400, window_delta=1*86400)

@@ -17,7 +17,7 @@ Delta = np.radians(22.0144)
 
 tref = tstart + .5 * Tspan
 
-sftfilepath = 'data/*glitching_signal*sft'
+sftfilepattern = 'data/*glitching_signal*sft'
 
 F0_width = np.sqrt(3)/(np.pi*Tspan)
 F1_width = np.sqrt(45/4.)/(np.pi*Tspan**2)
@@ -45,7 +45,7 @@ theta_prior = {'F0': {'type': 'unif',
                }
 
 search = pyfstat.MCMCGlitchSearch(
-    label=label, outdir=outdir, sftfilepath=sftfilepath,
+    label=label, outdir=outdir, sftfilepattern=sftfilepattern,
     theta_prior=theta_prior, nglitch=1, tref=tref, nsteps=[500, 500],
     ntemps=3, log10temperature_min=-0.5, minStartTime=tstart,
     maxStartTime=tstart+Tspan)

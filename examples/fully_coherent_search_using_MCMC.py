@@ -53,7 +53,7 @@ nsteps = [50, 50]
 
 mcmc = pyfstat.MCMCSearch(
     label='fully_coherent_search_using_MCMC', outdir='data',
-    sftfilepath='data/*'+data_label+'*sft', theta_prior=theta_prior, tref=tref,
+    sftfilepattern='data/*'+data_label+'*sft', theta_prior=theta_prior, tref=tref,
     minStartTime=tstart, maxStartTime=tend, nsteps=nsteps, nwalkers=nwalkers,
     ntemps=ntemps, log10temperature_min=log10temperature_min)
 mcmc.run(context='paper', subtractions=[30, -1e-10])

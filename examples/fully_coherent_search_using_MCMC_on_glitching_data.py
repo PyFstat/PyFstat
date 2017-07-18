@@ -26,7 +26,7 @@ nwalkers = 100
 nsteps = [500, 500]
 
 mcmc = MCMCSearch('fully_coherent_search_using_MCMC_on_glitching_data', 'data',
-                  sftfilepath='data/*_glitch*.sft',
+                  sftfilepattern='data/*_glitch*.sft',
                   theta_prior=theta_prior, tref=tref, minStartTime=tstart, maxStartTime=tend,
                   nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps,
                   log10temperature_min=log10temperature_min)
