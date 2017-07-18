@@ -36,7 +36,7 @@ class MCMCSearch(core.BaseSearchClass):
 
     @helper_functions.initializer
     def __init__(self, label, outdir, theta_prior, tref, minStartTime,
-                 maxStartTime, sftfilepath=None, nsteps=[100, 100],
+                 maxStartTime, sftfilepattern=None, nsteps=[100, 100],
                  nwalkers=100, ntemps=1, log10temperature_min=-5,
                  theta_initial=None, scatter_val=1e-10, rhohatmax=1000,
                  binary=False, BSGL=False, minCoverFreq=None, SSBprec=None,
@@ -46,7 +46,7 @@ class MCMCSearch(core.BaseSearchClass):
         Parameters
         label, outdir: str
             A label and directory to read/write data from/to
-        sftfilepath: str
+        sftfilepattern: str
             Pattern to match SFTs using wildcards (*?) and ranges [0-9];
             mutiple patterns can be given separated by colons.
         theta_prior: dict
@@ -94,10 +94,10 @@ class MCMCSearch(core.BaseSearchClass):
             os.mkdir(outdir)
         self._add_log_file()
         logging.info('Set-up MCMC search for model {}'.format(self.label))
-        if sftfilepath:
-            logging.info('Using data {}'.format(self.sftfilepath))
+        if sftfilepattern:
+            logging.info('Using data {}'.format(self.sftfilepattern))
         else:
-            logging.info('No sftfilepath given')
+            logging.info('No sftfilepattern given')
         if injectSources:
             logging.info('Inject sources: {}'.format(injectSources))
         self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
@@ -132,7 +132,7 @@ class MCMCSearch(core.BaseSearchClass):
     def _initiate_search_object(self):
         logging.info('Setting up search object')
         self.search = core.ComputeFstat(
-            tref=self.tref, sftfilepath=self.sftfilepath,
+            tref=self.tref, sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detectors=self.detectors, BSGL=self.BSGL, transient=False,
@@ -1112,7 +1112,7 @@ class MCMCSearch(core.BaseSearchClass):
             logging.info('No pickled data found')
             return False
 
-        if self.sftfilepath is not None:
+        if self.sftfilepattern is not None:
             oldest_sft = min([os.path.getmtime(f) for f in
                               self._get_list_of_matching_sfts()])
             if os.path.getmtime(self.pickle_path) < oldest_sft:
@@ -1275,7 +1275,7 @@ class MCMCSearch(core.BaseSearchClass):
                ' --refTime={} --outputLoudest="{}/{}.loudest" '
                '--minStartTime={} --maxStartTime={}').format(
                     params['Alpha'], params['Delta'], params['F0'],
-                    params['F1'], self.sftfilepath, params['tref'],
+                    params['F1'], self.sftfilepattern, params['tref'],
                     self.outdir, self.label, self.minStartTime,
                     self.maxStartTime)
         subprocess.call([cmd], shell=True)
@@ -1459,7 +1459,7 @@ class MCMCGlitchSearch(MCMCSearch):
             )
 
     @helper_functions.initializer
-    def __init__(self, label, outdir, sftfilepath, theta_prior, tref,
+    def __init__(self, label, outdir, sftfilepattern, theta_prior, tref,
                  minStartTime, maxStartTime, nglitch=1, nsteps=[100, 100],
                  nwalkers=100, ntemps=1, log10temperature_min=-5,
                  theta_initial=None, scatter_val=1e-10, rhohatmax=1000,
@@ -1471,8 +1471,9 @@ class MCMCGlitchSearch(MCMCSearch):
         ----------
         label, outdir: str
             A label and directory to read/write data from/to
-        sftfilepath: str
-            File patern to match SFTs
+        sftfilepattern: str
+            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            mutiple patterns can be given separated by colons.
         theta_prior: dict
             Dictionary of priors and fixed values for the search parameters.
             For each parameters (key of the dict), if it is to be held fixed
@@ -1530,7 +1531,7 @@ class MCMCGlitchSearch(MCMCSearch):
         self._add_log_file()
         logging.info(('Set-up MCMC glitch search with {} glitches for model {}'
                       ' on data {}').format(self.nglitch, self.label,
-                                            self.sftfilepath))
+                                            self.sftfilepattern))
         self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
         self._unpack_input_theta()
         self.ndim = len(self.theta_keys)
@@ -1554,7 +1555,7 @@ class MCMCGlitchSearch(MCMCSearch):
     def _initiate_search_object(self):
         logging.info('Setting up search object')
         self.search = core.SemiCoherentGlitchSearch(
-            label=self.label, outdir=self.outdir, sftfilepath=self.sftfilepath,
+            label=self.label, outdir=self.outdir, sftfilepattern=self.sftfilepattern,
             tref=self.tref, minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
@@ -1718,7 +1719,7 @@ class MCMCGlitchSearch(MCMCSearch):
 class MCMCSemiCoherentSearch(MCMCSearch):
     """ MCMC search for a signal using the semi-coherent ComputeFstat """
     @helper_functions.initializer
-    def __init__(self, label, outdir, theta_prior, tref, sftfilepath=None,
+    def __init__(self, label, outdir, theta_prior, tref, sftfilepattern=None,
                  nsegs=None, nsteps=[100, 100, 100], nwalkers=100,
                  binary=False, ntemps=1, log10temperature_min=-5,
                  theta_initial=None, scatter_val=1e-10, rhohatmax=1000,
@@ -1735,7 +1736,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         self._add_log_file()
         logging.info(('Set-up MCMC semi-coherent search for model {} on data'
                       '{}').format(
-            self.label, self.sftfilepath))
+            self.label, self.sftfilepattern))
         self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
         self._unpack_input_theta()
         self.ndim = len(self.theta_keys)
@@ -1767,7 +1768,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         logging.info('Setting up search object')
         self.search = core.SemiCoherentSearch(
             label=self.label, outdir=self.outdir, tref=self.tref,
-            nsegs=self.nsegs, sftfilepath=self.sftfilepath, binary=self.binary,
+            nsegs=self.nsegs, sftfilepattern=self.sftfilepattern, binary=self.binary,
             BSGL=self.BSGL, minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, detectors=self.detectors,
@@ -2124,7 +2125,7 @@ class MCMCTransientSearch(MCMCSearch):
     def _initiate_search_object(self):
         logging.info('Setting up search object')
         self.search = core.ComputeFstat(
-            tref=self.tref, sftfilepath=self.sftfilepath,
+            tref=self.tref, sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detectors=self.detectors, transient=True,

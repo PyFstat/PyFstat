@@ -31,7 +31,7 @@ nsteps = [5000, 1000, 1000]
 
 mcmc = pyfstat.MCMCGlitchSearch(
     'semi_coherent_glitch_search_using_MCMC', 'data',
-    sftfilepath='data/*_glitch*sft', theta_prior=theta_prior, tref=tref,
+    sftfilepattern='data/*_glitch*sft', theta_prior=theta_prior, tref=tref,
     tstart=tstart, tend=tend, nsteps=nsteps, nwalkers=nwalkers,
     scatter_val=1e-10, nglitch=1, ntemps=ntemps,
     log10temperature_min=log10temperature_min)

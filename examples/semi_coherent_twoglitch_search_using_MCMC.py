@@ -34,7 +34,7 @@ nwalkers = 100
 nsteps = [1000, 1000, 5000]
 
 mcmc = pyfstat.MCMCGlitchSearch(
-    'semi_coherent_twoglitch_search', 'data', sftfilepath='data/*twoglitch*sft',
+    'semi_coherent_twoglitch_search', 'data', sftfilepattern='data/*twoglitch*sft',
     theta_prior=theta_prior, tref=tref, tstart=tstart,
     tend=tend, nsteps=nsteps, nwalkers=nwalkers, scatter_val=1e-10, nglitch=2)
 

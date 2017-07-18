@@ -17,7 +17,7 @@ from core import tqdm, args, earth_ephem, sun_ephem, read_par
 class GridSearch(BaseSearchClass):
     """ Gridded search using ComputeFstat """
     @helper_functions.initializer
-    def __init__(self, label, outdir, sftfilepath, F0s=[0], F1s=[0], F2s=[0],
+    def __init__(self, label, outdir, sftfilepattern, F0s=[0], F1s=[0], F2s=[0],
                  Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
                  maxStartTime=None, nsegs=1, BSGL=False, minCoverFreq=None,
                  maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
@@ -28,8 +28,9 @@ class GridSearch(BaseSearchClass):
         ----------
         label, outdir: str
             A label and directory to read/write data from/to
-        sftfilepath: str
-            File patern to match SFTs
+        sftfilepattern: str
+            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            mutiple patterns can be given separated by colons.
         F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
             Length 3 tuple describing the grid for each parameter, e.g
             [F0min, F0max, dF0], for a fixed value simply give [F0]. Unless
@@ -56,7 +57,7 @@ class GridSearch(BaseSearchClass):
         logging.info('Setting up search object')
         if self.nsegs == 1:
             self.search = ComputeFstat(
-                tref=self.tref, sftfilepath=self.sftfilepath,
+                tref=self.tref, sftfilepattern=self.sftfilepattern,
                 minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
                 earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
                 detectors=self.detectors, transient=False,
@@ -68,7 +69,7 @@ class GridSearch(BaseSearchClass):
         else:
             self.search = SemiCoherentSearch(
                 label=self.label, outdir=self.outdir, tref=self.tref,
-                nsegs=self.nsegs, sftfilepath=self.sftfilepath,
+                nsegs=self.nsegs, sftfilepattern=self.sftfilepattern,
                 BSGL=self.BSGL, minStartTime=self.minStartTime,
                 maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
                 maxCoverFreq=self.maxCoverFreq, detectors=self.detectors,
@@ -106,7 +107,7 @@ class GridSearch(BaseSearchClass):
         if os.path.isfile(self.out_file) is False:
             logging.info('No old data found, continuing with grid search')
             return False
-        if self.sftfilepath is not None:
+        if self.sftfilepattern is not None:
             oldest_sft = min([os.path.getmtime(f) for f in
                               self._get_list_of_matching_sfts()])
             if os.path.getmtime(self.out_file) < oldest_sft:
@@ -275,7 +276,7 @@ class GridSearch(BaseSearchClass):
 
 
 class GridUniformPriorSearch():
-    def __init__(self, theta_prior, NF0, NF1, label, outdir, sftfilepath,
+    def __init__(self, theta_prior, NF0, NF1, label, outdir, sftfilepattern,
                  tref, minStartTime, maxStartTime, minCoverFreq=None,
                  maxCoverFreq=None, BSGL=False, detectors=None, nsegs=1):
         dF0 = (theta_prior['F0']['upper'] - theta_prior['F0']['lower'])/NF0
@@ -283,7 +284,7 @@ class GridUniformPriorSearch():
         F0s = [theta_prior['F0']['lower'], theta_prior['F0']['upper'], dF0]
         F1s = [theta_prior['F1']['lower'], theta_prior['F1']['upper'], dF1]
         self.search = GridSearch(
-            label, outdir, sftfilepath, F0s=F0s, F1s=F1s, tref=tref,
+            label, outdir, sftfilepattern, F0s=F0s, F1s=F1s, tref=tref,
             Alphas=[theta_prior['Alpha']], Deltas=[theta_prior['Delta']],
             minStartTime=minStartTime, maxStartTime=maxStartTime, BSGL=BSGL,
             detectors=detectors, minCoverFreq=minCoverFreq,
@@ -299,7 +300,7 @@ class GridUniformPriorSearch():
 class GridGlitchSearch(GridSearch):
     """ Grid search using the SemiCoherentGlitchSearch """
     @helper_functions.initializer
-    def __init__(self, label, outdir, sftfilepath=None, F0s=[0],
+    def __init__(self, label, outdir, sftfilepattern=None, F0s=[0],
                  F1s=[0], F2s=[0], delta_F0s=[0], delta_F1s=[0], tglitchs=None,
                  Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
@@ -310,8 +311,9 @@ class GridGlitchSearch(GridSearch):
         ----------
         label, outdir: str
             A label and directory to read/write data from/to
-        sftfilepath: str
-            File patern to match SFTs
+        sftfilepattern: str
+            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            mutiple patterns can be given separated by colons.
         F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
             Length 3 tuple describing the grid for each parameter, e.g
             [F0min, F0max, dF0], for a fixed value simply give [F0].
@@ -328,7 +330,7 @@ class GridGlitchSearch(GridSearch):
             self.sun_ephem = self.sun_ephem_default
 
         self.search = SemiCoherentGlitchSearch(
-            label=label, outdir=outdir, sftfilepath=self.sftfilepath,
+            label=label, outdir=outdir, sftfilepattern=self.sftfilepattern,
             tref=tref, minStartTime=minStartTime, maxStartTime=maxStartTime,
             minCoverFreq=minCoverFreq, maxCoverFreq=maxCoverFreq,
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
@@ -357,7 +359,7 @@ class GridGlitchSearch(GridSearch):
 class FrequencySlidingWindow(GridSearch):
     """ A sliding-window search over the Frequency """
     @helper_functions.initializer
-    def __init__(self, label, outdir, sftfilepath, F0s, F1, F2,
+    def __init__(self, label, outdir, sftfilepattern, F0s, F1, F2,
                  Alpha, Delta, tref, minStartTime=None,
                  maxStartTime=None, window_size=10*86400, window_delta=86400,
                  BSGL=False, minCoverFreq=None, maxCoverFreq=None,
@@ -368,8 +370,9 @@ class FrequencySlidingWindow(GridSearch):
         ----------
         label, outdir: str
             A label and directory to read/write data from/to
-        sftfilepath: str
-            File patern to match SFTs
+        sftfilepattern: str
+            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            mutiple patterns can be given separated by colons.
         F0s: array
             Frequency range
         F1, F2, Alpha, Delta: float
@@ -397,7 +400,7 @@ class FrequencySlidingWindow(GridSearch):
     def inititate_search_object(self):
         logging.info('Setting up search object')
         self.search = ComputeFstat(
-            tref=self.tref, sftfilepath=self.sftfilepath,
+            tref=self.tref, sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
             earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detectors=self.detectors, transient=True,
@@ -473,7 +476,7 @@ class FrequencySlidingWindow(GridSearch):
 class DMoff_NO_SPIN(GridSearch):
     """ DMoff test using SSBPREC_NO_SPIN """
     @helper_functions.initializer
-    def __init__(self, par, label, outdir, sftfilepath, minStartTime=None,
+    def __init__(self, par, label, outdir, sftfilepattern, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
                  earth_ephem=None, sun_ephem=None, detectors=None,
                  injectSources=None, assumeSqrtSX=None):
@@ -485,8 +488,9 @@ class DMoff_NO_SPIN(GridSearch):
             and 'tref') or a path to a .par file to read in the F0, F1 etc
         label, outdir: str
             A label and directory to read/write data from/to
-        sftfilepath: str
-            File patern to match SFTs
+        sftfilepattern: str
+            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            mutiple patterns can be given separated by colons.
         minStartTime, maxStartTime: int
             GPS seconds of the start time and end time
 

@@ -55,7 +55,7 @@ nsteps = [100, 100]
 
 mcmc = pyfstat.MCMCFollowUpSearch(
     label='weak_signal_follow_up', outdir='data',
-    sftfilepath='data/*'+data_label+'*sft', theta_prior=theta_prior, tref=tref,
+    sftfilepattern='data/*'+data_label+'*sft', theta_prior=theta_prior, tref=tref,
     minStartTime=tstart, maxStartTime=tend, nwalkers=nwalkers, nsteps=nsteps,
     ntemps=ntemps, log10temperature_min=log10temperature_min,
     scatter_val=scatter_val)

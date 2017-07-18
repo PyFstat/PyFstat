@@ -26,7 +26,7 @@ run_setup = [(1000, 50), (1000, 25), (1000, 1, False),
 
 mcmc = pyfstat.MCMCFollowUpSearch(
     label='follow_up', outdir='data',
-    sftfilepath='data/*basic*sft', theta_prior=theta_prior, tref=tref,
+    sftfilepattern='data/*basic*sft', theta_prior=theta_prior, tref=tref,
     minStartTime=tstart, maxStartTime=tend, nwalkers=nwalkers,
     ntemps=ntemps, log10temperature_min=log10temperature_min)
 mcmc.run(run_setup)

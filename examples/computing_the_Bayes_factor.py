@@ -24,7 +24,7 @@ nwalkers = 100
 nsteps = [500, 500]
 
 mcmc = MCMCSearch(label='computing_the_Bayes_factor', outdir='data', 
-                  sftfilepath='data/*basic*sft', theta_prior=theta_prior,
+                  sftfilepattern='data/*basic*sft', theta_prior=theta_prior,
                   tref=tref, tstart=tstart, tend=tend, nsteps=nsteps,
                   nwalkers=nwalkers, ntemps=ntemps,
                   log10temperature_min=log10temperature_min)

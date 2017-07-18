@@ -40,7 +40,7 @@ nsteps = [100, 100]
 
 mcmc = pyfstat.MCMCTransientSearch(
     label='transient_search', outdir='data',
-    sftfilepath='data/*simulated_transient_signal*sft',
+    sftfilepattern='data/*simulated_transient_signal*sft',
     theta_prior=theta_prior, tref=tref, minStartTime=minStartTime,
     maxStartTime=maxStartTime, nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps,
     log10temperature_min=log10temperature_min)
