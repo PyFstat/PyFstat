@@ -116,7 +116,10 @@ class MCMCSearch(core.BaseSearchClass):
         if args.clean and os.path.isfile(self.pickle_path):
             os.rename(self.pickle_path, self.pickle_path+".old")
 
-        self.lnlikelihoodcoef = np.log(70./self.rhohatmax**4)
+        self._set_likelihoodcoef()
+
+    def _set_likelihoodcoef(self):
+        self.likelihoodcoef = np.log(70./self.rhohatmax**4)
 
         self._log_input()
 
@@ -150,7 +153,7 @@ class MCMCSearch(core.BaseSearchClass):
             self.fixed_theta[theta_i] = theta[j]
         FS = search.compute_fullycoherent_det_stat_single_point(
             *self.fixed_theta)
-        return FS + self.lnlikelihoodcoef
+        return FS + self.likelihoodcoef
 
     def _unpack_input_theta(self):
         full_theta_keys = ['F0', 'F1', 'F2', 'Alpha', 'Delta']
@@ -1177,7 +1180,7 @@ class MCMCSearch(core.BaseSearchClass):
             maxtwoF = self.logl(p, self.search)
             self.search.BSGL = self.BSGL
         else:
-            maxtwoF = maxlogl - self.lnlikelihoodcoef
+            maxtwoF = maxlogl - self.likelihoodcoef
 
         repeats = []
         for i, k in enumerate(self.theta_keys):
@@ -1549,8 +1552,10 @@ class MCMCGlitchSearch(MCMCSearch):
 
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
         self._log_input()
+        self._set_likelihoodcoef()
 
-        self.lnlikelihoodcoef = (self.nglitch+1)*np.log(70./self.rhohatmax**4)
+    def _set_likelihoodcoef(self):
+        self.likelihoodcoef = (self.nglitch+1)*np.log(70./self.rhohatmax**4)
 
     def _initiate_search_object(self):
         logging.info('Setting up search object')
@@ -1586,7 +1591,7 @@ class MCMCGlitchSearch(MCMCSearch):
         for j, theta_i in enumerate(self.theta_idxs):
             self.fixed_theta[theta_i] = theta[j]
         FS = search.compute_nglitch_fstat(*self.fixed_theta)
-        return FS + self.lnlikelihoodcoef
+        return FS + self.likelihoodcoef
 
     def _unpack_input_theta(self):
         glitch_keys = ['delta_F0', 'delta_F1', 'tglitch']
@@ -1754,7 +1759,13 @@ class MCMCSemiCoherentSearch(MCMCSearch):
 
         self._log_input()
 
-        self.lnlikelihoodcoef = self.nsegs * np.log(70./self.rhohatmax**4)
+        if self.nsegs:
+            self._set_likelihoodcoef()
+        else:
+            logging.info('Value `nsegs` not yet provided')
+
+    def _set_likelihoodcoef(self):
+        self.likelihoodcoef = self.nsegs * np.log(70./self.rhohatmax**4)
 
     def _get_data_dictionary_to_save(self):
         d = dict(nsteps=self.nsteps, nwalkers=self.nwalkers,
@@ -1785,7 +1796,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             self.fixed_theta[theta_i] = theta[j]
         FS = search.run_semi_coherent_computefstatistic_single_point(
             *self.fixed_theta)
-        return FS + self.lnlikelihoodcoef
+        return FS + self.likelihoodcoef
 
 
 class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
@@ -1866,7 +1877,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         if run_setup is None and Nsegs0 is None:
             raise ValueError(
                 'You must either specify the run_setup, or Nsegs0 from which '
-                'the optimial run_setup given R can be estimated')
+                'the optimal run_setup given R can be estimated')
         fiducial_freq, DeltaOmega, DeltaFs = self.init_V_estimate_parameters()
         if run_setup is None:
             logging.info('No run_setup provided')
@@ -2047,6 +2058,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 p0 = sampler.chain[:, :, -1, :]
 
             self.nsegs = nseg
+            self._set_likelihoodcoef()
             self.search.nsegs = nseg
             self.update_search_object()
             self.search.init_semicoherent_parameters()
@@ -2141,7 +2153,7 @@ class MCMCTransientSearch(MCMCSearch):
         if in_theta[1] > self.maxStartTime:
             return -np.inf
         FS = search.run_computefstatistic_single_point(*in_theta)
-        return FS + self.lnlikelihoodcoef
+        return FS + self.likelihoodcoef
 
     def _unpack_input_theta(self):
         full_theta_keys = ['transient_tstart',
