@@ -1934,24 +1934,23 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 if args.no_template_counting:
                     V_vals.append([1, 1, 1])
                 else:
-                    V, Vsky, Vpe = get_V_estimate(
+                    V = get_V_estimate(
                         rs[1], self.tref, self.minStartTime, self.maxStartTime,
                         DeltaOmega, DeltaFs, fiducial_freq,
                         self.search.detector_names, self.earth_ephem,
                         self.sun_ephem)
-                    V_vals.append([V, Vsky, Vpe])
+                    V_vals.append(V)
 
         if log_table:
             logging.info('Using run-setup as follows:')
-            logging.info('Stage | nburn | nprod | nsegs | Tcoh d | resetp0 |'
-                         ' V = Vsky x Vpe')
+            logging.info(
+                'Stage | nburn | nprod | nsegs | Tcoh d | resetp0 | V')
             for i, rs in enumerate(run_setup):
                 Tcoh = (self.maxStartTime - self.minStartTime) / rs[1] / 86400
                 if V_vals[i] is None:
                     vtext = 'N/A'
                 else:
-                    vtext = '{:1.0e} = {:1.0e} x {:1.0e}'.format(
-                            V_vals[i][0], V_vals[i][1], V_vals[i][2])
+                    vtext = '{:1.0e}'.format(V_vals[i])
                 logging.info('{} | {} | {} | {} | {} | {} | {}'.format(
                     str(i).ljust(5), str(rs[0][0]).ljust(5),
                     str(rs[0][1]).ljust(5), str(rs[1]).ljust(5),
@@ -1960,54 +1959,28 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
         if gen_tex_table:
             filename = '{}/{}_run_setup.tex'.format(self.outdir, self.label)
-            if DeltaOmega > 0:
-                with open(filename, 'w+') as f:
-                    f.write(r'\begin{tabular}{c|cccccc}' + '\n')
-                    f.write(r'Stage & $\Nseg$ & $\Tcoh^{\rm days}$ &'
-                            r'$\Nsteps$ & $\V$ & $\Vsky$ & $\Vpe$ \\ \hline'
-                            '\n')
-                    for i, rs in enumerate(run_setup):
-                        Tcoh = float(
-                            self.maxStartTime - self.minStartTime)/rs[1]/86400
-                        line = r'{} & {} & {} & {} & {} & {} & {} \\' + '\n'
-                        if V_vals[i][0] is None:
-                            V = Vsky = Vpe = 'N/A'
-                        else:
-                            V, Vsky, Vpe = V_vals[i]
-                        if rs[0][-1] == 0:
-                            nsteps = rs[0][0]
-                        else:
-                            nsteps = '{},{}'.format(*rs[0])
-                        line = line.format(i, rs[1], '{:1.1f}'.format(Tcoh),
-                                           nsteps,
-                                           helper_functions.texify_float(V),
-                                           helper_functions.texify_float(Vsky),
-                                           helper_functions.texify_float(Vpe))
-                        f.write(line)
-                    f.write(r'\end{tabular}' + '\n')
-            else:
-                with open(filename, 'w+') as f:
-                    f.write(r'\begin{tabular}{c|cccc}' + '\n')
-                    f.write(r'Stage & $\Nseg$ & $\Tcoh^{\rm days}$ &'
-                            r'$\Nsteps$ & $\Vpe$ \\ \hline'
-                            '\n')
-                    for i, rs in enumerate(run_setup):
-                        Tcoh = float(
-                            self.maxStartTime - self.minStartTime)/rs[1]/86400
-                        line = r'{} & {} & {} & {} & {} \\' + '\n'
-                        if V_vals[i] is None:
-                            V = Vsky = Vpe = 'N/A'
-                        else:
-                            V, Vsky, Vpe = V_vals[i]
-                        if rs[0][-1] == 0:
-                            nsteps = rs[0][0]
-                        else:
-                            nsteps = '{},{}'.format(*rs[0])
-                        line = line.format(i, rs[1], '{:1.1f}'.format(Tcoh),
-                                           nsteps,
-                                           helper_functions.texify_float(Vpe))
-                        f.write(line)
-                    f.write(r'\end{tabular}' + '\n')
+            with open(filename, 'w+') as f:
+                f.write(r'\begin{tabular}{c|cccc}' + '\n')
+                f.write(r'Stage & $\Nseg$ & $\Tcoh^{\rm days}$ &'
+                        r'$\Nsteps$ & $\V$ \\ \hline'
+                        '\n')
+                for i, rs in enumerate(run_setup):
+                    Tcoh = float(
+                        self.maxStartTime - self.minStartTime)/rs[1]/86400
+                    line = r'{} & {} & {} & {} & {} \\' + '\n'
+                    if V_vals[i] is None:
+                        V = 'N/A'
+                    else:
+                        V = V_vals[i]
+                    if rs[0][-1] == 0:
+                        nsteps = rs[0][0]
+                    else:
+                        nsteps = '{},{}'.format(*rs[0])
+                    line = line.format(i, rs[1], '{:1.1f}'.format(Tcoh),
+                                       nsteps,
+                                       helper_functions.texify_float(V))
+                    f.write(line)
+                f.write(r'\end{tabular}' + '\n')
 
         if args.setup_only:
             logging.info("Exit as requested by setup_only flag")

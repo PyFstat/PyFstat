@@ -61,11 +61,11 @@ def get_nsegs_ip1(
         Vip1 = get_V_estimate(
             nsegs_ip1, tref, minStartTime, maxStartTime, DeltaOmega,
             DeltaFs, fiducial_freq, detector_names, earth_ephem, sun_ephem)
-        if Vip1[0] is None:
+        if Vip1 is None:
             return 1e6
         else:
             log10Vip1 = np.log10(Vip1)
-            return np.abs(log10Vi[0] + log10R - log10Vip1[0])
+            return np.abs(log10Vi + log10R - log10Vip1)
     res = scipy.optimize.minimize(f, .5*nsegs_i, method='Powell', tol=0.1,
                                   options={'maxiter': 10})
     nsegs_ip1 = int(res.x)
@@ -82,7 +82,7 @@ def get_nsegs_ip1(
 def get_V_estimate(
         nsegs, tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
         fiducial_freq, detector_names, earth_ephem, sun_ephem):
-    """ Returns V, Vsky, Vpe estimated from the super-sky metric
+    """ Returns V estimated from the super-sky metric
 
     Parameters
     ----------
@@ -141,4 +141,4 @@ def get_V_estimate(
         Vsky = 1
     if Vpe == 0:
         Vpe = 1
-    return (Vsky * Vpe, Vsky, Vpe)
+    return Vsky * Vpe
