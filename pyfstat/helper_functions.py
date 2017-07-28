@@ -11,6 +11,7 @@ import inspect
 import peakutils
 from functools import wraps
 from scipy.stats.distributions import ncx2
+import lal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -203,3 +204,8 @@ def run_commandline (cl):
     os.system('\n')
 
     return(out)
+
+def convert_array_to_gsl_matrix(array):
+    gsl_matrix =  lal.gsl_matrix(*array.shape)
+    gsl_matrix.data = array
+    return gsl_matrix

@@ -10,17 +10,18 @@ import numpy as np
 import scipy.optimize
 import lal
 import lalpulsar
+import helper_functions
 
 
 def get_optimal_setup(
-        R, Nsegs0, tref, minStartTime, maxStartTime, DeltaOmega,
-        DeltaFs, fiducial_freq, detector_names, earth_ephem, sun_ephem):
+        R, Nsegs0, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+        detector_names, earth_ephem, sun_ephem):
     logging.info('Calculating optimal setup for R={}, Nsegs0={}'.format(
         R, Nsegs0))
 
     V_0 = get_V_estimate(
-        Nsegs0, tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
-        fiducial_freq, detector_names, earth_ephem, sun_ephem)
+        Nsegs0, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+        detector_names, earth_ephem, sun_ephem)
     logging.info('Stage {}, nsegs={}, V={}'.format(0, Nsegs0, V_0))
 
     nsegs_vals = [Nsegs0]
@@ -30,8 +31,8 @@ def get_optimal_setup(
     nsegs_i = Nsegs0
     while nsegs_i > 1:
         nsegs_i, V_i = get_nsegs_ip1(
-            nsegs_i, R, tref, minStartTime, maxStartTime, DeltaOmega,
-            DeltaFs, fiducial_freq, detector_names, earth_ephem, sun_ephem)
+            nsegs_i, R, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+            detector_names, earth_ephem, sun_ephem)
         nsegs_vals.append(nsegs_i)
         V_vals.append(V_i)
         i += 1
@@ -42,13 +43,13 @@ def get_optimal_setup(
 
 
 def get_nsegs_ip1(
-        nsegs_i, R, tref, minStartTime, maxStartTime, DeltaOmega,
-        DeltaFs, fiducial_freq, detector_names, earth_ephem, sun_ephem):
+        nsegs_i, R, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+        detector_names, earth_ephem, sun_ephem):
 
     log10R = np.log10(R)
     log10Vi = np.log10(get_V_estimate(
-        nsegs_i, tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
-        fiducial_freq, detector_names, earth_ephem, sun_ephem))
+        nsegs_i, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+        detector_names, earth_ephem, sun_ephem))
 
     def f(nsegs_ip1):
         if nsegs_ip1[0] > nsegs_i:
@@ -59,8 +60,8 @@ def get_nsegs_ip1(
         if nsegs_ip1 == 0:
             nsegs_ip1 = 1
         Vip1 = get_V_estimate(
-            nsegs_ip1, tref, minStartTime, maxStartTime, DeltaOmega,
-            DeltaFs, fiducial_freq, detector_names, earth_ephem, sun_ephem)
+            nsegs_ip1, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+            detector_names, earth_ephem, sun_ephem)
         if Vip1 is None:
             return 1e6
         else:
@@ -73,15 +74,47 @@ def get_nsegs_ip1(
         nsegs_ip1 = 1
     if res.success:
         return nsegs_ip1, get_V_estimate(
-            nsegs_ip1, tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
-            fiducial_freq, detector_names, earth_ephem, sun_ephem)
+            nsegs_ip1, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+            detector_names, earth_ephem, sun_ephem)
     else:
         raise ValueError('Optimisation unsuccesful')
 
 
+def get_parallelepiped(prior):
+    keys = ['Alpha', 'Delta', 'F0', 'F1', 'F2']
+    spindown_keys = keys[3:]
+    sky_keys = keys[:2]
+    lims = []
+    lims_keys = []
+    lims_idxs = []
+    for i, key in enumerate(keys):
+        if type(prior[key]) == dict:
+            if prior[key]['type'] == 'unif':
+                lims.append([prior[key]['lower'], prior[key]['upper']])
+                lims_keys.append(key)
+                lims_idxs.append(i)
+            else:
+                raise ValueError(
+                    "Prior type {} not yet supported".format(
+                        prior[key]['type']))
+        elif key not in spindown_keys:
+            lims.append([prior[key], 0])
+    lims = np.array(lims)
+    lims_keys = np.array(lims_keys)
+    base = lims[:, 0]
+    p = [base]
+    for i in lims_idxs:
+        basex = base.copy()
+        basex[i] = lims[i, 1]
+        p.append(basex)
+    spindowns = np.sum([np.sum(lims_keys == k) for k in spindown_keys])
+    sky = any([key in lims_keys for key in sky_keys])
+    return np.array(p).T, spindowns , sky
+
+
 def get_V_estimate(
-        nsegs, tref, minStartTime, maxStartTime, DeltaOmega, DeltaFs,
-        fiducial_freq, detector_names, earth_ephem, sun_ephem):
+        nsegs, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+        detector_names, earth_ephem, sun_ephem):
     """ Returns V estimated from the super-sky metric
 
     Parameters
@@ -92,11 +125,8 @@ def get_V_estimate(
         Reference time in GPS seconds
     minStartTime, maxStartTime: int
         Minimum and maximum SFT timestamps
-    DeltaOmega: float
-        Solid angle of the sky-patch
-    DeltaFs: array
-        Array of [DeltaF0, DeltaF1, ...], length determines the number of
-        spin-down terms.
+    prior: dict
+        The prior dictionary
     fiducial_freq: float
         Fidicual frequency
     detector_names: array
@@ -105,7 +135,12 @@ def get_V_estimate(
         Paths to the ephemeris files
 
     """
-    spindowns = len(DeltaFs) - 1
+    in_phys, spindowns, sky = get_parallelepiped(prior)
+    out_rssky = np.zeros(in_phys.shape)
+
+    in_phys = helper_functions.convert_array_to_gsl_matrix(in_phys)
+    out_rssky = helper_functions.convert_array_to_gsl_matrix(out_rssky)
+
     tboundaries = np.linspace(minStartTime, maxStartTime, nsegs+1)
 
     ref_time = lal.LIGOTimeGPS(tref)
@@ -130,15 +165,21 @@ def get_V_estimate(
         logging.debug('Encountered run-time error {}'.format(e))
         return None, None, None
 
-    sqrtdetG_SKY = np.sqrt(np.linalg.det(
-        SSkyMetric.semi_rssky_metric.data[:2, :2]))
-    sqrtdetG_PE = np.sqrt(np.linalg.det(
-        SSkyMetric.semi_rssky_metric.data[2:, 2:]))
+    if sky:
+        i = 0
+    else:
+        i = 2
 
-    Vsky = .5*sqrtdetG_SKY*DeltaOmega
-    Vpe = sqrtdetG_PE * np.prod(DeltaFs)
-    if Vsky == 0:
-        Vsky = 1
-    if Vpe == 0:
-        Vpe = 1
-    return Vsky * Vpe
+    lalpulsar.ConvertPhysicalToSuperskyPoints(
+        out_rssky, in_phys, SSkyMetric.semi_rssky_transf)
+
+    parallelepiped = (out_rssky.data[i:, 1:].T - out_rssky.data[i:, 0]).T
+
+    sqrtdetG = np.sqrt(np.linalg.det(
+        SSkyMetric.semi_rssky_metric.data[i:, i:]))
+
+    dV = np.abs(np.linalg.det(parallelepiped))
+
+    V = sqrtdetG * dV
+
+    return V

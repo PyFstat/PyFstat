@@ -1908,7 +1908,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             if generate_setup:
                 nsegs_vals, V_vals = get_optimal_setup(
                     R, Nsegs0, self.tref, self.minStartTime,
-                    self.maxStartTime, DeltaOmega, DeltaFs, fiducial_freq,
+                    self.maxStartTime, self.theta_prior, fiducial_freq,
                     self.search.detector_names, self.earth_ephem,
                     self.sun_ephem)
                 self.write_setup_input_file(run_setup_input_file, R, Nsegs0,
@@ -1936,7 +1936,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 else:
                     V = get_V_estimate(
                         rs[1], self.tref, self.minStartTime, self.maxStartTime,
-                        DeltaOmega, DeltaFs, fiducial_freq,
+                        self.theta_prior, fiducial_freq,
                         self.search.detector_names, self.earth_ephem,
                         self.sun_ephem)
                     V_vals.append(V)
