@@ -265,7 +265,10 @@ class GridSearch(BaseSearchClass):
             print('  {}={}'.format(k, v))
 
     def set_out_file(self, extra_label=None):
-        dets = self.detectors.replace(',', '')
+        if self.detectors:
+            dets = self.detectors.replace(',', '')
+        else:
+            dets = 'NA'
         if extra_label:
             self.out_file = '{}/{}_{}_{}_{}.txt'.format(
                 self.outdir, self.label, dets, type(self).__name__,
