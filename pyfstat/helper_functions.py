@@ -209,3 +209,21 @@ def convert_array_to_gsl_matrix(array):
     gsl_matrix =  lal.gsl_matrix(*array.shape)
     gsl_matrix.data = array
     return gsl_matrix
+
+
+def get_sft_array(sftfilepattern, data_duration, F0, dF0):
+    """ Return the raw data from a set of sfts """
+
+    SFTCatalog = lalpulsar.SFTdataFind(
+        sftfilepattern, lalpulsar.SFTConstraints())
+    MultiSFTs = lalpulsar.LoadMultiSFTs(SFTCatalog, F0-dF0, F0+dF0)
+    SFTs = MultiSFTs.data[0]
+    data = []
+    for sft in SFTs.data:
+        data.append(np.abs(sft.data.data))
+    data = np.array(data).T
+    n, nsfts = data.shape
+    freqs = np.linspace(sft.f0, sft.f0+n*sft.deltaF, n)
+    times = np.linspace(0, data_duration, nsfts)
+
+    return times, freqs, data
