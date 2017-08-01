@@ -11,11 +11,10 @@ import helper_functions
 
 
 class Writer(BaseSearchClass):
-    """ Instance object for generating SFTs containing glitch signals """
+    """ Instance object for generating SFTs """
     @helper_functions.initializer
     def __init__(self, label='Test', tstart=700000000, duration=100*86400,
-                 dtglitch=None, delta_phi=0, delta_F0=0, delta_F1=0,
-                 delta_F2=0, tref=None, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
+                 tref=None, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
                  Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, phi=0, Tsft=1800,
                  outdir=".", sqrtSX=1, Band=4, detectors='H1',
                  minStartTime=None, maxStartTime=None, add_noise=True):
@@ -26,11 +25,6 @@ class Writer(BaseSearchClass):
             a human-readable label to be used in naming the output files
         tstart, tend : float
             start and end times (in gps seconds) of the total observation span
-        dtglitch: float
-            time (in gps seconds) of the glitch after tstart. To create data
-            without a glitch, set dtglitch=None
-        delta_phi, delta_F0, delta_F1: float
-            instanteneous glitch magnitudes in rad, Hz, and Hz/s respectively
         tref: float or None
             reference time (default is None, which sets the reference time to
             tstart)
@@ -45,21 +39,12 @@ class Writer(BaseSearchClass):
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
 
-        for d in self.delta_phi, self.delta_F0, self.delta_F1, self.delta_F2:
-            if np.size(d) == 1:
-                d = np.atleast_1d(d)
         self.tend = self.tstart + self.duration
         if self.minStartTime is None:
             self.minStartTime = self.tstart
         if self.maxStartTime is None:
             self.maxStartTime = self.tend
-        if self.dtglitch is None:
-            self.tbounds = [self.tstart, self.tend]
-        else:
-            self.dtglitch = np.atleast_1d(self.dtglitch)
-            self.tglitch = self.tstart + self.dtglitch
-            self.tbounds = np.concatenate((
-                [self.tstart], self.tglitch, [self.tend]))
+        self.tbounds = [self.tstart, self.tend]
         logging.info('Using segment boundaries {}'.format(self.tbounds))
 
         self.check_inputs()
@@ -69,14 +54,9 @@ class Writer(BaseSearchClass):
         if self.tref is None:
             self.tref = self.tstart
         self.tend = self.tstart + self.duration
-        tbs = np.array(self.tbounds)
-        self.durations_days = (tbs[1:] - tbs[:-1]) / 86400
+        self.duration_days = (self.tend-self.tstart) / 86400
         self.config_file_name = "{}/{}.cff".format(outdir, label)
-
         self.theta = np.array([phi, F0, F1, F2])
-        self.delta_thetas = np.atleast_2d(
-                np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T)
-
         self.data_duration = self.maxStartTime - self.minStartTime
         numSFTs = int(float(self.data_duration) / self.Tsft)
         self.sftfilenames = [
@@ -91,12 +71,6 @@ class Writer(BaseSearchClass):
     def check_inputs(self):
         self.minStartTime = int(self.minStartTime)
         self.maxStartTime = int(self.maxStartTime)
-        shapes = np.array([np.shape(x) for x in [self.delta_phi, self.delta_F0,
-                                                 self.delta_F1, self.delta_F2]]
-                          )
-        if not np.all(shapes == shapes[0]):
-            raise ValueError('all delta_* must be the same shape: {}'.format(
-                shapes))
 
     def make_data(self):
         ''' A convienience wrapper to generate a cff file then sfts '''
@@ -125,21 +99,14 @@ transientTauDays={:1.3f}\n""")
 
     def make_cff(self):
         """
-        Generates an .cff file for a 'glitching' signal
+        Generates a .cff file
 
         """
 
-        thetas = self._calculate_thetas(self.theta, self.delta_thetas,
-                                        self.tbounds)
-
-        content = ''
-        for i, (t, d, ts) in enumerate(zip(thetas, self.durations_days,
-                                           self.tbounds[:-1])):
-            line = self.get_single_config_line(
-                i, self.Alpha, self.Delta, self.h0, self.cosi, self.psi,
-                t[0], t[1], t[2], t[3], self.tref, ts, d)
-
-            content += line
+        content = self.get_single_config_line(
+            0, self.Alpha, self.Delta, self.h0, self.cosi, self.psi,
+            self.phi, self.F0, self.F1, self.F2, self.tref, self.tstart,
+            self.duration_days)
 
         if self.check_if_cff_file_needs_rewritting(content):
             config_file = open(self.config_file_name, "w+")
@@ -272,3 +239,115 @@ transientTauDays={:1.3f}\n""")
         output = helper_functions.run_commandline(cl_pfs)
         twoF = float(output.split('\n')[-2])
         return float(twoF)
+
+
+class GlitchWriter(Writer):
+    """ Instance object for generating SFTs containing glitch signals """
+    @helper_functions.initializer
+    def __init__(self, label='Test', tstart=700000000, duration=100*86400,
+                 dtglitch=None, delta_phi=0, delta_F0=0, delta_F1=0,
+                 delta_F2=0, tref=None, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
+                 Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, phi=0, Tsft=1800,
+                 outdir=".", sqrtSX=1, Band=4, detectors='H1',
+                 minStartTime=None, maxStartTime=None, add_noise=True):
+        """
+        Parameters
+        ----------
+        label: string
+            a human-readable label to be used in naming the output files
+        tstart, tend : float
+            start and end times (in gps seconds) of the total observation span
+        dtglitch: float
+            time (in gps seconds) of the glitch after tstart. To create data
+            without a glitch, set dtglitch=None
+        delta_phi, delta_F0, delta_F1: float
+            instanteneous glitch magnitudes in rad, Hz, and Hz/s respectively
+        tref: float or None
+            reference time (default is None, which sets the reference time to
+            tstart)
+        F0, F1, F2, Alpha, Delta, h0, cosi, psi, phi: float
+            frequency, sky-position, and amplitude parameters
+        Tsft: float
+            the sft duration
+        minStartTime, maxStartTime: float
+            if not None, the total span of data, this can be used to generate
+            transient signals
+
+        see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
+        """
+
+        for d in self.delta_phi, self.delta_F0, self.delta_F1, self.delta_F2:
+            if np.size(d) == 1:
+                d = np.atleast_1d(d)
+        self.tend = self.tstart + self.duration
+        if self.minStartTime is None:
+            self.minStartTime = self.tstart
+        if self.maxStartTime is None:
+            self.maxStartTime = self.tend
+        if self.dtglitch is None:
+            self.tbounds = [self.tstart, self.tend]
+        else:
+            self.dtglitch = np.atleast_1d(self.dtglitch)
+            self.tglitch = self.tstart + self.dtglitch
+            self.tbounds = np.concatenate((
+                [self.tstart], self.tglitch, [self.tend]))
+        logging.info('Using segment boundaries {}'.format(self.tbounds))
+
+        self.check_inputs()
+
+        if os.path.isdir(self.outdir) is False:
+            os.makedirs(self.outdir)
+        if self.tref is None:
+            self.tref = self.tstart
+        self.tend = self.tstart + self.duration
+        tbs = np.array(self.tbounds)
+        self.durations_days = (tbs[1:] - tbs[:-1]) / 86400
+        self.config_file_name = "{}/{}.cff".format(outdir, label)
+
+        self.theta = np.array([phi, F0, F1, F2])
+        self.delta_thetas = np.atleast_2d(
+                np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T)
+
+        self.data_duration = self.maxStartTime - self.minStartTime
+        numSFTs = int(float(self.data_duration) / self.Tsft)
+        self.sftfilenames = [
+            lalpulsar.OfficialSFTFilename(
+                dets[0], dets[1], numSFTs, self.Tsft, self.minStartTime,
+                self.data_duration, self.label)
+            for dets in self.detectors.split(',')]
+        self.sftfilepath = ';'.join([
+            '{}/{}'.format(self.outdir, fn) for fn in self.sftfilenames])
+        self.calculate_fmin_Band()
+
+    def check_inputs(self):
+        self.minStartTime = int(self.minStartTime)
+        self.maxStartTime = int(self.maxStartTime)
+        shapes = np.array([np.shape(x) for x in [self.delta_phi, self.delta_F0,
+                                                 self.delta_F1, self.delta_F2]]
+                          )
+        if not np.all(shapes == shapes[0]):
+            raise ValueError('all delta_* must be the same shape: {}'.format(
+                shapes))
+
+    def make_cff(self):
+        """
+        Generates an .cff file for a 'glitching' signal
+
+        """
+
+        thetas = self._calculate_thetas(self.theta, self.delta_thetas,
+                                        self.tbounds)
+
+        content = ''
+        for i, (t, d, ts) in enumerate(zip(thetas, self.durations_days,
+                                           self.tbounds[:-1])):
+            line = self.get_single_config_line(
+                i, self.Alpha, self.Delta, self.h0, self.cosi, self.psi,
+                t[0], t[1], t[2], t[3], self.tref, ts, d)
+
+            content += line
+
+        if self.check_if_cff_file_needs_rewritting(content):
+            config_file = open(self.config_file_name, "w+")
+            config_file.write(content)
+            config_file.close()

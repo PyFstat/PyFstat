@@ -154,9 +154,9 @@ class TestSemiCoherentGlitchSearch(Test):
         duration = 100*86400
         dtglitch = .5*100*86400
         delta_F0 = 0
-        Writer = pyfstat.Writer(self.label, outdir=outdir,
-                                duration=duration, dtglitch=dtglitch,
-                                delta_F0=delta_F0)
+        Writer = pyfstat.GlitchWriter(
+            self.label, outdir=outdir, duration=duration, dtglitch=dtglitch,
+            delta_F0=delta_F0)
 
         Writer.make_data()
 
@@ -204,13 +204,12 @@ class TestMCMCSearch(Test):
         Alpha = 5e-3
         Delta = 1.2
         tref = minStartTime
-        delta_F0 = 0
         Writer = pyfstat.Writer(F0=F0, F1=F1, F2=F2, label=self.label,
                                 h0=h0, sqrtSX=sqrtSX,
                                 outdir=outdir, tstart=minStartTime,
                                 Alpha=Alpha, Delta=Delta, tref=tref,
                                 duration=duration,
-                                delta_F0=delta_F0, Band=4)
+                                Band=4)
 
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
