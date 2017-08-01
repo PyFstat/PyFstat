@@ -12,6 +12,7 @@ import peakutils
 from functools import wraps
 from scipy.stats.distributions import ncx2
 import lal
+import lalpulsar
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -187,10 +188,20 @@ def compute_pstar(twoFcheck_obs, twoFstarcheck_obs, m0, plot=False):
     return 2*np.min([pstar_l, 1-pstar_l])
 
 
-def run_commandline (cl):
-    """Run a string commandline as a subprocess, check for errors and return output."""
+def run_commandline(cl, log_level=20):
+    """Run a string cmd as a subprocess, check for errors and return output.
 
-    logging.info('Now executing: ' + cl)
+    Parameters
+    ----------
+    cl: str
+        Command to run
+    log_level: int
+        See https://docs.python.org/2/library/logging.html#logging-levels,
+        default is '20' (INFO)
+
+    """
+
+    logging.log(log_level, 'Now executing: ' + cl)
     try:
         out = subprocess.check_output(cl,                       # what to run
                                       stderr=subprocess.STDOUT, # catch errors
@@ -205,8 +216,9 @@ def run_commandline (cl):
 
     return(out)
 
+
 def convert_array_to_gsl_matrix(array):
-    gsl_matrix =  lal.gsl_matrix(*array.shape)
+    gsl_matrix = lal.gsl_matrix(*array.shape)
     gsl_matrix.data = array
     return gsl_matrix
 
