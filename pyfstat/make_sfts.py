@@ -4,10 +4,13 @@ import numpy as np
 import logging
 import os
 
+import lal
 import lalpulsar
 
-from core import BaseSearchClass
+from core import BaseSearchClass, tqdm
 import helper_functions
+
+earth_ephem, sun_ephem = helper_functions.set_up_ephemeris_configuration()
 
 
 class Writer(BaseSearchClass):
@@ -351,3 +354,111 @@ class GlitchWriter(Writer):
             config_file = open(self.config_file_name, "w+")
             config_file.write(content)
             config_file.close()
+
+
+class FrequencyModulatedArtifactWriter(Writer):
+    """ Instance object for generating SFTs containing artifacts """
+
+    earth_ephem_default = earth_ephem
+    sun_ephem_default = sun_ephem
+
+    @helper_functions.initializer
+    def __init__(self, outdir=".", tstart=700000000, data_duration=86400,
+                 F0=30, tref=None, h0=10, Tsft=1800, sqrtSX=1, Band=4,
+                 Pmod=lal.DAYSID_SI, phi_amplitude=0, Alpha=1.2, Delta=0.5, IFO='H1',
+                 earth_ephem=None, sun_ephem=None):
+        """
+        Parameters
+        ----------
+        tstart, data_duration : float
+            start and duration times (in gps seconds) of the total observation
+        Pmod, Amp, F0, h0: float
+            Modulation period, amplitude, frequency and h0 of the artifact
+        Tsft: float
+            the sft duration
+        sqrtSX: float
+            Background IFO noise
+
+        see `lalapps_Makefakedata_v4 --help` for help with the other paramaters
+        """
+
+        if os.path.isdir(self.outdir) is False:
+            os.makedirs(self.outdir)
+        if tref is None:
+            raise ValueError('Input `tref` not specified')
+
+        self.nsfts = int(np.ceil(self.data_duration / self.Tsft))
+        self.data_duration_days = self.data_duration / 86400.
+        self.calculate_fmin_Band()
+
+        self.cosi = 0
+        self.Fmax = F0
+
+        if self.earth_ephem is None:
+            self.earth_ephem = self.earth_ephem_default
+        if self.sun_ephem is None:
+            self.sun_ephem = self.sun_ephem_default
+
+        self.n = np.array([np.cos(Alpha)*np.cos(Delta),
+                           np.sin(Alpha)*np.cos(Delta),
+                           np.sin(Delta)])
+
+    def get_frequency(self, t):
+        spin_posvel = lalpulsar.PosVel3D_t()
+        orbit_posvel = lalpulsar.PosVel3D_t()
+        det = lal.CachedDetectors[4]
+        ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
+        lalpulsar.DetectorPosVel(
+            spin_posvel, orbit_posvel, lal.LIGOTimeGPS(t), det, ephems,
+            lalpulsar.DETMOTION_ORBIT+lalpulsar.DETMOTION_SPIN)
+
+        # Pos and vel returned in units of c
+        f = self.F0+np.dot(self.n, orbit_posvel.vel+spin_posvel.vel)*self.Fmax
+        return f
+
+    def get_h0(self, t):
+        return self.h0
+
+    def make_data(self):
+        self.maxStartTime = None
+        self.duration = self.Tsft
+        linePhi = 0
+        lineFreq_old = 0
+        for i in tqdm(range(self.nsfts)):
+            self.minStartTime = self.tstart + i*self.Tsft
+            mid_time = self.minStartTime + self.Tsft / 2.0
+            lineFreq = self.get_frequency(mid_time)
+            linePhi += np.pi*self.Tsft*(lineFreq_old+lineFreq)
+            lineh0 = self.get_h0(mid_time)
+            self.run_makefakedata_v4(mid_time, lineFreq, linePhi, lineh0)
+            lineFreq_old = lineFreq
+
+    def run_makefakedata_v4(self, mid_time, lineFreq, linePhi, h0):
+        """ Generate the sft data using the --lineFeature option """
+        cl_mfd = []
+        cl_mfd.append('lalapps_Makefakedata_v4')
+        cl_mfd.append('--outSingleSFT=FALSE')
+        cl_mfd.append('--outSFTbname="{}"'.format(self.outdir))
+        cl_mfd.append('--IFO={}'.format(self.IFO))
+        cl_mfd.append('--noiseSqrtSh="{}"'.format(self.sqrtSX))
+        cl_mfd.append('--startTime={:0.0f}'.format(float(self.minStartTime)))
+        cl_mfd.append('--refTime={:0.0f}'.format(mid_time))
+        cl_mfd.append('--duration={}'.format(int(self.duration)))
+        cl_mfd.append('--fmin={:.16g}'.format(self.fmin))
+        cl_mfd.append('--Band={:.16g}'.format(self.Band))
+        cl_mfd.append('--Tsft={}'.format(self.Tsft))
+        cl_mfd.append('--Alpha={}'.format(self.Alpha))
+        cl_mfd.append('--Delta={}'.format(self.Delta))
+        cl_mfd.append('--Freq={}'.format(lineFreq))
+        cl_mfd.append('--phi0={}'.format(linePhi))
+        cl_mfd.append('--h0={}'.format(h0))
+        cl_mfd.append('--cosi={}'.format(self.cosi))
+        cl_mfd.append('--lineFeature=TRUE')
+        cl_mfd = " ".join(cl_mfd)
+        helper_functions.run_commandline(cl_mfd, log_level=10)
+
+
+class FrequencyAmplitudeModulatedArtifactWriter(FrequencyModulatedArtifactWriter):
+    """ Instance object for generating SFTs containing artifacts """
+    def get_h0(self, t):
+            return self.h0*np.sin(2*np.pi*t/self.Pmod+self.phi_amplitude)
