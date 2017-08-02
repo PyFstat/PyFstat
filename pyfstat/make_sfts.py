@@ -365,7 +365,7 @@ class FrequencyModulatedArtifactWriter(Writer):
     @helper_functions.initializer
     def __init__(self, outdir=".", tstart=700000000, data_duration=86400,
                  F0=30, tref=None, h0=10, Tsft=1800, sqrtSX=1, Band=4,
-                 Pmod=lal.DAYSID_SI, phi_amplitude=0, Alpha=1.2, Delta=0.5, IFO='H1',
+                 Pmod=lal.DAYSID_SI, phir0=0, Alpha=1.2, Delta=0.5, IFO='H1',
                  earth_ephem=None, sun_ephem=None):
         """
         Parameters
@@ -410,10 +410,20 @@ class FrequencyModulatedArtifactWriter(Writer):
         ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
         lalpulsar.DetectorPosVel(
             spin_posvel, orbit_posvel, lal.LIGOTimeGPS(t), det, ephems,
-            lalpulsar.DETMOTION_ORBIT+lalpulsar.DETMOTION_SPIN)
+            lalpulsar.DETMOTION_ORBIT)
 
         # Pos and vel returned in units of c
-        f = self.F0+np.dot(self.n, orbit_posvel.vel+spin_posvel.vel)*self.Fmax
+        if self.IFO == 'H1':
+            Lambda = lal.LHO_4K_DETECTOR_LATITUDE_RAD
+        elif self.IFO == 'L1':
+            Lambda = lal.LLO_4K_DETECTOR_LATITUDE_RAD
+        phir = 2*np.pi*t/self.Pmod + self.phir0
+        DeltaFSpin = lal.REARTH_SI/lal.C_SI * 2*np.pi/self.Pmod*(
+            np.sin(self.Delta)*np.sin(Lambda)
+            + np.cos(self.Alpha)*np.cos(self.Delta)*np.cos(Lambda)*np.cos(phir)
+            + np.sin(self.Alpha)*np.cos(self.Delta)*np.sin(Lambda)*np.sin(phir)
+            )
+        f = self.F0+(np.dot(self.n, orbit_posvel.vel) + DeltaFSpin)*self.Fmax
         return f
 
     def get_h0(self, t):
@@ -461,4 +471,4 @@ class FrequencyModulatedArtifactWriter(Writer):
 class FrequencyAmplitudeModulatedArtifactWriter(FrequencyModulatedArtifactWriter):
     """ Instance object for generating SFTs containing artifacts """
     def get_h0(self, t):
-            return self.h0*np.sin(2*np.pi*t/self.Pmod+self.phi_amplitude)
+            return self.h0*np.sin(2*np.pi*t/self.Pmod+self.phir0)
