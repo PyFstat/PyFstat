@@ -274,3 +274,10 @@ def get_covering_band(tref, tstart, tend, F0, F1, F2):
     return lalpulsar.CWSignalCoveringBand(tstart, tend, psr, 0, 0, 0)
 
 
+def twoFDMoffThreshold(twoFon, knee=400, twoFDMoffthreshold_below_threshold=62,
+                       prefactor=0.9, offset=0.5):
+    """ Calculation of the 2F_DMoff threshold, see Eq 2 of arXiv:1707.5286 """
+    if twoFon <= knee:
+        return twoFDMoffthreshold_below_threshold
+    else:
+        return 10**(prefactor*np.log10(twoFon-offset))
