@@ -3,6 +3,7 @@
 import numpy as np
 import logging
 import os
+import glob
 
 import lal
 import lalpulsar
@@ -429,26 +430,85 @@ class FrequencyModulatedArtifactWriter(Writer):
     def get_h0(self, t):
         return self.h0
 
+    def concatenate_sft_files(self, tmp_outdir):
+        SFTFilename = lalpulsar.OfficialSFTFilename(
+            self.IFO[0], self.IFO[1], self.nsfts, self.Tsft, self.tstart,
+            int(self.data_duration), self.label)
+
+        helper_functions.run_commandline(
+            'rm {}/{}'.format(self.outdir, SFTFilename), raise_error=False)
+
+        cl_splitSFTS = (
+            'lalapps_splitSFTs -fs {} -fb {} -fe {} -o {}/{} -i {}/{}_tmp/*sft'
+            .format(self.fmin, self.Band, self.fmin+self.Band, self.outdir,
+                    SFTFilename, self.outdir, self.label))
+        helper_functions.run_commandline(cl_splitSFTS)
+        helper_functions.run_commandline('rm {} -r'.format(tmp_outdir))
+        files = glob.glob('{}/{}*'.format(self.outdir, SFTFilename))
+        if len(files) == 1:
+            fn = files[0]
+            fn_new = fn.split('.')[0] + '.sft'
+            helper_functions.run_commandline('mv {} {}'.format(
+                fn, fn_new))
+        else:
+            raise IOError(
+                'Attempted to rename file, but multiple files found: {}'
+                .format(files))
+
     def make_data(self):
         self.maxStartTime = None
         self.duration = self.Tsft
         linePhi = 0
         lineFreq_old = 0
+
+        tmp_outdir = '{}/{}_tmp'.format(self.outdir, self.label)
+        if os.path.isdir(tmp_outdir) is True:
+            raise ValueError(
+                'Temporary directory {} already exists, please rename'.format(
+                    tmp_outdir))
+        else:
+            os.makedirs(tmp_outdir)
+
         for i in tqdm(range(self.nsfts)):
             self.minStartTime = self.tstart + i*self.Tsft
             mid_time = self.minStartTime + self.Tsft / 2.0
             lineFreq = self.get_frequency(mid_time)
             linePhi += np.pi*self.Tsft*(lineFreq_old+lineFreq)
             lineh0 = self.get_h0(mid_time)
-            self.run_makefakedata_v4(mid_time, lineFreq, linePhi, lineh0)
+            self.run_makefakedata_v4(mid_time, lineFreq, linePhi, lineh0,
+                                     tmp_outdir)
             lineFreq_old = lineFreq
 
-    def run_makefakedata_v4(self, mid_time, lineFreq, linePhi, h0):
+        SFTFilename = lalpulsar.OfficialSFTFilename(
+            self.IFO[0], self.IFO[1], self.nsfts, self.Tsft, self.tstart,
+            int(self.data_duration), self.label)
+
+        helper_functions.run_commandline(
+            'rm {}/{}'.format(self.outdir, SFTFilename), raise_error=False)
+
+        cl_splitSFTS = (
+            'lalapps_splitSFTs -fs {} -fb {} -fe {} -o {}/{} -i {}/{}_tmp/*sft'
+            .format(self.fmin, self.Band, self.fmin+self.Band, self.outdir,
+                    SFTFilename, self.outdir, self.label))
+        helper_functions.run_commandline(cl_splitSFTS)
+        helper_functions.run_commandline('rm {} -r'.format(tmp_outdir))
+        files = glob.glob('{}/{}*'.format(self.outdir, SFTFilename))
+        if len(files) == 1:
+            fn = files[0]
+            fn_new = fn.split('.')[0] + '.sft'
+            helper_functions.run_commandline('mv {} {}'.format(
+                fn, fn_new))
+        else:
+            raise IOError(
+                'Attempted to rename file, but multiple files found: {}'
+                .format(files))
+
+    def run_makefakedata_v4(self, mid_time, lineFreq, linePhi, h0, tmp_outdir):
         """ Generate the sft data using the --lineFeature option """
         cl_mfd = []
         cl_mfd.append('lalapps_Makefakedata_v4')
         cl_mfd.append('--outSingleSFT=FALSE')
-        cl_mfd.append('--outSFTbname="{}"'.format(self.outdir))
+        cl_mfd.append('--outSFTbname="{}"'.format(tmp_outdir))
         cl_mfd.append('--IFO={}'.format(self.IFO))
         cl_mfd.append('--noiseSqrtSh="{}"'.format(self.sqrtSX))
         cl_mfd.append('--startTime={:0.0f}'.format(float(self.minStartTime)))
