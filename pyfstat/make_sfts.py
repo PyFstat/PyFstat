@@ -364,17 +364,21 @@ class FrequencyModulatedArtifactWriter(Writer):
     sun_ephem_default = sun_ephem
 
     @helper_functions.initializer
-    def __init__(self, outdir=".", tstart=700000000, data_duration=86400,
-                 F0=30, tref=None, h0=10, Tsft=1800, sqrtSX=1, Band=4,
-                 Pmod=lal.DAYSID_SI, phir0=0, Alpha=1.2, Delta=0.5, IFO='H1',
-                 earth_ephem=None, sun_ephem=None):
+    def __init__(self, label, outdir=".", tstart=700000000,
+                 data_duration=86400, F0=30, F1=0, tref=None, h0=10, Tsft=1800,
+                 sqrtSX=1, Band=4, Pmod=lal.DAYSID_SI, Pmod_phi=0, Pmod_amp=1,
+                 Alpha=1.2, Delta=0.5, IFO='H1', earth_ephem=None,
+                 sun_ephem=None):
         """
         Parameters
         ----------
         tstart, data_duration : float
             start and duration times (in gps seconds) of the total observation
-        Pmod, Amp, F0, h0: float
-            Modulation period, amplitude, frequency and h0 of the artifact
+        Pmod, F0, F1 h0: float
+            Modulation period, freq, freq-drift, and h0 of the artifact
+        Alpha, Delta: float
+            Sky position, in radians, of a signal of which to add the orbital
+            modulation to the artifact, if not `None`.
         Tsft: float
             the sft duration
         sqrtSX: float
@@ -400,31 +404,40 @@ class FrequencyModulatedArtifactWriter(Writer):
         if self.sun_ephem is None:
             self.sun_ephem = self.sun_ephem_default
 
-        self.n = np.array([np.cos(Alpha)*np.cos(Delta),
-                           np.sin(Alpha)*np.cos(Delta),
-                           np.sin(Delta)])
+        if Alpha and Delta:
+            self.n = np.array([np.cos(Alpha)*np.cos(Delta),
+                               np.sin(Alpha)*np.cos(Delta),
+                               np.sin(Delta)])
 
     def get_frequency(self, t):
-        spin_posvel = lalpulsar.PosVel3D_t()
-        orbit_posvel = lalpulsar.PosVel3D_t()
-        det = lal.CachedDetectors[4]
-        ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
-        lalpulsar.DetectorPosVel(
-            spin_posvel, orbit_posvel, lal.LIGOTimeGPS(t), det, ephems,
-            lalpulsar.DETMOTION_ORBIT)
+        DeltaFDrift = self.F1 * (t - self.tref)
+
+        if self.Alpha and self.Delta:
+            spin_posvel = lalpulsar.PosVel3D_t()
+            orbit_posvel = lalpulsar.PosVel3D_t()
+            det = lal.CachedDetectors[4]
+            ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
+            lalpulsar.DetectorPosVel(
+                spin_posvel, orbit_posvel, lal.LIGOTimeGPS(t), det, ephems,
+                lalpulsar.DETMOTION_ORBIT)
+            DeltaFOrbital = np.dot(self.n, orbit_posvel.vel) * self.Fmax
+        else:
+            DeltaFOrbital = 0
 
         # Pos and vel returned in units of c
         if self.IFO == 'H1':
             Lambda = lal.LHO_4K_DETECTOR_LATITUDE_RAD
         elif self.IFO == 'L1':
             Lambda = lal.LLO_4K_DETECTOR_LATITUDE_RAD
-        phir = 2*np.pi*t/self.Pmod + self.phir0
-        DeltaFSpin = lal.REARTH_SI/lal.C_SI * 2*np.pi/self.Pmod*(
+
+        phir = 2*np.pi*t/self.Pmod + self.Pmod_phi
+        DeltaFSpin = self.Pmod_amp*lal.REARTH_SI/lal.C_SI * 2*np.pi/self.Pmod*(
             np.sin(self.Delta)*np.sin(Lambda)
             + np.cos(self.Alpha)*np.cos(self.Delta)*np.cos(Lambda)*np.cos(phir)
             + np.sin(self.Alpha)*np.cos(self.Delta)*np.sin(Lambda)*np.sin(phir)
-            )
-        f = self.F0+(np.dot(self.n, orbit_posvel.vel) + DeltaFSpin)*self.Fmax
+            ) * self.Fmax
+
+        f = self.F0 + DeltaFDrift + DeltaFOrbital + DeltaFSpin
         return f
 
     def get_h0(self, t):
@@ -479,29 +492,7 @@ class FrequencyModulatedArtifactWriter(Writer):
                                      tmp_outdir)
             lineFreq_old = lineFreq
 
-        SFTFilename = lalpulsar.OfficialSFTFilename(
-            self.IFO[0], self.IFO[1], self.nsfts, self.Tsft, self.tstart,
-            int(self.data_duration), self.label)
-
-        helper_functions.run_commandline(
-            'rm {}/{}'.format(self.outdir, SFTFilename), raise_error=False)
-
-        cl_splitSFTS = (
-            'lalapps_splitSFTs -fs {} -fb {} -fe {} -o {}/{} -i {}/{}_tmp/*sft'
-            .format(self.fmin, self.Band, self.fmin+self.Band, self.outdir,
-                    SFTFilename, self.outdir, self.label))
-        helper_functions.run_commandline(cl_splitSFTS)
-        helper_functions.run_commandline('rm {} -r'.format(tmp_outdir))
-        files = glob.glob('{}/{}*'.format(self.outdir, SFTFilename))
-        if len(files) == 1:
-            fn = files[0]
-            fn_new = fn.split('.')[0] + '.sft'
-            helper_functions.run_commandline('mv {} {}'.format(
-                fn, fn_new))
-        else:
-            raise IOError(
-                'Attempted to rename file, but multiple files found: {}'
-                .format(files))
+        self.concatenate_sft_files(tmp_outdir)
 
     def run_makefakedata_v4(self, mid_time, lineFreq, linePhi, h0, tmp_outdir):
         """ Generate the sft data using the --lineFeature option """
@@ -531,4 +522,4 @@ class FrequencyModulatedArtifactWriter(Writer):
 class FrequencyAmplitudeModulatedArtifactWriter(FrequencyModulatedArtifactWriter):
     """ Instance object for generating SFTs containing artifacts """
     def get_h0(self, t):
-            return self.h0*np.sin(2*np.pi*t/self.Pmod+self.phir0)
+            return self.h0*np.sin(2*np.pi*t/self.Pmod+self. Pmod_phi)
