@@ -68,6 +68,8 @@ def get_frequency_range_of_signal(F0, F1, Alpha, Delta, minStartTime,
 
     Note: assumes tref is in the middle of the data span
 
+    Note: See also `pyfstat.helper_functions.get_covering_band`
+
     Returns
     -------
     [Fmin, Fmax]: array

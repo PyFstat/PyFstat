@@ -241,23 +241,35 @@ def get_sft_array(sftfilepattern, data_duration, F0, dF0):
     return times, freqs, data
 
 
-def get_covering_band(tref, tstart, tend, uniform_prior):
+def get_covering_band(tref, tstart, tend, F0, F1, F2):
+    """ Get the covering band using XLALCWSignalCoveringBand
+
+    Parameters
+    ----------
+    tref, tstart, tend: int
+        The reference, start, and end times of interest
+    F0, F1, F1:
+        Frequency and spin-down of the signal
+
+    Note: this is similar to the function
+    `injection_helper_functions.get_frequency_range_of_signal`, however this
+    does not use the sky position and calculates an estimate for a full year
+    search over any sky position. In this sense, it is much more conservative.
+
+    Returns
+    -------
+    F0min, F0max: float
+        Estimates of the minimum and maximum frequencies of the signal during
+        the search
+
+    """
     tref = lal.LIGOTimeGPS(tref)
     tstart = lal.LIGOTimeGPS(tstart)
     tend = lal.LIGOTimeGPS(tend)
     psr = lalpulsar.PulsarSpinRange()
-    for i, key in enumerate(['F0', 'F1', 'F2']):
-        if key in uniform_prior:
-            if type(uniform_prior[key]) == dict and uniform_prior[key]['type'] == 'unif':
-                l, u = uniform_prior[key]['lower'], uniform_prior[key]['upper']
-                psr.fkdot[i] = (l+u)/2.
-                psr.fkdotBand[i] = u-l
-            else:
-                psr.fkdot[i] = uniform_prior[key]
-                psr.fkdotBand[i] = 0
-        else:
-            raise ValueError(
-                'uniform_prior should contain unif or const values of F0, F1, F2')
+    psr.fkdot[0] = F0
+    psr.fkdot[1] = F1
+    psr.fkdot[2] = F2
     psr.refTime = tref
     return lalpulsar.CWSignalCoveringBand(tstart, tend, psr, 0, 0, 0)
 
