@@ -42,7 +42,11 @@ def _calcDopplerWings(
     horizontals = s_lon - e_longitudes
 
     dopplerShifts = s_freq * np.sin(horizontals) * np.cos(vertical) * v_over_c
-    return np.amin(dopplerShifts), np.amax(dopplerShifts)
+    F0min, F0max = np.amin(dopplerShifts), np.amax(dopplerShifts)
+
+    # Add twice the spin-modulation
+    SpinModulationMax = 2*np.pi*lal.REARTH_SI/lal.DAYSID_SI/lal.C_SI * s_freq
+    return F0min - 2*SpinModulationMax, F0max + 2*SpinModulationMax
 
 
 def _calcSpindownWings(freq, fdot, minStartTime, maxStartTime):
