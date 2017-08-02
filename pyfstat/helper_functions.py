@@ -239,3 +239,26 @@ def get_sft_array(sftfilepattern, data_duration, F0, dF0):
     times = np.linspace(0, data_duration, nsfts)
 
     return times, freqs, data
+
+
+def get_covering_band(tref, tstart, tend, uniform_prior):
+    tref = lal.LIGOTimeGPS(tref)
+    tstart = lal.LIGOTimeGPS(tstart)
+    tend = lal.LIGOTimeGPS(tend)
+    psr = lalpulsar.PulsarSpinRange()
+    for i, key in enumerate(['F0', 'F1', 'F2']):
+        if key in uniform_prior:
+            if type(uniform_prior[key]) == dict and uniform_prior[key]['type'] == 'unif':
+                l, u = uniform_prior[key]['lower'], uniform_prior[key]['upper']
+                psr.fkdot[i] = (l+u)/2.
+                psr.fkdotBand[i] = u-l
+            else:
+                psr.fkdot[i] = uniform_prior[key]
+                psr.fkdotBand[i] = 0
+        else:
+            raise ValueError(
+                'uniform_prior should contain unif or const values of F0, F1, F2')
+    psr.refTime = tref
+    return lalpulsar.CWSignalCoveringBand(tstart, tend, psr, 0, 0, 0)
+
+
