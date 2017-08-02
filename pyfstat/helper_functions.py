@@ -188,7 +188,7 @@ def compute_pstar(twoFcheck_obs, twoFstarcheck_obs, m0, plot=False):
     return 2*np.min([pstar_l, 1-pstar_l])
 
 
-def run_commandline(cl, log_level=20):
+def run_commandline(cl, log_level=20, raise_error=True):
     """Run a string cmd as a subprocess, check for errors and return output.
 
     Parameters
@@ -211,7 +211,10 @@ def run_commandline(cl, log_level=20):
     except subprocess.CalledProcessError as e:
         logging.error('Execution failed:')
         logging.error(e.output)
-        raise
+        if raise_error:
+            raise
+        else:
+            out = 0
     os.system('\n')
 
     return(out)
