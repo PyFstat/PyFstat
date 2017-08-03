@@ -372,7 +372,7 @@ class FrequencyModulatedArtifactWriter(Writer):
     def __init__(self, label, outdir=".", tstart=700000000,
                  data_duration=86400, F0=30, F1=0, tref=None, h0=10, Tsft=1800,
                  sqrtSX=1, Band=4, Pmod=lal.DAYSID_SI, Pmod_phi=0, Pmod_amp=1,
-                 Alpha=1.2, Delta=0.5, IFO='H1', earth_ephem=None,
+                 Alpha=None, Delta=None, IFO='H1', earth_ephem=None,
                  sun_ephem=None):
         """
         Parameters
@@ -409,7 +409,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         if self.sun_ephem is None:
             self.sun_ephem = self.sun_ephem_default
 
-        if Alpha and Delta:
+        if Alpha is not None and Delta is not None:
             self.n = np.array([np.cos(Alpha)*np.cos(Delta),
                                np.sin(Alpha)*np.cos(Delta),
                                np.sin(Delta)])
@@ -417,7 +417,9 @@ class FrequencyModulatedArtifactWriter(Writer):
     def get_frequency(self, t):
         DeltaFDrift = self.F1 * (t - self.tref)
 
-        if self.Alpha and self.Delta:
+        phir = 2*np.pi*t/self.Pmod + self.Pmod_phi
+
+        if self.Alpha is not None and self.Delta is not None:
             spin_posvel = lalpulsar.PosVel3D_t()
             orbit_posvel = lalpulsar.PosVel3D_t()
             det = lal.CachedDetectors[4]
@@ -425,22 +427,21 @@ class FrequencyModulatedArtifactWriter(Writer):
             lalpulsar.DetectorPosVel(
                 spin_posvel, orbit_posvel, lal.LIGOTimeGPS(t), det, ephems,
                 lalpulsar.DETMOTION_ORBIT)
+            # Pos and vel returned in units of c
             DeltaFOrbital = np.dot(self.n, orbit_posvel.vel) * self.Fmax
+
+            if self.IFO == 'H1':
+                Lambda = lal.LHO_4K_DETECTOR_LATITUDE_RAD
+            elif self.IFO == 'L1':
+                Lambda = lal.LLO_4K_DETECTOR_LATITUDE_RAD
+
+            DeltaFSpin = (
+                self.Pmod_amp*lal.REARTH_SI/lal.C_SI*2*np.pi/self.Pmod*(
+                   np.cos(self.Delta)*np.cos(Lambda)*np.sin(self.Alpha-phir)
+                   ) * self.Fmax)
         else:
             DeltaFOrbital = 0
-
-        # Pos and vel returned in units of c
-        if self.IFO == 'H1':
-            Lambda = lal.LHO_4K_DETECTOR_LATITUDE_RAD
-        elif self.IFO == 'L1':
-            Lambda = lal.LLO_4K_DETECTOR_LATITUDE_RAD
-
-        phir = 2*np.pi*t/self.Pmod + self.Pmod_phi
-        DeltaFSpin = self.Pmod_amp*lal.REARTH_SI/lal.C_SI * 2*np.pi/self.Pmod*(
-            np.sin(self.Delta)*np.sin(Lambda)
-            + np.cos(self.Alpha)*np.cos(self.Delta)*np.cos(Lambda)*np.cos(phir)
-            + np.sin(self.Alpha)*np.cos(self.Delta)*np.sin(Lambda)*np.sin(phir)
-            ) * self.Fmax
+            DeltaFSpin = 2*np.pi*self.Pmod_amp/self.Pmod*np.cos(phir)
 
         f = self.F0 + DeltaFDrift + DeltaFOrbital + DeltaFSpin
         return f
@@ -552,8 +553,6 @@ class FrequencyModulatedArtifactWriter(Writer):
         cl_mfd.append('--fmin={:.16g}'.format(self.fmin))
         cl_mfd.append('--Band={:.16g}'.format(self.Band))
         cl_mfd.append('--Tsft={}'.format(self.Tsft))
-        cl_mfd.append('--Alpha={}'.format(self.Alpha))
-        cl_mfd.append('--Delta={}'.format(self.Delta))
         cl_mfd.append('--Freq={}'.format(lineFreq))
         cl_mfd.append('--phi0={}'.format(linePhi))
         cl_mfd.append('--h0={}'.format(h0))
