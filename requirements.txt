@@ -7,3 +7,4 @@ dill
 tqdm
 bashplotlib
 peakutils
+pathos

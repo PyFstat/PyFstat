@@ -4,14 +4,19 @@ import numpy as np
 import logging
 import os
 import glob
+import pkgutil
 
 import lal
 import lalpulsar
 
-from core import BaseSearchClass, tqdm
+from core import BaseSearchClass, tqdm, args
 import helper_functions
 
 earth_ephem, sun_ephem = helper_functions.set_up_ephemeris_configuration()
+
+
+class KeyboardInterruptError(Exception):
+    pass
 
 
 class Writer(BaseSearchClass):
@@ -443,20 +448,23 @@ class FrequencyModulatedArtifactWriter(Writer):
     def get_h0(self, t):
         return self.h0
 
-    def concatenate_sft_files(self, tmp_outdir):
+    def concatenate_sft_files(self):
         SFTFilename = lalpulsar.OfficialSFTFilename(
             self.IFO[0], self.IFO[1], self.nsfts, self.Tsft, self.tstart,
             int(self.data_duration), self.label)
 
+        # If the file already exists, simply remove it for now (no caching
+        # implemented)
         helper_functions.run_commandline(
-            'rm {}/{}'.format(self.outdir, SFTFilename), raise_error=False)
+            'rm {}/{}'.format(self.outdir, SFTFilename), raise_error=False,
+            log_level=10)
 
         cl_splitSFTS = (
-            'lalapps_splitSFTs -fs {} -fb {} -fe {} -o {}/{} -i {}/{}_tmp/*sft'
+            'lalapps_splitSFTs -fs {} -fb {} -fe {} -o {}/{} -i {}/*sft'
             .format(self.fmin, self.Band, self.fmin+self.Band, self.outdir,
-                    SFTFilename, self.outdir, self.label))
+                    SFTFilename, self.tmp_outdir))
         helper_functions.run_commandline(cl_splitSFTS)
-        helper_functions.run_commandline('rm {} -r'.format(tmp_outdir))
+        helper_functions.run_commandline('rm {} -r'.format(self.tmp_outdir))
         files = glob.glob('{}/{}*'.format(self.outdir, SFTFilename))
         if len(files) == 1:
             fn = files[0]
@@ -468,31 +476,67 @@ class FrequencyModulatedArtifactWriter(Writer):
                 'Attempted to rename file, but multiple files found: {}'
                 .format(files))
 
+    def pre_compute_evolution(self):
+        logging.info('Precomputing evolution parameters')
+        self.lineFreqs = []
+        self.linePhis = []
+        self.lineh0s = []
+        self.mid_times = []
+
+        linePhi = 0
+        lineFreq_old = 0
+        for i in tqdm(range(self.nsfts)):
+            mid_time = self.tstart + (i+.5)*self.Tsft
+            lineFreq = self.get_frequency(mid_time)
+
+            self.mid_times.append(mid_time)
+            self.lineFreqs.append(lineFreq)
+            self.linePhis.append(linePhi + np.pi*self.Tsft*(lineFreq_old+lineFreq))
+            self.lineh0s.append(self.get_h0(mid_time))
+
+            lineFreq_old = lineFreq
+
+    def make_ith_sft(self, i):
+        try:
+            self.run_makefakedata_v4(self.mid_times[i], self.lineFreqs[i],
+                                     self.linePhis[i], self.lineh0s[i],
+                                     self.tmp_outdir)
+        except KeyboardInterrupt:
+            raise KeyboardInterruptError()
+
     def make_data(self):
         self.maxStartTime = None
         self.duration = self.Tsft
-        linePhi = 0
-        lineFreq_old = 0
 
-        tmp_outdir = '{}/{}_tmp'.format(self.outdir, self.label)
-        if os.path.isdir(tmp_outdir) is True:
+        self.tmp_outdir = '{}/{}_tmp'.format(self.outdir, self.label)
+        if os.path.isdir(self.tmp_outdir) is True:
             raise ValueError(
                 'Temporary directory {} already exists, please rename'.format(
-                    tmp_outdir))
+                    self.tmp_outdir))
         else:
-            os.makedirs(tmp_outdir)
+            os.makedirs(self.tmp_outdir)
 
-        for i in tqdm(range(self.nsfts)):
-            self.minStartTime = self.tstart + i*self.Tsft
-            mid_time = self.minStartTime + self.Tsft / 2.0
-            lineFreq = self.get_frequency(mid_time)
-            linePhi += np.pi*self.Tsft*(lineFreq_old+lineFreq)
-            lineh0 = self.get_h0(mid_time)
-            self.run_makefakedata_v4(mid_time, lineFreq, linePhi, lineh0,
-                                     tmp_outdir)
-            lineFreq_old = lineFreq
+        self.pre_compute_evolution()
 
-        self.concatenate_sft_files(tmp_outdir)
+        logging.info('Generating SFTs')
+
+        if args.N > 1 and pkgutil.find_loader('pathos') is not None:
+            import pathos.pools
+            logging.info('Using {} threads'.format(args.N))
+            try:
+                with pathos.pools.ProcessPool(args.N) as p:
+                    list(tqdm(p.imap(self.make_ith_sft, range(self.nsfts)),
+                              total=self.nsfts))
+            except KeyboardInterrupt:
+                p.terminate()
+        else:
+            logging.info(
+                "No multiprocessing requested or `pathos` not install, cont."
+                " without multiprocessing")
+            for i in tqdm(range(self.nsfts)):
+                self.make_ith_sft(i)
+
+        self.concatenate_sft_files()
 
     def run_makefakedata_v4(self, mid_time, lineFreq, linePhi, h0, tmp_outdir):
         """ Generate the sft data using the --lineFeature option """
@@ -502,7 +546,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         cl_mfd.append('--outSFTbname="{}"'.format(tmp_outdir))
         cl_mfd.append('--IFO={}'.format(self.IFO))
         cl_mfd.append('--noiseSqrtSh="{}"'.format(self.sqrtSX))
-        cl_mfd.append('--startTime={:0.0f}'.format(float(self.minStartTime)))
+        cl_mfd.append('--startTime={:0.0f}'.format(mid_time-self.Tsft/2.0))
         cl_mfd.append('--refTime={:0.0f}'.format(mid_time))
         cl_mfd.append('--duration={}'.format(int(self.duration)))
         cl_mfd.append('--fmin={:.16g}'.format(self.fmin))

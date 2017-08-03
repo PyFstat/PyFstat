@@ -45,7 +45,10 @@ def set_up_command_line_arguments():
                         action="store_true")
     parser.add_argument("-u", "--use-old-data", action="store_true")
     parser.add_argument('-s', "--setup-only", action="store_true")
-    parser.add_argument('-n', "--no-template-counting", action="store_true")
+    parser.add_argument("--no-template-counting", action="store_true")
+    parser.add_argument(
+        '-N', type=int, default=3, metavar='N',
+        help="Number of threads to use when running in parallel")
     parser.add_argument('unittest_args', nargs='*')
     args, unknown = parser.parse_known_args()
     sys.argv[1:] = args.unittest_args
@@ -209,8 +212,7 @@ def run_commandline(cl, log_level=20, raise_error=True):
                                       universal_newlines=True   # properly display linebreaks in error/output printing
                                      )
     except subprocess.CalledProcessError as e:
-        logging.error('Execution failed:')
-        logging.error(e.output)
+        logging.log(log_level, 'Execution failed: {}'.format(e.output))
         if raise_error:
             raise
         else:

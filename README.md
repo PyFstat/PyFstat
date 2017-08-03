@@ -56,6 +56,8 @@ $ git clone git@gitlab.aei.uni-hannover.de:GregAshton/PyFstat.git
   provides a useful progress bar and estimate of the remaining run-time.
 * [bashplotlib](https://github.com/glamp/bashplotlib), if installed, presents
   a histogram of the loaded SFT data
+* [pathos](https://pypi.python.org/pypi/pathos), if installed, this provides
+  support for multiprocessing some functions.
 
 For an introduction to installing modules see
 [here](https://docs.python.org/3.5/installing/index.html). If you are using
