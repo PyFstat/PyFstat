@@ -354,15 +354,45 @@ class MCMCSearch(core.BaseSearchClass):
                 self._prod_convergence_test(j, sampler, nburn)
                 j += 1
             self._check_production_convergence(k)
-            return sampler
         else:
             for result in tqdm(sampler.sample(p0, iterations=nburn+nprod),
                                total=nburn+nprod):
                 pass
-            return sampler
 
-    def run(self, proposal_scale_factor=2, create_plots=True, **kwargs):
-        """ Run the MCMC simulatation """
+        logging.info("Mean acceptance fraction: {}"
+                     .format(np.mean(sampler.acceptance_fraction, axis=1)))
+        if self.ntemps > 1:
+            logging.info("Tswap acceptance fraction: {}"
+                         .format(sampler.tswap_acceptance_fraction))
+        try:
+            logging.info("Autocorrelation length: {}".format(
+                sampler.get_autocorr_time(c=5)))
+        except emcee.autocorr.AutocorrError as e:
+            logging.warning(
+                'Autocorrelation calculation failed with message {}'.format(e))
+
+        return sampler
+
+    def run(self, proposal_scale_factor=2, create_plots=True, c=5, **kwargs):
+        """ Run the MCMC simulatation
+
+        Parameters
+        ----------
+        proposal_scale_factor: float
+            The proposal scale factor used by the sampler, see Goodman & Weare
+            (2010). If the acceptance fraction is too low, you can raise it by
+            decreasing the a parameter; and if it is too high, you can reduce
+            it by increasing the a parameter [Foreman-Mackay (2013)].
+        create_plots: bool
+            If true, save trace plots of the walkers
+        c: int
+            The minimum number of autocorrelation times needed to trust the
+            result when estimating the autocorrelation time (see
+            emcee.autocorr.integrated_time for further details. Default is 5
+        **kwargs:
+            Passed to _plot_walkers to control the figures
+
+        """
 
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
         if self.old_data_is_okay_to_use is True:
@@ -391,15 +421,10 @@ class MCMCSearch(core.BaseSearchClass):
             logging.info('Running {}/{} initialisation with {} steps'.format(
                 j, ninit_steps, n))
             sampler = self._run_sampler(sampler, p0, nburn=n)
-            logging.info("Mean acceptance fraction: {}"
-                         .format(np.mean(sampler.acceptance_fraction, axis=1)))
-            if self.ntemps > 1:
-                logging.info("Tswap acceptance fraction: {}"
-                             .format(sampler.tswap_acceptance_fraction))
             if create_plots:
                 fig, axes = self._plot_walkers(sampler,
-                                              symbols=self.theta_symbols,
-                                              **kwargs)
+                                               symbols=self.theta_symbols,
+                                               **kwargs)
                 fig.tight_layout()
                 fig.savefig('{}/{}_init_{}_walkers.png'.format(
                     self.outdir, self.label, j), dpi=400)
@@ -417,15 +442,9 @@ class MCMCSearch(core.BaseSearchClass):
         logging.info('Running final burn and prod with {} steps'.format(
             nburn+nprod))
         sampler = self._run_sampler(sampler, p0, nburn=nburn, nprod=nprod)
-        logging.info("Mean acceptance fraction: {}"
-                     .format(np.mean(sampler.acceptance_fraction, axis=1)))
-        if self.ntemps > 1:
-            logging.info("Tswap acceptance fraction: {}"
-                         .format(sampler.tswap_acceptance_fraction))
-
         if create_plots:
             fig, axes = self._plot_walkers(sampler, symbols=self.theta_symbols,
-                                          nprod=nprod, **kwargs)
+                                           nprod=nprod, **kwargs)
             fig.tight_layout()
             fig.savefig('{}/{}_walkers.png'.format(self.outdir, self.label),
                         dpi=200)
@@ -1995,7 +2014,20 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
         Parameters
         ----------
-        run_setup: list of tuples
+        run_setup: list of tuples, optional
+        proposal_scale_factor: float
+            The proposal scale factor used by the sampler, see Goodman & Weare
+            (2010). If the acceptance fraction is too low, you can raise it by
+            decreasing the a parameter; and if it is too high, you can reduce
+            it by increasing the a parameter [Foreman-Mackay (2013)].
+        create_plots: bool
+            If true, save trace plots of the walkers
+        c: int
+            The minimum number of autocorrelation times needed to trust the
+            result when estimating the autocorrelation time (see
+            emcee.autocorr.integrated_time for further details. Default is 5
+        **kwargs:
+            Passed to _plot_walkers to control the figures
 
         """
 
@@ -2046,11 +2078,6 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                           '(Tcoh={:1.2f} days)').format(
                 j+1, len(run_setup), (nburn, nprod), nseg, Tcoh))
             sampler = self._run_sampler(sampler, p0, nburn=nburn, nprod=nprod)
-            logging.info("Mean acceptance fraction: {}"
-                         .format(np.mean(sampler.acceptance_fraction, axis=1)))
-            if self.ntemps > 1:
-                logging.info("Tswap acceptance fraction: {}"
-                             .format(sampler.tswap_acceptance_fraction))
             logging.info('Max detection statistic of run was {}'.format(
                 np.max(sampler.lnlikelihood)))
 
