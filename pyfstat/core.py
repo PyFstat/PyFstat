@@ -28,10 +28,30 @@ earth_ephem, sun_ephem = helper_functions.set_up_ephemeris_configuration()
 detector_colors = {'h1': 'C0', 'l1': 'C1'}
 
 
-def read_par(label=None, outdir=None, filename=None, suffix='par'):
+class Bunch(object):
+    def __init__(self, dictionary):
+        self.__dict__.update(dictionary)
+
+
+def read_par(filename=None, label=None, outdir=None, suffix='par',
+             return_type='bunch'):
     """ Read in a .par file, returns a dictionary of the values
 
+    Parameters
+    ----------
+    filename: str
+        Filename (path) containing a rows or `key=val` to read in
+    label, outdir, suffix: str, optional
+        If filename is None, form the file to read as `outdir/label.suffix`
+    return_type: {'bunch', 'dict'}
+        If `bunch`, return a class instance, if 'dict' return a dictionary
+
     Note, can also read in .loudest files
+
+    Returns
+    -------
+    d: Bunch or dict
+        The par values as either a `Bunch` or dict type
     """
     if filename is None:
         filename = '{}/{}.{}'.format(outdir, label, suffix)
@@ -40,7 +60,12 @@ def read_par(label=None, outdir=None, filename=None, suffix='par'):
     d = {}
     with open(filename, 'r') as f:
         d = get_dictionary_from_lines(f)
-    return d
+    if return_type in ['bunch', 'Bunch']:
+        return Bunch(d)
+    elif return_type in ['dict', 'dictionary']:
+        return d
+    else:
+        raise ValueError('return_type {} not understood'.format(return_type))
 
 
 def get_dictionary_from_lines(lines):
