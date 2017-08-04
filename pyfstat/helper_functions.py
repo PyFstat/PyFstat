@@ -191,7 +191,7 @@ def compute_pstar(twoFcheck_obs, twoFstarcheck_obs, m0, plot=False):
     return 2*np.min([pstar_l, 1-pstar_l])
 
 
-def run_commandline(cl, log_level=20, raise_error=True):
+def run_commandline(cl, log_level=20, raise_error=True, return_output=True):
     """Run a string cmd as a subprocess, check for errors and return output.
 
     Parameters
@@ -205,21 +205,25 @@ def run_commandline(cl, log_level=20, raise_error=True):
     """
 
     logging.log(log_level, 'Now executing: ' + cl)
-    try:
-        out = subprocess.check_output(cl,                       # what to run
-                                      stderr=subprocess.STDOUT, # catch errors
-                                      shell=True,               # proper environment etc
-                                      universal_newlines=True   # properly display linebreaks in error/output printing
-                                     )
-    except subprocess.CalledProcessError as e:
-        logging.log(log_level, 'Execution failed: {}'.format(e.output))
-        if raise_error:
-            raise
-        else:
-            out = 0
-    os.system('\n')
+    if return_output:
+        try:
+            out = subprocess.check_output(cl,                       # what to run
+                                          stderr=subprocess.STDOUT, # catch errors
+                                          shell=True,               # proper environment etc
+                                          universal_newlines=True,  # properly display linebreaks in error/output printing
+                                         )
+        except subprocess.CalledProcessError as e:
+            logging.log(log_level, 'Execution failed: {}'.format(e.output))
+            if raise_error:
+                raise
+            else:
+                out = 0
+        os.system('\n')
+        return(out)
+    else:
+        process = subprocess.Popen(cl, shell=True)
+        process.communicate()
 
-    return(out)
 
 
 def convert_array_to_gsl_matrix(array):
