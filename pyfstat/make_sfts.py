@@ -32,8 +32,8 @@ class Writer(BaseSearchClass):
         ----------
         label: string
             a human-readable label to be used in naming the output files
-        tstart, tend : float
-            start and end times (in gps seconds) of the total observation span
+        tstart, duration : int
+            start and duration (in gps seconds) of the total observation span
         tref: float or None
             reference time (default is None, which sets the reference time to
             tstart)
@@ -47,6 +47,9 @@ class Writer(BaseSearchClass):
 
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
+
+        self.tstart = int(tstart)
+        self.duration = int(duration)
 
         self.tend = self.tstart + self.duration
         if self.minStartTime is None:
@@ -264,8 +267,8 @@ class GlitchWriter(Writer):
         ----------
         label: string
             a human-readable label to be used in naming the output files
-        tstart, tend : float
-            start and end times (in gps seconds) of the total observation span
+        tstart, duration : float
+            start and duration (in gps seconds) of the total observation span
         dtglitch: float
             time (in gps seconds) of the glitch after tstart. To create data
             without a glitch, set dtglitch=None
@@ -284,6 +287,9 @@ class GlitchWriter(Writer):
 
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
+
+        self.tstart = int(tstart)
+        self.duration = int(duration)
 
         for d in self.delta_phi, self.delta_F0, self.delta_F1, self.delta_F2:
             if np.size(d) == 1:
@@ -377,7 +383,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         """
         Parameters
         ----------
-        tstart, data_duration : float
+        tstart, data_duration : int
             start and duration times (in gps seconds) of the total observation
         Pmod, F0, F1 h0: float
             Modulation period, freq, freq-drift, and h0 of the artifact
@@ -391,6 +397,9 @@ class FrequencyModulatedArtifactWriter(Writer):
 
         see `lalapps_Makefakedata_v4 --help` for help with the other paramaters
         """
+
+        self.tstart = int(tstart)
+        self.data_duration = int(data_duration)
 
         if os.path.isdir(self.outdir) is False:
             os.makedirs(self.outdir)
@@ -451,7 +460,7 @@ class FrequencyModulatedArtifactWriter(Writer):
 
     def concatenate_sft_files(self):
         SFTFilename = lalpulsar.OfficialSFTFilename(
-            self.IFO[0], self.IFO[1], self.nsfts, self.Tsft, self.tstart,
+            self.IFO[0], self.IFO[1], self.nsfts, self.Tsft, int(self.tstart),
             int(self.data_duration), self.label)
 
         # If the file already exists, simply remove it for now (no caching
