@@ -1,4 +1,5 @@
 """ Searches using MCMC-based methods """
+from __future__ import division, absolute_import, print_function
 
 import sys
 import os
@@ -14,11 +15,10 @@ import emcee
 import corner
 import dill as pickle
 
-import core
-from core import tqdm, args, earth_ephem, sun_ephem, read_par
-from optimal_setup_functions import get_V_estimate
-from optimal_setup_functions import get_optimal_setup
-import helper_functions
+import pyfstat.core as core
+from pyfstat.core import tqdm, args, earth_ephem, sun_ephem, read_par
+from pyfstat.optimal_setup_functions import get_V_estimate, get_optimal_setup
+import pyfstat.helper_functions as helper_functions
 
 
 class MCMCSearch(core.BaseSearchClass):

@@ -1,4 +1,5 @@
 """ Searches using grid-based methods """
+from __future__ import division, absolute_import, print_function
 
 import os
 import logging
@@ -9,9 +10,10 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
-import helper_functions
-from core import BaseSearchClass, ComputeFstat, SemiCoherentGlitchSearch, SemiCoherentSearch
-from core import tqdm, args, earth_ephem, sun_ephem, read_par
+import pyfstat.helper_functions as helper_functions
+from pyfstat.core import (BaseSearchClass, ComputeFstat,
+                          SemiCoherentGlitchSearch, SemiCoherentSearch, tqdm,
+                          args, earth_ephem, sun_ephem, read_par)
 
 
 class GridSearch(BaseSearchClass):

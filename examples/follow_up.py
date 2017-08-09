@@ -21,7 +21,7 @@ theta_prior = {'F0': {'type': 'unif', 'lower': F0*(1-1e-6), 'upper': F0*(1+1e-5)
 ntemps = 1
 log10temperature_min = -1
 nwalkers = 100
-run_setup = [(1000, 50), (1000, 25), (1000, 1, False), 
+run_setup = [(1000, 50), (1000, 25), (1000, 1, False),
              ((500, 500), 1, True)]
 
 mcmc = pyfstat.MCMCFollowUpSearch(
@@ -29,6 +29,7 @@ mcmc = pyfstat.MCMCFollowUpSearch(
     sftfilepattern='data/*basic*sft', theta_prior=theta_prior, tref=tref,
     minStartTime=tstart, maxStartTime=tend, nwalkers=nwalkers,
     ntemps=ntemps, log10temperature_min=log10temperature_min)
-mcmc.run(run_setup)
+mcmc.run(run_setup, gen_tex_table=True)
+#mcmc.run(Nsegs0=50)
 mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()

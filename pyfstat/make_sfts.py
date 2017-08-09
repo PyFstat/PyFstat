@@ -1,4 +1,5 @@
 """ pyfstat tools to generate sfts """
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 import logging
@@ -9,8 +10,8 @@ import pkgutil
 import lal
 import lalpulsar
 
-from core import BaseSearchClass, tqdm, args
-import helper_functions
+from pyfstat.core import BaseSearchClass, tqdm, args
+import pyfstat.helper_functions as helper_functions
 
 earth_ephem, sun_ephem = helper_functions.set_up_ephemeris_configuration()
 

@@ -4,13 +4,14 @@ Provides functions to aid in calculating the optimal setup based on the metric
 volume estimates.
 
 """
+from __future__ import division, absolute_import, print_function
 
 import logging
 import numpy as np
 import scipy.optimize
 import lal
 import lalpulsar
-import helper_functions
+import pyfstat.helper_functions as helper_functions
 
 
 def get_optimal_setup(

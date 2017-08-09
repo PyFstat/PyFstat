@@ -1,7 +1,10 @@
 """ The core tools used in pyfstat """
+from __future__ import division, absolute_import, print_function
+
 import os
 import logging
 import copy
+
 
 import glob
 import numpy as np
@@ -10,7 +13,7 @@ import scipy.optimize
 
 import lal
 import lalpulsar
-import helper_functions
+import pyfstat.helper_functions as helper_functions
 
 # workaround for matplotlib on X-less remote logins
 if 'DISPLAY' in os.environ:
