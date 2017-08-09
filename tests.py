@@ -223,7 +223,7 @@ class TestMCMCSearch(Test):
             sftfilepattern='{}/*{}*sft'.format(Writer.outdir, Writer.label),
             minStartTime=minStartTime, maxStartTime=maxStartTime,
             nsteps=[100, 100], nwalkers=100, ntemps=2, log10temperature_min=-1)
-        search.setup_convergence_testing()
+        search.setup_burnin_convergence_testing()
         search.run(create_plots=False)
         _, FS = search.get_max_twoF()
 
