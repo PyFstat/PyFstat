@@ -1,4 +1,4 @@
-from pyfstat import Writer
+from pyfstat import Writer, GlitchWriter
 import numpy as np
 
 # First, we generate data with a reasonably strong smooth signal
@@ -34,7 +34,7 @@ dtglitch = duration/2.0
 delta_F0 = 4e-5
 delta_F1 = 0
 
-glitch_data = Writer(
+glitch_data = GlitchWriter(
     label='glitch', outdir='data', tref=tref, tstart=tstart, F0=F0, F1=F1,
     F2=F2, duration=duration, Alpha=Alpha, Delta=Delta, h0=h0, sqrtSX=sqrtSX,
     dtglitch=dtglitch, delta_F0=delta_F0, delta_F1=delta_F1)
@@ -48,7 +48,7 @@ delta_F0 = [4e-6, 3e-7]
 delta_F1 = [0, 0]
 delta_F2 = [0, 0]
 
-two_glitch_data = Writer(
+two_glitch_data = GlitchWriter(
     label='twoglitch', outdir='data', tref=tref, tstart=tstart, F0=F0, F1=F1,
     F2=F2, duration=duration, Alpha=Alpha, Delta=Delta, h0=h0, sqrtSX=sqrtSX,
     dtglitch=dtglitch, delta_phi=delta_phi, delta_F0=delta_F0,

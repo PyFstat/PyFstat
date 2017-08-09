@@ -1280,7 +1280,7 @@ class MCMCSearch(core.BaseSearchClass):
 
     def generate_loudest(self):
         self.write_par()
-        params = read_par(self.label, self.outdir)
+        params = read_par(label=self.label, outdir=self.outdir)
         for key in ['Alpha', 'Delta', 'F0', 'F1']:
             if key not in params:
                 params[key] = self.theta_prior[key]

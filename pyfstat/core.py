@@ -2,26 +2,26 @@
 import os
 import logging
 import copy
-import glob
 
+import glob
 import numpy as np
+import scipy.special
+import scipy.optimize
+
+import lal
+import lalpulsar
+import helper_functions
 
 # workaround for matplotlib on X-less remote logins
-if os.environ.has_key('DISPLAY'):
+if 'DISPLAY' in os.environ:
     import matplotlib.pyplot as plt
 else:
-    logging.info('No $DISPLAY environment variable found, \
-                  so importing matplotlib.pyplot with non-interactive "Agg" backend.')
+    logging.info('No $DISPLAY environment variable found, so importing \
+                  matplotlib.pyplot with non-interactive "Agg" backend.')
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
 
-import scipy.special
-import scipy.optimize
-import lal
-import lalpulsar
-
-import helper_functions
 helper_functions.set_up_matplotlib_defaults()
 args, tqdm = helper_functions.set_up_command_line_arguments()
 earth_ephem, sun_ephem = helper_functions.set_up_ephemeris_configuration()
@@ -29,37 +29,64 @@ detector_colors = {'h1': 'C0', 'l1': 'C1'}
 
 
 class Bunch(object):
+    """ Turns dictionary into object with attribute-style access
+
+    Parameter
+    ---------
+    dict
+        Input dictionary
+
+    Examples
+    --------
+    >>> data = Bunch(dict(x=1, y=[1, 2, 3], z=True))
+    >>> print(data.x)
+    1
+    >>> print(data.y)
+    [1, 2, 3]
+    >>> print(data.z)
+    True
+
+    """
     def __init__(self, dictionary):
         self.__dict__.update(dictionary)
 
 
 def read_par(filename=None, label=None, outdir=None, suffix='par',
-             return_type='bunch'):
-    """ Read in a .par file, returns a dictionary of the values
+             return_type='dict', comments=['%', '#'], raise_error=False):
+    """ Read in a .par or .loudest file, returns a dict or Bunch of the data
 
     Parameters
     ----------
-    filename: str
-        Filename (path) containing a rows or `key=val` to read in
-    label, outdir, suffix: str, optional
-        If filename is None, form the file to read as `outdir/label.suffix`
-    return_type: {'bunch', 'dict'}
-        If `bunch`, return a class instance, if 'dict' return a dictionary
+    filename : str
+        Filename (path) containing rows of `key=val` data to read in.
+    label, outdir, suffix : str, optional
+        If filename is None, form the file to read as `outdir/label.suffix`.
+    return_type : {'dict', 'bunch'}, optional
+        If `dict`, return a dictionary, if 'bunch' return a Bunch
+    comments : str or list of strings, optional
+        Characters denoting that a row is a comment.
+    raise_error : bool, optional
+        If True, raise an error for lines which are not comments, but cannot
+        be read.
 
-    Note, can also read in .loudest files
+    Notes
+    -----
+    This can also be used to read in .loudest files, or any file which has
+    rows of `key=val` data (in which the val can be understood using eval(val)
 
     Returns
     -------
     d: Bunch or dict
         The par values as either a `Bunch` or dict type
+
     """
     if filename is None:
         filename = '{}/{}.{}'.format(outdir, label, suffix)
     if os.path.isfile(filename) is False:
-        raise ValueError("No file ({}) found".format(filename))
+        raise ValueError("No file {} found".format(filename))
     d = {}
     with open(filename, 'r') as f:
-        d = get_dictionary_from_lines(f)
+        d = _get_dictionary_from_lines(f, comments, raise_error)
     if return_type in ['bunch', 'Bunch']:
         return Bunch(d)
     elif return_type in ['dict', 'dictionary']:
@@ -68,15 +95,33 @@ def read_par(filename=None, label=None, outdir=None, suffix='par',
         raise ValueError('return_type {} not understood'.format(return_type))
 
 
-def get_dictionary_from_lines(lines):
+def _get_dictionary_from_lines(lines, comments, raise_error):
+    """ Return dictionary of key=val pairs for each line in lines
+
+    Parameters
+    ----------
+    comments : str or list of strings
+        Characters denoting that a row is a comment.
+    raise_error : bool
+        If True, raise an error for lines which are not comments, but cannot
+        be read.
+
+    Returns
+    -------
+    d: Bunch or dict
+        The par values as either a `Bunch` or dict type
+
+    """
     d = {}
     for line in lines:
-        if line[0] not in ['%', '#'] and len(line.split('=')) == 2:
+        if line[0] not in comments and len(line.split('=')) == 2:
             try:
                 key, val = line.rstrip('\n').split('=')
                 key = key.strip()
                 d[key] = np.float64(eval(val.rstrip('; ')))
             except SyntaxError:
+                if raise_error:
+                    raise IOError('Line {} not understood'.format(line))
                 pass
     return d
 
@@ -84,7 +129,26 @@ def get_dictionary_from_lines(lines):
 def predict_fstat(h0, cosi, psi, Alpha, Delta, Freq, sftfilepattern,
                   minStartTime, maxStartTime, IFO=None, assumeSqrtSX=None,
                   **kwargs):
-    """ Wrapper to lalapps_PredictFstat """
+    """ Wrapper to lalapps_PredictFstat
+
+    Parameters
+    ----------
+    h0, cosi, psi, Alpha, Delta, Freq : float
+        Signal properties, see `lalapps_PredictFstat --help` for more info.
+    sftfilepattern : str
+        Pattern matching the sftfiles to use.
+    minStartTime, maxStartTime : int
+    IFO : str
+        See `lalapps_PredictFstat --help`
+    assumeSqrtSX : float or None
+        See `lalapps_PredictFstat --help`, if None this option is not used
+
+    Returns
+    -------
+    twoF_expected, twoF_sigma : float
+        The expectation and standard deviation of 2F
+
+    """
     cl_pfs = []
     cl_pfs.append("lalapps_PredictFstat")
     cl_pfs.append("--h0={}".format(h0))
@@ -111,7 +175,15 @@ def predict_fstat(h0, cosi, psi, Alpha, Delta, Freq, sftfilepattern,
 
 
 class BaseSearchClass(object):
-    """ The base search class, provides general functions """
+    """ The base search class providing parent methods to other searches
+
+    Attributes
+    ----------
+    earth_ephem_default, sun_ephem_default : str
+        Paths to the earth and sun ephemeris files to use if not specified
+        elsewhere
+
+    """
 
     earth_ephem_default = earth_ephem
     sun_ephem_default = sun_ephem
@@ -131,17 +203,17 @@ class BaseSearchClass(object):
 
         Parameters
         ----------
-        n: int
+        n : int
             The dimension of the shift-matrix to generate
-        dT: float
+        dT : float
             The time delta of the shift matrix
 
         Returns
         -------
-        m: array (n, n)
-            The shift matrix
-        """
+        m : ndarray, shape (n,)
+            The shift matrix.
 
+        """
         m = np.zeros((n, n))
         factorial = np.math.factorial
         for i in range(n):
@@ -162,24 +234,46 @@ class BaseSearchClass(object):
 
         Parameters
         ----------
-        theta: array-like, shape (n,)
-            vector of the expansion coefficients to transform starting from the
+        theta : array-like, shape (n,)
+            Vector of the expansion coefficients to transform starting from the
             lowest degree e.g [phi, F0, F1,...].
-        dT: float
-            difference between the two reference times as tref_new - tref_old.
+        dT : float
+            Difference between the two reference times as tref_new - tref_old.
 
         Returns
         -------
-        theta_new: array-like shape (n,)
-            vector of the coefficients as evaluate as the new reference time.
+        theta_new : ndarray, shape (n,)
+            Vector of the coefficients as evaluated as the new reference time.
         """
-
         n = len(theta)
         m = self._shift_matrix(n, dT)
         return np.dot(m, theta)
 
     def _calculate_thetas(self, theta, delta_thetas, tbounds, theta0_idx=0):
-        """ Calculates the set of coefficients for the post-glitch signal """
+        """ Calculates the set of thetas given delta_thetas, the jumps
+
+        This is used when generating data containing glitches or timing noise.
+        Specifically, the source parameters of the signal are not constant in
+        time, but jump by `delta_theta` at `tbounds`.
+
+        Parameters
+        ----------
+        theta : array_like
+            The source parameters of size (n,).
+        delta_thetas : array_like
+            The jumps in the source parameters of size (m, n) where m is the
+            number of jumps.
+        tbounds : array_like
+            Time boundaries of the jumps of size (m+2,).
+        theta0_idx : int
+            Index of the segment for which the theta are defined.
+
+        Returns
+        -------
+        ndarray
+            The set of thetas, shape (m+1, n).
+
+        """
         thetas = [theta]
         for i, dt in enumerate(delta_thetas):
             if i < theta0_idx:
@@ -199,7 +293,7 @@ class BaseSearchClass(object):
         return thetas
 
     def _get_list_of_matching_sfts(self):
-        """ Returns a list of sfts matching the sftfilepattern """
+        """ Returns a list of sfts matching the attribute sftfilepattern """
         sftfilepatternlist = np.atleast_1d(self.sftfilepattern.split(';'))
         matches = [glob.glob(p) for p in sftfilepatternlist]
         matches = [item for sublist in matches for item in sublist]
@@ -225,41 +319,41 @@ class ComputeFstat(object):
         """
         Parameters
         ----------
-        tref: int
+        tref : int
             GPS seconds of the reference time.
-        sftfilepattern: str
+        sftfilepattern : str
             Pattern to match SFTs using wildcards (*?) and ranges [0-9];
             mutiple patterns can be given separated by colons.
-        minStartTime, maxStartTime: float GPStime
+        minStartTime, maxStartTime : float GPStime
             Only use SFTs with timestemps starting from (including, excluding)
             this epoch
-        binary: bool
+        binary : bool
             If true, search of binary parameters.
-        transient: bool
+        transient : bool
             If true, allow for the Fstat to be computed over a transient range.
-        BSGL: bool
+        BSGL : bool
             If true, compute the BSGL rather than the twoF value.
-        detectors: str
+        detectors : str
             Two character reference to the data to use, specify None for no
             contraint. If multiple-separate by comma.
-        minCoverFreq, maxCoverFreq: float
+        minCoverFreq, maxCoverFreq : float
             The min and max cover frequency passed to CreateFstatInput, if
             either is None the range of frequencies in the SFT less 1Hz is
             used.
-        earth_ephem, sun_ephem: str
+        earth_ephem, sun_ephem : str
             Paths of the two files containing positions of Earth and Sun,
             respectively at evenly spaced times, as passed to CreateFstatInput.
-            If None defaults defined in BaseSearchClass will be used.
-        injectSources: dict or str
+            If None defaults will be used.
+        injectSources : dict or str
             Either a dictionary of the values to inject, or a string pointing
             to the .cff file to inject
-        injectSqrtSX:
+        injectSqrtSX :
             Not yet implemented
-        assumeSqrtSX: float
+        assumeSqrtSX : float
             Don't estimate noise-floors but assume (stationary) per-IFO
             sqrt{SX} (if single value: use for all IFOs). If signal only,
             set sqrtSX=1
-        SSBprec: int
+        SSBprec : int
             Flag to set the SSB calculation: 0=Newtonian, 1=relativistic,
             2=relativisitic optimised, 3=DMoff, 4=NO_SPIN
 
@@ -272,7 +366,17 @@ class ComputeFstat(object):
 
         self.init_computefstatistic_single_point()
 
-    def get_SFTCatalog(self):
+    def _get_SFTCatalog(self):
+        """ Load the SFTCatalog
+
+        If sftfilepattern is specified, load the data. If not, attempt to
+        create data on the fly.
+
+        Returns
+        -------
+        SFTCatalog: lalpulsar.SFTCatalog
+
+        """
         if hasattr(self, 'SFTCatalog'):
             return
         if self.sftfilepattern is None:
@@ -330,10 +434,10 @@ class ComputeFstat(object):
         logging.info('Loaded {} data files from detectors {}'.format(
             len(SFT_timestamps), detector_names))
         cl_tconv1 = 'lalapps_tconvert {}'.format(int(SFT_timestamps[0]))
-        output    = helper_functions.run_commandline(cl_tconv1)
+        output = helper_functions.run_commandline(cl_tconv1)
         tconvert1 = output.rstrip('\n')
         cl_tconv2 = 'lalapps_tconvert {}'.format(int(SFT_timestamps[-1]))
-        output    = helper_functions.run_commandline(cl_tconv2)
+        output = helper_functions.run_commandline(cl_tconv2)
         tconvert2 = output.rstrip('\n')
         logging.info('Data spans from {} ({}) to {} ({})'.format(
             int(SFT_timestamps[0]),
@@ -345,7 +449,7 @@ class ComputeFstat(object):
     def init_computefstatistic_single_point(self):
         """ Initilisation step of run_computefstatistic for a single point """
 
-        SFTCatalog = self.get_SFTCatalog()
+        SFTCatalog = self._get_SFTCatalog()
 
         logging.info('Initialising ephems')
         ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
@@ -549,20 +653,22 @@ class ComputeFstat(object):
                                   tstart=None, tend=None, npoints=1000,
                                   ):
         """ Calculate the cumulative twoF along the obseration span
-        Params
-        ------
+
+        Parameters
+        ----------
         F0, F1, F2, Alpha, Delta: float
             Parameters at which to compute the cumulative twoF
-        asini, period, ecc, tp, argp: float
-            Binary parameters at which to compute the cumulative twoF (default
-            to None)
+        asini, period, ecc, tp, argp: float, optional
+            Binary parameters at which to compute the cumulative 2F
         tstart, tend: int
             GPS times to restrict the range of data used - automatically
             truncated to the span of data available
         npoints: int
             Number of points to compute twoF along the span
 
-        Note: the minimum cumulatibe twoF is hard-coded to be computed over
+        Notes
+        -----
+        The minimum cumulatibe twoF is hard-coded to be computed over
         the first 6 hours from either the first timestampe in the data (if
         tstart is smaller than it) or tstart.
 
@@ -585,13 +691,32 @@ class ComputeFstat(object):
 
         return taus, np.array(twoFs)
 
-    def calculate_pfs(self, label, outdir, N=15, IFO=None, pfs_input=None):
+    def _calculate_predict_fstat_cumulative(self, N, label=None, outdir=None,
+                                            IFO=None, pfs_input=None):
+        """ Calculates the predicted 2F and standard deviation cumulatively
+
+        Parameters
+        ----------
+        N : int
+            Number of timesteps to use between minStartTime and maxStartTime.
+        label, outdir : str, optional
+            The label and directory to read in the .loudest file from
+        IFO : str
+        pfs_input : dict, optional
+            Input kwargs to predict_fstat (alternative to giving label and
+            outdir).
+
+        Returns
+        -------
+        times, pfs, pfs_sigma : ndarray, size (N,)
+
+        """
 
         if pfs_input is None:
             if os.path.isfile('{}/{}.loudest'.format(outdir, label)) is False:
                 raise ValueError(
                     'Need a loudest file to add the predicted Fstat')
-            loudest = read_par(label, outdir, suffix='loudest')
+            loudest = read_par(label=label, outdir=outdir, suffix='loudest')
             pfs_input = {key: loudest[key] for key in
                          ['h0', 'cosi', 'psi', 'Alpha', 'Delta', 'Freq']}
         times = np.linspace(self.minStartTime, self.maxStartTime, N+1)[1:]
@@ -602,9 +727,37 @@ class ComputeFstat(object):
         pfs, pfs_sigma = np.array(out).T
         return times, pfs, pfs_sigma
 
-    def plot_twoF_cumulative(self, label, outdir, ax=None, c='k', savefig=True,
-                             title=None, add_pfs=False, N=15,
-                             injectSources=None, **kwargs):
+    def plot_twoF_cumulative(self, label, outdir, add_pfs=False, N=15,
+                             injectSources=None, ax=None, c='k', savefig=True,
+                             title=None, **kwargs):
+        """ Plot the twoF value cumulatively
+
+        Parameters
+        ----------
+        label, outdir : str
+        add_pfs : bool
+            If true, plot the predicted 2F and standard deviation
+        N : int
+            Number of points to use
+        injectSources : dict
+            See `ComputeFstat`
+        ax : matplotlib.axes._subplots_AxesSubplot, optional
+            Axis to add the plot to.
+        c : str
+            Colour
+        savefig : bool
+            If true, save the figure in outdir
+        title: str
+            Figure title
+
+        Returns
+        -------
+        tauS, tauF : ndarray shape (N,)
+            If savefig, the times and twoF (cumulative) values
+        ax : matplotlib.axes._subplots_AxesSubplot, optional
+            If savefig is False
+
+        """
         if ax is None:
             fig, ax = plt.subplots()
         if injectSources:
@@ -630,17 +783,20 @@ class ComputeFstat(object):
             self.detector_names = detector_names
 
         if add_pfs:
-            times, pfs, pfs_sigma = self.calculate_pfs(
-                label, outdir, N=N, pfs_input=pfs_input)
+            times, pfs, pfs_sigma = self._calculate_predict_fstat_cumulative(
+                N=N, label=label, outdir=outdir, pfs_input=pfs_input)
             ax.fill_between(
                 (times-self.minStartTime)/86400., pfs-pfs_sigma, pfs+pfs_sigma,
                 color=c,
-                label=r'Predicted $\langle 2\mathcal{F} \rangle\pm $ 1-$\sigma$ band',
+                label=(r'Predicted $\langle 2\mathcal{F} '
+                       r'\rangle\pm $ 1-$\sigma$ band'),
                 zorder=-10, alpha=0.2)
             if len(self.detector_names) > 1:
                 for d in self.detector_names:
-                    times, pfs, pfs_sigma = self.calculate_pfs(
-                        label, outdir, IFO=d.upper(), N=N, pfs_input=pfs_input)
+                    out = self._calculate_predict_fstat_cumulative(
+                        N=N, label=label, outdir=outdir, IFO=d.upper(),
+                        pfs_input=pfs_input)
+                    times, pfs, pfs_sigma = out
                     ax.fill_between(
                         (times-self.minStartTime)/86400., pfs-pfs_sigma,
                         pfs+pfs_sigma, color=detector_colors[d.lower()],
