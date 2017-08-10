@@ -17,7 +17,7 @@ import dill as pickle
 
 import pyfstat.core as core
 from pyfstat.core import tqdm, args, earth_ephem, sun_ephem, read_par
-from pyfstat.optimal_setup_functions import get_V_estimate, get_optimal_setup
+from pyfstat.optimal_setup_functions import get_Nstar_estimate, get_optimal_setup
 import pyfstat.helper_functions as helper_functions
 
 
@@ -1831,54 +1831,29 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         if prior[key]['type'] == 'unif':
             return .5*(prior[key]['upper'] + prior[key]['lower'])
 
-    def init_V_estimate_parameters(self):
-        if 'Alpha' in self.theta_keys:
-            DeltaAlpha = self.get_width_from_prior(self.theta_prior, 'Alpha')
-            DeltaDelta = self.get_width_from_prior(self.theta_prior, 'Delta')
-            DeltaMid = self.get_mid_from_prior(self.theta_prior, 'Delta')
-            DeltaOmega = np.sin(np.pi/2 - DeltaMid) * DeltaDelta * DeltaAlpha
-            logging.info('Search over Alpha and Delta')
-        else:
-            logging.info('No sky search requested')
-            DeltaOmega = 0
-        if 'F0' in self.theta_keys:
-            DeltaF0 = self.get_width_from_prior(self.theta_prior, 'F0')
-        else:
-            raise ValueError("You aren't searching over F0?")
-        DeltaFs = [DeltaF0]
-        if 'F1' in self.theta_keys:
-            DeltaF1 = self.get_width_from_prior(self.theta_prior, 'F1')
-            DeltaFs.append(DeltaF1)
-            if 'F2' in self.theta_keys:
-                DeltaF2 = self.get_width_from_prior(self.theta_prior, 'F2')
-                DeltaFs.append(DeltaF2)
-        logging.info('Searching over Frequency and {} spin-down components'
-                     .format(len(DeltaFs)-1))
-
-        if type(self.theta_prior['F0']) == dict:
-            fiducial_freq = self.get_mid_from_prior(self.theta_prior, 'F0')
-        else:
-            fiducial_freq = self.theta_prior['F0']
-
-        return fiducial_freq, DeltaOmega, DeltaFs
-
     def read_setup_input_file(self, run_setup_input_file):
         with open(run_setup_input_file, 'r+') as f:
             d = pickle.load(f)
         return d
 
     def write_setup_input_file(self, run_setup_input_file, R, Nsegs0,
-                               nsegs_vals, V_vals, DeltaOmega, DeltaFs):
-        d = dict(R=R, Nsegs0=Nsegs0, nsegs_vals=nsegs_vals, V_vals=V_vals,
-                 DeltaOmega=DeltaOmega, DeltaFs=DeltaFs)
+                               nsegs_vals, Nstar_vals, theta_prior):
+        d = dict(R=R, Nsegs0=Nsegs0, nsegs_vals=nsegs_vals,
+                 theta_prior=theta_prior, Nstar_vals=Nstar_vals)
         with open(run_setup_input_file, 'w+') as f:
             pickle.dump(d, f)
 
     def check_old_run_setup(self, old_setup, **kwargs):
         try:
             truths = [val == old_setup[key] for key, val in kwargs.iteritems()]
-            return all(truths)
-        except KeyError:
+            if all(truths):
+                return True
+            else:
+                logging.info(
+                    'Old setup does not match one of R, Nsegs0 or prior')
+        except KeyError as e:
+            logging.info(
+                'Error found when comparing with old setup: {}'.format(e))
             return False
 
     def init_run_setup(self, run_setup=None, R=10, Nsegs0=None, log_table=True,
@@ -1888,7 +1863,6 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             raise ValueError(
                 'You must either specify the run_setup, or Nsegs0 from which '
                 'the optimal run_setup given R can be estimated')
-        fiducial_freq, DeltaOmega, DeltaFs = self.init_V_estimate_parameters()
         if run_setup is None:
             logging.info('No run_setup provided')
 
@@ -1901,29 +1875,26 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 old_setup = self.read_setup_input_file(run_setup_input_file)
                 if self.check_old_run_setup(old_setup, R=R,
                                             Nsegs0=Nsegs0,
-                                            DeltaOmega=DeltaOmega,
-                                            DeltaFs=DeltaFs):
+                                            theta_prior=self.theta_prior):
                     logging.info('Using old setup with R={}, Nsegs0={}'.format(
                         R, Nsegs0))
                     nsegs_vals = old_setup['nsegs_vals']
-                    V_vals = old_setup['V_vals']
+                    Nstar_vals = old_setup['Nstar_vals']
                     generate_setup = False
                 else:
-                    logging.info(
-                        'Old setup does not match requested R, Nsegs0')
                     generate_setup = True
             else:
                 generate_setup = True
 
             if generate_setup:
-                nsegs_vals, V_vals = get_optimal_setup(
+                nsegs_vals, Nstar_vals = get_optimal_setup(
                     R, Nsegs0, self.tref, self.minStartTime,
-                    self.maxStartTime, self.theta_prior, fiducial_freq,
+                    self.maxStartTime, self.theta_prior,
                     self.search.detector_names, self.earth_ephem,
                     self.sun_ephem)
                 self.write_setup_input_file(run_setup_input_file, R, Nsegs0,
-                                            nsegs_vals, V_vals, DeltaOmega,
-                                            DeltaFs)
+                                            nsegs_vals, Nstar_vals,
+                                            self.theta_prior)
 
             run_setup = [((self.nsteps[0], 0),  nsegs, False)
                          for nsegs in nsegs_vals[:-1]]
@@ -1932,7 +1903,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
         else:
             logging.info('Calculating the number of templates for this setup')
-            V_vals = []
+            Nstar_vals = []
             for i, rs in enumerate(run_setup):
                 rs = list(rs)
                 if len(rs) == 2:
@@ -1942,25 +1913,24 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 run_setup[i] = rs
 
                 if args.no_template_counting:
-                    V_vals.append([1, 1, 1])
+                    Nstar_vals.append([1, 1, 1])
                 else:
-                    V = get_V_estimate(
+                    Nstar = get_Nstar_estimate(
                         rs[1], self.tref, self.minStartTime, self.maxStartTime,
-                        self.theta_prior, fiducial_freq,
-                        self.search.detector_names, self.earth_ephem,
-                        self.sun_ephem)
-                    V_vals.append(V)
+                        self.theta_prior, self.search.detector_names,
+                        self.earth_ephem, self.sun_ephem)
+                    Nstar_vals.append(Nstar)
 
         if log_table:
             logging.info('Using run-setup as follows:')
             logging.info(
-                'Stage | nburn | nprod | nsegs | Tcoh d | resetp0 | V')
+                'Stage | nburn | nprod | nsegs | Tcoh d | resetp0 | Nstar')
             for i, rs in enumerate(run_setup):
                 Tcoh = (self.maxStartTime - self.minStartTime) / rs[1] / 86400
-                if V_vals[i] is None:
+                if Nstar_vals[i] is None:
                     vtext = 'N/A'
                 else:
-                    vtext = '{:1.0e}'.format(V_vals[i])
+                    vtext = '{:0.3e}'.format(int(Nstar_vals[i]))
                 logging.info('{} | {} | {} | {} | {} | {} | {}'.format(
                     str(i).ljust(5), str(rs[0][0]).ljust(5),
                     str(rs[0][1]).ljust(5), str(rs[1]).ljust(5),
@@ -1971,24 +1941,22 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             filename = '{}/{}_run_setup.tex'.format(self.outdir, self.label)
             with open(filename, 'w+') as f:
                 f.write(r'\begin{tabular}{c|cccc}' + '\n')
-                f.write(r'Stage & $\Nseg$ & $\Tcoh^{\rm days}$ &'
-                        r'$\Nsteps$ & $\V$ \\ \hline'
+                f.write(r'Stage & $N_\mathrm{seg}$ &'
+                        r'$T_\mathrm{coh}^{\rm days}$ &'
+                        r'$N_\mathrm{burn}$ & $N_\mathrm{prod}$ &'
+                        r'$N^*$ \\ \hline'
                         '\n')
                 for i, rs in enumerate(run_setup):
                     Tcoh = float(
                         self.maxStartTime - self.minStartTime)/rs[1]/86400
-                    line = r'{} & {} & {} & {} & {} \\' + '\n'
-                    if V_vals[i] is None:
-                        V = 'N/A'
+                    line = r'{} & {} & {} & {} & {} & {} \\' + '\n'
+                    if Nstar_vals[i] is None:
+                        Nstar = 'N/A'
                     else:
-                        V = V_vals[i]
-                    if rs[0][-1] == 0:
-                        nsteps = rs[0][0]
-                    else:
-                        nsteps = '{},{}'.format(*rs[0])
+                        Nstar = Nstar_vals[i]
                     line = line.format(i, rs[1], '{:1.1f}'.format(Tcoh),
-                                       nsteps,
-                                       helper_functions.texify_float(V))
+                                       rs[0], rs[1],
+                                       helper_functions.texify_float(Nstar))
                     f.write(line)
                 f.write(r'\end{tabular}' + '\n')
 

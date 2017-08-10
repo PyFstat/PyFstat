@@ -1,7 +1,6 @@
 """
 
-Provides functions to aid in calculating the optimal setup based on the metric
-volume estimates.
+Provides functions to aid in calculating the optimal setup for zoom follow up
 
 """
 from __future__ import division, absolute_import, print_function
@@ -15,41 +14,64 @@ import pyfstat.helper_functions as helper_functions
 
 
 def get_optimal_setup(
-        R, Nsegs0, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+        R, Nsegs0, tref, minStartTime, maxStartTime, prior,
         detector_names, earth_ephem, sun_ephem):
+    """ Using an optimisation step, calculate the optimal setup ladder
+
+    Parameters
+    ----------
+    R : float
+    Nsegs0 : int
+        The number of segments for the initial step of the ladder
+    minStartTime, maxStartTime : int
+        GPS times of the start and end time of the search
+    prior : dict
+        Prior dictionary, each item must either be a fixed scalar value, or
+        a uniform prior.
+    detector_names : list of str
+    earth_ephem, sun_ephem : str
+
+    Returns
+    -------
+    nsegs, Nstar : list
+        Ladder of segment numbers and the corresponding Nstar
+
+    """
+
     logging.info('Calculating optimal setup for R={}, Nsegs0={}'.format(
         R, Nsegs0))
 
-    V_0 = get_V_estimate(
-        Nsegs0, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+    Nstar_0 = get_Nstar_estimate(
+        Nsegs0, tref, minStartTime, maxStartTime, prior,
         detector_names, earth_ephem, sun_ephem)
-    logging.info('Stage {}, nsegs={}, V={}'.format(0, Nsegs0, V_0))
+    logging.info(
+        'Stage {}, nsegs={}, Nstar={}'.format(0, Nsegs0, int(Nstar_0)))
 
     nsegs_vals = [Nsegs0]
-    V_vals = [V_0]
+    Nstar_vals = [Nstar_0]
 
     i = 0
     nsegs_i = Nsegs0
     while nsegs_i > 1:
-        nsegs_i, V_i = get_nsegs_ip1(
-            nsegs_i, R, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+        nsegs_i, Nstar_i = _get_nsegs_ip1(
+            nsegs_i, R, tref, minStartTime, maxStartTime, prior,
             detector_names, earth_ephem, sun_ephem)
         nsegs_vals.append(nsegs_i)
-        V_vals.append(V_i)
+        Nstar_vals.append(Nstar_i)
         i += 1
         logging.info(
-            'Stage {}, nsegs={}, V={}'.format(i, nsegs_i, V_i))
+            'Stage {}, nsegs={}, Nstar={}'.format(i, nsegs_i, int(Nstar_i)))
 
-    return nsegs_vals, V_vals
+    return nsegs_vals, Nstar_vals
 
 
-def get_nsegs_ip1(
-        nsegs_i, R, tref, minStartTime, maxStartTime, prior, fiducial_freq,
-        detector_names, earth_ephem, sun_ephem):
+def _get_nsegs_ip1(nsegs_i, R, tref, minStartTime, maxStartTime, prior,
+                   detector_names, earth_ephem, sun_ephem):
+    """ Calculate Nsegs_{i+1} given Nsegs_{i} """
 
     log10R = np.log10(R)
-    log10Vi = np.log10(get_V_estimate(
-        nsegs_i, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+    log10Nstari = np.log10(get_Nstar_estimate(
+        nsegs_i, tref, minStartTime, maxStartTime, prior,
         detector_names, earth_ephem, sun_ephem))
 
     def f(nsegs_ip1):
@@ -60,28 +82,46 @@ def get_nsegs_ip1(
         nsegs_ip1 = int(nsegs_ip1[0])
         if nsegs_ip1 == 0:
             nsegs_ip1 = 1
-        Vip1 = get_V_estimate(
-            nsegs_ip1, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+        Nstarip1 = get_Nstar_estimate(
+            nsegs_ip1, tref, minStartTime, maxStartTime, prior,
             detector_names, earth_ephem, sun_ephem)
-        if Vip1 is None:
+        if Nstarip1 is None:
             return 1e6
         else:
-            log10Vip1 = np.log10(Vip1)
-            return np.abs(log10Vi + log10R - log10Vip1)
+            log10Nstarip1 = np.log10(Nstarip1)
+            return np.abs(log10Nstari + log10R - log10Nstarip1)
     res = scipy.optimize.minimize(f, .5*nsegs_i, method='Powell', tol=0.1,
                                   options={'maxiter': 10})
     nsegs_ip1 = int(res.x)
     if nsegs_ip1 == 0:
         nsegs_ip1 = 1
     if res.success:
-        return nsegs_ip1, get_V_estimate(
-            nsegs_ip1, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+        return nsegs_ip1, get_Nstar_estimate(
+            nsegs_ip1, tref, minStartTime, maxStartTime, prior,
             detector_names, earth_ephem, sun_ephem)
     else:
         raise ValueError('Optimisation unsuccesful')
 
 
-def get_parallelepiped(prior):
+def _extract_data_from_prior(prior):
+    """ Calculate the input data from the prior
+
+    Parameters
+    ----------
+    prior: dict
+
+    Returns
+    -------
+    p : ndarray
+        Matrix with columns being the edges of the uniform bounding box
+    spindowns : int
+        The number of spindowns
+    sky : bool
+        If true, search includes the sky position
+    fiducial_freq : float
+        Fidicual frequency
+
+    """
     keys = ['Alpha', 'Delta', 'F0', 'F1', 'F2']
     spindown_keys = keys[3:]
     sky_keys = keys[:2]
@@ -110,33 +150,43 @@ def get_parallelepiped(prior):
         p.append(basex)
     spindowns = np.sum([np.sum(lims_keys == k) for k in spindown_keys])
     sky = any([key in lims_keys for key in sky_keys])
-    return np.array(p).T, spindowns , sky
+    if type(prior['F0']) == dict:
+        fiducial_freq = prior['F0']['upper']
+    else:
+        fiducial_freq = prior['F0']
+
+    return np.array(p).T, spindowns, sky, fiducial_freq
 
 
-def get_V_estimate(
-        nsegs, tref, minStartTime, maxStartTime, prior, fiducial_freq,
+def get_Nstar_estimate(
+        nsegs, tref, minStartTime, maxStartTime, prior,
         detector_names, earth_ephem, sun_ephem):
-    """ Returns V estimated from the super-sky metric
+    """ Returns N* estimated from the super-sky metric
 
     Parameters
     ----------
-    nsegs: int
+    nsegs : int
         Number of semi-coherent segments
-    tref: int
+    tref : int
         Reference time in GPS seconds
-    minStartTime, maxStartTime: int
+    minStartTime, maxStartTime : int
         Minimum and maximum SFT timestamps
-    prior: dict
+    prior : dict
         The prior dictionary
-    fiducial_freq: float
-        Fidicual frequency
-    detector_names: array
+    detector_names : array
         Array of detectors to average over
-    earth_ephem, sun_ephem: st
+    earth_ephem, sun_ephem : str
         Paths to the ephemeris files
 
+    Returns
+    -------
+    Nstar: int
+        The estimated approximate number of templates to cover the prior
+        parameter space at a mismatch of unity, assuming the normalised
+        thickness is unity.
+
     """
-    in_phys, spindowns, sky = get_parallelepiped(prior)
+    in_phys, spindowns, sky, fiducial_freq = _extract_data_from_prior(prior)
     out_rssky = np.zeros(in_phys.shape)
 
     in_phys = helper_functions.convert_array_to_gsl_matrix(in_phys)
@@ -160,8 +210,9 @@ def get_V_estimate(
     ephemeris = lalpulsar.InitBarycenter(earth_ephem, sun_ephem)
     try:
         SSkyMetric = lalpulsar.ComputeSuperskyMetrics(
-            spindowns, ref_time, segments, fiducial_freq, detectors,
-            detector_weights, detector_motion, ephemeris)
+            lalpulsar.SUPERSKY_METRIC_TYPE, spindowns, ref_time, segments,
+            fiducial_freq, detectors, detector_weights, detector_motion,
+            ephemeris)
     except RuntimeError as e:
         logging.debug('Encountered run-time error {}'.format(e))
         return None, None, None
@@ -181,6 +232,6 @@ def get_V_estimate(
 
     dV = np.abs(np.linalg.det(parallelepiped))
 
-    V = sqrtdetG * dV
+    Nstar = sqrtdetG * dV
 
-    return V
+    return Nstar
