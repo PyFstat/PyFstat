@@ -25,7 +25,8 @@ class Writer(BaseSearchClass):
                  tref=None, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
                  Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, phi=0, Tsft=1800,
                  outdir=".", sqrtSX=1, Band=4, detectors='H1',
-                 minStartTime=None, maxStartTime=None, add_noise=True):
+                 minStartTime=None, maxStartTime=None, add_noise=True,
+                 transientWindowType='none'):
         """
         Parameters
         ----------
@@ -92,7 +93,7 @@ class Writer(BaseSearchClass):
         self.run_makefakedata()
 
     def get_single_config_line(self, i, Alpha, Delta, h0, cosi, psi, phi, F0,
-                               F1, F2, tref, tstart, duration_days):
+                               F1, F2, tref, window, tstart, duration_days):
         template = (
 """[TS{}]
 Alpha = {:1.18e}
@@ -105,11 +106,11 @@ Freq = {:1.18e}
 f1dot = {:1.18e}
 f2dot = {:1.18e}
 refTime = {:10.6f}
-transientWindowType=rect
-transientStartTime={:10.3f}
-transientTauDays={:1.3f}\n""")
+transientWindowType = {:s}
+transientStartTime = {:10.3f}
+transientTauDays = {:1.3f}\n""")
         return template.format(i, Alpha, Delta, h0, cosi, psi, phi, F0, F1,
-                               F2, tref, tstart, duration_days)
+                               F2, tref, window, tstart, duration_days)
 
     def make_cff(self):
         """
@@ -119,7 +120,7 @@ transientTauDays={:1.3f}\n""")
 
         content = self.get_single_config_line(
             0, self.Alpha, self.Delta, self.h0, self.cosi, self.psi,
-            self.phi, self.F0, self.F1, self.F2, self.tref, self.tstart,
+            self.phi, self.F0, self.F1, self.F2, self.tref, self.transientWindowType, self.tstart,
             self.duration_days)
 
         if self.check_if_cff_file_needs_rewritting(content):
@@ -247,7 +248,8 @@ class GlitchWriter(Writer):
                  delta_F2=0, tref=None, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
                  Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, phi=0, Tsft=1800,
                  outdir=".", sqrtSX=1, Band=4, detectors='H1',
-                 minStartTime=None, maxStartTime=None, add_noise=True):
+                 minStartTime=None, maxStartTime=None, add_noise=True,
+                 transientWindowType='rect'):
         """
         Parameters
         ----------
@@ -317,7 +319,7 @@ class GlitchWriter(Writer):
                                            self.tbounds[:-1])):
             line = self.get_single_config_line(
                 i, self.Alpha, self.Delta, self.h0, self.cosi, self.psi,
-                t[0], t[1], t[2], t[3], self.tref, ts, d)
+                t[0], t[1], t[2], t[3], self.tref, self.transientWindowType, ts, d)
 
             content += line
 

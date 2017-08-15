@@ -31,7 +31,8 @@ class GridSearch(BaseSearchClass):
                  Deltas, tref=None, minStartTime=None, maxStartTime=None,
                  nsegs=1, BSGL=False, minCoverFreq=None, maxCoverFreq=None,
                  detectors=None, SSBprec=None, injectSources=None,
-                 input_arrays=False, assumeSqrtSX=None):
+                 input_arrays=False, assumeSqrtSX=None,
+                 transientWindowType=None, t0Band=None, tauBand=None):
         """
         Parameters
         ----------
@@ -48,6 +49,17 @@ class GridSearch(BaseSearchClass):
             GPS seconds of the reference time, start time and end time
         input_arrays: bool
             if true, use the F0s, F1s, etc as is
+        transientWindowType: str
+            If 'rect' or 'exp',
+            compute atoms so that a transient (t0,tau) map can later be computed.
+            ('none' instead of None explicitly calls the transient-window function,
+             but with the full range, for debugging)
+            Currently only supported for nsegs=1.
+        t0Band, tauBand: int
+            if >0, search t0 in (minStartTime,minStartTime+t0Band)
+                   and tau in (2*Tsft,2*Tsft+tauBand).
+            if =0, only compute CW Fstat with t0=minStartTime,
+                   tau=maxStartTime-minStartTime.
 
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
@@ -66,7 +78,9 @@ class GridSearch(BaseSearchClass):
             self.search = ComputeFstat(
                 tref=self.tref, sftfilepattern=self.sftfilepattern,
                 minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
-                detectors=self.detectors, transient=False,
+                detectors=self.detectors,
+                transientWindowType=self.transientWindowType,
+                t0Band=self.t0Band, tauBand=self.tauBand,
                 minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
                 BSGL=self.BSGL, SSBprec=self.SSBprec,
                 injectSources=self.injectSources,
@@ -563,7 +577,7 @@ class FrequencySlidingWindow(GridSearch):
         self.search = ComputeFstat(
             tref=self.tref, sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
-            detectors=self.detectors, transient=True,
+            detectors=self.detectors, transientWindowType=self.transientWindowType,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL, SSBprec=self.SSBprec,
             injectSources=self.injectSources)
