@@ -642,7 +642,6 @@ class ComputeFstat(BaseSearchClass):
                                asini=None, period=None, ecc=None, tp=None,
                                argp=None):
         """ Returns twoF or ln(BSGL) fully-coherently at a single point """
-
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
         self.PulsarDopplerParams.Alpha = Alpha
         self.PulsarDopplerParams.Delta = Delta
@@ -681,10 +680,11 @@ class ComputeFstat(BaseSearchClass):
             # F-stat computation
             self.windowRange.tau = int(2*self.Tsft)
 
-        FS = lalpulsar.ComputeTransientFstatMap(
+        self.FstatMap = lalpulsar.ComputeTransientFstatMap(
             self.FstatResults.multiFatoms[0], self.windowRange, False)
+        F_mn = self.FstatMap.F_mn.data
 
-        twoF = 2*np.max(FS.F_mn.data)
+        twoF = 2*np.max(F_mn)
         if self.BSGL is False:
             if np.isnan(twoF):
                 return 0
@@ -705,7 +705,7 @@ class ComputeFstat(BaseSearchClass):
         # to return BSGL
         # FIXME: should we instead compute BSGL over the whole F_mn
         # and return the maximum of that?
-        idx_maxTwoF = np.argmax(FS.F_mn.data)
+        idx_maxTwoF = np.argmax(F_mn)
 
         self.twoFX[0] = 2*FS0.F_mn.data[idx_maxTwoF]
         self.twoFX[1] = 2*FS1.F_mn.data[idx_maxTwoF]
@@ -751,10 +751,11 @@ class ComputeFstat(BaseSearchClass):
             self.transientWindowType = 'none'
             self.init_computefstatistic_single_point()
         for tau in taus:
-            twoFs.append(self.get_fullycoherent_twoF(
+            detstat = self.get_fullycoherent_twoF(
                 tstart=tstart, tend=tstart+tau, F0=F0, F1=F1, F2=F2,
                 Alpha=Alpha, Delta=Delta, asini=asini, period=period, ecc=ecc,
-                tp=tp, argp=argp))
+                tp=tp, argp=argp)
+            twoFs.append(detstat)
 
         return taus, np.array(twoFs)
 
