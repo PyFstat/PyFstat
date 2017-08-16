@@ -352,9 +352,12 @@ class MCMCSearch(core.BaseSearchClass):
                                total=nburn+nprod):
                 pass
 
+        self.mean_acceptance_fraction = np.mean(
+            sampler.acceptance_fraction, axis=1)
         logging.info("Mean acceptance fraction: {}"
-                     .format(np.mean(sampler.acceptance_fraction, axis=1)))
+                     .format(self.mean_acceptance_fraction))
         if self.ntemps > 1:
+            self.tswap_acceptance_fraction = sampler.tswap_acceptance_fraction
             logging.info("Tswap acceptance fraction: {}"
                          .format(sampler.tswap_acceptance_fraction))
         try:
