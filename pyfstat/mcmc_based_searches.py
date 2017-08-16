@@ -266,7 +266,7 @@ class MCMCSearch(core.BaseSearchClass):
         if test_type in ['autocorr']:
             self._get_convergence_test = self.test_autocorr_convergence
         elif test_type in ['GR']:
-            self._get_convergence_test= self.test_GR_convergence
+            self._get_convergence_test = self.test_GR_convergence
         else:
             raise ValueError('test_type {} not understood'.format(test_type))
 
@@ -282,6 +282,10 @@ class MCMCSearch(core.BaseSearchClass):
                 acors[temp, :] = emcee.autocorr.exponential_time(x)
             c = np.max(acors, axis=0)
         except emcee.autocorr.AutocorrError:
+            logging.info('Failed to calculate exponential autocorrelation')
+            c = np.zeros(self.ndim) + np.nan
+        except AttributeError:
+            logging.info('Unable to calculate exponential autocorrelation')
             c = np.zeros(self.ndim) + np.nan
 
         self.convergence_diagnosticx.append(i - self.convergence_n/2.)
