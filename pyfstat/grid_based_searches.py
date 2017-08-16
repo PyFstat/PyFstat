@@ -355,7 +355,8 @@ class TransientGridSearch(GridSearch):
                  transientWindowType=None, t0Band=None, tauBand=None,
                  dt0=None, dtau=None,
                  outputTransientFstatMap=False,
-                 outputAtoms=False):
+                 outputAtoms=False,
+                 tCWFstatMapVersion='lal'):
         """
         Parameters
         ----------
@@ -388,6 +389,9 @@ class TransientGridSearch(GridSearch):
         outputTransientFstatMap: bool
             if true, write output files for (t0,tau) Fstat maps
             (one file for each doppler grid point!)
+        tCWFstatMapVersion: str
+            Choose between standard 'lal' implementation,
+            'pycuda' for gpu, and some others for devel/debug.
 
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
@@ -413,7 +417,8 @@ class TransientGridSearch(GridSearch):
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL, SSBprec=self.SSBprec,
             injectSources=self.injectSources,
-            assumeSqrtSX=self.assumeSqrtSX)
+            assumeSqrtSX=self.assumeSqrtSX,
+            tCWFstatMapVersion=self.tCWFstatMapVersion)
         self.search.get_det_stat = self.search.get_fullycoherent_twoF
 
     def run(self, return_data=False):
@@ -435,9 +440,12 @@ class TransientGridSearch(GridSearch):
             if getattr(self, 'transientWindowType', None):
                 if self.outputTransientFstatMap:
                     tCWfile = os.path.splitext(self.out_file)[0]+'_tCW_%.16f_%.16f_%.16f_%.16g_%.16g.dat' % (vals[2],vals[5],vals[6],vals[3],vals[4]) # freq alpha delta f1dot f2dot
-                    fo = lal.FileOpen(tCWfile, 'w')
-                    lalpulsar.write_transientFstatMap_to_fp ( fo, FstatMap, windowRange, None )
-                    del fo # instead of lal.FileClose() which is not SWIG-exported
+                    if self.tCWFstatMapVersion == 'lal':
+                        fo = lal.FileOpen(tCWfile, 'w')
+                        lalpulsar.write_transientFstatMap_to_fp ( fo, FstatMap, windowRange, None )
+                        del fo # instead of lal.FileClose() which is not SWIG-exported
+                    else:
+                        np.savetxt(tCWfile, 2.0*FstatMap.F_mn, delimiter=' ')
                 Fmn = FstatMap.F_mn.data
                 maxidx = np.unravel_index(Fmn.argmax(), Fmn.shape)
                 thisCand += [windowRange.t0+maxidx[0]*windowRange.dt0,

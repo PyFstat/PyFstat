@@ -13,6 +13,7 @@ import scipy.optimize
 import lal
 import lalpulsar
 import pyfstat.helper_functions as helper_functions
+import pyfstat.tcw_fstat_map_funcs as tcw
 
 # workaround for matplotlib on X-less remote logins
 if 'DISPLAY' in os.environ:
@@ -335,7 +336,8 @@ class ComputeFstat(BaseSearchClass):
                  dt0=None, dtau=None,
                  detectors=None, minCoverFreq=None, maxCoverFreq=None,
                  injectSources=None, injectSqrtSX=None, assumeSqrtSX=None,
-                 SSBprec=None):
+                 SSBprec=None,
+                 tCWFstatMapVersion='lal'):
         """
         Parameters
         ----------
@@ -383,6 +385,9 @@ class ComputeFstat(BaseSearchClass):
         SSBprec : int
             Flag to set the SSB calculation: 0=Newtonian, 1=relativistic,
             2=relativisitic optimised, 3=DMoff, 4=NO_SPIN
+        tCWFstatMapVersion: str
+            Choose between standard 'lal' implementation,
+            'pycuda' for gpu, and some others for devel/debug.
 
         """
 
@@ -653,6 +658,8 @@ class ComputeFstat(BaseSearchClass):
                     if self.dtau:
                         self.windowRange.dtau = self.dtau
 
+            self.tCWFstatMapFeatures = tcw.init_transient_fstat_map_features()
+
     def get_fullycoherent_twoF(self, tstart, tend, F0, F1, F2, Alpha, Delta,
                                asini=None, period=None, ecc=None, tp=None,
                                argp=None):
@@ -695,9 +702,21 @@ class ComputeFstat(BaseSearchClass):
             # F-stat computation
             self.windowRange.tau = int(2*self.Tsft)
 
-        self.FstatMap = lalpulsar.ComputeTransientFstatMap(
-            self.FstatResults.multiFatoms[0], self.windowRange, False)
-        F_mn = self.FstatMap.F_mn.data
+        #logging.debug('Calling "%s" version of ComputeTransientFstatMap() with windowRange: (type=%d (%s), t0=%f, t0Band=%f, dt0=%f, tau=%f, tauBand=%f, dtau=%f)...' % (self.tCWFstatMapVersion, self.windowRange.type, self.transientWindowType, self.windowRange.t0, self.windowRange.t0Band, self.windowRange.dt0, self.windowRange.tau, self.windowRange.tauBand, self.windowRange.dtau))
+        self.FstatMap = tcw.call_compute_transient_fstat_map( self.tCWFstatMapVersion,
+                                                         self.tCWFstatMapFeatures,
+                                                         self.FstatResults.multiFatoms[0],
+                                                         self.windowRange
+                                                       )
+        if self.tCWFstatMapVersion == 'lal':
+            F_mn = self.FstatMap.F_mn.data
+        else:
+            F_mn = self.FstatMap.F_mn
+
+        #logging.debug('maxF:   {}'.format(FstatMap.maxF))
+        #logging.debug('t0_ML:  %ds=T0+%fd' % (FstatMap.t0_ML, (FstatMap.t0_ML-tstart)/(3600.*24.)))
+        #logging.debug('tau_ML: %ds=%fd' % (FstatMap.tau_ML, FstatMap.tau_ML/(3600.*24.)))
+        #logging.debug('F_mn:   {}'.format(F_mn))
 
         twoF = 2*np.max(F_mn)
         if self.BSGL is False:
@@ -950,6 +969,7 @@ class SemiCoherentSearch(ComputeFstat):
         self.transientWindowType = 'rect'
         self.t0Band  = None
         self.tauBand = None
+        self.tCWFstatMapVersion = 'lal'
         self.init_computefstatistic_single_point()
         self.init_semicoherent_parameters()
 
@@ -1089,6 +1109,7 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         self.transientWindowType = 'rect'
         self.t0Band  = None
         self.tauBand = None
+        self.tCWFstatMapVersion = 'lal'
         self.binary  = False
         self.init_computefstatistic_single_point()
 

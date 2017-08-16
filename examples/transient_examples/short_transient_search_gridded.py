@@ -50,7 +50,8 @@ search2 = pyfstat.TransientGridSearch(
     minStartTime=minStartTime, maxStartTime=maxStartTime,
     transientWindowType='rect', t0Band=Tspan-2*Tsft, tauBand=Tspan,
     BSGL=False,
-    outputTransientFstatMap=True)
+    outputTransientFstatMap=True,
+    tCWFstatMapVersion='lal')
 search2.run()
 search2.print_max_twoF()
 
