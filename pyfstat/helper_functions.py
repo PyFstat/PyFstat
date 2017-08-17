@@ -39,6 +39,11 @@ def set_up_command_line_arguments():
                         action="store_true")
     parser.add_argument("-v", "--verbose", help="Increase output verbosity",
                         action="store_true")
+    parser.add_argument("-l", "--set-log-level", default=None,
+                        choices=['NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR',
+                                 'CRITICAL'],
+                        help=("Set log level, see https://docs.python.org/2/"
+                              "library/logging.html#levels, overides -q/v"))
     parser.add_argument("--no-interactive", help="Don't use interactive",
                         action="store_true")
     parser.add_argument("-c", "--clean", help="Don't use cached data",
@@ -66,6 +71,8 @@ def set_up_command_line_arguments():
         stream_handler.setLevel(logging.DEBUG)
     else:
         stream_handler.setLevel(logging.INFO)
+    if args.set_log_level:
+        stream_handler.setLevel(getattr(logging, args.set_log_level))
     stream_handler.setFormatter(logging.Formatter(
         '%(asctime)s %(levelname)-8s: %(message)s', datefmt='%H:%M'))
     logger.addHandler(stream_handler)
