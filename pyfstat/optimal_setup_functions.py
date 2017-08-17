@@ -214,8 +214,8 @@ def get_Nstar_estimate(
             fiducial_freq, detectors, detector_weights, detector_motion,
             ephemeris)
     except RuntimeError as e:
-        logging.debug('Encountered run-time error {}'.format(e))
-        return None, None, None
+        logging.warning('Encountered run-time error {}'.format(e))
+        raise RuntimeError("Calculation of the SSkyMetric failed")
 
     if sky:
         i = 0
