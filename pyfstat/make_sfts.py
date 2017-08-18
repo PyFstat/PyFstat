@@ -92,9 +92,9 @@ class Writer(BaseSearchClass):
         self.make_cff()
         self.run_makefakedata()
 
-    def get_single_config_line(self, i, Alpha, Delta, h0, cosi, psi, phi, F0,
-                               F1, F2, tref, window, tstart, duration_days):
-        template = (
+    def get_base_template(self, i, Alpha, Delta, h0, cosi, psi, phi, F0,
+                               F1, F2, tref):
+        return (
 """[TS{}]
 Alpha = {:1.18e}
 Delta = {:1.18e}
@@ -105,12 +105,33 @@ phi0 = {:1.18e}
 Freq = {:1.18e}
 f1dot = {:1.18e}
 f2dot = {:1.18e}
-refTime = {:10.6f}
+refTime = {:10.6f}""")
+
+    def get_single_config_line_cw(self, i, Alpha, Delta, h0, cosi, psi, phi, F0,
+                               F1, F2, tref):
+        template = (self.get_base_template(i, Alpha, Delta, h0, cosi, psi, phi, F0,
+                               F1, F2, tref) + """\n""")
+        return template.format(i, Alpha, Delta, h0, cosi, psi, phi, F0, F1,
+                               F2, tref)
+
+    def get_single_config_line_tcw(self, i, Alpha, Delta, h0, cosi, psi, phi, F0,
+                               F1, F2, tref, window, tstart, duration_days):
+        template = (self.get_base_template(i, Alpha, Delta, h0, cosi, psi, phi, F0,
+                               F1, F2, tref) + """
 transientWindowType = {:s}
 transientStartTime = {:10.3f}
 transientTauDays = {:1.3f}\n""")
         return template.format(i, Alpha, Delta, h0, cosi, psi, phi, F0, F1,
                                F2, tref, window, tstart, duration_days)
+
+    def get_single_config_line(self, i, Alpha, Delta, h0, cosi, psi, phi, F0,
+                               F1, F2, tref, window, tstart, duration_days):
+        if window=='none':
+            return self.get_single_config_line_cw(i, Alpha, Delta, h0, cosi, psi, phi, F0,
+                               F1, F2, tref)
+        else:
+            return self.get_single_config_line_tcw(i, Alpha, Delta, h0, cosi, psi, phi, F0,
+                               F1, F2, tref, window, tstart, duration_days)
 
     def make_cff(self):
         """
