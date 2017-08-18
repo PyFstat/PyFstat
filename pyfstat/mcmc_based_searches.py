@@ -361,9 +361,11 @@ class MCMCSearch(core.BaseSearchClass):
             logging.info("Tswap acceptance fraction: {}"
                          .format(sampler.tswap_acceptance_fraction))
         try:
+            self.autocorr_time = sampler.get_autocorr_time(c=4)
             logging.info("Autocorrelation length: {}".format(
-                sampler.get_autocorr_time(c=5)))
+                self.autocorr_time))
         except emcee.autocorr.AutocorrError as e:
+            self.autocorr_time = np.nan
             logging.warning(
                 'Autocorrelation calculation failed with message {}'.format(e))
 
