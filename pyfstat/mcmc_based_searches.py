@@ -371,6 +371,17 @@ class MCMCSearch(core.BaseSearchClass):
 
         return sampler
 
+    def _estimate_run_time(self):
+        tau0S = 2.7e-8
+        tau0LD = 1.6e-7
+        Nsfts = (self.maxStartTime - self.minStartTime) / 1800.
+        average_numb_evals = np.sum(self.nsteps)*self.nwalkers*self.ntemps
+        a = tau0S * Nsfts * average_numb_evals
+        b = tau0LD * Nsfts * average_numb_evals
+        print(a, b, Nsfts)
+        logging.info('Estimated run-time = {} s = {:1.0f}:{:1.0f} m'.format(
+            a+b, *divmod(a+b, 60)))
+
     def run(self, proposal_scale_factor=2, create_plots=True, c=5, **kwargs):
         """ Run the MCMC simulatation
 
@@ -404,6 +415,7 @@ class MCMCSearch(core.BaseSearchClass):
             return
 
         self._initiate_search_object()
+        self._estimate_run_time()
 
         sampler = emcee.PTSampler(
             self.ntemps, self.nwalkers, self.ndim, self.logl, self.logp,
