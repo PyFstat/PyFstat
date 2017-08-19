@@ -285,7 +285,7 @@ class GridUniformPriorSearch():
     def __init__(self, theta_prior, NF0, NF1, label, outdir, sftfilepattern,
                  tref, minStartTime, maxStartTime, minCoverFreq=None,
                  maxCoverFreq=None, BSGL=False, detectors=None, nsegs=1,
-                 SSBprec=None):
+                 SSBprec=None, injectSources=None):
         dF0 = (theta_prior['F0']['upper'] - theta_prior['F0']['lower'])/NF0
         dF1 = (theta_prior['F1']['upper'] - theta_prior['F1']['lower'])/NF1
         F0s = [theta_prior['F0']['lower'], theta_prior['F0']['upper'], dF0]
@@ -295,7 +295,8 @@ class GridUniformPriorSearch():
             Alphas=[theta_prior['Alpha']], Deltas=[theta_prior['Delta']],
             minStartTime=minStartTime, maxStartTime=maxStartTime, BSGL=BSGL,
             detectors=detectors, minCoverFreq=minCoverFreq,
-            maxCoverFreq=maxCoverFreq, nsegs=nsegs, SSBprec=SSBprec)
+            injectSources=injectSources, maxCoverFreq=maxCoverFreq,
+            nsegs=nsegs, SSBprec=SSBprec)
 
     def run(self):
         self.search.run()
