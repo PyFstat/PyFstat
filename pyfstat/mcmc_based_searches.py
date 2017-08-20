@@ -468,6 +468,7 @@ class MCMCSearch(core.BaseSearchClass):
         self.lnlikes = lnlikes
         self.all_lnlikelihood = all_lnlikelihood
         self._save_data(sampler, samples, lnprobs, lnlikes, all_lnlikelihood)
+        return sampler
 
     def _get_rescale_multiplier_for_key(self, key):
         """ Get the rescale multiplier from the rescale_dictionary
