@@ -372,13 +372,25 @@ class MCMCSearch(core.BaseSearchClass):
         return sampler
 
     def _estimate_run_time(self):
-        tau0S = 2.7e-8
-        tau0LD = 1.6e-7
+        """ Print the estimated run time
+
+        Uses timing coefficients based on a Lenovo T460p Intel(R)
+        Core(TM) i5-6300HQ CPU @ 2.30GHz.
+
+        """
+        # Todo: add option to time on a machine, and move coefficients to
+        # ~/.pyfstat.conf
+        if (type(self.theta_prior['Alpha']) == dict or
+                type(self.theta_prior['Delta']) == dict):
+            tau0S = 7.3e-5
+            tau0LD = 4.2e-7
+        else:
+            tau0S = 5.0e-5
+            tau0LD = 6.2e-8
         Nsfts = (self.maxStartTime - self.minStartTime) / 1800.
-        average_numb_evals = np.sum(self.nsteps)*self.nwalkers*self.ntemps
-        a = tau0S * Nsfts * average_numb_evals
-        b = tau0LD * Nsfts * average_numb_evals
-        print(a, b, Nsfts)
+        numb_evals = np.sum(self.nsteps)*self.nwalkers*self.ntemps
+        a = tau0S * numb_evals
+        b = tau0LD * Nsfts * numb_evals
         logging.info('Estimated run-time = {} s = {:1.0f}:{:1.0f} m'.format(
             a+b, *divmod(a+b, 60)))
 
@@ -993,18 +1005,20 @@ class MCMCSearch(core.BaseSearchClass):
                 if burnin_idx and add_det_stat_burnin:
                     burn_in_vals = lnl[:, :burnin_idx].flatten()
                     try:
-                        axes[-1].hist(burn_in_vals[~np.isnan(burn_in_vals)],
-                                      bins=50, histtype='step', color='C3')
+                        twoF_burnin = (burn_in_vals[~np.isnan(burn_in_vals)]
+                                       - self.likelihoodcoef)
+                        axes[-1].hist(twoF_burnin, bins=50, histtype='step',
+                                      color='C3')
                     except ValueError:
                         logging.info('Det. Stat. hist failed, most likely all '
                                      'values where the same')
                         pass
                 else:
-                    burn_in_vals = []
+                    twoF_burnin = []
                 prod_vals = lnl[:, burnin_idx:].flatten()
                 try:
-                    axes[-1].hist(prod_vals[~np.isnan(prod_vals)], bins=50,
-                                  histtype='step', color='k')
+                    twoF = prod_vals[~np.isnan(prod_vals)]-self.likelihoodcoef
+                    axes[-1].hist(twoF, bins=50, histtype='step', color='k')
                 except ValueError:
                     logging.info('Det. Stat. hist failed, most likely all '
                                  'values where the same')
@@ -1014,7 +1028,7 @@ class MCMCSearch(core.BaseSearchClass):
                 else:
                     axes[-1].set_xlabel(r'$\widetilde{2\mathcal{F}}$')
                 axes[-1].set_ylabel(r'$\textrm{Counts}$')
-                combined_vals = np.append(burn_in_vals, prod_vals)
+                combined_vals = np.append(twoF_burnin, twoF)
                 if len(combined_vals) > 0:
                     minv = np.min(combined_vals)
                     maxv = np.max(combined_vals)
