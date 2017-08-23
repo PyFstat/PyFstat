@@ -75,7 +75,8 @@ class GridSearch(BaseSearchClass):
                 BSGL=self.BSGL, minStartTime=self.minStartTime,
                 maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
                 maxCoverFreq=self.maxCoverFreq, detectors=self.detectors,
-                earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem)
+                earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
+                injectSources=self.injectSources)
 
             def cut_out_tstart_tend(*vals):
                 return self.search.run_semi_coherent_computefstatistic_single_point(*vals[2:])
