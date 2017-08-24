@@ -14,13 +14,13 @@ import pyfstat.helper_functions as helper_functions
 
 
 def get_optimal_setup(
-        R, Nsegs0, tref, minStartTime, maxStartTime, prior,
+        NstarMax, Nsegs0, tref, minStartTime, maxStartTime, prior,
         detector_names, earth_ephem, sun_ephem):
     """ Using an optimisation step, calculate the optimal setup ladder
 
     Parameters
     ----------
-    R : float
+    NstarMax : float
     Nsegs0 : int
         The number of segments for the initial step of the ladder
     minStartTime, maxStartTime : int
@@ -38,8 +38,8 @@ def get_optimal_setup(
 
     """
 
-    logging.info('Calculating optimal setup for R={}, Nsegs0={}'.format(
-        R, Nsegs0))
+    logging.info('Calculating optimal setup for NstarMax={}, Nsegs0={}'.format(
+        NstarMax, Nsegs0))
 
     Nstar_0 = get_Nstar_estimate(
         Nsegs0, tref, minStartTime, maxStartTime, prior,
@@ -54,7 +54,7 @@ def get_optimal_setup(
     nsegs_i = Nsegs0
     while nsegs_i > 1:
         nsegs_i, Nstar_i = _get_nsegs_ip1(
-            nsegs_i, R, tref, minStartTime, maxStartTime, prior,
+            nsegs_i, NstarMax, tref, minStartTime, maxStartTime, prior,
             detector_names, earth_ephem, sun_ephem)
         nsegs_vals.append(nsegs_i)
         Nstar_vals.append(Nstar_i)
@@ -65,11 +65,11 @@ def get_optimal_setup(
     return nsegs_vals, Nstar_vals
 
 
-def _get_nsegs_ip1(nsegs_i, R, tref, minStartTime, maxStartTime, prior,
+def _get_nsegs_ip1(nsegs_i, NstarMax, tref, minStartTime, maxStartTime, prior,
                    detector_names, earth_ephem, sun_ephem):
     """ Calculate Nsegs_{i+1} given Nsegs_{i} """
 
-    log10R = np.log10(R)
+    log10NstarMax = np.log10(NstarMax)
     log10Nstari = np.log10(get_Nstar_estimate(
         nsegs_i, tref, minStartTime, maxStartTime, prior,
         detector_names, earth_ephem, sun_ephem))
@@ -89,9 +89,10 @@ def _get_nsegs_ip1(nsegs_i, R, tref, minStartTime, maxStartTime, prior,
             return 1e6
         else:
             log10Nstarip1 = np.log10(Nstarip1)
-            return np.abs(log10Nstari + log10R - log10Nstarip1)
-    res = scipy.optimize.minimize(f, .5*nsegs_i, method='Powell', tol=0.1,
+            return np.abs(log10Nstari + log10NstarMax - log10Nstarip1)
+    res = scipy.optimize.minimize(f, .4*nsegs_i, method='Powell', tol=1,
                                   options={'maxiter': 10})
+    logging.info('{} with {} evaluations'.format(res['message'], res['nfev']))
     nsegs_ip1 = int(res.x)
     if nsegs_ip1 == 0:
         nsegs_ip1 = 1

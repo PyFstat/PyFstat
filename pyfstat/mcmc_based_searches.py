@@ -1872,9 +1872,9 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             d = pickle.load(f)
         return d
 
-    def write_setup_input_file(self, run_setup_input_file, R, Nsegs0,
+    def write_setup_input_file(self, run_setup_input_file, NstarMax, Nsegs0,
                                nsegs_vals, Nstar_vals, theta_prior):
-        d = dict(R=R, Nsegs0=Nsegs0, nsegs_vals=nsegs_vals,
+        d = dict(NstarMax=NstarMax, Nsegs0=Nsegs0, nsegs_vals=nsegs_vals,
                  theta_prior=theta_prior, Nstar_vals=Nstar_vals)
         with open(run_setup_input_file, 'w+') as f:
             pickle.dump(d, f)
@@ -1886,19 +1886,19 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 return True
             else:
                 logging.info(
-                    'Old setup does not match one of R, Nsegs0 or prior')
+                    'Old setup does not match one of NstarMax, Nsegs0 or prior')
         except KeyError as e:
             logging.info(
                 'Error found when comparing with old setup: {}'.format(e))
             return False
 
-    def init_run_setup(self, run_setup=None, R=10, Nsegs0=None, log_table=True,
-                       gen_tex_table=True):
+    def init_run_setup(self, run_setup=None, NstarMax=1000, Nsegs0=None,
+                       log_table=True, gen_tex_table=True):
 
         if run_setup is None and Nsegs0 is None:
             raise ValueError(
-                'You must either specify the run_setup, or Nsegs0 from which '
-                'the optimal run_setup given R can be estimated')
+                'You must either specify the run_setup, or Nsegs0 and NStarMax'
+                ' from which the optimal run_setup can be estimated')
         if run_setup is None:
             logging.info('No run_setup provided')
 
@@ -1909,11 +1909,12 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 logging.info('Checking old setup input file {}'.format(
                     run_setup_input_file))
                 old_setup = self.read_setup_input_file(run_setup_input_file)
-                if self.check_old_run_setup(old_setup, R=R,
+                if self.check_old_run_setup(old_setup, NstarMax=NstarMax,
                                             Nsegs0=Nsegs0,
                                             theta_prior=self.theta_prior):
-                    logging.info('Using old setup with R={}, Nsegs0={}'.format(
-                        R, Nsegs0))
+                    logging.info(
+                        'Using old setup with NstarMax={}, Nsegs0={}'.format(
+                            NstarMax, Nsegs0))
                     nsegs_vals = old_setup['nsegs_vals']
                     Nstar_vals = old_setup['Nstar_vals']
                     generate_setup = False
@@ -1924,11 +1925,11 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
             if generate_setup:
                 nsegs_vals, Nstar_vals = get_optimal_setup(
-                    R, Nsegs0, self.tref, self.minStartTime,
+                    NstarMax, Nsegs0, self.tref, self.minStartTime,
                     self.maxStartTime, self.theta_prior,
                     self.search.detector_names, self.earth_ephem,
                     self.sun_ephem)
-                self.write_setup_input_file(run_setup_input_file, R, Nsegs0,
+                self.write_setup_input_file(run_setup_input_file, NstarMax, Nsegs0,
                                             nsegs_vals, Nstar_vals,
                                             self.theta_prior)
 
@@ -2002,9 +2003,9 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         else:
             return run_setup
 
-    def run(self, run_setup=None, proposal_scale_factor=2, R=10, Nsegs0=None,
-            create_plots=True, log_table=True, gen_tex_table=True, fig=None,
-            axes=None, return_fig=False, **kwargs):
+    def run(self, run_setup=None, proposal_scale_factor=2, NstarMax=10,
+            Nsegs0=None, create_plots=True, log_table=True, gen_tex_table=True,
+            fig=None, axes=None, return_fig=False, **kwargs):
         """ Run the follow-up with the given run_setup
 
         Parameters
@@ -2029,7 +2030,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         self.nsegs = 1
         self._initiate_search_object()
         run_setup = self.init_run_setup(
-            run_setup, R=R, Nsegs0=Nsegs0, log_table=log_table,
+            run_setup, NstarMax=NstarMax, Nsegs0=Nsegs0, log_table=log_table,
             gen_tex_table=gen_tex_table)
         self.run_setup = run_setup
 
