@@ -917,38 +917,44 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
         detStat = 0
         if record_segments:
             self.detStat_per_segment = []
-        for tstart, tend in zip(self.tboundaries[:-1], self.tboundaries[1:]):
-            self.windowRange.t0 = int(tstart)  # TYPE UINT4
-            self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
 
-            FS = lalpulsar.ComputeTransientFstatMap(
-                self.FstatResults.multiFatoms[0], self.windowRange, False)
-
-            if self.BSGL is False:
-                d_detStat = 2*FS.F_mn.data[0][0]
-            else:
-                FstatResults_single = copy.copy(self.FstatResults)
-                FstatResults_single.lenth = 1
-                FstatResults_single.data = self.FstatResults.multiFatoms[0].data[0]
-                FS0 = lalpulsar.ComputeTransientFstatMap(
-                    FstatResults_single.multiFatoms[0], self.windowRange, False)
-                FstatResults_single.data = self.FstatResults.multiFatoms[0].data[1]
-                FS1 = lalpulsar.ComputeTransientFstatMap(
-                    FstatResults_single.multiFatoms[0], self.windowRange, False)
-
-                self.twoFX[0] = 2*FS0.F_mn.data[0][0]
-                self.twoFX[1] = 2*FS1.F_mn.data[0][0]
-                log10_BSGL = lalpulsar.ComputeBSGL(
-                        2*FS.F_mn.data[0][0], self.twoFX, self.BSGLSetup)
-                d_detStat = log10_BSGL/np.log10(np.exp(1))
-            if np.isnan(d_detStat):
-                logging.debug('NaNs in semi-coherent twoF treated as zero')
-                d_detStat = 0
+        self.windowRange.tau = int(self.Tcoh)  # TYPE UINT4
+        for tstart in self.tboundaries[:-1]:
+            d_detStat = self._get_per_segment_det_stat(tstart)
             detStat += d_detStat
             if record_segments:
                 self.detStat_per_segment.append(d_detStat)
 
         return detStat
+
+    def _get_per_segment_det_stat(self, tstart):
+        self.windowRange.t0 = int(tstart)  # TYPE UINT4
+
+        FS = lalpulsar.ComputeTransientFstatMap(
+            self.FstatResults.multiFatoms[0], self.windowRange, False)
+
+        if self.BSGL is False:
+            d_detStat = 2*FS.F_mn.data[0][0]
+        else:
+            FstatResults_single = copy.copy(self.FstatResults)
+            FstatResults_single.lenth = 1
+            FstatResults_single.data = self.FstatResults.multiFatoms[0].data[0]
+            FS0 = lalpulsar.ComputeTransientFstatMap(
+                FstatResults_single.multiFatoms[0], self.windowRange, False)
+            FstatResults_single.data = self.FstatResults.multiFatoms[0].data[1]
+            FS1 = lalpulsar.ComputeTransientFstatMap(
+                FstatResults_single.multiFatoms[0], self.windowRange, False)
+
+            self.twoFX[0] = 2*FS0.F_mn.data[0][0]
+            self.twoFX[1] = 2*FS1.F_mn.data[0][0]
+            log10_BSGL = lalpulsar.ComputeBSGL(
+                    2*FS.F_mn.data[0][0], self.twoFX, self.BSGLSetup)
+            d_detStat = log10_BSGL/np.log10(np.exp(1))
+        if np.isnan(d_detStat):
+            logging.debug('NaNs in semi-coherent twoF treated as zero')
+            d_detStat = 0
+
+        return d_detStat
 
 
 class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
