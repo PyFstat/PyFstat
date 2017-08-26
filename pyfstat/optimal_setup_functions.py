@@ -226,13 +226,21 @@ def get_Nstar_estimate(
     lalpulsar.ConvertPhysicalToSuperskyPoints(
         out_rssky, in_phys, SSkyMetric.semi_rssky_transf)
 
+    d = out_rssky.data
+
+    g = SSkyMetric.semi_rssky_metric.data
+
+    d[2:] = d[2:][::-1]  # Convert to Alpha, Delta, F0, F1.. ordering
+    g[2:] = g[2:][::-1]  # Convert to Alpha, Delta, F0, F1.. ordering
+
+    g = g[i:, i:]  # Remove sky if required
     parallelepiped = (out_rssky.data[i:, 1:].T - out_rssky.data[i:, 0]).T
 
-    sqrtdetG = np.sqrt(np.linalg.det(
-        SSkyMetric.semi_rssky_metric.data[i:, i:]))
-
-    dV = np.abs(np.linalg.det(parallelepiped))
-
-    Nstar = sqrtdetG * dV
-
-    return Nstar
+    Nstars = []
+    for j in range(1, len(g)+1):
+        dV = np.abs(np.linalg.det(parallelepiped[:j, :j]))
+        sqrtdetG = np.sqrt(np.abs(np.linalg.det(g[:j, :j])))
+        Nstars.append(sqrtdetG * dV)
+    logging.debug('Nstar for each dimension = {}'.format(
+        ', '.join(["{:1.1e}".format(n) for n in Nstars])))
+    return np.max(Nstars)
