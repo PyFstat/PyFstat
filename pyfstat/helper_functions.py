@@ -35,15 +35,12 @@ def set_up_matplotlib_defaults():
 
 def set_up_command_line_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-q", "--quite", help="Decrease output verbosity",
-                        action="store_true")
-    parser.add_argument("-v", "--verbose", help="Increase output verbosity",
-                        action="store_true")
-    parser.add_argument("-l", "--set-log-level", default=None,
-                        choices=['NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR',
-                                 'CRITICAL'],
-                        help=("Set log level, see https://docs.python.org/2/"
-                              "library/logging.html#levels, overides -q/v"))
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="Increase output verbosity [logging.DEBUG]")
+    parser.add_argument("-q", "--quite", action="store_true",
+                        help="Decrease output verbosity [logging.WARNGING]")
+    parser.add_argument("-vq", "--very_quite", action="store_true",
+                        help="Increase output verbosity [logging.ERROR]")
     parser.add_argument("--no-interactive", help="Don't use interactive",
                         action="store_true")
     parser.add_argument("-c", "--clean", help="Don't use cached data",
@@ -57,24 +54,28 @@ def set_up_command_line_arguments():
     parser.add_argument('unittest_args', nargs='*')
     args, unknown = parser.parse_known_args()
     sys.argv[1:] = args.unittest_args
+
     if args.quite or args.no_interactive:
         def tqdm(x, *args, **kwargs):
             return x
     else:
         tqdm = set_up_optional_tqdm()
+
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
     stream_handler = logging.StreamHandler()
-    if args.quite:
-        stream_handler.setLevel(logging.WARNING)
-    elif args.verbose:
-        stream_handler.setLevel(logging.DEBUG)
-    else:
-        stream_handler.setLevel(logging.INFO)
-    if args.set_log_level:
-        stream_handler.setLevel(getattr(logging, args.set_log_level))
     stream_handler.setFormatter(logging.Formatter(
         '%(asctime)s %(levelname)-8s: %(message)s', datefmt='%H:%M'))
+
+    if args.quite:
+        logger.setLevel(logging.WARNING)
+        stream_handler.setLevel(logging.WARNING)
+    elif args.verbose:
+        logger.setLevel(logging.DEBUG)
+        stream_handler.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+        stream_handler.setLevel(logging.INFO)
+
     logger.addHandler(stream_handler)
     return args, tqdm
 

@@ -869,12 +869,7 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
         self.whatToCompute = lalpulsar.FSTATQ_2F+lalpulsar.FSTATQ_ATOMS_PER_DET
         self.tboundaries = np.linspace(self.minStartTime, self.maxStartTime,
                                        self.nsegs+1)
-
-    def run_semi_coherent_computefstatistic_single_point(
-            self, F0, F1, F2, Alpha, Delta, asini=None,
-            period=None, ecc=None, tp=None, argp=None,
-            record_segments=False):
-        """ Returns twoF or ln(BSGL) semi-coherently at a single point """
+        self.Tcoh = self.tboundaries[1] - self.tboundaries[0]
 
         if hasattr(self, 'SFT_timestamps'):
             if self.tboundaries[0] < self.SFT_timestamps[0]:
@@ -885,6 +880,12 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
                 logging.debug(
                     'Semi-coherent end time {} after last SFT timestamp {}'
                     .format(self.tboundaries[-1], self.SFT_timestamps[-1]))
+
+    def run_semi_coherent_computefstatistic_single_point(
+            self, F0, F1, F2, Alpha, Delta, asini=None,
+            period=None, ecc=None, tp=None, argp=None,
+            record_segments=False):
+        """ Returns twoF or ln(BSGL) semi-coherently at a single point """
 
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
         self.PulsarDopplerParams.Alpha = Alpha
