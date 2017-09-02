@@ -33,10 +33,10 @@ $ conda install pip
 
 ### Clone the repository
 
-In a terminal, to clone the directory:
+In a terminal, clone the directory:
 
 ```
-$ git clone git@gitlab.aei.uni-hannover.de:GregAshton/PyFstat.git
+$ git clone https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat.git
 ```
 
 ### Dependencies
