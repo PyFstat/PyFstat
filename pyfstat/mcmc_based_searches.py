@@ -449,7 +449,7 @@ class MCMCSearch(core.BaseSearchClass):
                                                **kwargs)
                 fig.tight_layout()
                 fig.savefig('{}/{}_init_{}_walkers.png'.format(
-                    self.outdir, self.label, j), dpi=400)
+                    self.outdir, self.label, j))
 
             p0 = self._get_new_p0(sampler)
             p0 = self._apply_corrections_to_p0(p0)
@@ -469,7 +469,7 @@ class MCMCSearch(core.BaseSearchClass):
                                            nprod=nprod, **kwargs)
             fig.tight_layout()
             fig.savefig('{}/{}_walkers.png'.format(self.outdir, self.label),
-                        dpi=200)
+                        )
 
         samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
         lnprobs = sampler.lnprobability[0, :, nburn:].reshape((-1))
@@ -960,6 +960,8 @@ class MCMCSearch(core.BaseSearchClass):
                     axes[i].plot(xoffset+idxs[burnin_idx:],
                                  cs[burnin_idx:]-subtractions[i],
                                  color="k", alpha=alpha, lw=lw)
+
+                    axes[i].set_xlim(0, xoffset+idxs[-1])
                     if symbols:
                         if subtractions[i] == 0:
                             axes[i].set_ylabel(symbols[i], labelpad=labelpad)
@@ -2105,7 +2107,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 return fig, axes
             else:
                 fig.savefig('{}/{}_walkers.png'.format(
-                    self.outdir, self.label), dpi=200)
+                    self.outdir, self.label))
 
 
 class MCMCTransientSearch(MCMCSearch):
