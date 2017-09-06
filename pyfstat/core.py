@@ -5,7 +5,6 @@ import os
 import logging
 import copy
 
-
 import glob
 import numpy as np
 import scipy.special
@@ -27,15 +26,14 @@ else:
 
 helper_functions.set_up_matplotlib_defaults()
 args, tqdm = helper_functions.set_up_command_line_arguments()
-earth_ephem, sun_ephem = helper_functions.set_up_ephemeris_configuration()
 detector_colors = {'h1': 'C0', 'l1': 'C1'}
 
 
 class Bunch(object):
     """ Turns dictionary into object with attribute-style access
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     dict
         Input dictionary
 
@@ -178,18 +176,7 @@ def predict_fstat(h0, cosi, psi, Alpha, Delta, Freq, sftfilepattern,
 
 
 class BaseSearchClass(object):
-    """ The base search class providing parent methods to other searches
-
-    Attributes
-    ----------
-    earth_ephem_default, sun_ephem_default : str
-        Paths to the earth and sun ephemeris files to use if not specified
-        elsewhere
-
-    """
-
-    earth_ephem_default = earth_ephem
-    sun_ephem_default = sun_ephem
+    """ The base search class providing parent methods to other searches """
 
     def _add_log_file(self):
         """ Log output to a file, requires class to have outdir and label """
@@ -306,19 +293,37 @@ class BaseSearchClass(object):
             raise IOError('No sfts found matching {}'.format(
                 self.sftfilepattern))
 
+    def set_ephemeris_files(self, earth_ephem=None, sun_ephem=None):
+        """ Set the ephemeris files to use for the Earth and Sun
 
-class ComputeFstat(object):
+        Parameters
+        ----------
+        earth_ephem, sun_ephem: str
+            Paths of the two files containing positions of Earth and Sun,
+            respectively at evenly spaced times, as passed to CreateFstatInput
+
+        Note: If not manually set, default values in ~/.pyfstat are used
+
+        """
+
+        earth_ephem_default, sun_ephem_default = (
+                helper_functions.get_ephemeris_files())
+
+        if earth_ephem is None:
+            self.earth_ephem = earth_ephem_default
+        if sun_ephem is None:
+            self.sun_ephem = sun_ephem_default
+
+
+class ComputeFstat(BaseSearchClass):
     """ Base class providing interface to `lalpulsar.ComputeFstat` """
-
-    earth_ephem_default = earth_ephem
-    sun_ephem_default = sun_ephem
 
     @helper_functions.initializer
     def __init__(self, tref, sftfilepattern=None, minStartTime=None,
                  maxStartTime=None, binary=False, transient=True, BSGL=False,
                  detectors=None, minCoverFreq=None, maxCoverFreq=None,
-                 earth_ephem=None, sun_ephem=None, injectSources=None,
-                 injectSqrtSX=None, assumeSqrtSX=None, SSBprec=None):
+                 injectSources=None, injectSqrtSX=None, assumeSqrtSX=None,
+                 SSBprec=None):
         """
         Parameters
         ----------
@@ -343,10 +348,6 @@ class ComputeFstat(object):
             The min and max cover frequency passed to CreateFstatInput, if
             either is None the range of frequencies in the SFT less 1Hz is
             used.
-        earth_ephem, sun_ephem : str
-            Paths of the two files containing positions of Earth and Sun,
-            respectively at evenly spaced times, as passed to CreateFstatInput.
-            If None defaults will be used.
         injectSources : dict or str
             Either a dictionary of the values to inject, or a string pointing
             to the .cff file to inject
@@ -362,11 +363,7 @@ class ComputeFstat(object):
 
         """
 
-        if earth_ephem is None:
-            self.earth_ephem = self.earth_ephem_default
-        if sun_ephem is None:
-            self.sun_ephem = self.sun_ephem_default
-
+        self.set_ephemeris_files()
         self.init_computefstatistic_single_point()
 
     def _get_SFTCatalog(self):
@@ -827,15 +824,15 @@ class ComputeFstat(object):
             return ax
 
 
-class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
+class SemiCoherentSearch(ComputeFstat):
     """ A semi-coherent search """
 
     @helper_functions.initializer
     def __init__(self, label, outdir, tref, nsegs=None, sftfilepattern=None,
                  binary=False, BSGL=False, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
-                 detectors=None, earth_ephem=None, sun_ephem=None,
-                 injectSources=None, assumeSqrtSX=None, SSBprec=None):
+                 detectors=None, injectSources=None, assumeSqrtSX=None,
+                 SSBprec=None):
         """
         Parameters
         ----------
@@ -853,10 +850,7 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
         """
 
         self.fs_file_name = "{}/{}_FS.dat".format(self.outdir, self.label)
-        if self.earth_ephem is None:
-            self.earth_ephem = self.earth_ephem_default
-        if self.sun_ephem is None:
-            self.sun_ephem = self.sun_ephem_default
+        self.set_ephemeris_files()
         self.transient = True
         self.init_computefstatistic_single_point()
         self.init_semicoherent_parameters()
@@ -957,7 +951,7 @@ class SemiCoherentSearch(BaseSearchClass, ComputeFstat):
         return d_detStat
 
 
-class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
+class SemiCoherentGlitchSearch(ComputeFstat):
     """ A semi-coherent glitch search
 
     This implements a basic `semi-coherent glitch F-stat in which the data
@@ -970,8 +964,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
     def __init__(self, label, outdir, tref, minStartTime, maxStartTime,
                  nglitch=0, sftfilepattern=None, theta0_idx=0, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, assumeSqrtSX=None,
-                 detectors=None, earth_ephem=None, sun_ephem=None,
-                 SSBprec=None, injectSources=None):
+                 detectors=None, SSBprec=None, injectSources=None):
         """
         Parameters
         ----------
@@ -994,10 +987,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
         """
 
         self.fs_file_name = "{}/{}_FS.dat".format(self.outdir, self.label)
-        if self.earth_ephem is None:
-            self.earth_ephem = self.earth_ephem_default
-        if self.sun_ephem is None:
-            self.sun_ephem = self.sun_ephem_default
+        self.set_ephemeris_files()
         self.transient = True
         self.binary = False
         self.init_computefstatistic_single_point()
@@ -1017,7 +1007,7 @@ class SemiCoherentGlitchSearch(BaseSearchClass, ComputeFstat):
                 np.array([delta_phi, delta_F0s, delta_F1s, delta_F2]).T)
 
         thetas = self._calculate_thetas(theta, delta_thetas, tboundaries,
-                                       theta0_idx=self.theta0_idx)
+                                        theta0_idx=self.theta0_idx)
 
         twoFSum = 0
         for i, theta_i_at_tref in enumerate(thetas):

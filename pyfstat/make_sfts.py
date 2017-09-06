@@ -13,8 +13,6 @@ import lalpulsar
 from pyfstat.core import BaseSearchClass, tqdm, args
 import pyfstat.helper_functions as helper_functions
 
-earth_ephem, sun_ephem = helper_functions.set_up_ephemeris_configuration()
-
 
 class KeyboardInterruptError(Exception):
     pass
@@ -49,6 +47,7 @@ class Writer(BaseSearchClass):
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
 
+        self.set_ephemeris_files()
         self.tstart = int(tstart)
         self.duration = int(duration)
 
@@ -372,15 +371,11 @@ class GlitchWriter(Writer):
 class FrequencyModulatedArtifactWriter(Writer):
     """ Instance object for generating SFTs containing artifacts """
 
-    earth_ephem_default = earth_ephem
-    sun_ephem_default = sun_ephem
-
     @helper_functions.initializer
     def __init__(self, label, outdir=".", tstart=700000000,
                  data_duration=86400, F0=30, F1=0, tref=None, h0=10, Tsft=1800,
                  sqrtSX=1, Band=4, Pmod=lal.DAYSID_SI, Pmod_phi=0, Pmod_amp=1,
-                 Alpha=None, Delta=None, IFO='H1', earth_ephem=None,
-                 sun_ephem=None):
+                 Alpha=None, Delta=None, IFO='H1'):
         """
         Parameters
         ----------
@@ -399,6 +394,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         see `lalapps_Makefakedata_v4 --help` for help with the other paramaters
         """
 
+        self.set_ephemeris_files()
         self.tstart = int(tstart)
         self.data_duration = int(data_duration)
 
@@ -413,11 +409,6 @@ class FrequencyModulatedArtifactWriter(Writer):
 
         self.cosi = 0
         self.Fmax = F0
-
-        if self.earth_ephem is None:
-            self.earth_ephem = self.earth_ephem_default
-        if self.sun_ephem is None:
-            self.sun_ephem = self.sun_ephem_default
 
         if Alpha is not None and Delta is not None:
             self.n = np.array([np.cos(Alpha)*np.cos(Delta),

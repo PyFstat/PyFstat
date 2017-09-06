@@ -80,7 +80,7 @@ def set_up_command_line_arguments():
     return args, tqdm
 
 
-def set_up_ephemeris_configuration():
+def get_ephemeris_files():
     """ Returns the earth_ephem and sun_ephem """
     config_file = os.path.expanduser('~')+'/.pyfstat.conf'
     if os.path.isfile(config_file):

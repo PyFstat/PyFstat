@@ -15,7 +15,7 @@ import pyfstat.helper_functions as helper_functions
 
 def get_optimal_setup(
         NstarMax, Nsegs0, tref, minStartTime, maxStartTime, prior,
-        detector_names, earth_ephem, sun_ephem):
+        detector_names):
     """ Using an optimisation step, calculate the optimal setup ladder
 
     Parameters
@@ -29,7 +29,6 @@ def get_optimal_setup(
         Prior dictionary, each item must either be a fixed scalar value, or
         a uniform prior.
     detector_names : list of str
-    earth_ephem, sun_ephem : str
 
     Returns
     -------
@@ -43,7 +42,7 @@ def get_optimal_setup(
 
     Nstar_0 = get_Nstar_estimate(
         Nsegs0, tref, minStartTime, maxStartTime, prior,
-        detector_names, earth_ephem, sun_ephem)
+        detector_names)
     logging.info(
         'Stage {}, nsegs={}, Nstar={}'.format(0, Nsegs0, int(Nstar_0)))
 
@@ -55,7 +54,7 @@ def get_optimal_setup(
     while nsegs_i > 1:
         nsegs_i, Nstar_i = _get_nsegs_ip1(
             nsegs_i, NstarMax, tref, minStartTime, maxStartTime, prior,
-            detector_names, earth_ephem, sun_ephem)
+            detector_names)
         nsegs_vals.append(nsegs_i)
         Nstar_vals.append(Nstar_i)
         i += 1
@@ -66,13 +65,13 @@ def get_optimal_setup(
 
 
 def _get_nsegs_ip1(nsegs_i, NstarMax, tref, minStartTime, maxStartTime, prior,
-                   detector_names, earth_ephem, sun_ephem):
+                   detector_names):
     """ Calculate Nsegs_{i+1} given Nsegs_{i} """
 
     log10NstarMax = np.log10(NstarMax)
     log10Nstari = np.log10(get_Nstar_estimate(
         nsegs_i, tref, minStartTime, maxStartTime, prior,
-        detector_names, earth_ephem, sun_ephem))
+        detector_names))
 
     def f(nsegs_ip1):
         if nsegs_ip1[0] > nsegs_i:
@@ -83,8 +82,7 @@ def _get_nsegs_ip1(nsegs_i, NstarMax, tref, minStartTime, maxStartTime, prior,
         if nsegs_ip1 == 0:
             nsegs_ip1 = 1
         Nstarip1 = get_Nstar_estimate(
-            nsegs_ip1, tref, minStartTime, maxStartTime, prior,
-            detector_names, earth_ephem, sun_ephem)
+            nsegs_ip1, tref, minStartTime, maxStartTime, prior, detector_names)
         if Nstarip1 is None:
             return 1e6
         else:
@@ -99,7 +97,7 @@ def _get_nsegs_ip1(nsegs_i, NstarMax, tref, minStartTime, maxStartTime, prior,
     if res.success:
         return nsegs_ip1, get_Nstar_estimate(
             nsegs_ip1, tref, minStartTime, maxStartTime, prior,
-            detector_names, earth_ephem, sun_ephem)
+            detector_names)
     else:
         raise ValueError('Optimisation unsuccesful')
 
@@ -160,8 +158,7 @@ def _extract_data_from_prior(prior):
 
 
 def get_Nstar_estimate(
-        nsegs, tref, minStartTime, maxStartTime, prior,
-        detector_names, earth_ephem, sun_ephem):
+        nsegs, tref, minStartTime, maxStartTime, prior, detector_names):
     """ Returns N* estimated from the super-sky metric
 
     Parameters
@@ -176,8 +173,6 @@ def get_Nstar_estimate(
         The prior dictionary
     detector_names : array
         Array of detectors to average over
-    earth_ephem, sun_ephem : str
-        Paths to the ephemeris files
 
     Returns
     -------
@@ -187,6 +182,7 @@ def get_Nstar_estimate(
         thickness is unity.
 
     """
+    earth_ephem, sun_ephem = helper_functions.get_ephemeris_files()
     in_phys, spindowns, sky, fiducial_freq = _extract_data_from_prior(prior)
     out_rssky = np.zeros(in_phys.shape)
 

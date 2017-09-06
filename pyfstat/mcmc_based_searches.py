@@ -16,8 +16,8 @@ import corner
 import dill as pickle
 
 import pyfstat.core as core
-from pyfstat.core import tqdm, args, earth_ephem, sun_ephem, read_par
-from pyfstat.optimal_setup_functions import get_Nstar_estimate, get_optimal_setup
+from pyfstat.core import tqdm, args, read_par
+import pyfstat.optimal_setup_functions as optimal_setup_functions
 import pyfstat.helper_functions as helper_functions
 
 
@@ -33,17 +33,17 @@ class MCMCSearch(core.BaseSearchClass):
         asini='', period='s', ecc='', tp='', argp='')
     rescale_dictionary = {}
 
-
     @helper_functions.initializer
     def __init__(self, label, outdir, theta_prior, tref, minStartTime,
                  maxStartTime, sftfilepattern=None, nsteps=[100, 100],
                  nwalkers=100, ntemps=1, log10temperature_min=-5,
                  theta_initial=None, scatter_val=1e-10, rhohatmax=1000,
                  binary=False, BSGL=False, minCoverFreq=None, SSBprec=None,
-                 maxCoverFreq=None, detectors=None, earth_ephem=None,
-                 sun_ephem=None, injectSources=None, assumeSqrtSX=None):
+                 maxCoverFreq=None, detectors=None,
+                 injectSources=None, assumeSqrtSX=None):
         """
         Parameters
+        ----------
         label, outdir: str
             A label and directory to read/write data from/to
         sftfilepattern: str
@@ -83,10 +83,6 @@ class MCMCSearch(core.BaseSearchClass):
         minCoverFreq, maxCoverFreq: float
             Minimum and maximum instantaneous frequency which will be covered
             over the SFT time span as passed to CreateFstatInput
-        earth_ephem, sun_ephem: str
-            Paths of the two files containing positions of Earth and Sun,
-            respectively at evenly spaced times, as passed to CreateFstatInput
-            If None defaults defined in BaseSearchClass will be used
 
         """
 
@@ -107,11 +103,6 @@ class MCMCSearch(core.BaseSearchClass):
             self.betas = np.logspace(0, self.log10temperature_min, self.ntemps)
         else:
             self.betas = None
-
-        if earth_ephem is None:
-            self.earth_ephem = self.earth_ephem_default
-        if sun_ephem is None:
-            self.sun_ephem = self.sun_ephem_default
 
         if args.clean and os.path.isfile(self.pickle_path):
             os.rename(self.pickle_path, self.pickle_path+".old")
@@ -137,7 +128,6 @@ class MCMCSearch(core.BaseSearchClass):
         self.search = core.ComputeFstat(
             tref=self.tref, sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
-            earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detectors=self.detectors, BSGL=self.BSGL, transient=False,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             binary=self.binary, injectSources=self.injectSources,
@@ -1516,7 +1506,7 @@ class MCMCGlitchSearch(MCMCSearch):
                  theta_initial=None, scatter_val=1e-10, rhohatmax=1000,
                  dtglitchmin=1*86400, theta0_idx=0, detectors=None,
                  BSGL=False, minCoverFreq=None, maxCoverFreq=None,
-                 earth_ephem=None, sun_ephem=None, injectSources=None):
+                 injectSources=None):
         """
         Parameters
         ----------
@@ -1570,10 +1560,6 @@ class MCMCGlitchSearch(MCMCSearch):
         minCoverFreq, maxCoverFreq: float
             Minimum and maximum instantaneous frequency which will be covered
             over the SFT time span as passed to CreateFstatInput
-        earth_ephem, sun_ephem: str
-            Paths of the two files containing positions of Earth and Sun,
-            respectively at evenly spaced times, as passed to CreateFstatInput
-            If None defaults defined in BaseSearchClass will be used
 
         """
 
@@ -1590,11 +1576,6 @@ class MCMCGlitchSearch(MCMCSearch):
             self.betas = np.logspace(0, self.log10temperature_min, self.ntemps)
         else:
             self.betas = None
-        if earth_ephem is None:
-            self.earth_ephem = self.earth_ephem_default
-        if sun_ephem is None:
-            self.sun_ephem = self.sun_ephem_default
-
         if args.clean and os.path.isfile(self.pickle_path):
             os.rename(self.pickle_path, self.pickle_path+".old")
 
@@ -1611,8 +1592,7 @@ class MCMCGlitchSearch(MCMCSearch):
             label=self.label, outdir=self.outdir, sftfilepattern=self.sftfilepattern,
             tref=self.tref, minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
-            maxCoverFreq=self.maxCoverFreq, earth_ephem=self.earth_ephem,
-            sun_ephem=self.sun_ephem, detectors=self.detectors, BSGL=self.BSGL,
+            maxCoverFreq=self.maxCoverFreq, detectors=self.detectors, BSGL=self.BSGL,
             nglitch=self.nglitch, theta0_idx=self.theta0_idx,
             injectSources=self.injectSources)
 
@@ -1778,8 +1758,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
                  theta_initial=None, scatter_val=1e-10, rhohatmax=1000,
                  detectors=None, BSGL=False, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
-                 earth_ephem=None, sun_ephem=None, injectSources=None,
-                 assumeSqrtSX=None):
+                 injectSources=None, assumeSqrtSX=None):
         """
 
         """
@@ -1797,11 +1776,6 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             self.betas = np.logspace(0, self.log10temperature_min, self.ntemps)
         else:
             self.betas = None
-        if earth_ephem is None:
-            self.earth_ephem = self.earth_ephem_default
-        if sun_ephem is None:
-            self.sun_ephem = self.sun_ephem_default
-
         if args.clean and os.path.isfile(self.pickle_path):
             os.rename(self.pickle_path, self.pickle_path+".old")
 
@@ -1827,11 +1801,10 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         logging.info('Setting up search object')
         self.search = core.SemiCoherentSearch(
             label=self.label, outdir=self.outdir, tref=self.tref,
-            nsegs=self.nsegs, sftfilepattern=self.sftfilepattern, binary=self.binary,
-            BSGL=self.BSGL, minStartTime=self.minStartTime,
+            nsegs=self.nsegs, sftfilepattern=self.sftfilepattern,
+            binary=self.binary, BSGL=self.BSGL, minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, detectors=self.detectors,
-            earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             injectSources=self.injectSources, assumeSqrtSX=self.assumeSqrtSX)
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
@@ -1888,7 +1861,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 return True
             else:
                 logging.info(
-                    'Old setup does not match one of NstarMax, Nsegs0 or prior')
+                    "Old setup doesn't match one of NstarMax, Nsegs0 or prior")
         except KeyError as e:
             logging.info(
                 'Error found when comparing with old setup: {}'.format(e))
@@ -1926,13 +1899,13 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 generate_setup = True
 
             if generate_setup:
-                nsegs_vals, Nstar_vals = get_optimal_setup(
-                    NstarMax, Nsegs0, self.tref, self.minStartTime,
-                    self.maxStartTime, self.theta_prior,
-                    self.search.detector_names, self.earth_ephem,
-                    self.sun_ephem)
-                self.write_setup_input_file(run_setup_input_file, NstarMax, Nsegs0,
-                                            nsegs_vals, Nstar_vals,
+                nsegs_vals, Nstar_vals = (
+                        optimal_setup_functions.get_optimal_setup(
+                            NstarMax, Nsegs0, self.tref, self.minStartTime,
+                            self.maxStartTime, self.theta_prior,
+                            self.search.detector_names))
+                self.write_setup_input_file(run_setup_input_file, NstarMax,
+                                            Nsegs0, nsegs_vals, Nstar_vals,
                                             self.theta_prior)
 
             run_setup = [((self.nsteps[0], 0),  nsegs, False)
@@ -1954,10 +1927,9 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 if args.no_template_counting:
                     Nstar_vals.append([1, 1, 1])
                 else:
-                    Nstar = get_Nstar_estimate(
+                    Nstar = optimal_setup_functions.get_Nstar_estimate(
                         rs[1], self.tref, self.minStartTime, self.maxStartTime,
-                        self.theta_prior, self.search.detector_names,
-                        self.earth_ephem, self.sun_ephem)
+                        self.theta_prior, self.search.detector_names)
                     Nstar_vals.append(Nstar)
 
         if log_table:
@@ -2137,7 +2109,6 @@ class MCMCTransientSearch(MCMCSearch):
         self.search = core.ComputeFstat(
             tref=self.tref, sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
-            earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detectors=self.detectors, transient=True,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL, binary=self.binary,

@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import pyfstat.helper_functions as helper_functions
 from pyfstat.core import (BaseSearchClass, ComputeFstat,
                           SemiCoherentGlitchSearch, SemiCoherentSearch, tqdm,
-                          args, earth_ephem, sun_ephem, read_par)
+                          args, read_par)
 
 
 class GridSearch(BaseSearchClass):
@@ -22,9 +22,8 @@ class GridSearch(BaseSearchClass):
     def __init__(self, label, outdir, sftfilepattern, F0s=[0], F1s=[0], F2s=[0],
                  Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
                  maxStartTime=None, nsegs=1, BSGL=False, minCoverFreq=None,
-                 maxCoverFreq=None, earth_ephem=None, sun_ephem=None,
-                 detectors=None, SSBprec=None, injectSources=None,
-                 input_arrays=False, assumeSqrtSX=None):
+                 maxCoverFreq=None, detectors=None, SSBprec=None,
+                 injectSources=None, input_arrays=False, assumeSqrtSX=None):
         """
         Parameters
         ----------
@@ -45,11 +44,6 @@ class GridSearch(BaseSearchClass):
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
 
-        if earth_ephem is None:
-            self.earth_ephem = self.earth_ephem_default
-        if sun_ephem is None:
-            self.sun_ephem = self.sun_ephem_default
-
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.set_out_file()
@@ -61,7 +55,6 @@ class GridSearch(BaseSearchClass):
             self.search = ComputeFstat(
                 tref=self.tref, sftfilepattern=self.sftfilepattern,
                 minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
-                earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
                 detectors=self.detectors, transient=False,
                 minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
                 BSGL=self.BSGL, SSBprec=self.SSBprec,
@@ -75,7 +68,6 @@ class GridSearch(BaseSearchClass):
                 BSGL=self.BSGL, minStartTime=self.minStartTime,
                 maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
                 maxCoverFreq=self.maxCoverFreq, detectors=self.detectors,
-                earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
                 injectSources=self.injectSources)
 
             def cut_out_tstart_tend(*vals):
@@ -313,7 +305,7 @@ class GridGlitchSearch(GridSearch):
                  F1s=[0], F2s=[0], delta_F0s=[0], delta_F1s=[0], tglitchs=None,
                  Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
-                 write_after=1000, earth_ephem=None, sun_ephem=None):
+                 write_after=1000):
 
         """
         Parameters
@@ -333,16 +325,11 @@ class GridGlitchSearch(GridSearch):
         """
         if tglitchs is None:
             self.tglitchs = [self.maxStartTime]
-        if earth_ephem is None:
-            self.earth_ephem = self.earth_ephem_default
-        if sun_ephem is None:
-            self.sun_ephem = self.sun_ephem_default
 
         self.search = SemiCoherentGlitchSearch(
             label=label, outdir=outdir, sftfilepattern=self.sftfilepattern,
             tref=tref, minStartTime=minStartTime, maxStartTime=maxStartTime,
             minCoverFreq=minCoverFreq, maxCoverFreq=maxCoverFreq,
-            earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             BSGL=self.BSGL)
 
         if os.path.isdir(outdir) is False:
@@ -372,8 +359,7 @@ class FrequencySlidingWindow(GridSearch):
                  Alpha, Delta, tref, minStartTime=None,
                  maxStartTime=None, window_size=10*86400, window_delta=86400,
                  BSGL=False, minCoverFreq=None, maxCoverFreq=None,
-                 earth_ephem=None, sun_ephem=None, detectors=None,
-                 SSBprec=None, injectSources=None):
+                 detectors=None, SSBprec=None, injectSources=None):
         """
         Parameters
         ----------
@@ -392,11 +378,6 @@ class FrequencySlidingWindow(GridSearch):
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
 
-        if earth_ephem is None:
-            self.earth_ephem = self.earth_ephem_default
-        if sun_ephem is None:
-            self.sun_ephem = self.sun_ephem_default
-
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.set_out_file()
@@ -411,7 +392,6 @@ class FrequencySlidingWindow(GridSearch):
         self.search = ComputeFstat(
             tref=self.tref, sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
-            earth_ephem=self.earth_ephem, sun_ephem=self.sun_ephem,
             detectors=self.detectors, transient=True,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL, SSBprec=self.SSBprec,
@@ -487,8 +467,7 @@ class DMoff_NO_SPIN(GridSearch):
     @helper_functions.initializer
     def __init__(self, par, label, outdir, sftfilepattern, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
-                 earth_ephem=None, sun_ephem=None, detectors=None,
-                 injectSources=None, assumeSqrtSX=None):
+                 detectors=None, injectSources=None, assumeSqrtSX=None):
         """
         Parameters
         ----------
@@ -505,11 +484,6 @@ class DMoff_NO_SPIN(GridSearch):
 
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
-
-        if earth_ephem is None:
-            self.earth_ephem = self.earth_ephem_default
-        if sun_ephem is None:
-            self.sun_ephem = self.sun_ephem_default
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
