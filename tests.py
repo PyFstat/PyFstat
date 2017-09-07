@@ -16,19 +16,19 @@ class Test(unittest.TestCase):
 
 
 class TestWriter(Test):
-    label = "Test"
+    label = "TestWriter"
 
     def test_make_cff(self):
         Writer = pyfstat.Writer(self.label, outdir=outdir)
         Writer.make_cff()
-        self.assertTrue(os.path.isfile('./TestData/Test.cff'))
+        self.assertTrue(os.path.isfile('./TestData/{}.cff'.format(self.label)))
 
     def test_run_makefakedata(self):
-        Writer = pyfstat.Writer(self.label, outdir=outdir)
+        Writer = pyfstat.Writer(self.label, outdir=outdir, duration=86400)
         Writer.make_cff()
         Writer.run_makefakedata()
         self.assertTrue(os.path.isfile(
-            './TestData/H-4800_H1_1800SFT_Test-700000000-8640000.sft'))
+            './TestData/H-48_H1_1800SFT_TestWriter-700000000-86400.sft'))
 
     def test_makefakedata_usecached(self):
         Writer = pyfstat.Writer(self.label, outdir=outdir, duration=86400)
@@ -86,10 +86,11 @@ class TestBaseSearchClass(Test):
 
 
 class TestComputeFstat(Test):
-    label = "Test"
+    label = "TestComputeFstat"
 
     def test_run_computefstatistic_single_point(self):
-        Writer = pyfstat.Writer(self.label, outdir=outdir)
+        Writer = pyfstat.Writer(self.label, outdir=outdir, duration=86400,
+                                h0=1, sqrtSX=1)
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
 
@@ -107,7 +108,8 @@ class TestComputeFstat(Test):
         self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.2)
 
     def run_computefstatistic_single_point_no_noise(self):
-        Writer = pyfstat.Writer(self.label, outdir=outdir, add_noise=False)
+        Writer = pyfstat.Writer(self.label, outdir=outdir, add_noise=False,
+                                duration=86400, h0=1, sqrtSX=1)
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
 
@@ -125,7 +127,8 @@ class TestComputeFstat(Test):
         self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.2)
 
     def test_injectSources_from_file(self):
-        Writer = pyfstat.Writer(self.label, outdir=outdir, add_noise=False)
+        Writer = pyfstat.Writer(self.label, outdir=outdir, add_noise=False,
+                                duration=86400, h0=1, sqrtSX=1)
         Writer.make_cff()
         injectSources = Writer.config_file_name
 
@@ -148,15 +151,17 @@ class TestComputeFstat(Test):
 
 
 class TestSemiCoherentGlitchSearch(Test):
-    label = "Test"
+    label = "TestSemiCoherentGlitchSearch"
 
     def test_compute_nglitch_fstat(self):
-        duration = 100*86400
-        dtglitch = .5*100*86400
+        duration = 10*86400
+        dtglitch = .5*duration
         delta_F0 = 0
+        h0 = 1
+        sqrtSX = 1
         Writer = pyfstat.GlitchWriter(
             self.label, outdir=outdir, duration=duration, dtglitch=dtglitch,
-            delta_F0=delta_F0)
+            delta_F0=delta_F0, sqrtSX=sqrtSX, h0=h0)
 
         Writer.make_data()
 
@@ -190,16 +195,16 @@ class TestSemiCoherentGlitchSearch(Test):
 
 
 class TestMCMCSearch(Test):
-    label = "Test"
+    label = "TestMCMCSearch"
 
     def test_fully_coherent(self):
-        h0 = 5e-24
-        sqrtSX = 1e-22
+        h0 = 1
+        sqrtSX = 1
         F0 = 30
         F1 = -1e-10
         F2 = 0
         minStartTime = 700000000
-        duration = 100 * 86400
+        duration = 1 * 86400
         maxStartTime = minStartTime + duration
         Alpha = 5e-3
         Delta = 1.2
@@ -214,8 +219,8 @@ class TestMCMCSearch(Test):
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
 
-        theta = {'F0': {'type': 'norm', 'loc': F0, 'scale': np.abs(1e-9*F0)},
-                 'F1': {'type': 'norm', 'loc': F1, 'scale': np.abs(1e-9*F1)},
+        theta = {'F0': {'type': 'norm', 'loc': F0, 'scale': np.abs(1e-10*F0)},
+                 'F1': {'type': 'norm', 'loc': F1, 'scale': np.abs(1e-10*F1)},
                  'F2': F2, 'Alpha': Alpha, 'Delta': Delta}
 
         search = pyfstat.MCMCSearch(
@@ -233,7 +238,7 @@ class TestMCMCSearch(Test):
             FS > predicted_FS or np.abs((FS-predicted_FS))/predicted_FS < 0.3)
 
     def test_multi_stage(self):
-        Writer = pyfstat.Writer(F0=10)
+        Writer = pyfstat.Writer(F0=10, duration=86400, h0=1, sqrtSX=1)
         Writer.make_cff()
 
         theta = {'F0': {'type': 'norm', 'loc': 10, 'scale': 1e-2},
