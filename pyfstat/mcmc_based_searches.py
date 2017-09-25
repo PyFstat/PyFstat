@@ -1978,22 +1978,20 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         if gen_tex_table:
             filename = '{}/{}_run_setup.tex'.format(self.outdir, self.label)
             with open(filename, 'w+') as f:
-                f.write(r'\begin{tabular}{c|cccc}' + '\n')
+                f.write(r'\begin{tabular}{c|ccc}' + '\n')
                 f.write(r'Stage & $N_\mathrm{seg}$ &'
                         r'$T_\mathrm{coh}^{\rm days}$ &'
-                        r'$N_\mathrm{burn}$ & $N_\mathrm{prod}$ &'
-                        r'$N^*$ \\ \hline'
+                        r'$\mathcal{N}^*$ \\ \hline'
                         '\n')
                 for i, rs in enumerate(run_setup):
                     Tcoh = float(
                         self.maxStartTime - self.minStartTime)/rs[1]/86400
-                    line = r'{} & {} & {} & {} & {} & {} \\' + '\n'
+                    line = r'{} & {} & {} & {} \\' + '\n'
                     if Nstar_vals[i] is None:
                         Nstar = 'N/A'
                     else:
                         Nstar = Nstar_vals[i]
                     line = line.format(i, rs[1], '{:1.1f}'.format(Tcoh),
-                                       rs[0], rs[1],
                                        helper_functions.texify_float(Nstar))
                     f.write(line)
                 f.write(r'\end{tabular}' + '\n')
