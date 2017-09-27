@@ -53,9 +53,8 @@ class MCMCSearch(core.BaseSearchClass):
         The  log_10(tmin) value, the set of betas passed to PTSampler are
         generated from `np.logspace(0, log10temperature_min, ntemps)`.
     theta_initial: dict, array, (None)
-        Either a dictionary of distribution about which to distribute the
-        initial walkers about, an array (from which the walkers will be
-        scattered by scatter_val, or  None in which case the prior is used.
+        A dictionary of distribution about which to distribute the
+        initial walkers about
     rhohatmax: float,
         Upper bound for the SNR scale parameter (required to normalise the
         Bayes factor) - this needs to be carefully set when using the
@@ -1084,20 +1083,12 @@ class MCMCSearch(core.BaseSearchClass):
                     for key in self.theta_keys]
                    for i in range(self.nwalkers)]
                   for j in range(self.ntemps)]
-        elif type(self.theta_initial) == list:
-            logging.info('Generate initial values from list of theta_initial')
-            p0 = [[[self._generate_rv(**val)
-                    for val in self.theta_initial]
-                   for i in range(self.nwalkers)]
-                  for j in range(self.ntemps)]
         elif self.theta_initial is None:
             logging.info('Generate initial values from prior dictionary')
             p0 = [[[self._generate_rv(**self.theta_prior[key])
                     for key in self.theta_keys]
                    for i in range(self.nwalkers)]
                   for j in range(self.ntemps)]
-        elif len(self.theta_initial) == self.ndim:
-            p0 = self._generate_scattered_p0(self.theta_initial)
         else:
             raise ValueError('theta_initial not understood')
 
