@@ -22,26 +22,25 @@ import pyfstat.helper_functions as helper_functions
 
 
 class MCMCSearch(core.BaseSearchClass):
-    """ MCMC search using ComputeFstat
+    """MCMC search using ComputeFstat
 
     Parameters
     ----------
     label, outdir: str
         A label and directory to read/write data from/to
-    sftfilepattern: str
-        Pattern to match SFTs using wildcards (*?) and ranges [0-9];
-        mutiple patterns can be given separated by colons.
     theta_prior: dict
         Dictionary of priors and fixed values for the search parameters.
         For each parameters (key of the dict), if it is to be held fixed
         the value should be the constant float, if it is be searched, the
         value should be a dictionary of the prior.
-    theta_initial: dict, array, (None)
-        Either a dictionary of distribution about which to distribute the
-        initial walkers about, an array (from which the walkers will be
-        scattered by scatter_val, or  None in which case the prior is used.
     tref, minStartTime, maxStartTime: int
         GPS seconds of the reference time, start time and end time
+    sftfilepattern: str
+        Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+        mutiple patterns can be given separated by colons.
+    detectors: str
+        Two character reference to the detectors to use, specify None for no
+        contraint and comma separate for multiple references.
     nsteps: list (m,)
         List specifying the number of steps to take, the last two entries
         give the nburn and nprod of the 'production' run, all entries
@@ -52,19 +51,29 @@ class MCMCSearch(core.BaseSearchClass):
         tempered PTSampler.
     log10temperature_min float < 0
         The  log_10(tmin) value, the set of betas passed to PTSampler are
-        generated from np.logspace(0, log10temperature_min, ntemps).
-    rhohatmax: float
+        generated from `np.logspace(0, log10temperature_min, ntemps)`.
+    theta_initial: dict, array, (None)
+        Either a dictionary of distribution about which to distribute the
+        initial walkers about, an array (from which the walkers will be
+        scattered by scatter_val, or  None in which case the prior is used.
+    rhohatmax: float,
         Upper bound for the SNR scale parameter (required to normalise the
         Bayes factor) - this needs to be carefully set when using the
         evidence.
-    binary: Bool
+    binary: bool
         If true, search over binary parameters
-    detectors: str
-        Two character reference to the data to use, specify None for no
-        contraint.
+    BSGL: bool
+        If true, use the BSGL statistic
+    SSBPrec: int
+        SSBPrec (SSB precision) to use when calling ComputeFstat
     minCoverFreq, maxCoverFreq: float
         Minimum and maximum instantaneous frequency which will be covered
         over the SFT time span as passed to CreateFstatInput
+    injectSources: dict
+        If given, inject these properties into the SFT files before running
+        the search
+    assumeSqrtSX: float
+        Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}
 
     Attributes
     ----------
@@ -92,11 +101,11 @@ class MCMCSearch(core.BaseSearchClass):
 
     @helper_functions.initializer
     def __init__(self, label, outdir, theta_prior, tref, minStartTime,
-                 maxStartTime, sftfilepattern=None, nsteps=[100, 100],
-                 nwalkers=100, ntemps=1, log10temperature_min=-5,
-                 theta_initial=None, scatter_val=1e-10, rhohatmax=1000,
-                 binary=False, BSGL=False, minCoverFreq=None, SSBprec=None,
-                 maxCoverFreq=None, detectors=None,
+                 maxStartTime, sftfilepattern=None, detectors=None,
+                 nsteps=[100, 100], nwalkers=100, ntemps=1,
+                 log10temperature_min=-5, theta_initial=None,
+                 scatter_val=1e-10, rhohatmax=1000, binary=False, BSGL=False,
+                 SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
                  injectSources=None, assumeSqrtSX=None):
 
         if os.path.isdir(outdir) is False:
@@ -1510,62 +1519,22 @@ class MCMCSearch(core.BaseSearchClass):
 
 
 class MCMCGlitchSearch(MCMCSearch):
-    """ MCMC search using the SemiCoherentGlitchSearch
+    """MCMC search using the SemiCoherentGlitchSearch
 
-    See the parent class MCMCSearch for all inherited methods and attributes
+    See parent MCMCSearch for a list of all additional parameters, here we list
+    only the additional init parameters of this class.
 
     Parameters
     ----------
-    label, outdir: str
-        A label and directory to read/write data from/to
-    sftfilepattern: str
-        Pattern to match SFTs using wildcards (*?) and ranges [0-9];
-        mutiple patterns can be given separated by colons.
-    theta_prior: dict
-        Dictionary of priors and fixed values for the search parameters.
-        For each parameters (key of the dict), if it is to be held fixed
-        the value should be the constant float, if it is be searched, the
-        value should be a dictionary of the prior.
-    theta_initial: dict, array, (None)
-        Either a dictionary of distribution about which to distribute the
-        initial walkers about, an array (from which the walkers will be
-        scattered by scatter_val), or None in which case the prior is used.
-    scatter_val, float or ndim array
-        Size of scatter to use about the initialisation step, if given as
-        an array it must be of length ndim and the order is given by
-        theta_keys
     nglitch: int
         The number of glitches to allow
-    tref, minStartTime, maxStartTime: int
-        GPS seconds of the reference time, start time and end time
-    nsteps: list (m,)
-        List specifying the number of steps to take, the last two entries
-        give the nburn and nprod of the 'production' run, all entries
-        before are for iterative initialisation steps (usually just one)
-        e.g. [1000, 1000, 500].
     dtglitchmin: int
         The minimum duration (in seconds) of a segment between two glitches
         or a glitch and the start/end of the data
-    rhohatmax: float
-        Upper bound for the SNR scale parameter (required to normalise the
-        Bayes factor) - this needs to be carefully set when using the
-        evidence.
-    nwalkers, ntemps: int,
-        The number of walkers and temperates to use in the parallel
-        tempered PTSampler.
-    log10temperature_min float < 0
-        The  log_10(tmin) value, the set of betas passed to PTSampler are
-        generated from np.logspace(0, log10temperature_min, ntemps).
     theta0_idx, int
-        Index (zero-based) of which segment the theta refers to - uyseful
+        Index (zero-based) of which segment the theta refers to - useful
         if providing a tight prior on theta to allow the signal to jump
         too theta (and not just from)
-    detectors: str
-        Two character reference to the data to use, specify None for no
-        contraint.
-    minCoverFreq, maxCoverFreq: float
-        Minimum and maximum instantaneous frequency which will be covered
-        over the SFT time span as passed to CreateFstatInput
 
     """
 
@@ -1585,13 +1554,14 @@ class MCMCGlitchSearch(MCMCSearch):
             )
 
     @helper_functions.initializer
-    def __init__(self, label, outdir, sftfilepattern, theta_prior, tref,
-                 minStartTime, maxStartTime, nglitch=1, nsteps=[100, 100],
-                 nwalkers=100, ntemps=1, log10temperature_min=-5,
-                 theta_initial=None, scatter_val=1e-10, rhohatmax=1000,
-                 dtglitchmin=1*86400, theta0_idx=0, detectors=None,
-                 BSGL=False, minCoverFreq=None, maxCoverFreq=None,
-                 injectSources=None):
+    def __init__(self, label, outdir, theta_prior, tref, minStartTime,
+                 maxStartTime, sftfilepattern=None, detectors=None,
+                 nsteps=[100, 100], nwalkers=100, ntemps=1,
+                 log10temperature_min=-5, theta_initial=None,
+                 scatter_val=1e-10, rhohatmax=1000, binary=False, BSGL=False,
+                 SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
+                 injectSources=None, assumeSqrtSX=None,
+                 dtglitchmin=1*86400, theta0_idx=0, nglitch=1):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -1780,15 +1750,27 @@ class MCMCGlitchSearch(MCMCSearch):
 
 
 class MCMCSemiCoherentSearch(MCMCSearch):
-    """ MCMC search for a signal using the semi-coherent ComputeFstat """
+    """ MCMC search for a signal using the semi-coherent ComputeFstat
+
+    See parent MCMCSearch for a list of all additional parameters, here we list
+    only the additional init parameters of this class.
+
+    Parameters
+    ----------
+    nsegs: int
+        The number of segments
+
+    """
+
     @helper_functions.initializer
-    def __init__(self, label, outdir, theta_prior, tref, sftfilepattern=None,
-                 nsegs=None, nsteps=[100, 100, 100], nwalkers=100,
-                 binary=False, ntemps=1, log10temperature_min=-5,
-                 theta_initial=None, scatter_val=1e-10, rhohatmax=1000,
-                 detectors=None, BSGL=False, minStartTime=None,
-                 maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
-                 injectSources=None, assumeSqrtSX=None):
+    def __init__(self, label, outdir, theta_prior, tref, minStartTime,
+                 maxStartTime, sftfilepattern=None, detectors=None,
+                 nsteps=[100, 100], nwalkers=100, ntemps=1,
+                 log10temperature_min=-5, theta_initial=None,
+                 scatter_val=1e-10, rhohatmax=1000, binary=False, BSGL=False,
+                 SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
+                 injectSources=None, assumeSqrtSX=None,
+                 nsegs=None):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -1848,7 +1830,12 @@ class MCMCSemiCoherentSearch(MCMCSearch):
 
 
 class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
-    """ A follow up procudure increasing the coherence time in a zoom """
+    """ A follow up procudure increasing the coherence time in a zoom
+
+    See parent MCMCSemiCoherentSearch for a list of all additional parameters
+
+    """
+
     def _get_data_dictionary_to_save(self):
         d = dict(nwalkers=self.nwalkers, ntemps=self.ntemps,
                  theta_keys=self.theta_keys, theta_prior=self.theta_prior,
@@ -2108,7 +2095,12 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
 
 class MCMCTransientSearch(MCMCSearch):
-    """ MCMC search for a transient signal using ComputeFstat """
+    """ MCMC search for a transient signal using ComputeFstat
+
+    See parent MCMCSearch for a list of all additional parameters, here we list
+    only the additional init parameters of this class.
+
+    """
 
     symbol_dictionary = dict(
         F0='$f$', F1='$\dot{f}$', F2='$\ddot{f}$',
