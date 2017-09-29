@@ -21,7 +21,7 @@ theta_prior = {'F0': {'type': 'unif', 'lower': F0-1e-4, 'upper': F0+1e-4},
                }
 
 ntemps = 2
-log10temperature_min = -0.01
+log10beta_min = -0.01
 nwalkers = 100
 nsteps = [500, 500]
 
@@ -29,7 +29,7 @@ mcmc = MCMCSearch('fully_coherent_search_using_MCMC_on_glitching_data', 'data',
                   sftfilepattern='data/*_glitch*.sft',
                   theta_prior=theta_prior, tref=tref, minStartTime=tstart, maxStartTime=tend,
                   nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps,
-                  log10temperature_min=log10temperature_min)
+                  log10beta_min=log10beta_min)
 mcmc.run()
 mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()

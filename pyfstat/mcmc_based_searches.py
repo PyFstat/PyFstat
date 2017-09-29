@@ -48,9 +48,10 @@ class MCMCSearch(core.BaseSearchClass):
     nwalkers, ntemps: int,
         The number of walkers and temperates to use in the parallel
         tempered PTSampler.
-    log10temperature_min float < 0
-        The  log_10(tmin) value, the set of betas passed to PTSampler are
-        generated from `np.logspace(0, log10temperature_min, ntemps)`.
+    log10beta_min float < 0
+        The  log_10(beta) value, if given the set of betas passed to PTSampler
+        are generated from `np.logspace(0, log10beta_min, ntemps)` (given
+        in descending order to emcee).
     theta_initial: dict, array, (None)
         A dictionary of distribution about which to distribute the
         initial walkers about
@@ -101,7 +102,7 @@ class MCMCSearch(core.BaseSearchClass):
     def __init__(self, label, outdir, theta_prior, tref, minStartTime,
                  maxStartTime, sftfilepattern=None, detectors=None,
                  nsteps=[100, 100], nwalkers=100, ntemps=1,
-                 log10temperature_min=-5, theta_initial=None,
+                 log10beta_min=-5, theta_initial=None,
                  rhohatmax=1000, binary=False, BSGL=False,
                  SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
                  injectSources=None, assumeSqrtSX=None):
@@ -119,8 +120,8 @@ class MCMCSearch(core.BaseSearchClass):
         self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
         self._unpack_input_theta()
         self.ndim = len(self.theta_keys)
-        if self.log10temperature_min:
-            self.betas = np.logspace(0, self.log10temperature_min, self.ntemps)
+        if self.log10beta_min:
+            self.betas = np.logspace(0, self.log10beta_min, self.ntemps)
         else:
             self.betas = None
 
@@ -138,8 +139,8 @@ class MCMCSearch(core.BaseSearchClass):
         logging.info('nwalkers={}'.format(self.nwalkers))
         logging.info('nsteps = {}'.format(self.nsteps))
         logging.info('ntemps = {}'.format(self.ntemps))
-        logging.info('log10temperature_min = {}'.format(
-            self.log10temperature_min))
+        logging.info('log10beta_min = {}'.format(
+            self.log10beta_min))
 
     def _initiate_search_object(self):
         logging.info('Setting up search object')
@@ -1163,7 +1164,7 @@ class MCMCSearch(core.BaseSearchClass):
         d = dict(nsteps=self.nsteps, nwalkers=self.nwalkers,
                  ntemps=self.ntemps, theta_keys=self.theta_keys,
                  theta_prior=self.theta_prior,
-                 log10temperature_min=self.log10temperature_min,
+                 log10beta_min=self.log10beta_min,
                  BSGL=self.BSGL)
         return d
 
@@ -1571,7 +1572,7 @@ class MCMCGlitchSearch(MCMCSearch):
     def __init__(self, label, outdir, theta_prior, tref, minStartTime,
                  maxStartTime, sftfilepattern=None, detectors=None,
                  nsteps=[100, 100], nwalkers=100, ntemps=1,
-                 log10temperature_min=-5, theta_initial=None,
+                 log10beta_min=-5, theta_initial=None,
                  rhohatmax=1000, binary=False, BSGL=False,
                  SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
                  injectSources=None, assumeSqrtSX=None,
@@ -1586,8 +1587,8 @@ class MCMCGlitchSearch(MCMCSearch):
         self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
         self._unpack_input_theta()
         self.ndim = len(self.theta_keys)
-        if self.log10temperature_min:
-            self.betas = np.logspace(0, self.log10temperature_min, self.ntemps)
+        if self.log10beta_min:
+            self.betas = np.logspace(0, self.log10beta_min, self.ntemps)
         else:
             self.betas = None
         if args.clean and os.path.isfile(self.pickle_path):
@@ -1702,7 +1703,7 @@ class MCMCGlitchSearch(MCMCSearch):
         d = dict(nsteps=self.nsteps, nwalkers=self.nwalkers,
                  ntemps=self.ntemps, theta_keys=self.theta_keys,
                  theta_prior=self.theta_prior,
-                 log10temperature_min=self.log10temperature_min,
+                 log10beta_min=self.log10beta_min,
                  theta0_idx=self.theta0_idx, BSGL=self.BSGL)
         return d
 
@@ -1780,7 +1781,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
     def __init__(self, label, outdir, theta_prior, tref, minStartTime,
                  maxStartTime, sftfilepattern=None, detectors=None,
                  nsteps=[100, 100], nwalkers=100, ntemps=1,
-                 log10temperature_min=-5, theta_initial=None,
+                 log10beta_min=-5, theta_initial=None,
                  rhohatmax=1000, binary=False, BSGL=False,
                  SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
                  injectSources=None, assumeSqrtSX=None,
@@ -1795,8 +1796,8 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
         self._unpack_input_theta()
         self.ndim = len(self.theta_keys)
-        if self.log10temperature_min:
-            self.betas = np.logspace(0, self.log10temperature_min, self.ntemps)
+        if self.log10beta_min:
+            self.betas = np.logspace(0, self.log10beta_min, self.ntemps)
         else:
             self.betas = None
         if args.clean and os.path.isfile(self.pickle_path):
@@ -1816,7 +1817,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         d = dict(nsteps=self.nsteps, nwalkers=self.nwalkers,
                  ntemps=self.ntemps, theta_keys=self.theta_keys,
                  theta_prior=self.theta_prior,
-                 log10temperature_min=self.log10temperature_min,
+                 log10beta_min=self.log10beta_min,
                  BSGL=self.BSGL, nsegs=self.nsegs)
         return d
 
@@ -1853,7 +1854,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
     def _get_data_dictionary_to_save(self):
         d = dict(nwalkers=self.nwalkers, ntemps=self.ntemps,
                  theta_keys=self.theta_keys, theta_prior=self.theta_prior,
-                 log10temperature_min=self.log10temperature_min,
+                 log10beta_min=self.log10beta_min,
                  BSGL=self.BSGL, run_setup=self.run_setup)
         return d
 

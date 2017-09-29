@@ -34,7 +34,7 @@ theta_prior = {'F0': {'type': 'unif',
                }
 
 ntemps = 2
-log10temperature_min = -1
+log10beta_min = -1
 nwalkers = 100
 nsteps = [100, 100]
 
@@ -43,7 +43,7 @@ mcmc = pyfstat.MCMCTransientSearch(
     sftfilepattern='data/*simulated_transient_signal*sft',
     theta_prior=theta_prior, tref=tref, minStartTime=minStartTime,
     maxStartTime=maxStartTime, nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps,
-    log10temperature_min=log10temperature_min)
+    log10beta_min=log10beta_min)
 mcmc.run()
 mcmc.plot_corner(label_offset=0.7)
 mcmc.print_summary()

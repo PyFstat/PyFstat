@@ -47,7 +47,7 @@ theta_prior = {'F0': {'type': 'unif',
 search = pyfstat.MCMCGlitchSearch(
     label=label, outdir=outdir, sftfilepattern=sftfilepattern,
     theta_prior=theta_prior, nglitch=1, tref=tref, nsteps=[500, 500],
-    ntemps=3, log10temperature_min=-0.5, minStartTime=tstart,
+    ntemps=3, log10beta_min=-0.5, minStartTime=tstart,
     maxStartTime=tstart+Tspan)
 search.run()
 search.plot_corner(label_offset=0.8, add_prior=True)

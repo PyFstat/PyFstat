@@ -48,7 +48,7 @@ theta_prior = {'F0': {'type': 'unif', 'lower': F0-DeltaF0/2.,
                }
 
 ntemps = 3
-log10temperature_min = -0.5
+log10beta_min = -0.5
 nwalkers = 100
 scatter_val = 1e-10
 nsteps = [100, 100]
@@ -57,7 +57,7 @@ mcmc = pyfstat.MCMCFollowUpSearch(
     label='weak_signal_follow_up', outdir='data',
     sftfilepattern='data/*'+data_label+'*sft', theta_prior=theta_prior, tref=tref,
     minStartTime=tstart, maxStartTime=tend, nwalkers=nwalkers, nsteps=nsteps,
-    ntemps=ntemps, log10temperature_min=log10temperature_min,
+    ntemps=ntemps, log10beta_min=log10beta_min,
     scatter_val=scatter_val)
 
 fig, axes = plt.subplots(nrows=2, ncols=2)

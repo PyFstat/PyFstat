@@ -25,7 +25,7 @@ theta_prior = {'F0': {'type': 'norm', 'loc': F0, 'scale': abs(1e-6*F0)},
                }
 
 ntemps = 4
-log10temperature_min = -1
+log10beta_min = -1
 nwalkers = 100
 nsteps = [5000, 1000, 1000]
 
@@ -34,7 +34,7 @@ mcmc = pyfstat.MCMCGlitchSearch(
     sftfilepattern='data/*_glitch*sft', theta_prior=theta_prior, tref=tref,
     tstart=tstart, tend=tend, nsteps=nsteps, nwalkers=nwalkers,
     scatter_val=1e-10, nglitch=1, ntemps=ntemps,
-    log10temperature_min=log10temperature_min)
+    log10beta_min=log10beta_min)
 
 mcmc.run()
 mcmc.plot_corner(add_prior=True)

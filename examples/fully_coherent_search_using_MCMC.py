@@ -47,7 +47,7 @@ theta_prior = {'F0': {'type': 'unif',
                }
 
 ntemps = 1
-log10temperature_min = -1
+log10beta_min = -1
 nwalkers = 100
 nsteps = [1000, 1000]
 
@@ -55,7 +55,7 @@ mcmc = pyfstat.MCMCSearch(
     label='fully_coherent_search_using_MCMC', outdir='data',
     sftfilepattern='data/*'+data_label+'*sft', theta_prior=theta_prior, tref=tref,
     minStartTime=tstart, maxStartTime=tend, nsteps=nsteps, nwalkers=nwalkers,
-    ntemps=ntemps, log10temperature_min=log10temperature_min)
+    ntemps=ntemps, log10beta_min=log10beta_min)
 mcmc.run(context='paper', subtractions=[30, -1e-10], c=2)
 mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()
