@@ -160,9 +160,9 @@ class MCMCSearch(core.BaseSearchClass):
     def logl(self, theta, search):
         for j, theta_i in enumerate(self.theta_idxs):
             self.fixed_theta[theta_i] = theta[j]
-        FS = search.compute_fullycoherent_det_stat_single_point(
-            *self.fixed_theta)
-        return FS + self.likelihoodcoef
+        twoF = search.get_fullycoherent_twoF(
+            self.minStartTime, self.maxStartTime, *self.fixed_theta)
+        return twoF/2.0 + self.likelihoodcoef
 
     def _unpack_input_theta(self):
         full_theta_keys = ['F0', 'F1', 'F2', 'Alpha', 'Delta']
@@ -1244,11 +1244,11 @@ class MCMCSearch(core.BaseSearchClass):
 
         """
         if any(np.isposinf(self.lnlikes)):
-            logging.info('twoF values contain positive infinite values')
+            logging.info('lnlike values contain positive infinite values')
         if any(np.isneginf(self.lnlikes)):
-            logging.info('twoF values contain negative infinite values')
+            logging.info('lnlike values contain negative infinite values')
         if any(np.isnan(self.lnlikes)):
-            logging.info('twoF values contain nan')
+            logging.info('lnlike values contain nan')
         idxs = np.isfinite(self.lnlikes)
         jmax = np.nanargmax(self.lnlikes[idxs])
         maxlogl = self.lnlikes[jmax]
@@ -1262,7 +1262,7 @@ class MCMCSearch(core.BaseSearchClass):
             maxtwoF = self.logl(p, self.search)
             self.search.BSGL = self.BSGL
         else:
-            maxtwoF = maxlogl - self.likelihoodcoef
+            maxtwoF = (maxlogl - self.likelihoodcoef)*2
 
         repeats = []
         for i, k in enumerate(self.theta_keys):
@@ -1633,8 +1633,8 @@ class MCMCGlitchSearch(MCMCSearch):
 
         for j, theta_i in enumerate(self.theta_idxs):
             self.fixed_theta[theta_i] = theta[j]
-        FS = search.compute_nglitch_fstat(*self.fixed_theta)
-        return FS + self.likelihoodcoef
+        twoF = search.get_semicoherent_nglitch_twoF(*self.fixed_theta)
+        return twoF/2.0 + self.likelihoodcoef
 
     def _unpack_input_theta(self):
         glitch_keys = ['delta_F0', 'delta_F1', 'tglitch']
@@ -1839,9 +1839,9 @@ class MCMCSemiCoherentSearch(MCMCSearch):
     def logl(self, theta, search):
         for j, theta_i in enumerate(self.theta_idxs):
             self.fixed_theta[theta_i] = theta[j]
-        FS = search.run_semi_coherent_computefstatistic_single_point(
+        twoF = search.get_semicoherent_twoF(
             *self.fixed_theta)
-        return FS + self.likelihoodcoef
+        return twoF/2.0 + self.likelihoodcoef
 
 
 class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
@@ -2152,8 +2152,8 @@ class MCMCTransientSearch(MCMCSearch):
         in_theta[1] = in_theta[0] + in_theta[1]
         if in_theta[1] > self.maxStartTime:
             return -np.inf
-        FS = search.run_computefstatistic_single_point(*in_theta)
-        return FS + self.likelihoodcoef
+        twoF = search.get_fullycoherent_twoF(*in_theta)
+        return twoF/2.0 + self.likelihoodcoef
 
     def _unpack_input_theta(self):
         full_theta_keys = ['transient_tstart',

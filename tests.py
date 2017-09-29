@@ -97,13 +97,9 @@ class TestComputeFstat(Test):
         search = pyfstat.ComputeFstat(
             tref=Writer.tref,
             sftfilepattern='{}/*{}*sft'.format(Writer.outdir, Writer.label))
-        FS = search.run_computefstatistic_single_point(Writer.tstart,
-                                                       Writer.tend,
-                                                       Writer.F0,
-                                                       Writer.F1,
-                                                       Writer.F2,
-                                                       Writer.Alpha,
-                                                       Writer.Delta)
+        FS = search.get_fullycoherent_twoF(
+            Writer.tstart, Writer.tend, Writer.F0, Writer.F1, Writer.F2,
+            Writer.Alpha, Writer.Delta)
         print predicted_FS, FS
         self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.2)
 
@@ -116,13 +112,9 @@ class TestComputeFstat(Test):
         search = pyfstat.ComputeFstat(
             tref=Writer.tref, assumeSqrtSX=1,
             sftfilepattern='{}/*{}*sft'.format(Writer.outdir, Writer.label))
-        FS = search.run_computefstatistic_single_point(Writer.tstart,
-                                                       Writer.tend,
-                                                       Writer.F0,
-                                                       Writer.F1,
-                                                       Writer.F2,
-                                                       Writer.Alpha,
-                                                       Writer.Delta)
+        FS = search.get_fullycoherent_twoF(
+            Writer.tstart, Writer.tend, Writer.F0, Writer.F1, Writer.F2,
+            Writer.Alpha, Writer.Delta)
         print predicted_FS, FS
         self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.2)
 
@@ -137,13 +129,9 @@ class TestComputeFstat(Test):
             minCoverFreq=28, maxCoverFreq=32, minStartTime=Writer.tstart,
             maxStartTime=Writer.tstart+Writer.duration,
             detectors=Writer.detectors)
-        FS = search.run_computefstatistic_single_point(Writer.tstart,
-                                                       Writer.tend,
-                                                       Writer.F0,
-                                                       Writer.F1,
-                                                       Writer.F2,
-                                                       Writer.Alpha,
-                                                       Writer.Delta)
+        FS = search.get_fullycoherent_twoF(
+            Writer.tstart, Writer.tend, Writer.F0, Writer.F1, Writer.F2,
+            Writer.Alpha, Writer.Delta)
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
         print predicted_FS, FS
@@ -153,7 +141,7 @@ class TestComputeFstat(Test):
 class TestSemiCoherentGlitchSearch(Test):
     label = "TestSemiCoherentGlitchSearch"
 
-    def test_compute_nglitch_fstat(self):
+    def test_get_semicoherent_nglitch_twoF(self):
         duration = 10*86400
         dtglitch = .5*duration
         delta_F0 = 0
@@ -171,10 +159,9 @@ class TestSemiCoherentGlitchSearch(Test):
             tref=Writer.tref, minStartTime=Writer.tstart,
             maxStartTime=Writer.tend, nglitch=1)
 
-        FS = search.compute_nglitch_fstat(Writer.F0, Writer.F1, Writer.F2,
-                                          Writer.Alpha, Writer.Delta,
-                                          Writer.delta_F0, Writer.delta_F1,
-                                          search.minStartTime+dtglitch)
+        FS = search.get_semicoherent_nglitch_twoF(
+            Writer.F0, Writer.F1, Writer.F2, Writer.Alpha, Writer.Delta,
+            Writer.delta_F0, Writer.delta_F1, search.minStartTime+dtglitch)
 
         # Compute the predicted semi-coherent glitch Fstat
         minStartTime = Writer.tstart

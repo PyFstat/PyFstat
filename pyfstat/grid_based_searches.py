@@ -60,7 +60,7 @@ class GridSearch(BaseSearchClass):
                 BSGL=self.BSGL, SSBprec=self.SSBprec,
                 injectSources=self.injectSources,
                 assumeSqrtSX=self.assumeSqrtSX)
-            self.search.get_det_stat = self.search.run_computefstatistic_single_point
+            self.search.get_det_stat = self.search.get_fullycoherent_twoF
         else:
             self.search = SemiCoherentSearch(
                 label=self.label, outdir=self.outdir, tref=self.tref,
@@ -71,7 +71,7 @@ class GridSearch(BaseSearchClass):
                 injectSources=self.injectSources)
 
             def cut_out_tstart_tend(*vals):
-                return self.search.run_semi_coherent_computefstatistic_single_point(*vals[2:])
+                return self.search.get_semicoherent_twoF(*vals[2:])
             self.search.get_det_stat = cut_out_tstart_tend
 
     def get_array_from_tuple(self, x):
@@ -397,7 +397,7 @@ class FrequencySlidingWindow(GridSearch):
             BSGL=self.BSGL, SSBprec=self.SSBprec,
             injectSources=self.injectSources)
         self.search.get_det_stat = (
-            self.search.run_computefstatistic_single_point)
+            self.search.get_fullycoherent_twoF)
 
     def get_input_data_array(self):
         arrays = []

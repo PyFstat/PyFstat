@@ -576,19 +576,9 @@ class ComputeFstat(BaseSearchClass):
             self.windowRange.tauBand = 0
             self.windowRange.dtau = 1
 
-    def compute_fullycoherent_det_stat_single_point(
-            self, F0, F1, F2, Alpha, Delta, asini=None, period=None, ecc=None,
-            tp=None, argp=None):
-        """ Compute the fully-coherent det. statistic at a single point """
-
-        return self.run_computefstatistic_single_point(
-            self.minStartTime, self.maxStartTime, F0, F1, F2, Alpha, Delta,
-            asini, period, ecc, tp, argp)
-
-    def run_computefstatistic_single_point(self, tstart, tend, F0, F1,
-                                           F2, Alpha, Delta, asini=None,
-                                           period=None, ecc=None, tp=None,
-                                           argp=None):
+    def get_fullycoherent_twoF(self, tstart, tend, F0, F1, F2, Alpha, Delta,
+                               asini=None, period=None, ecc=None, tp=None,
+                               argp=None):
         """ Returns twoF or ln(BSGL) fully-coherently at a single point """
 
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
@@ -684,7 +674,7 @@ class ComputeFstat(BaseSearchClass):
             self.transient = True
             self.init_computefstatistic_single_point()
         for tau in taus:
-            twoFs.append(self.run_computefstatistic_single_point(
+            twoFs.append(self.get_fullycoherent_twoF(
                 tstart=tstart, tend=tstart+tau, F0=F0, F1=F1, F2=F2,
                 Alpha=Alpha, Delta=Delta, asini=asini, period=period, ecc=ecc,
                 tp=tp, argp=argp))
@@ -875,7 +865,7 @@ class SemiCoherentSearch(ComputeFstat):
                     'Semi-coherent end time {} after last SFT timestamp {}'
                     .format(self.tboundaries[-1], self.SFT_timestamps[-1]))
 
-    def run_semi_coherent_computefstatistic_single_point(
+    def get_semicoherent_twoF(
             self, F0, F1, F2, Alpha, Delta, asini=None,
             period=None, ecc=None, tp=None, argp=None,
             record_segments=False):
@@ -992,7 +982,7 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         self.binary = False
         self.init_computefstatistic_single_point()
 
-    def compute_nglitch_fstat(self, F0, F1, F2, Alpha, Delta, *args):
+    def get_semicoherent_nglitch_twoF(self, F0, F1, F2, Alpha, Delta, *args):
         """ Returns the semi-coherent glitch summed twoF """
 
         args = list(args)
@@ -1013,7 +1003,7 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         for i, theta_i_at_tref in enumerate(thetas):
             ts, te = tboundaries[i], tboundaries[i+1]
 
-            twoFVal = self.run_computefstatistic_single_point(
+            twoFVal = self.get_fullycoherent_twoF(
                 ts, te, theta_i_at_tref[1], theta_i_at_tref[2],
                 theta_i_at_tref[3], Alpha, Delta)
             twoFSum += twoFVal
@@ -1039,14 +1029,14 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         theta_post_glitch = self._shift_coefficients(
             theta_post_glitch_at_glitch, tref - tglitch)
 
-        twoFsegA = self.run_computefstatistic_single_point(
+        twoFsegA = self.get_fullycoherent_twoF(
             self.minStartTime, tglitch, theta[0], theta[1], theta[2], Alpha,
             Delta)
 
         if tglitch == self.maxStartTime:
             return twoFsegA
 
-        twoFsegB = self.run_computefstatistic_single_point(
+        twoFsegB = self.get_fullycoherent_twoF(
             tglitch, self.maxStartTime, theta_post_glitch[0],
             theta_post_glitch[1], theta_post_glitch[2], Alpha,
             Delta)
