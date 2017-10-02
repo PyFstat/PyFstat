@@ -10,7 +10,7 @@ import pkgutil
 import lal
 import lalpulsar
 
-from pyfstat.core import BaseSearchClass, tqdm, args
+from pyfstat.core import BaseSearchClass, tqdm, args, predict_fstat
 import pyfstat.helper_functions as helper_functions
 
 
@@ -48,29 +48,34 @@ class Writer(BaseSearchClass):
         """
 
         self.set_ephemeris_files()
-        self.tstart = int(tstart)
-        self.duration = int(duration)
+        self.basic_setup()
+        self.calculate_fmin_Band()
 
+        self.tbounds = [self.tstart, self.tend]
+        logging.info('Using segment boundaries {}'.format(self.tbounds))
+
+    def basic_setup(self):
+        self.tstart = int(self.tstart)
+        self.duration = int(self.duration)
         self.tend = self.tstart + self.duration
         if self.minStartTime is None:
             self.minStartTime = self.tstart
         if self.maxStartTime is None:
             self.maxStartTime = self.tend
-        self.tbounds = [self.tstart, self.tend]
-        logging.info('Using segment boundaries {}'.format(self.tbounds))
+        self.minStartTime = int(self.minStartTime)
+        self.maxStartTime = int(self.maxStartTime)
+        self.duration_days = (self.tend-self.tstart) / 86400
 
-        self.check_inputs()
+        self.data_duration = self.maxStartTime - self.minStartTime
+        numSFTs = int(float(self.data_duration) / self.Tsft)
+
+        self.theta = np.array([self.phi, self.F0, self.F1, self.F2])
 
         if os.path.isdir(self.outdir) is False:
             os.makedirs(self.outdir)
         if self.tref is None:
             self.tref = self.tstart
-        self.tend = self.tstart + self.duration
-        self.duration_days = (self.tend-self.tstart) / 86400
-        self.config_file_name = "{}/{}.cff".format(outdir, label)
-        self.theta = np.array([phi, F0, F1, F2])
-        self.data_duration = self.maxStartTime - self.minStartTime
-        numSFTs = int(float(self.data_duration) / self.Tsft)
+        self.config_file_name = "{}/{}.cff".format(self.outdir, self.label)
         self.sftfilenames = [
             lalpulsar.OfficialSFTFilename(
                 dets[0], dets[1], numSFTs, self.Tsft, self.minStartTime,
@@ -78,11 +83,8 @@ class Writer(BaseSearchClass):
             for dets in self.detectors.split(',')]
         self.sftfilepath = ';'.join([
             '{}/{}'.format(self.outdir, fn) for fn in self.sftfilenames])
-        self.calculate_fmin_Band()
-
-    def check_inputs(self):
-        self.minStartTime = int(self.minStartTime)
-        self.maxStartTime = int(self.maxStartTime)
+        self.IFOs = (
+            ",".join(['"{}"'.format(d) for d in self.detectors.split(",")]))
 
     def make_data(self):
         ''' A convienience wrapper to generate a cff file then sfts '''
@@ -203,8 +205,7 @@ transientTauDays={:1.3f}\n""")
         cl_mfd.append('--outSingleSFT=TRUE')
         cl_mfd.append('--outSFTdir="{}"'.format(self.outdir))
         cl_mfd.append('--outLabel="{}"'.format(self.label))
-        cl_mfd.append('--IFOs={}'.format(
-            ",".join(['"{}"'.format(d) for d in self.detectors.split(",")])))
+        cl_mfd.append('--IFOs={}'.format(self.IFOs))
         if self.add_noise:
             cl_mfd.append('--sqrtSX="{}"'.format(self.sqrtSX))
         if self.minStartTime is None:
@@ -231,26 +232,11 @@ transientTauDays={:1.3f}\n""")
 
     def predict_fstat(self):
         """ Wrapper to lalapps_PredictFstat """
-        cl_pfs = []
-        cl_pfs.append("lalapps_PredictFstat")
-        cl_pfs.append("--h0={}".format(self.h0))
-        cl_pfs.append("--cosi={}".format(self.cosi))
-        cl_pfs.append("--psi={}".format(self.psi))
-        cl_pfs.append("--Alpha={}".format(self.Alpha))
-        cl_pfs.append("--Delta={}".format(self.Delta))
-        cl_pfs.append("--Freq={}".format(self.F0))
-
-        cl_pfs.append("--DataFiles='{}'".format(
-            self.outdir+"/*SFT_"+self.label+"*sft"))
-        cl_pfs.append("--assumeSqrtSX={}".format(self.sqrtSX))
-
-        cl_pfs.append("--minStartTime={}".format(int(self.minStartTime)))
-        cl_pfs.append("--maxStartTime={}".format(int(self.maxStartTime)))
-
-        cl_pfs = " ".join(cl_pfs)
-        output = helper_functions.run_commandline(cl_pfs)
-        twoF = float(output.split('\n')[-2])
-        return float(twoF)
+        twoF_expected, twoF_sigma = predict_fstat(
+            self.h0, self.cosi, self.psi, self.Alpha, self.Delta, self.F0,
+            self.sftfilepath, self.minStartTime, self.maxStartTime,
+            self.detectors, self.sqrtSX) # detectors OR IFO?
+        return twoF_expected
 
 
 class GlitchWriter(Writer):
@@ -288,17 +274,20 @@ class GlitchWriter(Writer):
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
 
-        self.tstart = int(tstart)
-        self.duration = int(duration)
+        self.basic_setup()
+        self.calculate_fmin_Band()
+
+        shapes = np.array([np.shape(x) for x in [self.delta_phi, self.delta_F0,
+                                                 self.delta_F1, self.delta_F2]]
+                          )
+        if not np.all(shapes == shapes[0]):
+            raise ValueError('all delta_* must be the same shape: {}'.format(
+                shapes))
 
         for d in self.delta_phi, self.delta_F0, self.delta_F1, self.delta_F2:
             if np.size(d) == 1:
                 d = np.atleast_1d(d)
-        self.tend = self.tstart + self.duration
-        if self.minStartTime is None:
-            self.minStartTime = self.tstart
-        if self.maxStartTime is None:
-            self.maxStartTime = self.tend
+
         if self.dtglitch is None:
             self.tbounds = [self.tstart, self.tend]
         else:
@@ -308,41 +297,11 @@ class GlitchWriter(Writer):
                 [self.tstart], self.tglitch, [self.tend]))
         logging.info('Using segment boundaries {}'.format(self.tbounds))
 
-        self.check_inputs()
-
-        if os.path.isdir(self.outdir) is False:
-            os.makedirs(self.outdir)
-        if self.tref is None:
-            self.tref = self.tstart
-        self.tend = self.tstart + self.duration
         tbs = np.array(self.tbounds)
         self.durations_days = (tbs[1:] - tbs[:-1]) / 86400
-        self.config_file_name = "{}/{}.cff".format(outdir, label)
 
-        self.theta = np.array([phi, F0, F1, F2])
         self.delta_thetas = np.atleast_2d(
                 np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T)
-
-        self.data_duration = self.maxStartTime - self.minStartTime
-        numSFTs = int(float(self.data_duration) / self.Tsft)
-        self.sftfilenames = [
-            lalpulsar.OfficialSFTFilename(
-                dets[0], dets[1], numSFTs, self.Tsft, self.minStartTime,
-                self.data_duration, self.label)
-            for dets in self.detectors.split(',')]
-        self.sftfilepath = ';'.join([
-            '{}/{}'.format(self.outdir, fn) for fn in self.sftfilenames])
-        self.calculate_fmin_Band()
-
-    def check_inputs(self):
-        self.minStartTime = int(self.minStartTime)
-        self.maxStartTime = int(self.maxStartTime)
-        shapes = np.array([np.shape(x) for x in [self.delta_phi, self.delta_F0,
-                                                 self.delta_F1, self.delta_F2]]
-                          )
-        if not np.all(shapes == shapes[0]):
-            raise ValueError('all delta_* must be the same shape: {}'.format(
-                shapes))
 
     def make_cff(self):
         """
