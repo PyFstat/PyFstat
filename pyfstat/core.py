@@ -119,7 +119,10 @@ def _get_dictionary_from_lines(lines, comments, raise_error):
             try:
                 key, val = line.rstrip('\n').split('=')
                 key = key.strip()
-                d[key] = np.float64(eval(val.rstrip('; ')))
+                try:
+                    d[key] = np.float64(eval(val.rstrip('; ')))
+                except NameError:
+                    d[key] = val.rstrip('; ')
             except SyntaxError:
                 if raise_error:
                     raise IOError('Line {} not understood'.format(line))
@@ -405,7 +408,7 @@ class ComputeFstat(BaseSearchClass):
         constraints = lalpulsar.SFTConstraints()
         if self.detectors:
             if ',' in self.detectors:
-                logging.info('Using all detector data')
+                constraints.detector = self.detectors
             else:
                 constraints.detector = self.detectors
         if self.minStartTime:
@@ -493,7 +496,12 @@ class ComputeFstat(BaseSearchClass):
             PP.Amp.psi = self.injectSources['psi']
             PP.Doppler.Alpha = self.injectSources['Alpha']
             PP.Doppler.Delta = self.injectSources['Delta']
-            PP.Doppler.fkdot = np.array(self.injectSources['fkdot'])
+            if 'fkdot' in self.injectSources:
+                PP.Doppler.fkdot = np.array(self.injectSources['fkdot'])
+            else:
+                PP.Doppler.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
+                for i, key in enumerate(['F0', 'F1', 'F2']):
+                    PP.Doppler.fkdot[i] = self.injectSources[key]
             PP.Doppler.refTime = self.tref
             if 't0' not in self.injectSources:
                 PP.Transient.type = lalpulsar.TRANSIENT_NONE
