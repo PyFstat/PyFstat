@@ -14,6 +14,8 @@ import pyfstat.helper_functions as helper_functions
 from pyfstat.core import (BaseSearchClass, ComputeFstat,
                           SemiCoherentGlitchSearch, SemiCoherentSearch, tqdm,
                           args, read_par)
+import lalpulsar
+import lal
 
 
 class GridSearch(BaseSearchClass):
@@ -505,8 +507,6 @@ class DMoff_NO_SPIN(GridSearch):
         self.Deltas = [self.par['Delta']]
         self.Re = 6.371e6
         self.c = 2.998e8
-        self.SIDEREAL_DAY = 23*60*60 + 56*60 + 4.0916
-        self.TERRESTRIAL_DAY = 86400.
         a0 = self.Re/self.c  # *np.cos(self.par['Delta'])
         self.m0 = np.max([4, int(np.ceil(2*np.pi*self.par['F0']*a0))])
         logging.info(
@@ -520,21 +520,21 @@ class DMoff_NO_SPIN(GridSearch):
             m0, twoF_SUM, twoFstar_SUM_SIDEREAL, twoFstar_SUM_TERRESTRIAL
 
         """
-        self.SSBprec = 2
-        self.set_out_file('SSBPREC2')
-        self.F0s = [self.par['F0']+j/self.SIDEREAL_DAY for j in range(-4, 5)]
+        self.SSBprec = lalpulsar.SSBPREC_RELATIVISTIC
+        self.set_out_file('SSBPREC_RELATIVISTIC')
+        self.F0s = [self.par['F0']+j/lal.DAYSID_SI for j in range(-4, 5)]
         self.run()
         twoF_SUM = np.sum(self.data[:, -1])
 
-        self.SSBprec = 4
-        self.set_out_file('SSBPREC4')
-        self.F0s = [self.par['F0']+j/self.SIDEREAL_DAY
+        self.SSBprec = lalpulsar.SSBPREC_NO_SPIN
+        self.set_out_file('SSBPREC_NO_SPIN')
+        self.F0s = [self.par['F0']+j/lal.DAYSID_SI
                     for j in range(-self.m0, self.m0+1)]
         self.run()
         twoFstar_SUM = np.sum(self.data[:, -1])
 
-        self.set_out_file('SSBPREC4_TERRESTRIAL')
-        self.F0s = [self.par['F0']+j/self.TERRESTRIAL_DAY
+        self.set_out_file('SSBPREC_NO_SPIN_TERRESTRIAL')
+        self.F0s = [self.par['F0']+j/lal.DAYJUL_SI
                     for j in range(-self.m0, self.m0+1)]
         self.run()
         twoFstar_SUM_terrestrial = np.sum(self.data[:, -1])
