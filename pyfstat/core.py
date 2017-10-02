@@ -153,6 +153,8 @@ def predict_fstat(h0, cosi, psi, Alpha, Delta, Freq, sftfilepattern,
         The expectation and standard deviation of 2F
 
     """
+    tempory_filename = 'fs.tmp'
+
     cl_pfs = []
     cl_pfs.append("lalapps_PredictFstat")
     cl_pfs.append("--h0={}".format(h0))
@@ -170,11 +172,12 @@ def predict_fstat(h0, cosi, psi, Alpha, Delta, Freq, sftfilepattern,
 
     cl_pfs.append("--minStartTime={}".format(int(minStartTime)))
     cl_pfs.append("--maxStartTime={}".format(int(maxStartTime)))
-    cl_pfs.append("--outputFstat=/tmp/fs")
+    cl_pfs.append("--outputFstat={}".format(tempory_filename))
 
     cl_pfs = " ".join(cl_pfs)
     helper_functions.run_commandline(cl_pfs)
-    d = read_par(filename='/tmp/fs')
+    d = read_par(filename=tempory_filename)
+    os.remove(tempory_filename)
     return float(d['twoF_expected']), float(d['twoF_sigma'])
 
 
