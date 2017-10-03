@@ -168,7 +168,11 @@ def predict_fstat(h0, cosi, psi, Alpha, Delta, Freq, sftfilepattern,
     if assumeSqrtSX:
         cl_pfs.append("--assumeSqrtSX={}".format(assumeSqrtSX))
     if IFO:
-        cl_pfs.append("--IFO={}".format(IFO))
+        if ',' in IFO:
+            logging.warning('Multiple detector selection not available, using'
+                            ' all available data')
+        else:
+            cl_pfs.append("--IFO={}".format(IFO))
 
     cl_pfs.append("--minStartTime={}".format(int(minStartTime)))
     cl_pfs.append("--maxStartTime={}".format(int(maxStartTime)))
@@ -411,7 +415,8 @@ class ComputeFstat(BaseSearchClass):
         constraints = lalpulsar.SFTConstraints()
         if self.detectors:
             if ',' in self.detectors:
-                constraints.detector = self.detectors
+                logging.warning('Multiple detector selection not available,'
+                                ' using all available data')
             else:
                 constraints.detector = self.detectors
         if self.minStartTime:
