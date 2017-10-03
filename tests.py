@@ -30,15 +30,15 @@ class TestWriter(Test):
             './{}/{}.cff'.format(self.outdir, self.label)))
 
     def test_run_makefakedata(self):
-        Writer = pyfstat.Writer(self.label, outdir=self.outdir, duration=86400)
+        Writer = pyfstat.Writer(self.label, outdir=self.outdir, duration=3600)
         Writer.make_cff()
         Writer.run_makefakedata()
         self.assertTrue(os.path.isfile(
-            './{}/H-48_H1_1800SFT_TestWriter-700000000-86400.sft'
+            './{}/H-2_H1_1800SFT_TestWriter-700000000-3600.sft'
             .format(self.outdir)))
 
     def test_makefakedata_usecached(self):
-        Writer = pyfstat.Writer(self.label, outdir=self.outdir, duration=86400)
+        Writer = pyfstat.Writer(self.label, outdir=self.outdir, duration=3600)
         if os.path.isfile(Writer.sftfilepath):
             os.remove(Writer.sftfilepath)
         Writer.make_cff()
@@ -127,6 +127,16 @@ class TestComputeFstat(Test):
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
 
+        search_H1L1 = pyfstat.ComputeFstat(
+            tref=Writer.tref,
+            sftfilepattern='{}/*{}*sft'.format(Writer.outdir, Writer.label))
+        FS = search_H1L1.get_fullycoherent_twoF(
+            Writer.tstart, Writer.tend, Writer.F0, Writer.F1, Writer.F2,
+            Writer.Alpha, Writer.Delta)
+        self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.2)
+
+        Writer.detectors = 'H1'
+        predicted_FS = Writer.predict_fstat()
         search_H1 = pyfstat.ComputeFstat(
             tref=Writer.tref, detectors='H1',
             sftfilepattern='{}/*{}*sft'.format(Writer.outdir, Writer.label),
@@ -136,17 +146,10 @@ class TestComputeFstat(Test):
             Writer.Alpha, Writer.Delta)
         self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.2)
 
-        search_H1L1 = pyfstat.ComputeFstat(
-            tref=Writer.tref, detectors='H1,L1',
-            sftfilepattern='{}/*{}*sft'.format(Writer.outdir, Writer.label))
-        FS = search_H1L1.get_fullycoherent_twoF(
-            Writer.tstart, Writer.tend, Writer.F0, Writer.F1, Writer.F2,
-            Writer.Alpha, Writer.Delta)
-        self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.2)
-
     def run_computefstatistic_single_point_no_noise(self):
-        Writer = pyfstat.Writer(self.label, outdir=self.outdir, add_noise=False,
-                                duration=86400, h0=1, sqrtSX=1)
+        Writer = pyfstat.Writer(
+            self.label, outdir=self.outdir, add_noise=False, duration=86400,
+            h0=1, sqrtSX=1)
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
 
@@ -156,12 +159,13 @@ class TestComputeFstat(Test):
         FS = search.get_fullycoherent_twoF(
             Writer.tstart, Writer.tend, Writer.F0, Writer.F1, Writer.F2,
             Writer.Alpha, Writer.Delta)
-        print predicted_FS, FS
-        self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.2)
+        self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.3)
 
     def test_injectSources(self):
-        Writer = pyfstat.Writer(self.label, outdir=self.outdir, add_noise=False,
-                                duration=86400, h0=1, sqrtSX=1)
+        # This seems to be writing with a signal...
+        Writer = pyfstat.Writer(
+            self.label, outdir=self.outdir, add_noise=False, duration=86400,
+            h0=1, sqrtSX=1)
         Writer.make_cff()
         injectSources = Writer.config_file_name
 
