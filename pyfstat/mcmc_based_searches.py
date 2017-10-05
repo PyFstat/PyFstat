@@ -998,7 +998,7 @@ class MCMCSearch(core.BaseSearchClass):
                                      color="C3", alpha=alpha,
                                      lw=lw)
                         axes[i].axvline(xoffset+convergence_idx,
-                                        color='k', ls='--', lw=0.25)
+                                        color='k', ls='--', lw=0.5)
                     axes[i].plot(xoffset+idxs[burnin_idx:],
                                  cs[burnin_idx:]-subtractions[i],
                                  color="k", alpha=alpha, lw=lw)
