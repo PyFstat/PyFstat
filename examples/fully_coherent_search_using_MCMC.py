@@ -17,10 +17,11 @@ tref = .5*(tstart+tend)
 
 depth = 10
 h0 = sqrtSX / depth
-data_label = 'fully_coherent_search_using_MCMC'
+label = 'fully_coherent_search_using_MCMC'
+outdir = 'data'
 
 data = pyfstat.Writer(
-    label=data_label, outdir='data', tref=tref,
+    label=label, outdir=outdir, tref=tref,
     tstart=tstart, F0=F0, F1=F1, F2=F2, duration=duration, Alpha=Alpha,
     Delta=Delta, h0=h0, sqrtSX=sqrtSX)
 data.make_data()
@@ -49,13 +50,13 @@ theta_prior = {'F0': {'type': 'unif',
 ntemps = 1
 log10beta_min = -1
 nwalkers = 100
-nsteps = [1000, 1000]
+nsteps = [300, 300]
 
 mcmc = pyfstat.MCMCSearch(
-    label='fully_coherent_search_using_MCMC', outdir='data',
-    sftfilepattern='data/*'+data_label+'*sft', theta_prior=theta_prior, tref=tref,
-    minStartTime=tstart, maxStartTime=tend, nsteps=nsteps, nwalkers=nwalkers,
-    ntemps=ntemps, log10beta_min=log10beta_min)
-mcmc.run(context='paper', subtractions=[30, -1e-10], c=2)
+    label=label, outdir=outdir,
+    sftfilepattern='{}/*{}*sft'.format(outdir, label), theta_prior=theta_prior,
+    tref=tref, minStartTime=tstart, maxStartTime=tend, nsteps=nsteps,
+    nwalkers=nwalkers, ntemps=ntemps, log10beta_min=log10beta_min)
+mcmc.run(subtractions=[F0, F1])
 mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()

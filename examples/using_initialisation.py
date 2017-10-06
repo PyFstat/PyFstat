@@ -17,7 +17,7 @@ tref = .5*(tstart+tend)
 
 depth = 10
 h0 = sqrtSX / depth
-label = 'semi_coherent_search_using_MCMC'
+label = 'using_initialisation'
 outdir = 'data'
 
 data = pyfstat.Writer(
@@ -50,14 +50,15 @@ theta_prior = {'F0': {'type': 'unif',
 ntemps = 1
 log10beta_min = -1
 nwalkers = 100
-nsteps = [300, 300]
+nsteps = [100, 100]
 
-mcmc = pyfstat.MCMCSemiCoherentSearch(
-    label=label, outdir=outdir, nsegs=3,
+mcmc = pyfstat.MCMCSearch(
+    label=label, outdir=outdir,
     sftfilepattern='{}/*{}*sft'.format(outdir, label),
     theta_prior=theta_prior, tref=tref, minStartTime=tstart, maxStartTime=tend,
     nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps,
     log10beta_min=log10beta_min)
-mcmc.run()
+mcmc.setup_initialisation(100, scatter_val=1e-10)
+mcmc.run(subtractions=[F0, F1])
 mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()
