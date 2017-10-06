@@ -133,7 +133,7 @@ class TestComputeFstat(Test):
         FS = search_H1L1.get_fullycoherent_twoF(
             Writer.tstart, Writer.tend, Writer.F0, Writer.F1, Writer.F2,
             Writer.Alpha, Writer.Delta)
-        self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.2)
+        self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.3)
 
         Writer.detectors = 'H1'
         predicted_FS = Writer.predict_fstat()
@@ -144,7 +144,7 @@ class TestComputeFstat(Test):
         FS = search_H1.get_fullycoherent_twoF(
             Writer.tstart, Writer.tend, Writer.F0, Writer.F1, Writer.F2,
             Writer.Alpha, Writer.Delta)
-        self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.2)
+        self.assertTrue(np.abs(predicted_FS-FS)/FS < 0.3)
 
     def run_computefstatistic_single_point_no_noise(self):
         Writer = pyfstat.Writer(
@@ -179,7 +179,7 @@ class TestComputeFstat(Test):
             Writer.Alpha, Writer.Delta)
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
-        self.assertTrue(np.abs(predicted_FS-FS_from_file)/FS_from_file < 0.2)
+        self.assertTrue(np.abs(predicted_FS-FS_from_file)/FS_from_file < 0.3)
 
         injectSourcesdict = pyfstat.core.read_par(Writer.config_file_name)
         injectSourcesdict['F0'] = injectSourcesdict['Freq']
