@@ -423,12 +423,10 @@ class ComputeFstat(BaseSearchClass):
             constraints.minStartTime = lal.LIGOTimeGPS(self.minStartTime)
         if self.maxStartTime:
             constraints.maxStartTime = lal.LIGOTimeGPS(self.maxStartTime)
-
         logging.info('Loading data matching pattern {}'.format(
                      self.sftfilepattern))
         SFTCatalog = lalpulsar.SFTdataFind(self.sftfilepattern, constraints)
-        detector_names = list(set([d.header.name for d in SFTCatalog.data]))
-        self.detector_names = detector_names
+
         SFT_timestamps = [d.header.epoch for d in SFTCatalog.data]
         self.SFT_timestamps = [float(s) for s in SFT_timestamps]
         if len(SFT_timestamps) == 0:
@@ -440,21 +438,33 @@ class ComputeFstat(BaseSearchClass):
                 plot_hist(SFT_timestamps, height=5, bincount=50)
             except ImportError:
                 pass
-        if len(detector_names) == 0:
-            raise ValueError('No data loaded.')
-        logging.info('Loaded {} data files from detectors {}'.format(
-            len(SFT_timestamps), detector_names))
+
         cl_tconv1 = 'lalapps_tconvert {}'.format(int(SFT_timestamps[0]))
-        output = helper_functions.run_commandline(cl_tconv1)
+        output = helper_functions.run_commandline(cl_tconv1,
+                                                  log_level=logging.DEBUG)
         tconvert1 = output.rstrip('\n')
         cl_tconv2 = 'lalapps_tconvert {}'.format(int(SFT_timestamps[-1]))
-        output = helper_functions.run_commandline(cl_tconv2)
+        output = helper_functions.run_commandline(cl_tconv2,
+                                                  log_level=logging.DEBUG)
         tconvert2 = output.rstrip('\n')
         logging.info('Data spans from {} ({}) to {} ({})'.format(
             int(SFT_timestamps[0]),
             tconvert1,
             int(SFT_timestamps[-1]),
             tconvert2))
+
+        if self.minStartTime is None:
+            self.minStartTime = int(SFT_timestamps[0])
+        if self.maxStartTime is None:
+            self.maxStartTime = int(SFT_timestamps[-1])
+
+        detector_names = list(set([d.header.name for d in SFTCatalog.data]))
+        self.detector_names = detector_names
+        if len(detector_names) == 0:
+            raise ValueError('No data loaded.')
+        logging.info('Loaded {} data files from detectors {}'.format(
+            len(SFT_timestamps), detector_names))
+
         return SFTCatalog
 
     def init_computefstatistic_single_point(self):
@@ -735,7 +745,7 @@ class ComputeFstat(BaseSearchClass):
 
     def plot_twoF_cumulative(self, label, outdir, add_pfs=False, N=15,
                              injectSources=None, ax=None, c='k', savefig=True,
-                             title=None, **kwargs):
+                             title=None, plt_label=None, **kwargs):
         """ Plot the twoF value cumulatively
 
         Parameters
@@ -753,8 +763,8 @@ class ComputeFstat(BaseSearchClass):
             Colour
         savefig : bool
             If true, save the figure in outdir
-        title: str
-            Figure title
+        title, plt_label: str
+            Figure title and label
 
         Returns
         -------
@@ -775,7 +785,7 @@ class ComputeFstat(BaseSearchClass):
             pfs_input = None
 
         taus, twoFs = self.calculate_twoF_cumulative(**kwargs)
-        ax.plot(taus/86400., twoFs, label='All detectors', color=c)
+        ax.plot(taus/86400., twoFs, label=plt_label, color=c)
         if len(self.detector_names) > 1:
             detector_names = self.detector_names
             detectors = self.detectors
@@ -819,7 +829,8 @@ class ComputeFstat(BaseSearchClass):
         else:
             ax.set_ylabel(r'$\widetilde{2\mathcal{F}}_{\rm cumulative}$')
         ax.set_xlim(0, taus[-1]/86400)
-        ax.legend(frameon=False, loc=2, fontsize=6)
+        if plt_label:
+            ax.legend(frameon=False, loc=2, fontsize=6)
         if title:
             ax.set_title(title)
         if savefig:

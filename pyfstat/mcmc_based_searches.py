@@ -26,52 +26,55 @@ class MCMCSearch(core.BaseSearchClass):
 
     Parameters
     ----------
-    label, outdir: str
-        A label and directory to read/write data from/to
     theta_prior: dict
         Dictionary of priors and fixed values for the search parameters.
         For each parameters (key of the dict), if it is to be held fixed
         the value should be the constant float, if it is be searched, the
         value should be a dictionary of the prior.
     tref, minStartTime, maxStartTime: int
-        GPS seconds of the reference time, start time and end time
-    sftfilepattern: str
+        GPS seconds of the reference time, start time and end time. While tref
+        is requirede, minStartTime and maxStartTime default to None in which
+        case all available data is used.
+    label, outdir: str
+        A label and output directory (optional, defaults is `'data'`) to
+        name files
+    sftfilepattern: str, optional
         Pattern to match SFTs using wildcards (*?) and ranges [0-9];
         mutiple patterns can be given separated by colons.
-    detectors: str
+    detectors: str, optional
         Two character reference to the detectors to use, specify None for no
         contraint and comma separate for multiple references.
-    nsteps: list (2,)
+    nsteps: list (2,), optional
         Number of burn-in and production steps to take, [nburn, nprod]. See
         `pyfstat.MCMCSearch.setup_initialisation()` for details on adding
         initialisation steps.
-    nwalkers, ntemps: int,
+    nwalkers, ntemps: int, optional
         The number of walkers and temperates to use in the parallel
         tempered PTSampler.
-    log10beta_min float < 0
+    log10beta_min float < 0, optional
         The  log_10(beta) value, if given the set of betas passed to PTSampler
         are generated from `np.logspace(0, log10beta_min, ntemps)` (given
         in descending order to emcee).
-    theta_initial: dict, array, (None)
+    theta_initial: dict, array, optional
         A dictionary of distribution about which to distribute the
         initial walkers about
-    rhohatmax: float,
+    rhohatmax: float, optional
         Upper bound for the SNR scale parameter (required to normalise the
         Bayes factor) - this needs to be carefully set when using the
         evidence.
-    binary: bool
+    binary: bool, optional
         If true, search over binary parameters
-    BSGL: bool
+    BSGL: bool, optional
         If true, use the BSGL statistic
-    SSBPrec: int
+    SSBPrec: int, optional
         SSBPrec (SSB precision) to use when calling ComputeFstat
-    minCoverFreq, maxCoverFreq: float
+    minCoverFreq, maxCoverFreq: float, optional
         Minimum and maximum instantaneous frequency which will be covered
         over the SFT time span as passed to CreateFstatInput
-    injectSources: dict
+    injectSources: dict, optional
         If given, inject these properties into the SFT files before running
         the search
-    assumeSqrtSX: float
+    assumeSqrtSX: float, optional
         Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}
 
     Attributes
@@ -99,9 +102,9 @@ class MCMCSearch(core.BaseSearchClass):
     transform_dictionary = {}
 
     @helper_functions.initializer
-    def __init__(self, label, outdir, theta_prior, tref, minStartTime,
-                 maxStartTime, sftfilepattern=None, detectors=None,
-                 nsteps=[100, 100], nwalkers=100, ntemps=1,
+    def __init__(self, theta_prior, tref, label, outdir='data',
+                 minStartTime=None, maxStartTime=None, sftfilepattern=None,
+                 detectors=None, nsteps=[100, 100], nwalkers=100, ntemps=1,
                  log10beta_min=-5, theta_initial=None,
                  rhohatmax=1000, binary=False, BSGL=False,
                  SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
@@ -151,6 +154,10 @@ class MCMCSearch(core.BaseSearchClass):
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             binary=self.binary, injectSources=self.injectSources,
             assumeSqrtSX=self.assumeSqrtSX, SSBprec=self.SSBprec)
+        if self.minStartTime is None:
+            self.minStartTime = self.search.minStartTime
+        if self.maxStartTime is None:
+            self.maxStartTime = self.search.maxStartTime
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [self._generic_lnprior(**theta_prior[key])(p) for p, key in
@@ -830,6 +837,9 @@ class MCMCSearch(core.BaseSearchClass):
             if key not in d:
                 d[key] = val
 
+        if 'add_pfs' in kwargs:
+            self.generate_loudest()
+
         if hasattr(self, 'search') is False:
             self._initiate_search_object()
         if self.binary is False:
@@ -1165,7 +1175,8 @@ class MCMCSearch(core.BaseSearchClass):
                  ntemps=self.ntemps, theta_keys=self.theta_keys,
                  theta_prior=self.theta_prior,
                  log10beta_min=self.log10beta_min,
-                 BSGL=self.BSGL)
+                 BSGL=self.BSGL, minStartTime=self.minStartTime,
+                 maxStartTime=self.maxStartTime)
         return d
 
     def _save_data(self, sampler, samples, lnprobs, lnlikes, all_lnlikelihood):
@@ -1211,6 +1222,11 @@ class MCMCSearch(core.BaseSearchClass):
         old_d.pop('lnprobs')
         old_d.pop('lnlikes')
         old_d.pop('all_lnlikelihood')
+
+        for key in 'minStartTime', 'maxStartTime':
+            if new_d[key] is None:
+                new_d[key] = old_d[key]
+                setattr(self, key, new_d[key])
 
         mod_keys = []
         for key in new_d.keys():
@@ -1569,9 +1585,9 @@ class MCMCGlitchSearch(MCMCSearch):
             )
 
     @helper_functions.initializer
-    def __init__(self, label, outdir, theta_prior, tref, minStartTime,
-                 maxStartTime, sftfilepattern=None, detectors=None,
-                 nsteps=[100, 100], nwalkers=100, ntemps=1,
+    def __init__(self, theta_prior, tref, label, outdir='data',
+                 minStartTime=None, maxStartTime=None, sftfilepattern=None,
+                 detectors=None, nsteps=[100, 100], nwalkers=100, ntemps=1,
                  log10beta_min=-5, theta_initial=None,
                  rhohatmax=1000, binary=False, BSGL=False,
                  SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
@@ -1610,6 +1626,10 @@ class MCMCGlitchSearch(MCMCSearch):
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
             detectors=self.detectors, BSGL=self.BSGL, nglitch=self.nglitch,
             theta0_idx=self.theta0_idx, injectSources=self.injectSources)
+        if self.minStartTime is None:
+            self.minStartTime = self.search.minStartTime
+        if self.maxStartTime is None:
+            self.maxStartTime = self.search.maxStartTime
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         if self.nglitch > 1:
@@ -1778,9 +1798,9 @@ class MCMCSemiCoherentSearch(MCMCSearch):
     """
 
     @helper_functions.initializer
-    def __init__(self, label, outdir, theta_prior, tref, minStartTime,
-                 maxStartTime, sftfilepattern=None, detectors=None,
-                 nsteps=[100, 100], nwalkers=100, ntemps=1,
+    def __init__(self, theta_prior, tref, label, outdir='data',
+                 minStartTime=None, maxStartTime=None, sftfilepattern=None,
+                 detectors=None, nsteps=[100, 100], nwalkers=100, ntemps=1,
                  log10beta_min=-5, theta_initial=None,
                  rhohatmax=1000, binary=False, BSGL=False,
                  SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
@@ -1830,6 +1850,10 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             maxStartTime=self.maxStartTime, minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq, detectors=self.detectors,
             injectSources=self.injectSources, assumeSqrtSX=self.assumeSqrtSX)
+        if self.minStartTime is None:
+            self.minStartTime = self.search.minStartTime
+        if self.maxStartTime is None:
+            self.maxStartTime = self.search.maxStartTime
 
     def logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [self._generic_lnprior(**theta_prior[key])(p) for p, key in
@@ -2144,6 +2168,10 @@ class MCMCTransientSearch(MCMCSearch):
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL, binary=self.binary,
             injectSources=self.injectSources)
+        if self.minStartTime is None:
+            self.minStartTime = self.search.minStartTime
+        if self.maxStartTime is None:
+            self.maxStartTime = self.search.maxStartTime
 
     def logl(self, theta, search):
         for j, theta_i in enumerate(self.theta_idxs):
