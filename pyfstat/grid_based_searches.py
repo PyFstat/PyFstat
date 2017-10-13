@@ -183,7 +183,7 @@ class GridSearch(BaseSearchClass):
     def plot_2D(self, xkey, ykey, ax=None, save=True, vmin=None, vmax=None,
                 add_mismatch=None, xN=None, yN=None, flat_keys=[],
                 rel_flat_idxs=[], flatten_method=np.max, title=None,
-                predicted_twoF=None, cm=None, cbarkwargs={}):
+                predicted_twoF=None, cm=None, cbarkwargs={}, x0=None, y0=None):
         """ Plots a 2D grid of 2F values
 
         Parameters
@@ -201,7 +201,11 @@ class GridSearch(BaseSearchClass):
         flat_idxs = [self.keys.index(k) for k in flat_keys]
 
         x = np.unique(self.data[:, xidx])
+        if x0:
+            x = x-x0
         y = np.unique(self.data[:, yidx])
+        if y0:
+            y = y-y0
         flat_vals = [np.unique(self.data[:, j]) for j in flat_idxs]
         z = self.data[:, -1]
 
@@ -230,8 +234,15 @@ class GridSearch(BaseSearchClass):
         ax.set_xlim(x[0], x[-1])
         ax.set_ylim(y[0], y[-1])
         labels = {'F0': '$f$', 'F1': '$\dot{f}$'}
-        ax.set_xlabel(labels[xkey])
-        ax.set_ylabel(labels[ykey])
+        labels0 = {'F0': '$-f_0$', 'F1': '$-\dot{f}_0$'}
+        if x0:
+            ax.set_xlabel(labels[xkey]+labels0[xkey])
+        else:
+            ax.set_xlabel(labels[xkey])
+        if y0:
+            ax.set_ylabel(labels[ykey]+labels0[ykey])
+        else:
+            ax.set_ylabel(labels[ykey])
 
         if title:
             ax.set_title(title)
