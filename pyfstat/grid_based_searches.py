@@ -86,6 +86,7 @@ class GridSearch(BaseSearchClass):
             return np.array(x)
 
     def get_input_data_array(self):
+        logging.info("Generating input data array")
         arrays = []
         for tup in ([self.minStartTime], [self.maxStartTime], self.F0s, self.F1s, self.F2s,
                     self.Alphas, self.Deltas):
@@ -284,6 +285,80 @@ class GridSearch(BaseSearchClass):
         else:
             self.out_file = '{}/{}_{}_{}.txt'.format(
                 self.outdir, self.label, dets, type(self).__name__)
+
+
+class SliceGridSearch(GridSearch):
+    """ Slice gridded search using ComputeFstat """
+    @helper_functions.initializer
+    def __init__(self, label, outdir, sftfilepattern, F0s=[0], F1s=[0], F2s=[0],
+                 Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
+                 maxStartTime=None, nsegs=1, BSGL=False, minCoverFreq=None,
+                 maxCoverFreq=None, detectors=None, SSBprec=None,
+                 injectSources=None, input_arrays=False, assumeSqrtSX=None,
+                 Lambda0=None):
+        """
+        Parameters
+        ----------
+        label, outdir: str
+            A label and directory to read/write data from/to
+        sftfilepattern: str
+            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            mutiple patterns can be given separated by colons.
+        F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
+            Length 3 tuple describing the grid for each parameter, e.g
+            [F0min, F0max, dF0], for a fixed value simply give [F0]. Unless
+            input_arrays == True, then these are the values to search at.
+        tref, minStartTime, maxStartTime: int
+            GPS seconds of the reference time, start time and end time
+        input_arrays: bool
+            if true, use the F0s, F1s, etc as is
+
+        For all other parameters, see `pyfstat.ComputeFStat` for details
+        """
+
+        if os.path.isdir(outdir) is False:
+            os.mkdir(outdir)
+        self.set_out_file()
+        self.keys = ['_', '_', 'F0', 'F1', 'F2', 'Alpha', 'Delta']
+
+        self.Lambda0 = np.array(Lambda0)
+        if len(self.Lambda0) != len(self.keys):
+            raise ValueError(
+                'Lambda0 must be of length {}'.format(len(self.keys)))
+
+    def run(self, return_data=False):
+        self.get_input_data_array()
+
+        self.Lambda0s_grid = []
+        for j in range(self.input_data.shape[1]):
+            i = np.argmin(np.abs(self.Lambda0[j]-self.input_data[:, j]))
+            self.Lambda0s_grid.append(self.input_data[:, j][i])
+
+        old_data = self.check_old_data_is_okay_to_use()
+        if old_data is not False:
+            self.data = old_data
+            return
+
+        self.inititate_search_object()
+
+        logging.info('Total number of grid points is {}'.format(
+            len(self.input_data)))
+
+        data = []
+        for vals in tqdm(self.input_data):
+            if np.sum(vals != self.Lambda0s_grid) < 3:
+                FS = self.search.get_det_stat(*vals)
+                data.append(list(vals) + [FS])
+            else:
+                data.append(list(vals) + [0])
+
+        data = np.array(data, dtype=np.float)
+        if return_data:
+            return data
+        else:
+            logging.info('Saving data to {}'.format(self.out_file))
+            np.savetxt(self.out_file, data, delimiter=' ')
+            self.data = data
 
 
 class GridUniformPriorSearch():
