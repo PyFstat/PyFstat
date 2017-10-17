@@ -346,7 +346,8 @@ class SliceGridSearch(GridSearch):
             raise ValueError(
                 'Lambda0 must be of length {}'.format(len(self.search_keys)))
 
-    def run(self, factor=2, max_n_ticks=4, whspace=0.07, save=True):
+    def run(self, factor=2, max_n_ticks=4, whspace=0.07, save=True,
+            **kwargs):
         lbdim = 0.5 * factor   # size of left/bottom margin
         trdim = 0.4 * factor   # size of top/right margin
         plotdim = factor * self.ndim + factor * (self.ndim - 1.) * whspace
@@ -409,8 +410,8 @@ class SliceGridSearch(GridSearch):
                 search.set_out_file()
                 search.run()
                 ax = search.plot_2D(jkey, ikey, ax=ax, save=False,
-                                    y0=self.Lambda0[i], x0=self.Lambda0[j]
-                                    )
+                                    y0=self.Lambda0[i], x0=self.Lambda0[j],
+                                    **kwargs)
                 setattr(search, ikey+'s', [self.Lambda0[i]])
                 setattr(search, jkey+'s', [self.Lambda0[j]])
 
@@ -546,6 +547,7 @@ class FrequencySlidingWindow(GridSearch):
         self.F2s = [F2]
         self.Alphas = [Alpha]
         self.Deltas = [Delta]
+        self.input_arrays = False
 
     def inititate_search_object(self):
         logging.info('Setting up search object')
