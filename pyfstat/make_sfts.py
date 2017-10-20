@@ -332,13 +332,14 @@ class FrequencyModulatedArtifactWriter(Writer):
 
     @helper_functions.initializer
     def __init__(self, label, outdir=".", tstart=700000000,
-                 data_duration=86400, F0=30, F1=0, tref=None, h0=10, Tsft=1800,
+                 duration=86400, F0=30, F1=0, tref=None, h0=10, Tsft=1800,
                  sqrtSX=1, Band=4, Pmod=lal.DAYSID_SI, Pmod_phi=0, Pmod_amp=1,
-                 Alpha=None, Delta=None, IFO='H1'):
+                 Alpha=None, Delta=None, IFO='H1', minStartTime=None,
+                 maxStartTime=None, detectors='H1'):
         """
         Parameters
         ----------
-        tstart, data_duration : int
+        tstart, duration : int
             start and duration times (in gps seconds) of the total observation
         Pmod, F0, F1 h0: float
             Modulation period, freq, freq-drift, and h0 of the artifact
@@ -352,18 +353,21 @@ class FrequencyModulatedArtifactWriter(Writer):
 
         see `lalapps_Makefakedata_v4 --help` for help with the other paramaters
         """
+        self.phi = 0
+        self.F2 = 0
 
+        self.basic_setup()
         self.set_ephemeris_files()
         self.tstart = int(tstart)
-        self.data_duration = int(data_duration)
+        self.duration = int(duration)
 
         if os.path.isdir(self.outdir) is False:
             os.makedirs(self.outdir)
         if tref is None:
             raise ValueError('Input `tref` not specified')
 
-        self.nsfts = int(np.ceil(self.data_duration / self.Tsft))
-        self.data_duration_days = self.data_duration / 86400.
+        self.nsfts = int(np.ceil(self.duration / self.Tsft))
+        self.duration = self.duration / 86400.
         self.calculate_fmin_Band()
 
         self.cosi = 0
@@ -412,7 +416,7 @@ class FrequencyModulatedArtifactWriter(Writer):
     def concatenate_sft_files(self):
         SFTFilename = lalpulsar.OfficialSFTFilename(
             self.IFO[0], self.IFO[1], self.nsfts, self.Tsft, int(self.tstart),
-            int(self.data_duration), self.label)
+            int(self.duration), self.label)
 
         # If the file already exists, simply remove it for now (no caching
         # implemented)
