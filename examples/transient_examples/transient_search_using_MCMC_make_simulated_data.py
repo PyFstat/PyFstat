@@ -22,5 +22,5 @@ transient = pyfstat.Writer(
     label='simulated_transient_signal', outdir='data', tref=tref,
     tstart=transient_tstart, F0=F0, F1=F1, F2=F2, duration=transient_duration,
     Alpha=Alpha, Delta=Delta, h0=h0, sqrtSX=sqrtSX, minStartTime=minStartTime,
-    maxStartTime=maxStartTime)
+    maxStartTime=maxStartTime, transientWindowType='rect')
 transient.make_data()

@@ -41,7 +41,8 @@ mcmc = pyfstat.MCMCTransientSearch(
     sftfilepattern='data/*simulated_transient_signal*sft',
     theta_prior=theta_prior, tref=tref, minStartTime=minStartTime,
     maxStartTime=maxStartTime, nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps,
-    log10beta_min=log10beta_min)
+    log10beta_min=log10beta_min,
+    transientWindowType='rect')
 mcmc.run()
 mcmc.plot_corner(label_offset=0.7)
 mcmc.print_summary()
