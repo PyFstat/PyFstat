@@ -180,23 +180,31 @@ class GridSearch(BaseSearchClass):
             m = self.convert_F1_to_mismatch(y, yhat, Tseg)
             axY.set_ylim(m[0], m[-1])
 
-    def plot_1D(self, xkey, ax=None, x0=None, savefig=True):
+    def plot_1D(self, xkey, ax=None, x0=None, xrescale=1, savefig=True,
+                xlabel=None, ylabel='$\widetilde{2\mathcal{F}}$'):
         if ax is None:
             fig, ax = plt.subplots()
         xidx = self.keys.index(xkey)
         x = np.unique(self.data[:, xidx])
         if x0:
             x = x - x0
+        x = x * xrescale
         z = self.data[:, -1]
         ax.plot(x, z)
         if x0:
             ax.set_xlabel(self.tex_labels[xkey]+self.tex_labels0[xkey])
         else:
             ax.set_xlabel(self.tex_labels[xkey])
+
+        if xlabel:
+            ax.set_xlabel(xlabel)
+
+        ax.set_ylabel(ylabel)
         if savefig:
+            fig.tight_layout()
             fig.savefig('{}/{}_1D.png'.format(self.outdir, self.label))
         else:
-            return ax
+            return fig, ax
 
     def plot_2D(self, xkey, ykey, ax=None, save=True, vmin=None, vmax=None,
                 add_mismatch=None, xN=None, yN=None, flat_keys=[],
@@ -622,6 +630,82 @@ class FrequencySlidingWindow(GridSearch):
                 '{}/{}_sliding_window.png'.format(self.outdir, self.label))
         else:
             return ax
+
+
+class EarthTest(GridSearch):
+    """ """
+    tex_labels = {'deltaRadius': '$\Delta R$ [m]',
+                  'phaseOffset': 'phase-offset [rad]',
+                  'deltaPspin': '$\Delta P_\mathrm{spin}$ [s]'}
+
+    @helper_functions.initializer
+    def __init__(self, label, outdir, sftfilepattern, deltaRadius,
+                 phaseOffset, deltaPspin, F0, F1, F2, Alpha,
+                 Delta, tref=None, minStartTime=None, maxStartTime=None,
+                 BSGL=False, minCoverFreq=None, maxCoverFreq=None,
+                 detectors=None, injectSources=None,
+                 assumeSqrtSX=None):
+        """
+        Parameters
+        ----------
+        label, outdir: str
+            A label and directory to read/write data from/to
+        sftfilepattern: str
+            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            mutiple patterns can be given separated by colons.
+        F0, F1, F2, Alpha, Delta: float
+        tref, minStartTime, maxStartTime: int
+            GPS seconds of the reference time, start time and end time
+
+        For all other parameters, see `pyfstat.ComputeFStat` for details
+        """
+        self.nsegs = 1
+        self.F0s = [F0]
+        self.F1s = [F1]
+        self.F2s = [F2]
+        self.Alphas = [Alpha]
+        self.Deltas = [Delta]
+        self.deltaRadius = np.atleast_1d(deltaRadius)
+        self.phaseOffset = np.atleast_1d(phaseOffset)
+        self.deltaPspin = np.atleast_1d(deltaPspin)
+        self.set_out_file()
+        self.SSBprec = lalpulsar.SSBPREC_RELATIVISTIC
+        self.keys = ['deltaRadius', 'phaseOffset', 'deltaPspin']
+
+    def get_input_data_array(self):
+        logging.info("Generating input data array")
+        coord_arrays = [self.deltaRadius, self.phaseOffset, self.deltaPspin]
+        input_data = []
+        for vals in itertools.product(*coord_arrays):
+                input_data.append(vals)
+        self.input_data = np.array(input_data)
+        self.coord_arrays = coord_arrays
+
+    def run(self):
+        self.get_input_data_array()
+        old_data = self.check_old_data_is_okay_to_use()
+        if old_data is not False:
+            self.data = old_data
+            return
+
+        if hasattr(self, 'search') is False:
+            self.inititate_search_object()
+
+        data = []
+        vals = [self.minStartTime, self.maxStartTime, self.F0, self.F1,
+                self.F2, self.Alpha, self.Delta]
+        for (dR, dphi, dP) in tqdm(self.input_data):
+            rescaleRadius = (1 + dR / lal.REARTH_SI)
+            rescalePeriod = (1 + dP / lal.DAYSID_SI)
+            lalpulsar.BarycenterModifyEarthRotation(
+                rescaleRadius, dphi, rescalePeriod, self.tref)
+            FS = self.search.get_det_stat(*vals)
+            data.append(list([dR, dphi, dP]) + [FS])
+
+        data = np.array(data, dtype=np.float)
+        logging.info('Saving data to {}'.format(self.out_file))
+        np.savetxt(self.out_file, data, delimiter=' ')
+        self.data = data
 
 
 class DMoff_NO_SPIN(GridSearch):
