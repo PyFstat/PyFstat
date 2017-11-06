@@ -9,6 +9,7 @@ from collections import OrderedDict
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+from scipy.misc import logsumexp
 
 import pyfstat.helper_functions as helper_functions
 from pyfstat.core import (BaseSearchClass, ComputeFstat,
@@ -706,6 +707,20 @@ class EarthTest(GridSearch):
         logging.info('Saving data to {}'.format(self.out_file))
         np.savetxt(self.out_file, data, delimiter=' ')
         self.data = data
+
+    def marginalised_bayes_factor(self, prior_widths):
+        ndims = self.data.shape[1] - 1
+        params = [np.unique(self.data[:, j]) for j in range(ndims)]
+        twoF = self.data[:, -1].reshape(tuple([len(p) for p in params]))
+        F = twoF / 2.0
+        max_F = np.max(F)
+        for i, x in enumerate(params[::-1]):
+            if len(x) > 1:
+                dx = x[1] - x[0]
+                F = logsumexp(F, axis=-1)+np.log(dx)-np.log(prior_widths[i])
+            else:
+                F = np.squeeze(F, axis=-1)
+        return np.atleast_1d(F)[0], max_F
 
 
 class DMoff_NO_SPIN(GridSearch):
