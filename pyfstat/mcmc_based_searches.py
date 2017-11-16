@@ -1019,7 +1019,7 @@ class MCMCSearch(core.BaseSearchClass):
                             axes[i].set_ylabel(symbols[i], labelpad=labelpad)
                         else:
                             axes[i].set_ylabel(
-                                symbols[i]+'$-$'+symbols[i]+'$_0$',
+                                symbols[i]+'$-$'+symbols[i]+'$^\mathrm{s}$',
                                 labelpad=labelpad)
 
                     if hasattr(self, 'convergence_diagnostic'):
