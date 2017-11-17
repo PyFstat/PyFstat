@@ -46,7 +46,7 @@ $ git clone https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat.git
 * [numpy](http://www.numpy.org/)
 * [matplotlib](http://matplotlib.org/) >= 1.4
 * [scipy](https://www.scipy.org/)
-* [emcee](http://dan.iel.fm/emcee/current/)
+* [ptemcee](https://github.com/willvousden/ptemcee)
 * [corner](https://pypi.python.org/pypi/corner/)
 * [dill](https://pypi.python.org/pypi/dill)
 * [peakutils](https://pypi.python.org/pypi/PeakUtils)

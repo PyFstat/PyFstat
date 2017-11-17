@@ -1,7 +1,7 @@
 numpy
 matplotlib>=1.4
 scipy
-emcee
+ptemcee
 corner
 dill
 tqdm
