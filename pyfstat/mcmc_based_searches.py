@@ -250,40 +250,6 @@ class MCMCSearch(core.BaseSearchClass):
 
         return p0
 
-    def setup_burnin_convergence_testing(
-            self, n=10, test_type='autocorr', windowed=False, **kwargs):
-        """ Set up convergence testing during the MCMC simulation
-
-        Parameters
-        ----------
-        n: int
-            Number of steps after which to test convergence
-        test_type: str ['autocorr', 'GR']
-            If 'autocorr' use the exponential autocorrelation time (kwargs
-            passed to `get_autocorr_convergence`). If 'GR' use the Gelman-Rubin
-            statistic (kwargs passed to `get_GR_convergence`)
-        windowed: bool
-            If True, only calculate the convergence test in a window of length
-            `n`
-        **kwargs:
-            Passed to either `_test_autocorr_convergence()` or
-            `_test_GR_convergence()` depending on `test_type`.
-
-        """
-        logging.info('Setting up convergence testing')
-        self.convergence_n = n
-        self.convergence_windowed = windowed
-        self.convergence_test_type = test_type
-        self.convergence_kwargs = kwargs
-        self.convergence_diagnostic = []
-        self.convergence_diagnosticx = []
-        if test_type in ['autocorr']:
-            self._get_convergence_test = self._test_autocorr_convergence
-        elif test_type in ['GR']:
-            self._get_convergence_test = self._test_GR_convergence
-        else:
-            raise ValueError('test_type {} not understood'.format(test_type))
-
     def setup_initialisation(self, nburn0, scatter_val=1e-10):
         """ Add an initialisation step to the MCMC run
 
@@ -308,87 +274,119 @@ class MCMCSearch(core.BaseSearchClass):
         self.nsteps = [nburn0] + self.nsteps
         self.scatter_val = scatter_val
 
-    def _test_autocorr_convergence(self, i, sampler, test=True, n_cut=5):
-        try:
-            acors = np.zeros((self.ntemps, self.ndim))
-            for temp in range(self.ntemps):
-                if self.convergence_windowed:
-                    j = i-self.convergence_n
-                else:
-                    j = 0
-                x = np.mean(sampler.chain[temp, :, j:i, :], axis=0)
-                acors[temp, :] = emcee.autocorr.exponential_time(x)
-            c = np.max(acors, axis=0)
-        except emcee.autocorr.AutocorrError:
-            logging.info('Failed to calculate exponential autocorrelation')
-            c = np.zeros(self.ndim) + np.nan
-        except AttributeError:
-            logging.info('Unable to calculate exponential autocorrelation')
-            c = np.zeros(self.ndim) + np.nan
+#    def setup_burnin_convergence_testing(
+#            self, n=10, test_type='autocorr', windowed=False, **kwargs):
+#        """ Set up convergence testing during the MCMC simulation
+#
+#        Parameters
+#        ----------
+#        n: int
+#            Number of steps after which to test convergence
+#        test_type: str ['autocorr', 'GR']
+#            If 'autocorr' use the exponential autocorrelation time (kwargs
+#            passed to `get_autocorr_convergence`). If 'GR' use the Gelman-Rubin
+#            statistic (kwargs passed to `get_GR_convergence`)
+#        windowed: bool
+#            If True, only calculate the convergence test in a window of length
+#            `n`
+#        **kwargs:
+#            Passed to either `_test_autocorr_convergence()` or
+#            `_test_GR_convergence()` depending on `test_type`.
+#
+#        """
+#        logging.info('Setting up convergence testing')
+#        self.convergence_n = n
+#        self.convergence_windowed = windowed
+#        self.convergence_test_type = test_type
+#        self.convergence_kwargs = kwargs
+#        self.convergence_diagnostic = []
+#        self.convergence_diagnosticx = []
+#        if test_type in ['autocorr']:
+#            self._get_convergence_test = self._test_autocorr_convergence
+#        elif test_type in ['GR']:
+#            self._get_convergence_test = self._test_GR_convergence
+#        else:
+#            raise ValueError('test_type {} not understood'.format(test_type))
+#
+#
+#    def _test_autocorr_convergence(self, i, sampler, test=True, n_cut=5):
+#        try:
+#            acors = np.zeros((self.ntemps, self.ndim))
+#            for temp in range(self.ntemps):
+#                if self.convergence_windowed:
+#                    j = i-self.convergence_n
+#                else:
+#                    j = 0
+#                x = np.mean(sampler.chain[temp, :, j:i, :], axis=0)
+#                acors[temp, :] = emcee.autocorr.exponential_time(x)
+#            c = np.max(acors, axis=0)
+#        except emcee.autocorr.AutocorrError:
+#            logging.info('Failed to calculate exponential autocorrelation')
+#            c = np.zeros(self.ndim) + np.nan
+#        except AttributeError:
+#            logging.info('Unable to calculate exponential autocorrelation')
+#            c = np.zeros(self.ndim) + np.nan
+#
+#        self.convergence_diagnosticx.append(i - self.convergence_n/2.)
+#        self.convergence_diagnostic.append(list(c))
+#
+#        if test:
+#            return i > n_cut * np.max(c)
+#
+#    def _test_GR_convergence(self, i, sampler, test=True, R=1.1):
+#        if self.convergence_windowed:
+#            s = sampler.chain[0, :, i-self.convergence_n+1:i+1, :]
+#        else:
+#            s = sampler.chain[0, :, :i+1, :]
+#        N = float(self.convergence_n)
+#        M = float(self.nwalkers)
+#        W = np.mean(np.var(s, axis=1), axis=0)
+#        per_walker_mean = np.mean(s, axis=1)
+#        mean = np.mean(per_walker_mean, axis=0)
+#        B = N / (M-1.) * np.sum((per_walker_mean-mean)**2, axis=0)
+#        Vhat = (N-1)/N * W + (M+1)/(M*N) * B
+#        c = np.sqrt(Vhat/W)
+#        self.convergence_diagnostic.append(c)
+#        self.convergence_diagnosticx.append(i - self.convergence_n/2.)
+#
+#        if test and np.max(c) < R:
+#            return True
+#        else:
+#            return False
+#
+#    def _test_convergence(self, i, sampler, **kwargs):
+#        if np.mod(i+1, self.convergence_n) == 0:
+#            return self._get_convergence_test(i, sampler, **kwargs)
+#        else:
+#            return False
+#
+#    def _run_sampler_with_conv_test(self, sampler, p0, nprod=0, nburn=0):
+#        logging.info('Running {} burn-in steps with convergence testing'
+#                     .format(nburn))
+#        iterator = tqdm(sampler.sample(p0, iterations=nburn), total=nburn)
+#        for i, output in enumerate(iterator):
+#            if self._test_convergence(i, sampler, test=True,
+#                                      **self.convergence_kwargs):
+#                logging.info(
+#                    'Converged at {} before max number {} of steps reached'
+#                    .format(i, nburn))
+#                self.convergence_idx = i
+#                break
+#        iterator.close()
+#        logging.info('Running {} production steps'.format(nprod))
+#        j = nburn
+#        iterator = tqdm(sampler.sample(output[0], iterations=nprod),
+#                        total=nprod)
+#        for result in iterator:
+#            self._test_convergence(j, sampler, test=False,
+#                                   **self.convergence_kwargs)
+#            j += 1
+#        return sampler
 
-        self.convergence_diagnosticx.append(i - self.convergence_n/2.)
-        self.convergence_diagnostic.append(list(c))
-
-        if test:
-            return i > n_cut * np.max(c)
-
-    def _test_GR_convergence(self, i, sampler, test=True, R=1.1):
-        if self.convergence_windowed:
-            s = sampler.chain[0, :, i-self.convergence_n+1:i+1, :]
-        else:
-            s = sampler.chain[0, :, :i+1, :]
-        N = float(self.convergence_n)
-        M = float(self.nwalkers)
-        W = np.mean(np.var(s, axis=1), axis=0)
-        per_walker_mean = np.mean(s, axis=1)
-        mean = np.mean(per_walker_mean, axis=0)
-        B = N / (M-1.) * np.sum((per_walker_mean-mean)**2, axis=0)
-        Vhat = (N-1)/N * W + (M+1)/(M*N) * B
-        c = np.sqrt(Vhat/W)
-        self.convergence_diagnostic.append(c)
-        self.convergence_diagnosticx.append(i - self.convergence_n/2.)
-
-        if test and np.max(c) < R:
-            return True
-        else:
-            return False
-
-    def _test_convergence(self, i, sampler, **kwargs):
-        if np.mod(i+1, self.convergence_n) == 0:
-            return self._get_convergence_test(i, sampler, **kwargs)
-        else:
-            return False
-
-    def _run_sampler_with_conv_test(self, sampler, p0, nprod=0, nburn=0):
-        logging.info('Running {} burn-in steps with convergence testing'
-                     .format(nburn))
-        iterator = tqdm(sampler.sample(p0, iterations=nburn), total=nburn)
-        for i, output in enumerate(iterator):
-            if self._test_convergence(i, sampler, test=True,
-                                      **self.convergence_kwargs):
-                logging.info(
-                    'Converged at {} before max number {} of steps reached'
-                    .format(i, nburn))
-                self.convergence_idx = i
-                break
-        iterator.close()
-        logging.info('Running {} production steps'.format(nprod))
-        j = nburn
-        iterator = tqdm(sampler.sample(output[0], iterations=nprod),
-                        total=nprod)
-        for result in iterator:
-            self._test_convergence(j, sampler, test=False,
-                                   **self.convergence_kwargs)
-            j += 1
-        return sampler
-
-    def _run_sampler(self, sampler, p0, nprod=0, nburn=0):
-        if hasattr(self, 'convergence_n'):
-            self._run_sampler_with_conv_test(sampler, p0, nprod, nburn)
-        else:
-            for result in tqdm(sampler.sample(p0, iterations=nburn+nprod),
-                               total=nburn+nprod):
-                pass
+    def _run_sampler(self, sampler, p0, nprod=0, nburn=0, window=50):
+        for result in tqdm(sampler.sample(p0, iterations=nburn+nprod),
+                           total=nburn+nprod):
+            pass
 
         self.mean_acceptance_fraction = np.mean(
             sampler.acceptance_fraction, axis=1)
@@ -994,20 +992,20 @@ class MCMCSearch(core.BaseSearchClass):
 
             idxs = np.arange(chain.shape[1])
             burnin_idx = chain.shape[1] - nprod
-            if hasattr(self, 'convergence_idx'):
-                convergence_idx = self.convergence_idx
-            else:
-                convergence_idx = burnin_idx
+            #if hasattr(self, 'convergence_idx'):
+            #    last_idx = self.convergence_idx
+            #else:
+            last_idx = burnin_idx
             if ndim > 1:
                 for i in range(ndim):
                     axes[i].ticklabel_format(useOffset=False, axis='y')
                     cs = chain[:, :, i].T
                     if burnin_idx > 0:
-                        axes[i].plot(xoffset+idxs[:convergence_idx+1],
-                                     cs[:convergence_idx+1]-subtractions[i],
+                        axes[i].plot(xoffset+idxs[:last_idx+1],
+                                     cs[:last_idx+1]-subtractions[i],
                                      color="C3", alpha=alpha,
                                      lw=lw)
-                        axes[i].axvline(xoffset+convergence_idx,
+                        axes[i].axvline(xoffset+last_idx,
                                         color='k', ls='--', lw=0.5)
                     axes[i].plot(xoffset+idxs[burnin_idx:],
                                  cs[burnin_idx:]-subtractions[i],
@@ -1022,22 +1020,22 @@ class MCMCSearch(core.BaseSearchClass):
                                 symbols[i]+'$-$'+symbols[i]+'$^\mathrm{s}$',
                                 labelpad=labelpad)
 
-                    if hasattr(self, 'convergence_diagnostic'):
-                        ax = axes[i].twinx()
-                        axes[i].set_zorder(ax.get_zorder()+1)
-                        axes[i].patch.set_visible(False)
-                        c_x = np.array(self.convergence_diagnosticx)
-                        c_y = np.array(self.convergence_diagnostic)
-                        break_idx = np.argmin(np.abs(c_x - burnin_idx))
-                        ax.plot(c_x[:break_idx], c_y[:break_idx, i], '-C0',
-                                zorder=-10)
-                        ax.plot(c_x[break_idx:], c_y[break_idx:, i], '-C0',
-                                zorder=-10)
-                        if self.convergence_test_type == 'autocorr':
-                            ax.set_ylabel(r'$\tau_\mathrm{exp}$')
-                        elif self.convergence_test_type == 'GR':
-                            ax.set_ylabel('PSRF')
-                        ax.ticklabel_format(useOffset=False)
+#                    if hasattr(self, 'convergence_diagnostic'):
+#                        ax = axes[i].twinx()
+#                        axes[i].set_zorder(ax.get_zorder()+1)
+#                        axes[i].patch.set_visible(False)
+#                        c_x = np.array(self.convergence_diagnosticx)
+#                        c_y = np.array(self.convergence_diagnostic)
+#                        break_idx = np.argmin(np.abs(c_x - burnin_idx))
+#                        ax.plot(c_x[:break_idx], c_y[:break_idx, i], '-C0',
+#                                zorder=-10)
+#                        ax.plot(c_x[break_idx:], c_y[break_idx:, i], '-C0',
+#                                zorder=-10)
+#                        if self.convergence_test_type == 'autocorr':
+#                            ax.set_ylabel(r'$\tau_\mathrm{exp}$')
+#                        elif self.convergence_test_type == 'GR':
+#                            ax.set_ylabel('PSRF')
+#                        ax.ticklabel_format(useOffset=False)
             else:
                 axes[0].ticklabel_format(useOffset=False, axis='y')
                 cs = chain[:, :, temp].T
