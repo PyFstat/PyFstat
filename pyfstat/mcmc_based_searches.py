@@ -2116,7 +2116,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             mid_labels += ['Production']
             for ax in axes[:self.ndim]:
                 axy = ax.twiny()
-                axy.tick_params(pad=6, axis='x', which='major')
+                axy.tick_params(pad=-10, direction='in', axis='x', which='major')
+                axy.minorticks_off()
                 axy.set_xlim(ax.get_xlim())
                 axy.set_xticks(mids)
                 axy.set_xticklabels(mid_labels)
