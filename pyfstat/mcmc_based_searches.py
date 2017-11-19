@@ -1874,7 +1874,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         d = dict(nwalkers=self.nwalkers, ntemps=self.ntemps,
                  theta_keys=self.theta_keys, theta_prior=self.theta_prior,
                  log10beta_min=self.log10beta_min,
-                 BSGL=self.BSGL, run_setup=self.run_setup)
+                 BSGL=self.BSGL, minStartTime=self.minStartTime,
+                 maxStartTime=self.maxStartTime, run_setup=self.run_setup)
         return d
 
     def update_search_object(self):
@@ -2001,7 +2002,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 f.write(r'\begin{tabular}{c|ccc}' + '\n')
                 f.write(r'Stage & $N_\mathrm{seg}$ &'
                         r'$T_\mathrm{coh}^{\rm days}$ &'
-                        r'$\mathcal{N}^*$ \\ \hline'
+                        r'$\mathcal{N}^*(\Nseg^{(\ell)}, \Delta\mathbf{\lambda}^{(0)})$ \\ \hline'
                         '\n')
                 for i, rs in enumerate(run_setup):
                     Tcoh = float(
@@ -2106,6 +2107,19 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                     ax.axvline(nsteps_total, color='k', ls='--', lw=0.25)
 
             nsteps_total += nburn+nprod
+
+        if create_plots:
+            nstep_list = np.array(
+                [el[0][0] for el in run_setup] + [run_setup[-1][0][1]])
+            mids = np.cumsum(nstep_list) - nstep_list/2
+            mid_labels = ['{:1.0f}'.format(i) for i in np.arange(0, len(mids)-1)]
+            mid_labels += ['Production']
+            for ax in axes[:self.ndim]:
+                axy = ax.twiny()
+                axy.tick_params(pad=6, axis='x', which='major')
+                axy.set_xlim(ax.get_xlim())
+                axy.set_xticks(mids)
+                axy.set_xticklabels(mid_labels)
 
         samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
         lnprobs = sampler.logprobability[0, :, nburn:].reshape((-1))
