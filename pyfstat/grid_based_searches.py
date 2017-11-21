@@ -660,18 +660,30 @@ class EarthTest(GridSearch):
 
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
+        if os.path.isdir(outdir) is False:
+            os.mkdir(outdir)
         self.nsegs = 1
         self.F0s = [F0]
         self.F1s = [F1]
         self.F2s = [F2]
         self.Alphas = [Alpha]
         self.Deltas = [Delta]
+        self.duration = maxStartTime - minStartTime
         self.deltaRadius = np.atleast_1d(deltaRadius)
         self.phaseOffset = np.atleast_1d(phaseOffset)
+        self.phaseOffset = self.phaseOffset + 1e-12  # Hack to stop cached data being used
         self.deltaPspin = np.atleast_1d(deltaPspin)
         self.set_out_file()
         self.SSBprec = lalpulsar.SSBPREC_RELATIVISTIC
         self.keys = ['deltaRadius', 'phaseOffset', 'deltaPspin']
+
+        self.prior_widths = [
+            np.max(self.deltaRadius)-np.min(self.deltaRadius),
+            np.max(self.phaseOffset)-np.min(self.phaseOffset),
+            np.max(self.deltaPspin)-np.min(self.deltaPspin)]
+
+        if hasattr(self, 'search') is False:
+            self.inititate_search_object()
 
     def get_input_data_array(self):
         logging.info("Generating input data array")
@@ -682,15 +694,25 @@ class EarthTest(GridSearch):
         self.input_data = np.array(input_data)
         self.coord_arrays = coord_arrays
 
+    def run_special(self):
+        vals = [self.minStartTime, self.maxStartTime, self.F0, self.F1,
+                self.F2, self.Alpha, self.Delta]
+        self.special_data = {'zero': [0, 0, 0]}
+        for key, (dR, dphi, dP) in self.special_data.iteritems():
+            rescaleRadius = (1 + dR / lal.REARTH_SI)
+            rescalePeriod = (1 + dP / lal.DAYSID_SI)
+            lalpulsar.BarycenterModifyEarthRotation(
+                rescaleRadius, dphi, rescalePeriod, self.tref)
+            FS = self.search.get_det_stat(*vals)
+            self.special_data[key] = list([dR, dphi, dP]) + [FS]
+
     def run(self):
+        self.run_special()
         self.get_input_data_array()
         old_data = self.check_old_data_is_okay_to_use()
         if old_data is not False:
             self.data = old_data
             return
-
-        if hasattr(self, 'search') is False:
-            self.inititate_search_object()
 
         data = []
         vals = [self.minStartTime, self.maxStartTime, self.F0, self.F1,
@@ -708,19 +730,83 @@ class EarthTest(GridSearch):
         np.savetxt(self.out_file, data, delimiter=' ')
         self.data = data
 
-    def marginalised_bayes_factor(self, prior_widths):
+    def marginalised_bayes_factor(self, prior_widths=None):
+        if prior_widths is None:
+            prior_widths = self.prior_widths
+
         ndims = self.data.shape[1] - 1
-        params = [np.unique(self.data[:, j]) for j in range(ndims)]
+        params = np.array([np.unique(self.data[:, j]) for j in range(ndims)])
         twoF = self.data[:, -1].reshape(tuple([len(p) for p in params]))
         F = twoF / 2.0
-        max_F = np.max(F)
         for i, x in enumerate(params[::-1]):
             if len(x) > 1:
                 dx = x[1] - x[0]
-                F = logsumexp(F, axis=-1)+np.log(dx)-np.log(prior_widths[i])
+                F = logsumexp(F, axis=-1)+np.log(dx)-np.log(prior_widths[-1-i])
             else:
                 F = np.squeeze(F, axis=-1)
-        return np.atleast_1d(F)[0], max_F
+        marginalised_F = np.atleast_1d(F)[0]
+        F_at_zero = self.special_data['zero'][-1]/2.0
+
+        max_idx = np.argmax(self.data[:, -1])
+        max_F = self.data[max_idx, -1]/2.0
+        max_F_params = self.data[max_idx, :-1]
+        logging.info('F at zero = {:.1f}, marginalised_F = {:.1f},'
+                     ' max_F = {:.1f} ({})'.format(
+                         F_at_zero, marginalised_F, max_F, max_F_params))
+        return F_at_zero - marginalised_F, (F_at_zero - max_F) / F_at_zero
+
+    def plot_corner(self, prior_widths=None, fig=None, axes=None):
+        Bsa, FmaxMismatch = self.marginalised_bayes_factor(prior_widths)
+
+        data = self.data[:, -1].reshape(
+            (len(self.deltaRadius), len(self.phaseOffset),
+             len(self.deltaPspin)))
+        xyz = [self.deltaRadius/lal.REARTH_SI, self.phaseOffset/(np.pi),
+               self.deltaPspin/60.]
+        labels = [r'$\frac{\Delta R}{R_\mathrm{Earth}}$',
+                  r'$\frac{\Delta \phi}{\pi}$',
+                  r'$\Delta P_\mathrm{spin}$ [min]',
+                  r'$2\mathcal{F}$']
+
+        from projection_matrix import projection_matrix
+
+        fig, axes = projection_matrix(data, xyz, projection='log_mean',
+                                      factor=1.6, labels=labels)
+        axes[-1][-1].axvline((lal.DAYJUL_SI - lal.DAYSID_SI)/60.0, color='C3')
+        plt.suptitle(
+            'T={:.1f} days, $f$={:.2f} Hz, $\log\mathcal{{B}}_{{S/A}}$={:.1f},'
+            r' $\frac{{\mathcal{{F}}_0-\mathcal{{F}}_\mathrm{{max}}}}'
+            r'{{\mathcal{{F}}_0}}={:.1e}$'
+            .format(self.duration/86400, self.F0, Bsa, FmaxMismatch), y=0.99,
+            size=14)
+        fig.savefig('{}/{}_projection_matrix.png'.format(
+            self.outdir, self.label))
+
+        fig, axes = projection_matrix(data, xyz, projection='max_slice',
+                                      factor=1.6, labels=labels)
+        axes[-1][-1].axvline((lal.DAYJUL_SI - lal.DAYSID_SI)/60.0, color='C3')
+        plt.suptitle('T={:.1f} days, $f$={:.2f} Hz' .format(
+            self.duration/86400, self.F0), y=0.99, size=14)
+        fig.savefig('{}/{}_max_slice.png'.format(self.outdir, self.label))
+
+    def plot(self, key, prior_widths=None):
+        Bsa, FmaxMismatch = self.marginalised_bayes_factor(prior_widths)
+
+        rescales_defaults = {'deltaRadius': 1/lal.REARTH_SI,
+                             'phaseOffset': 1/np.pi,
+                             'deltaPspin': 1}
+        labels = {'deltaRadius': r'$\frac{\Delta R}{R_\mathrm{Earth}}$',
+                  'phaseOffset': r'$\frac{\Delta \phi}{\pi}$',
+                  'deltaPspin': r'$\Delta P_\mathrm{spin}$ [s]'
+                  }
+
+        fig, ax = self.plot_1D(key, xrescale=rescales_defaults[key],
+                               xlabel=labels[key], savefig=False)
+        ax.set_title(
+            'T={} days, $f$={} Hz, $\log\mathcal{{B}}_{{S/A}}$={:.1f}'
+            .format(self.duration/86400, self.F0, Bsa))
+        fig.tight_layout()
+        fig.savefig('{}/{}_1D.png'.format(self.outdir, self.label))
 
 
 class DMoff_NO_SPIN(GridSearch):
