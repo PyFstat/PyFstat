@@ -416,14 +416,30 @@ class MCMCSearch(core.BaseSearchClass):
             tau0S = 7.3e-5
             tau0LD = 4.2e-7
         else:
-            tau0S = 5.0e-5
             tau0LD = 6.2e-8
+            tau0T = 1.5e-8
+            tau0S = 5.0e-5
+            tau0C = 5.6e-6
         Nsfts = (self.maxStartTime - self.minStartTime) / 1800.
-        numb_evals = np.sum(self.nsteps)*self.nwalkers*self.ntemps
-        a = tau0S * numb_evals
-        b = tau0LD * Nsfts * numb_evals
+        if hasattr(self, 'run_setup'):
+            ts = []
+            for row in self.run_setup:
+                nsteps = row[0]
+                nsegs = row[1]
+                numb_evals = np.sum(nsteps)*self.nwalkers*self.ntemps
+                t = (tau0S + tau0LD*Nsfts) * numb_evals
+                if nsegs > 1:
+                    t += (tau0C + tau0T*Nsfts)*nsegs*numb_evals
+                ts.append(t)
+            time = np.sum(ts)
+        else:
+            numb_evals = np.sum(self.nsteps)*self.nwalkers*self.ntemps
+            time = (tau0S + tau0LD*Nsfts) * numb_evals
+            if getattr(self, 'nsegs', 1) > 1:
+                time += (tau0C + tau0T*Nsfts)*self.nsegs*numb_evals
+
         logging.info('Estimated run-time = {} s = {:1.0f}:{:1.0f} m'.format(
-            a+b, *divmod(a+b, 60)))
+            time, *divmod(time, 60)))
 
     def run(self, proposal_scale_factor=2, create_plots=True, window=50,
             **kwargs):
@@ -2053,6 +2069,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             run_setup, NstarMax=NstarMax, Nsegs0=Nsegs0, log_table=log_table,
             gen_tex_table=gen_tex_table)
         self.run_setup = run_setup
+        self._estimate_run_time()
 
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
         if self.old_data_is_okay_to_use is True:

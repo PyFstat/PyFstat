@@ -17,7 +17,7 @@ tref = .5*(tstart+tend)
 
 depth = 10
 h0 = sqrtSX / depth
-label = 'semi_coherent_search_using_MCMC'
+label = 'semicoherent_search_using_MCMC'
 outdir = 'data'
 
 data = pyfstat.Writer(
@@ -53,7 +53,7 @@ nwalkers = 100
 nsteps = [300, 300]
 
 mcmc = pyfstat.MCMCSemiCoherentSearch(
-    label=label, outdir=outdir, nsegs=3,
+    label=label, outdir=outdir, nsegs=10,
     sftfilepattern='{}/*{}*sft'.format(outdir, label),
     theta_prior=theta_prior, tref=tref, minStartTime=tstart, maxStartTime=tend,
     nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps,
