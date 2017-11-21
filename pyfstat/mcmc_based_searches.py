@@ -11,7 +11,7 @@ import subprocess
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-import emcee
+from ptemcee import Sampler as PTSampler
 import corner
 import dill as pickle
 
@@ -54,7 +54,7 @@ class MCMCSearch(core.BaseSearchClass):
     log10beta_min float < 0, optional
         The  log_10(beta) value, if given the set of betas passed to PTSampler
         are generated from `np.logspace(0, log10beta_min, ntemps)` (given
-        in descending order to emcee).
+        in descending order to ptemcee).
     theta_initial: dict, array, optional
         A dictionary of distribution about which to distribute the
         initial walkers about
@@ -250,40 +250,6 @@ class MCMCSearch(core.BaseSearchClass):
 
         return p0
 
-    def setup_burnin_convergence_testing(
-            self, n=10, test_type='autocorr', windowed=False, **kwargs):
-        """ Set up convergence testing during the MCMC simulation
-
-        Parameters
-        ----------
-        n: int
-            Number of steps after which to test convergence
-        test_type: str ['autocorr', 'GR']
-            If 'autocorr' use the exponential autocorrelation time (kwargs
-            passed to `get_autocorr_convergence`). If 'GR' use the Gelman-Rubin
-            statistic (kwargs passed to `get_GR_convergence`)
-        windowed: bool
-            If True, only calculate the convergence test in a window of length
-            `n`
-        **kwargs:
-            Passed to either `_test_autocorr_convergence()` or
-            `_test_GR_convergence()` depending on `test_type`.
-
-        """
-        logging.info('Setting up convergence testing')
-        self.convergence_n = n
-        self.convergence_windowed = windowed
-        self.convergence_test_type = test_type
-        self.convergence_kwargs = kwargs
-        self.convergence_diagnostic = []
-        self.convergence_diagnosticx = []
-        if test_type in ['autocorr']:
-            self._get_convergence_test = self._test_autocorr_convergence
-        elif test_type in ['GR']:
-            self._get_convergence_test = self._test_GR_convergence
-        else:
-            raise ValueError('test_type {} not understood'.format(test_type))
-
     def setup_initialisation(self, nburn0, scatter_val=1e-10):
         """ Add an initialisation step to the MCMC run
 
@@ -308,87 +274,119 @@ class MCMCSearch(core.BaseSearchClass):
         self.nsteps = [nburn0] + self.nsteps
         self.scatter_val = scatter_val
 
-    def _test_autocorr_convergence(self, i, sampler, test=True, n_cut=5):
-        try:
-            acors = np.zeros((self.ntemps, self.ndim))
-            for temp in range(self.ntemps):
-                if self.convergence_windowed:
-                    j = i-self.convergence_n
-                else:
-                    j = 0
-                x = np.mean(sampler.chain[temp, :, j:i, :], axis=0)
-                acors[temp, :] = emcee.autocorr.exponential_time(x)
-            c = np.max(acors, axis=0)
-        except emcee.autocorr.AutocorrError:
-            logging.info('Failed to calculate exponential autocorrelation')
-            c = np.zeros(self.ndim) + np.nan
-        except AttributeError:
-            logging.info('Unable to calculate exponential autocorrelation')
-            c = np.zeros(self.ndim) + np.nan
+#    def setup_burnin_convergence_testing(
+#            self, n=10, test_type='autocorr', windowed=False, **kwargs):
+#        """ Set up convergence testing during the MCMC simulation
+#
+#        Parameters
+#        ----------
+#        n: int
+#            Number of steps after which to test convergence
+#        test_type: str ['autocorr', 'GR']
+#            If 'autocorr' use the exponential autocorrelation time (kwargs
+#            passed to `get_autocorr_convergence`). If 'GR' use the Gelman-Rubin
+#            statistic (kwargs passed to `get_GR_convergence`)
+#        windowed: bool
+#            If True, only calculate the convergence test in a window of length
+#            `n`
+#        **kwargs:
+#            Passed to either `_test_autocorr_convergence()` or
+#            `_test_GR_convergence()` depending on `test_type`.
+#
+#        """
+#        logging.info('Setting up convergence testing')
+#        self.convergence_n = n
+#        self.convergence_windowed = windowed
+#        self.convergence_test_type = test_type
+#        self.convergence_kwargs = kwargs
+#        self.convergence_diagnostic = []
+#        self.convergence_diagnosticx = []
+#        if test_type in ['autocorr']:
+#            self._get_convergence_test = self._test_autocorr_convergence
+#        elif test_type in ['GR']:
+#            self._get_convergence_test = self._test_GR_convergence
+#        else:
+#            raise ValueError('test_type {} not understood'.format(test_type))
+#
+#
+#    def _test_autocorr_convergence(self, i, sampler, test=True, n_cut=5):
+#        try:
+#            acors = np.zeros((self.ntemps, self.ndim))
+#            for temp in range(self.ntemps):
+#                if self.convergence_windowed:
+#                    j = i-self.convergence_n
+#                else:
+#                    j = 0
+#                x = np.mean(sampler.chain[temp, :, j:i, :], axis=0)
+#                acors[temp, :] = emcee.autocorr.exponential_time(x)
+#            c = np.max(acors, axis=0)
+#        except emcee.autocorr.AutocorrError:
+#            logging.info('Failed to calculate exponential autocorrelation')
+#            c = np.zeros(self.ndim) + np.nan
+#        except AttributeError:
+#            logging.info('Unable to calculate exponential autocorrelation')
+#            c = np.zeros(self.ndim) + np.nan
+#
+#        self.convergence_diagnosticx.append(i - self.convergence_n/2.)
+#        self.convergence_diagnostic.append(list(c))
+#
+#        if test:
+#            return i > n_cut * np.max(c)
+#
+#    def _test_GR_convergence(self, i, sampler, test=True, R=1.1):
+#        if self.convergence_windowed:
+#            s = sampler.chain[0, :, i-self.convergence_n+1:i+1, :]
+#        else:
+#            s = sampler.chain[0, :, :i+1, :]
+#        N = float(self.convergence_n)
+#        M = float(self.nwalkers)
+#        W = np.mean(np.var(s, axis=1), axis=0)
+#        per_walker_mean = np.mean(s, axis=1)
+#        mean = np.mean(per_walker_mean, axis=0)
+#        B = N / (M-1.) * np.sum((per_walker_mean-mean)**2, axis=0)
+#        Vhat = (N-1)/N * W + (M+1)/(M*N) * B
+#        c = np.sqrt(Vhat/W)
+#        self.convergence_diagnostic.append(c)
+#        self.convergence_diagnosticx.append(i - self.convergence_n/2.)
+#
+#        if test and np.max(c) < R:
+#            return True
+#        else:
+#            return False
+#
+#    def _test_convergence(self, i, sampler, **kwargs):
+#        if np.mod(i+1, self.convergence_n) == 0:
+#            return self._get_convergence_test(i, sampler, **kwargs)
+#        else:
+#            return False
+#
+#    def _run_sampler_with_conv_test(self, sampler, p0, nprod=0, nburn=0):
+#        logging.info('Running {} burn-in steps with convergence testing'
+#                     .format(nburn))
+#        iterator = tqdm(sampler.sample(p0, iterations=nburn), total=nburn)
+#        for i, output in enumerate(iterator):
+#            if self._test_convergence(i, sampler, test=True,
+#                                      **self.convergence_kwargs):
+#                logging.info(
+#                    'Converged at {} before max number {} of steps reached'
+#                    .format(i, nburn))
+#                self.convergence_idx = i
+#                break
+#        iterator.close()
+#        logging.info('Running {} production steps'.format(nprod))
+#        j = nburn
+#        iterator = tqdm(sampler.sample(output[0], iterations=nprod),
+#                        total=nprod)
+#        for result in iterator:
+#            self._test_convergence(j, sampler, test=False,
+#                                   **self.convergence_kwargs)
+#            j += 1
+#        return sampler
 
-        self.convergence_diagnosticx.append(i - self.convergence_n/2.)
-        self.convergence_diagnostic.append(list(c))
-
-        if test:
-            return i > n_cut * np.max(c)
-
-    def _test_GR_convergence(self, i, sampler, test=True, R=1.1):
-        if self.convergence_windowed:
-            s = sampler.chain[0, :, i-self.convergence_n+1:i+1, :]
-        else:
-            s = sampler.chain[0, :, :i+1, :]
-        N = float(self.convergence_n)
-        M = float(self.nwalkers)
-        W = np.mean(np.var(s, axis=1), axis=0)
-        per_walker_mean = np.mean(s, axis=1)
-        mean = np.mean(per_walker_mean, axis=0)
-        B = N / (M-1.) * np.sum((per_walker_mean-mean)**2, axis=0)
-        Vhat = (N-1)/N * W + (M+1)/(M*N) * B
-        c = np.sqrt(Vhat/W)
-        self.convergence_diagnostic.append(c)
-        self.convergence_diagnosticx.append(i - self.convergence_n/2.)
-
-        if test and np.max(c) < R:
-            return True
-        else:
-            return False
-
-    def _test_convergence(self, i, sampler, **kwargs):
-        if np.mod(i+1, self.convergence_n) == 0:
-            return self._get_convergence_test(i, sampler, **kwargs)
-        else:
-            return False
-
-    def _run_sampler_with_conv_test(self, sampler, p0, nprod=0, nburn=0):
-        logging.info('Running {} burn-in steps with convergence testing'
-                     .format(nburn))
-        iterator = tqdm(sampler.sample(p0, iterations=nburn), total=nburn)
-        for i, output in enumerate(iterator):
-            if self._test_convergence(i, sampler, test=True,
-                                      **self.convergence_kwargs):
-                logging.info(
-                    'Converged at {} before max number {} of steps reached'
-                    .format(i, nburn))
-                self.convergence_idx = i
-                break
-        iterator.close()
-        logging.info('Running {} production steps'.format(nprod))
-        j = nburn
-        iterator = tqdm(sampler.sample(output[0], iterations=nprod),
-                        total=nprod)
-        for result in iterator:
-            self._test_convergence(j, sampler, test=False,
-                                   **self.convergence_kwargs)
-            j += 1
-        return sampler
-
-    def _run_sampler(self, sampler, p0, nprod=0, nburn=0):
-        if hasattr(self, 'convergence_n'):
-            self._run_sampler_with_conv_test(sampler, p0, nprod, nburn)
-        else:
-            for result in tqdm(sampler.sample(p0, iterations=nburn+nprod),
-                               total=nburn+nprod):
-                pass
+    def _run_sampler(self, sampler, p0, nprod=0, nburn=0, window=50):
+        for result in tqdm(sampler.sample(p0, iterations=nburn+nprod),
+                           total=nburn+nprod):
+            pass
 
         self.mean_acceptance_fraction = np.mean(
             sampler.acceptance_fraction, axis=1)
@@ -398,14 +396,9 @@ class MCMCSearch(core.BaseSearchClass):
             self.tswap_acceptance_fraction = sampler.tswap_acceptance_fraction
             logging.info("Tswap acceptance fraction: {}"
                          .format(sampler.tswap_acceptance_fraction))
-        try:
-            self.autocorr_time = sampler.get_autocorr_time(c=4)
-            logging.info("Autocorrelation length: {}".format(
-                self.autocorr_time))
-        except emcee.autocorr.AutocorrError as e:
-            self.autocorr_time = np.nan
-            logging.warning(
-                'Autocorrelation calculation failed with message {}'.format(e))
+        self.autocorr_time = sampler.get_autocorr_time(window=window)
+        logging.info("Autocorrelation length: {}".format(
+            self.autocorr_time))
 
         return sampler
 
@@ -423,16 +416,33 @@ class MCMCSearch(core.BaseSearchClass):
             tau0S = 7.3e-5
             tau0LD = 4.2e-7
         else:
-            tau0S = 5.0e-5
             tau0LD = 6.2e-8
+            tau0T = 1.5e-8
+            tau0S = 5.0e-5
+            tau0C = 5.6e-6
         Nsfts = (self.maxStartTime - self.minStartTime) / 1800.
-        numb_evals = np.sum(self.nsteps)*self.nwalkers*self.ntemps
-        a = tau0S * numb_evals
-        b = tau0LD * Nsfts * numb_evals
-        logging.info('Estimated run-time = {} s = {:1.0f}:{:1.0f} m'.format(
-            a+b, *divmod(a+b, 60)))
+        if hasattr(self, 'run_setup'):
+            ts = []
+            for row in self.run_setup:
+                nsteps = row[0]
+                nsegs = row[1]
+                numb_evals = np.sum(nsteps)*self.nwalkers*self.ntemps
+                t = (tau0S + tau0LD*Nsfts) * numb_evals
+                if nsegs > 1:
+                    t += (tau0C + tau0T*Nsfts)*nsegs*numb_evals
+                ts.append(t)
+            time = np.sum(ts)
+        else:
+            numb_evals = np.sum(self.nsteps)*self.nwalkers*self.ntemps
+            time = (tau0S + tau0LD*Nsfts) * numb_evals
+            if getattr(self, 'nsegs', 1) > 1:
+                time += (tau0C + tau0T*Nsfts)*self.nsegs*numb_evals
 
-    def run(self, proposal_scale_factor=2, create_plots=True, c=5, **kwargs):
+        logging.info('Estimated run-time = {} s = {:1.0f}:{:1.0f} m'.format(
+            time, *divmod(time, 60)))
+
+    def run(self, proposal_scale_factor=2, create_plots=True, window=50,
+            **kwargs):
         """ Run the MCMC simulatation
 
         Parameters
@@ -444,17 +454,17 @@ class MCMCSearch(core.BaseSearchClass):
             it by increasing the a parameter [Foreman-Mackay (2013)].
         create_plots: bool
             If true, save trace plots of the walkers
-        c: int
+        window: int
             The minimum number of autocorrelation times needed to trust the
             result when estimating the autocorrelation time (see
-            emcee.autocorr.integrated_time for further details. Default is 5
+            ptemcee.Sampler.get_autocorr_time for further details.
         **kwargs:
             Passed to _plot_walkers to control the figures
 
         Returns
         -------
-        sampler: emcee.ptsampler.PTSampler
-            The emcee ptsampler object
+        sampler: ptemcee.Sampler
+            The ptemcee ptsampler object
 
         """
 
@@ -472,8 +482,9 @@ class MCMCSearch(core.BaseSearchClass):
         self._initiate_search_object()
         self._estimate_run_time()
 
-        sampler = emcee.PTSampler(
-            self.ntemps, self.nwalkers, self.ndim, self.logl, self.logp,
+        sampler = PTSampler(
+            ntemps=self.ntemps, nwalkers=self.nwalkers, dim=self.ndim,
+            logl=self.logl, logp=self.logp,
             logpargs=(self.theta_prior, self.theta_keys, self.search),
             loglargs=(self.search,), betas=self.betas, a=proposal_scale_factor)
 
@@ -486,7 +497,7 @@ class MCMCSearch(core.BaseSearchClass):
         for j, n in enumerate(self.nsteps[:-2]):
             logging.info('Running {}/{} initialisation with {} steps'.format(
                 j, ninit_steps, n))
-            sampler = self._run_sampler(sampler, p0, nburn=n)
+            sampler = self._run_sampler(sampler, p0, nburn=n, window=window)
             if create_plots:
                 fig, axes = self._plot_walkers(sampler,
                                                symbols=self.theta_symbols,
@@ -516,9 +527,9 @@ class MCMCSearch(core.BaseSearchClass):
                         )
 
         samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
-        lnprobs = sampler.lnprobability[0, :, nburn:].reshape((-1))
-        lnlikes = sampler.lnlikelihood[0, :, nburn:].reshape((-1))
-        all_lnlikelihood = sampler.lnlikelihood[:, :, nburn:]
+        lnprobs = sampler.logprobability[0, :, nburn:].reshape((-1))
+        lnlikes = sampler.loglikelihood[0, :, nburn:].reshape((-1))
+        all_lnlikelihood = sampler.loglikelihood[:, :, nburn:]
         self.samples = samples
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes
@@ -994,20 +1005,20 @@ class MCMCSearch(core.BaseSearchClass):
 
             idxs = np.arange(chain.shape[1])
             burnin_idx = chain.shape[1] - nprod
-            if hasattr(self, 'convergence_idx'):
-                convergence_idx = self.convergence_idx
-            else:
-                convergence_idx = burnin_idx
+            #if hasattr(self, 'convergence_idx'):
+            #    last_idx = self.convergence_idx
+            #else:
+            last_idx = burnin_idx
             if ndim > 1:
                 for i in range(ndim):
                     axes[i].ticklabel_format(useOffset=False, axis='y')
                     cs = chain[:, :, i].T
                     if burnin_idx > 0:
-                        axes[i].plot(xoffset+idxs[:convergence_idx+1],
-                                     cs[:convergence_idx+1]-subtractions[i],
+                        axes[i].plot(xoffset+idxs[:last_idx+1],
+                                     cs[:last_idx+1]-subtractions[i],
                                      color="C3", alpha=alpha,
                                      lw=lw)
-                        axes[i].axvline(xoffset+convergence_idx,
+                        axes[i].axvline(xoffset+last_idx,
                                         color='k', ls='--', lw=0.5)
                     axes[i].plot(xoffset+idxs[burnin_idx:],
                                  cs[burnin_idx:]-subtractions[i],
@@ -1019,25 +1030,25 @@ class MCMCSearch(core.BaseSearchClass):
                             axes[i].set_ylabel(symbols[i], labelpad=labelpad)
                         else:
                             axes[i].set_ylabel(
-                                symbols[i]+'$-$'+symbols[i]+'$_0$',
+                                symbols[i]+'$-$'+symbols[i]+'$^\mathrm{s}$',
                                 labelpad=labelpad)
 
-                    if hasattr(self, 'convergence_diagnostic'):
-                        ax = axes[i].twinx()
-                        axes[i].set_zorder(ax.get_zorder()+1)
-                        axes[i].patch.set_visible(False)
-                        c_x = np.array(self.convergence_diagnosticx)
-                        c_y = np.array(self.convergence_diagnostic)
-                        break_idx = np.argmin(np.abs(c_x - burnin_idx))
-                        ax.plot(c_x[:break_idx], c_y[:break_idx, i], '-C0',
-                                zorder=-10)
-                        ax.plot(c_x[break_idx:], c_y[break_idx:, i], '-C0',
-                                zorder=-10)
-                        if self.convergence_test_type == 'autocorr':
-                            ax.set_ylabel(r'$\tau_\mathrm{exp}$')
-                        elif self.convergence_test_type == 'GR':
-                            ax.set_ylabel('PSRF')
-                        ax.ticklabel_format(useOffset=False)
+#                    if hasattr(self, 'convergence_diagnostic'):
+#                        ax = axes[i].twinx()
+#                        axes[i].set_zorder(ax.get_zorder()+1)
+#                        axes[i].patch.set_visible(False)
+#                        c_x = np.array(self.convergence_diagnosticx)
+#                        c_y = np.array(self.convergence_diagnostic)
+#                        break_idx = np.argmin(np.abs(c_x - burnin_idx))
+#                        ax.plot(c_x[:break_idx], c_y[:break_idx, i], '-C0',
+#                                zorder=-10)
+#                        ax.plot(c_x[break_idx:], c_y[break_idx:, i], '-C0',
+#                                zorder=-10)
+#                        if self.convergence_test_type == 'autocorr':
+#                            ax.set_ylabel(r'$\tau_\mathrm{exp}$')
+#                        elif self.convergence_test_type == 'GR':
+#                            ax.set_ylabel('PSRF')
+#                        ax.ticklabel_format(useOffset=False)
             else:
                 axes[0].ticklabel_format(useOffset=False, axis='y')
                 cs = chain[:, :, temp].T
@@ -1055,7 +1066,7 @@ class MCMCSearch(core.BaseSearchClass):
                 if len(axes) == ndim:
                     axes.append(fig.add_subplot(ndim+1, 1, ndim+1))
 
-                lnl = sampler.lnlikelihood[temp, :, :]
+                lnl = sampler.loglikelihood[temp, :, :]
                 if burnin_idx and add_det_stat_burnin:
                     burn_in_vals = lnl[:, :burnin_idx].flatten()
                     try:
@@ -1137,8 +1148,8 @@ class MCMCSearch(core.BaseSearchClass):
         """
         temp_idx = 0
         pF = sampler.chain[temp_idx, :, :, :]
-        lnl = sampler.lnlikelihood[temp_idx, :, :]
-        lnp = sampler.lnprobability[temp_idx, :, :]
+        lnl = sampler.loglikelihood[temp_idx, :, :]
+        lnp = sampler.logprobability[temp_idx, :, :]
 
         # General warnings about the state of lnp
         if np.any(np.isnan(lnp)):
@@ -1879,7 +1890,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         d = dict(nwalkers=self.nwalkers, ntemps=self.ntemps,
                  theta_keys=self.theta_keys, theta_prior=self.theta_prior,
                  log10beta_min=self.log10beta_min,
-                 BSGL=self.BSGL, run_setup=self.run_setup)
+                 BSGL=self.BSGL, minStartTime=self.minStartTime,
+                 maxStartTime=self.maxStartTime, run_setup=self.run_setup)
         return d
 
     def update_search_object(self):
@@ -2006,7 +2018,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 f.write(r'\begin{tabular}{c|ccc}' + '\n')
                 f.write(r'Stage & $N_\mathrm{seg}$ &'
                         r'$T_\mathrm{coh}^{\rm days}$ &'
-                        r'$\mathcal{N}^*$ \\ \hline'
+                        r'$\mathcal{N}^*(\Nseg^{(\ell)}, \Delta\mathbf{\lambda}^{(0)})$ \\ \hline'
                         '\n')
                 for i, rs in enumerate(run_setup):
                     Tcoh = float(
@@ -2029,7 +2041,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
     def run(self, run_setup=None, proposal_scale_factor=2, NstarMax=10,
             Nsegs0=None, create_plots=True, log_table=True, gen_tex_table=True,
-            fig=None, axes=None, return_fig=False, **kwargs):
+            fig=None, axes=None, return_fig=False, window=50, **kwargs):
         """ Run the follow-up with the given run_setup
 
         Parameters
@@ -2042,10 +2054,10 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             it by increasing the a parameter [Foreman-Mackay (2013)].
         create_plots: bool
             If true, save trace plots of the walkers
-        c: int
+        window: int
             The minimum number of autocorrelation times needed to trust the
             result when estimating the autocorrelation time (see
-            emcee.autocorr.integrated_time for further details. Default is 5
+            ptemcee.Sampler.get_autocorr_time for further details.
         **kwargs:
             Passed to _plot_walkers to control the figures
 
@@ -2057,6 +2069,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             run_setup, NstarMax=NstarMax, Nsegs0=Nsegs0, log_table=log_table,
             gen_tex_table=gen_tex_table)
         self.run_setup = run_setup
+        self._estimate_run_time()
 
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
         if self.old_data_is_okay_to_use is True:
@@ -2087,8 +2100,9 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             self.search.nsegs = nseg
             self.update_search_object()
             self.search.init_semicoherent_parameters()
-            sampler = emcee.PTSampler(
-                self.ntemps, self.nwalkers, self.ndim, self.logl, self.logp,
+            sampler = PTSampler(
+                ntemps=self.ntemps, nwalkers=self.nwalkers, dim=self.ndim,
+                logl=self.logl, logp=self.logp,
                 logpargs=(self.theta_prior, self.theta_keys, self.search),
                 loglargs=(self.search,), betas=self.betas,
                 a=proposal_scale_factor)
@@ -2097,9 +2111,10 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             logging.info(('Running {}/{} with {} steps and {} nsegs '
                           '(Tcoh={:1.2f} days)').format(
                 j+1, len(run_setup), (nburn, nprod), nseg, Tcoh))
-            sampler = self._run_sampler(sampler, p0, nburn=nburn, nprod=nprod)
+            sampler = self._run_sampler(sampler, p0, nburn=nburn, nprod=nprod,
+                                        window=window)
             logging.info('Max detection statistic of run was {}'.format(
-                np.max(sampler.lnlikelihood)))
+                np.max(sampler.loglikelihood)))
 
             if create_plots:
                 fig, axes = self._plot_walkers(
@@ -2110,10 +2125,24 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
             nsteps_total += nburn+nprod
 
+        if create_plots:
+            nstep_list = np.array(
+                [el[0][0] for el in run_setup] + [run_setup[-1][0][1]])
+            mids = np.cumsum(nstep_list) - nstep_list/2
+            mid_labels = ['{:1.0f}'.format(i) for i in np.arange(0, len(mids)-1)]
+            mid_labels += ['Production']
+            for ax in axes[:self.ndim]:
+                axy = ax.twiny()
+                axy.tick_params(pad=-10, direction='in', axis='x', which='major')
+                axy.minorticks_off()
+                axy.set_xlim(ax.get_xlim())
+                axy.set_xticks(mids)
+                axy.set_xticklabels(mid_labels)
+
         samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
-        lnprobs = sampler.lnprobability[0, :, nburn:].reshape((-1))
-        lnlikes = sampler.lnlikelihood[0, :, nburn:].reshape((-1))
-        all_lnlikelihood = sampler.lnlikelihood
+        lnprobs = sampler.logprobability[0, :, nburn:].reshape((-1))
+        lnlikes = sampler.loglikelihood[0, :, nburn:].reshape((-1))
+        all_lnlikelihood = sampler.loglikelihood
         self.samples = samples
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes

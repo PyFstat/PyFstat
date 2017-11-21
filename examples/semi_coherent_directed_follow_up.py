@@ -2,6 +2,8 @@ import pyfstat
 import numpy as np
 import matplotlib.pyplot as plt
 
+plt.style.use('./paper-style.mplstyle')
+
 F0 = 30.0
 F1 = -1e-10
 F2 = 0
