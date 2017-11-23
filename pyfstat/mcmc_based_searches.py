@@ -413,13 +413,15 @@ class MCMCSearch(core.BaseSearchClass):
         # ~/.pyfstat.conf
         if (type(self.theta_prior['Alpha']) == dict or
                 type(self.theta_prior['Delta']) == dict):
-            tau0S = 7.3e-5
-            tau0LD = 4.2e-7
-        else:
-            tau0LD = 6.2e-8
+            tau0LD = 5.2e-7
             tau0T = 1.5e-8
-            tau0S = 5.0e-5
-            tau0C = 5.6e-6
+            tau0S = 1.2e-4
+            tau0C = 5.8e-6
+        else:
+            tau0LD = 1.3e-7
+            tau0T = 1.5e-8
+            tau0S = 9.1e-5
+            tau0C = 5.5e-6
         Nsfts = (self.maxStartTime - self.minStartTime) / 1800.
         if hasattr(self, 'run_setup'):
             ts = []
