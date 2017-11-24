@@ -226,11 +226,8 @@ def get_Nstar_estimate(
 
     g = SSkyMetric.semi_rssky_metric.data
 
-    d[2:] = d[2:][::-1]  # Convert to Alpha, Delta, F0, F1.. ordering
-    g[2:] = g[2:][::-1]  # Convert to Alpha, Delta, F0, F1.. ordering
-
     g = g[i:, i:]  # Remove sky if required
-    parallelepiped = (out_rssky.data[i:, 1:].T - out_rssky.data[i:, 0]).T
+    parallelepiped = (d[i:, 1:].T - d[i:, 0]).T
 
     Nstars = []
     for j in range(1, len(g)+1):
