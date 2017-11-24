@@ -7,8 +7,8 @@ plt.style.use('./paper-style.mplstyle')
 F0 = 30.0
 F1 = -1e-10
 F2 = 0
-Alpha = 1.0
-Delta = 0.5
+Alpha = np.radians(83.6292)
+Delta = np.radians(22.0144)
 
 # Properties of the GW data
 sqrtSX = 1e-23
@@ -33,21 +33,21 @@ twoF = data.predict_fstat()
 print 'Predicted twoF value: {}\n'.format(twoF)
 
 # Search
-VF0 = VF1 = 100
-DeltaF0 = VF0 * np.sqrt(3)/(np.pi*duration)
-DeltaF1 = VF1 * np.sqrt(180)/(np.pi*duration**2)
-DeltaAlpha = 1e-2
-DeltaDelta = 1e-2
-theta_prior = {'F0': {'type': 'unif', 'lower': F0-DeltaF0/2.,
+VF0 = VF1 = 1e5
+DeltaF0 = np.sqrt(VF0) * np.sqrt(3)/(np.pi*duration)
+DeltaF1 = np.sqrt(VF1) * np.sqrt(180)/(np.pi*duration**2)
+theta_prior = {'F0': {'type': 'unif',
+                      'lower': F0-DeltaF0/2.,
                       'upper': F0+DeltaF0/2},
-               'F1': {'type': 'unif', 'lower': F1-DeltaF1/2.,
+               'F1': {'type': 'unif',
+                      'lower': F1-DeltaF1/2.,
                       'upper': F1+DeltaF1/2},
                'F2': F2,
                'Alpha': Alpha,
                'Delta': Delta
                }
 
-ntemps = 2
+ntemps = 3
 log10beta_min = -0.5
 nwalkers = 100
 nsteps = [100, 100]
