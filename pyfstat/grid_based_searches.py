@@ -755,7 +755,8 @@ class EarthTest(GridSearch):
                          F_at_zero, marginalised_F, max_F, max_F_params))
         return F_at_zero - marginalised_F, (F_at_zero - max_F) / F_at_zero
 
-    def plot_corner(self, prior_widths=None, fig=None, axes=None):
+    def plot_corner(self, prior_widths=None, fig=None, axes=None,
+                    projection='log_mean'):
         Bsa, FmaxMismatch = self.marginalised_bayes_factor(prior_widths)
 
         data = self.data[:, -1].reshape(
@@ -770,7 +771,7 @@ class EarthTest(GridSearch):
 
         from projection_matrix import projection_matrix
 
-        fig, axes = projection_matrix(data, xyz, projection='log_mean',
+        fig, axes = projection_matrix(data, xyz, projection=projection,
                                       factor=1.6, labels=labels)
         axes[-1][-1].axvline((lal.DAYJUL_SI - lal.DAYSID_SI)/60.0, color='C3')
         plt.suptitle(
@@ -781,13 +782,6 @@ class EarthTest(GridSearch):
             size=14)
         fig.savefig('{}/{}_projection_matrix.png'.format(
             self.outdir, self.label))
-
-        fig, axes = projection_matrix(data, xyz, projection='max_slice',
-                                      factor=1.6, labels=labels)
-        axes[-1][-1].axvline((lal.DAYJUL_SI - lal.DAYSID_SI)/60.0, color='C3')
-        plt.suptitle('T={:.1f} days, $f$={:.2f} Hz' .format(
-            self.duration/86400, self.F0), y=0.99, size=14)
-        fig.savefig('{}/{}_max_slice.png'.format(self.outdir, self.label))
 
     def plot(self, key, prior_widths=None):
         Bsa, FmaxMismatch = self.marginalised_bayes_factor(prior_widths)
