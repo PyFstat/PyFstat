@@ -59,6 +59,6 @@ mcmc = pyfstat.MCMCSearch(
     nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps,
     log10beta_min=log10beta_min)
 mcmc.setup_initialisation(100, scatter_val=1e-10)
-mcmc.run(subtractions=[F0, F1])
+mcmc.run()
 mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()

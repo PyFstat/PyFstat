@@ -56,7 +56,7 @@ mcmc = pyfstat.MCMCSearch(
     sftfilepattern='data/*'+data_label+'*sft', theta_prior=theta_prior, tref=tref,
     minStartTime=tstart, maxStartTime=tend, nsteps=nsteps, nwalkers=nwalkers,
     ntemps=ntemps, log10beta_min=log10beta_min)
-mcmc.run(context='paper', subtractions=[30, -1e-10])
+mcmc.run()
 mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()
 

@@ -47,8 +47,8 @@ theta_prior = {'F0': {'type': 'unif',
                'Delta': Delta
                }
 
-ntemps = 1
-log10beta_min = -1
+ntemps = 2
+log10beta_min = -0.5
 nwalkers = 100
 nsteps = [300, 300]
 
@@ -57,6 +57,9 @@ mcmc = pyfstat.MCMCSearch(
     sftfilepattern='{}/*{}*sft'.format(outdir, label), theta_prior=theta_prior,
     tref=tref, minStartTime=tstart, maxStartTime=tend, nsteps=nsteps,
     nwalkers=nwalkers, ntemps=ntemps, log10beta_min=log10beta_min)
-mcmc.run(subtractions=[F0, F1])
+mcmc.transform_dictionary = dict(
+    F0=dict(subtractor=F0, symbol='$f-f^\mathrm{s}$'),
+    F1=dict(subtractor=F1, symbol='$\dot{f}-\dot{f}^\mathrm{s}$'))
+mcmc.run()
 mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()

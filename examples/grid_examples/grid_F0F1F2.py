@@ -3,8 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from projection_matrix import projection_matrix
 
-plt.style.use('paper')
-
 F0 = 30.0
 F1 = 1e-10
 F2 = 0
