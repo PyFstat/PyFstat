@@ -286,6 +286,16 @@ class GridSearch(BaseSearchClass):
             return ax
 
     def get_max_twoF(self):
+        """ Get the maximum twoF over the grid
+
+        Returns
+        -------
+        d: dict
+            Dictionary containing, 'minStartTime', 'maxStartTime', 'F0', 'F1',
+            'F2', 'Alpha', 'Delta' and 'twoF' of maximum
+
+        """
+
         twoF = self.data[:, -1]
         idx = np.argmax(twoF)
         v = self.data[idx, :]
