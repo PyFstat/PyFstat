@@ -348,13 +348,13 @@ class ComputeFstat(BaseSearchClass):
             this epoch
         binary : bool
             If true, search of binary parameters.
+        BSGL : bool
+            If true, compute the BSGL rather than the twoF value.
         transientWindowType: str
             If 'rect' or 'exp',
             allow for the Fstat to be computed over a transient range.
-            ('none' instead of None explicitly calls the transient-window function,
-             but with the full range, for debugging)
-        BSGL : bool
-            If true, compute the BSGL rather than the twoF value.
+            ('none' instead of None explicitly calls the transient-window
+            function, but with the full range, for debugging)
         detectors : str
             Two character reference to the data to use, specify None for no
             contraint. If multiple-separate by comma.
@@ -606,27 +606,32 @@ class ComputeFstat(BaseSearchClass):
             if self.transientWindowType in transientWindowTypes:
                 self.windowRange.type = transientWindowTypes[self.transientWindowType]
             else:
-                raise ValueError('Unknown window-type ({}) passed as input. Allowed are: [{}].'.format(self.transientWindowType, ', '.join(transientWindowTypes)))
+                raise ValueError(
+                    'Unknown window-type ({}) passed as input, [{}] allows.'
+                    .format(self.transientWindowType,
+                            ', '.join(transientWindowTypes)))
 
             self.Tsft = int(1.0/SFTCatalog.data[0].header.deltaF)
             if self.t0Band is None:
-                self.windowRange.t0Band  = 0
-                self.windowRange.dt0     = 1
+                self.windowRange.t0Band = 0
+                self.windowRange.dt0 = 1
             else:
-                if not isinstance(self.t0Band,int):
-                    logging.warn('Casting non-integer t0Band={} to int...'.format(self.t0Band))
+                if not isinstance(self.t0Band, int):
+                    logging.warn('Casting non-integer t0Band={} to int...'
+                                 .format(self.t0Band))
                     self.t0Band = int(self.t0Band)
-                self.windowRange.t0Band  = self.t0Band
-                self.windowRange.dt0     = self.Tsft
+                self.windowRange.t0Band = self.t0Band
+                self.windowRange.dt0 = self.Tsft
             if self.tauBand is None:
                 self.windowRange.tauBand = 0
-                self.windowRange.dtau    = 1
+                self.windowRange.dtau = 1
             else:
-                if not isinstance(self.tauBand,int):
-                    logging.warn('Casting non-integer tauBand={} to int...'.format(self.tauBand))
+                if not isinstance(self.tauBand, int):
+                    logging.warn('Casting non-integer tauBand={} to int...'
+                                 .format(self.tauBand))
                     self.tauBand = int(self.tauBand)
                 self.windowRange.tauBand = self.tauBand
-                self.windowRange.dtau    = self.Tsft
+                self.windowRange.dtau = self.Tsft
 
     def get_fullycoherent_twoF(self, tstart, tend, F0, F1, F2, Alpha, Delta,
                                asini=None, period=None, ecc=None, tp=None,
@@ -667,7 +672,8 @@ class ComputeFstat(BaseSearchClass):
             # actual (t0,tau) window was set with tstart, tend before
             self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
         else:
-            # grid search: start at minimum tau required for nondegenerate F-stat computation
+            # grid search: start at minimum tau required for nondegenerate
+            # F-stat computation
             self.windowRange.tau = int(2*self.Tsft)
 
         FS = lalpulsar.ComputeTransientFstatMap(

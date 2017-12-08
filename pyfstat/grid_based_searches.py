@@ -50,11 +50,10 @@ class GridSearch(BaseSearchClass):
         input_arrays: bool
             if true, use the F0s, F1s, etc as is
         transientWindowType: str
-            If 'rect' or 'exp',
-            compute atoms so that a transient (t0,tau) map can later be computed.
-            ('none' instead of None explicitly calls the transient-window function,
-             but with the full range, for debugging)
-            Currently only supported for nsegs=1.
+            If 'rect' or 'exp', compute atoms so that a transient (t0,tau) map
+            can later be computed.  ('none' instead of None explicitly calls
+            the transient-window function, but with the full range, for
+            debugging). Currently only supported for nsegs=1.
         t0Band, tauBand: int
             if >0, search t0 in (minStartTime,minStartTime+t0Band)
                    and tau in (2*Tsft,2*Tsft+tauBand).

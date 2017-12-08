@@ -2208,7 +2208,8 @@ class MCMCTransientSearch(MCMCSearch):
         self.search = core.ComputeFstat(
             tref=self.tref, sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
-            detectors=self.detectors, transientWindowType=self.transientWindowType,
+            detectors=self.detectors,
+            transientWindowType=self.transientWindowType,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL, binary=self.binary,
             injectSources=self.injectSources)
