@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
 import pyfstat
+import os
 import numpy as np
 import matplotlib.pyplot as plt
+
+datadir = 'data_s'
 
 F0 = 30.0
 F1 = -1e-10
@@ -26,17 +29,29 @@ F2s = [F2]
 Alphas = [Alpha]
 Deltas = [Delta]
 
-search = pyfstat.GridSearch(
-    label='grid_search', outdir='data_s',
-    sftfilepattern='data_s/*simulated_transient_signal*sft',
+print('Standard CW search:')
+search1 = pyfstat.GridSearch(
+    label='CW', outdir=datadir,
+    sftfilepattern=os.path.join(datadir,'*simulated_transient_signal*sft'),
     F0s=F0s, F1s=F1s, F2s=F2s, Alphas=Alphas, Deltas=Deltas, tref=tref,
     minStartTime=minStartTime, maxStartTime=maxStartTime,
-#    transientWindowType='rect', t0Band=Tspan-2*Tsft, tauBand=Tspan,
     BSGL=False)
-search.run()
-search.print_max_twoF()
+search1.run()
+search1.print_max_twoF()
 
-search.plot_1D(xkey='F0',
+search1.plot_1D(xkey='F0',
                xlabel='freq [Hz]', ylabel='$2\mathcal{F}$')
 
-search.plot_2D(xkey='F0', ykey='F1')
+print('with t0,tau bands:')
+search2 = pyfstat.GridSearch(
+    label='tCW', outdir=datadir,
+    sftfilepattern=os.path.join(datadir,'*simulated_transient_signal*sft'),
+    F0s=F0s, F1s=F1s, F2s=F2s, Alphas=Alphas, Deltas=Deltas, tref=tref,
+    minStartTime=minStartTime, maxStartTime=maxStartTime,
+    transientWindowType='rect', t0Band=Tspan-2*Tsft, tauBand=Tspan,
+    BSGL=False)
+search2.run()
+search2.print_max_twoF()
+
+search2.plot_1D(xkey='F0',
+               xlabel='freq [Hz]', ylabel='$2\mathcal{F}$')
