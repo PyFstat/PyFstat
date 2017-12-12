@@ -684,8 +684,8 @@ class ComputeFstat(BaseSearchClass):
         FS = lalpulsar.ComputeTransientFstatMap(
             self.FstatResults.multiFatoms[0], self.windowRange, False)
 
+        twoF = 2*np.max(FS.F_mn.data)
         if self.BSGL is False:
-            twoF = 2*FS.F_mn.data[0][0]
             if np.isnan(twoF):
                 return 0
             else:
@@ -700,10 +700,17 @@ class ComputeFstat(BaseSearchClass):
         FS1 = lalpulsar.ComputeTransientFstatMap(
             FstatResults_single.multiFatoms[0], self.windowRange, False)
 
-        self.twoFX[0] = 2*FS0.F_mn.data[0][0]
-        self.twoFX[1] = 2*FS1.F_mn.data[0][0]
+        # for now, use the Doppler parameter with
+        # multi-detector F maximised over t0,tau
+        # to return BSGL
+        # FIXME: should we instead compute BSGL over the whole F_mn
+        # and return the maximum of that?
+        idx_maxTwoF = np.argmax(FS.F_mn.data)
+
+        self.twoFX[0] = 2*FS0.F_mn.data[idx_maxTwoF]
+        self.twoFX[1] = 2*FS1.F_mn.data[idx_maxTwoF]
         log10_BSGL = lalpulsar.ComputeBSGL(
-                2*FS.F_mn.data[0][0], self.twoFX, self.BSGLSetup)
+                twoF, self.twoFX, self.BSGLSetup)
 
         return log10_BSGL/np.log10(np.exp(1))
 
