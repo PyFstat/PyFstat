@@ -355,6 +355,11 @@ class ComputeFstat(BaseSearchClass):
             allow for the Fstat to be computed over a transient range.
             ('none' instead of None explicitly calls the transient-window
             function, but with the full range, for debugging)
+        t0Band, tauBand: int
+            if >0, search t0 in (minStartTime,minStartTime+t0Band)
+                   and tau in (2*Tsft,2*Tsft+tauBand).
+            if =0, only compute CW Fstat with t0=minStartTime,
+                   tau=maxStartTime-minStartTime.
         detectors : str
             Two character reference to the data to use, specify None for no
             contraint. If multiple-separate by comma.
