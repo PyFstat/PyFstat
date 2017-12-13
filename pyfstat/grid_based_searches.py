@@ -164,12 +164,18 @@ class GridSearch(BaseSearchClass):
             detstat = self.search.get_det_stat(*vals)
             windowRange = getattr(self.search, 'windowRange', None)
             FstatMap = getattr(self.search, 'FstatMap', None)
-            data.append(list(vals) + [detstat])
-            if self.outputTransientFstatMap and self.transientWindowType:
-                tCWfile = os.path.splitext(self.out_file)[0]+'_tCW_%.16f_%.16f_%.16f_%.16g_%.16g.dat' % (vals[2],vals[5],vals[6],vals[3],vals[4]) # freq alpha delta f1dot f2dot
-                fo = lal.FileOpen(tCWfile, 'w')
-                lalpulsar.write_transientFstatMap_to_fp ( fo, FstatMap, windowRange, None )
-                del fo # instead of lal.FileClose() which is not SWIG-exported
+            thisCand = list(vals) + [detstat]
+            if self.transientWindowType:
+                if self.outputTransientFstatMap:
+                    tCWfile = os.path.splitext(self.out_file)[0]+'_tCW_%.16f_%.16f_%.16f_%.16g_%.16g.dat' % (vals[2],vals[5],vals[6],vals[3],vals[4]) # freq alpha delta f1dot f2dot
+                    fo = lal.FileOpen(tCWfile, 'w')
+                    lalpulsar.write_transientFstatMap_to_fp ( fo, FstatMap, windowRange, None )
+                    del fo # instead of lal.FileClose() which is not SWIG-exported
+                Fmn = FstatMap.F_mn.data
+                maxidx = np.unravel_index(Fmn.argmax(), Fmn.shape)
+                thisCand += [windowRange.t0+maxidx[0]*windowRange.dt0,
+                             windowRange.tau+maxidx[1]*windowRange.dtau]
+            data.append(thisCand)
 
         data = np.array(data, dtype=np.float)
         if return_data:
