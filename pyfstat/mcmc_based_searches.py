@@ -76,6 +76,12 @@ class MCMCSearch(core.BaseSearchClass):
         the search
     assumeSqrtSX: float, optional
         Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}
+    transientWindowType: str
+        If 'rect' or 'exp',
+        compute atoms so that a transient (t0,tau) map can later be computed.
+        ('none' instead of None explicitly calls the transient-window function,
+        but with the full range, for debugging)
+        Currently only supported for nsegs=1.
 
     Attributes
     ----------
@@ -108,7 +114,8 @@ class MCMCSearch(core.BaseSearchClass):
                  log10beta_min=-5, theta_initial=None,
                  rhohatmax=1000, binary=False, BSGL=False,
                  SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
-                 injectSources=None, assumeSqrtSX=None):
+                 injectSources=None, assumeSqrtSX=None,
+                 transientWindowType=None):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -150,7 +157,8 @@ class MCMCSearch(core.BaseSearchClass):
         self.search = core.ComputeFstat(
             tref=self.tref, sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
-            detectors=self.detectors, BSGL=self.BSGL, transient=False,
+            detectors=self.detectors, BSGL=self.BSGL,
+            transientWindowType=self.transientWindowType,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             binary=self.binary, injectSources=self.injectSources,
             assumeSqrtSX=self.assumeSqrtSX, SSBprec=self.SSBprec)
@@ -2195,10 +2203,13 @@ class MCMCTransientSearch(MCMCSearch):
 
     def _initiate_search_object(self):
         logging.info('Setting up search object')
+        if not self.transientWindowType:
+            self.transientWindowType = 'rect'
         self.search = core.ComputeFstat(
             tref=self.tref, sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
-            detectors=self.detectors, transient=True,
+            detectors=self.detectors,
+            transientWindowType=self.transientWindowType,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL, binary=self.binary,
             injectSources=self.injectSources)
