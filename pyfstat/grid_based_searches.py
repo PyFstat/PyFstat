@@ -782,10 +782,15 @@ class EarthTest(GridSearch):
                   r'$\Delta P_\mathrm{spin}$ [min]',
                   r'$2\mathcal{F}$']
 
-        from projection_matrix import projection_matrix
+        try:
+            from gridcorner import gridcorner
+        except ImportError:
+            raise ImportError(
+                "Python module 'gridcorner' not found, please install from "
+                "https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner")
 
-        fig, axes = projection_matrix(data, xyz, projection=projection,
-                                      factor=1.6, labels=labels)
+        fig, axes = gridcorner(data, xyz, projection=projection, factor=1.6,
+                               labels=labels)
         axes[-1][-1].axvline((lal.DAYJUL_SI - lal.DAYSID_SI)/60.0, color='C3')
         plt.suptitle(
             'T={:.1f} days, $f$={:.2f} Hz, $\log\mathcal{{B}}_{{S/A}}$={:.1f},'
