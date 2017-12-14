@@ -7,4 +7,7 @@ setup(name='PyFstat',
       author='Gregory Ashton',
       author_email='gregory.ashton@ligo.org',
       packages=['pyfstat'],
+      include_package_data=True,
+      package_data={'pyfstat': ['pyCUDAkernels/cudaTransientFstatExpWindow.cu',
+                                'pyCUDAkernels/cudaTransientFstatRectWindow.cu']},
       )
