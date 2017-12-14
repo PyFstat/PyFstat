@@ -1,9 +1,13 @@
 import pyfstat
 import numpy as np
 import matplotlib.pyplot as plt
-from projection_matrix import projection_matrix
 
-plt.style.use('paper')
+try:
+    from gridcorner import gridcorner
+except ImportError:
+    raise ImportError(
+        "Python module 'gridcorner' not found, please install from "
+        "https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner")
 
 F0 = 30.0
 F1 = 1e-10
@@ -55,6 +59,6 @@ twoF = search.data[:, -1].reshape((len(F0_vals), len(F1_vals), len(F2_vals)))
 xyz = [F0_vals, F1_vals, F2_vals]
 labels = ['$f - f_0$', '$\dot{f} - \dot{f}_0$', '$\ddot{f} - \ddot{f}_0$',
           '$\widetilde{2\mathcal{F}}$']
-fig, axes = projection_matrix(twoF, xyz, projection='log_mean', labels=labels,
-                              whspace=0.1, factor=1.8)
+fig, axes = gridcorner.gridcorner(
+    twoF, xyz, projection='log_mean', labels=labels, whspace=0.1, factor=1.8)
 fig.savefig('{}/{}_projection_matrix.png'.format(outdir, label))

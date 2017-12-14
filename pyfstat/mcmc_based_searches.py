@@ -76,6 +76,12 @@ class MCMCSearch(core.BaseSearchClass):
         the search
     assumeSqrtSX: float, optional
         Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}
+    transientWindowType: str
+        If 'rect' or 'exp',
+        compute atoms so that a transient (t0,tau) map can later be computed.
+        ('none' instead of None explicitly calls the transient-window function,
+        but with the full range, for debugging)
+        Currently only supported for nsegs=1.
 
     Attributes
     ----------
@@ -108,7 +114,8 @@ class MCMCSearch(core.BaseSearchClass):
                  log10beta_min=-5, theta_initial=None,
                  rhohatmax=1000, binary=False, BSGL=False,
                  SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
-                 injectSources=None, assumeSqrtSX=None):
+                 injectSources=None, assumeSqrtSX=None,
+                 transientWindowType=None):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -150,7 +157,8 @@ class MCMCSearch(core.BaseSearchClass):
         self.search = core.ComputeFstat(
             tref=self.tref, sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
-            detectors=self.detectors, BSGL=self.BSGL, transient=False,
+            detectors=self.detectors, BSGL=self.BSGL,
+            transientWindowType=self.transientWindowType,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             binary=self.binary, injectSources=self.injectSources,
             assumeSqrtSX=self.assumeSqrtSX, SSBprec=self.SSBprec)
@@ -212,38 +220,39 @@ class MCMCSearch(core.BaseSearchClass):
         self.theta_symbols = [self.theta_symbols[i] for i in idxs]
         self.theta_keys = [self.theta_keys[i] for i in idxs]
 
+    def _evaluate_logpost(self, p0vec):
+        init_logp = np.array([
+            self.logp(p, self.theta_prior, self.theta_keys, self.search)
+            for p in p0vec])
+        init_logl = np.array([
+            self.logl(p, self.search)
+            for p in p0vec])
+        return init_logl + init_logp
+
     def _check_initial_points(self, p0):
         for nt in range(self.ntemps):
             logging.info('Checking temperature {} chains'.format(nt))
-            initial_priors = np.array([
-                self.logp(p, self.theta_prior, self.theta_keys, self.search)
-                for p in p0[nt]])
-            number_of_initial_out_of_bounds = sum(initial_priors == -np.inf)
-
-            if number_of_initial_out_of_bounds > 0:
+            num = sum(self._evaluate_logpost(p0[nt]) == -np.inf)
+            if num > 0:
                 logging.warning(
                     'Of {} initial values, {} are -np.inf due to the prior'
-                    .format(len(initial_priors),
-                            number_of_initial_out_of_bounds))
-
+                    .format(len(p0[0]), num))
                 p0 = self._generate_new_p0_to_fix_initial_points(
-                    p0, nt, initial_priors)
+                    p0, nt)
 
-    def _generate_new_p0_to_fix_initial_points(self, p0, nt, initial_priors):
+    def _generate_new_p0_to_fix_initial_points(self, p0, nt):
         logging.info('Attempting to correct intial values')
-        idxs = np.arange(self.nwalkers)[initial_priors == -np.inf]
+        init_logpost = self._evaluate_logpost(p0[nt])
+        idxs = np.arange(self.nwalkers)[init_logpost == -np.inf]
         count = 0
-        while sum(initial_priors == -np.inf) > 0 and count < 100:
+        while sum(init_logpost == -np.inf) > 0 and count < 100:
             for j in idxs:
                 p0[nt][j] = (p0[nt][np.random.randint(0, self.nwalkers)]*(
                              1+np.random.normal(0, 1e-10, self.ndim)))
-            initial_priors = np.array([
-                self.logp(p, self.theta_prior, self.theta_keys,
-                          self.search)
-                for p in p0[nt]])
+            init_logpost = self._evaluate_logpost(p0[nt])
             count += 1
 
-        if sum(initial_priors == -np.inf) > 0:
+        if sum(init_logpost == -np.inf) > 0:
             logging.info('Failed to fix initial priors')
         else:
             logging.info('Suceeded to fix initial priors')
@@ -2194,10 +2203,13 @@ class MCMCTransientSearch(MCMCSearch):
 
     def _initiate_search_object(self):
         logging.info('Setting up search object')
+        if not self.transientWindowType:
+            self.transientWindowType = 'rect'
         self.search = core.ComputeFstat(
             tref=self.tref, sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
-            detectors=self.detectors, transient=True,
+            detectors=self.detectors,
+            transientWindowType=self.transientWindowType,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL, binary=self.binary,
             injectSources=self.injectSources)

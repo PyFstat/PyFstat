@@ -2,8 +2,6 @@ import pyfstat
 import numpy as np
 import matplotlib.pyplot as plt
 
-plt.style.use('./paper-style.mplstyle')
-
 F0 = 30.0
 F1 = -1e-10
 F2 = 0
@@ -63,8 +61,8 @@ NstarMax = 1000
 Nsegs0 = 100
 fig, axes = plt.subplots(nrows=2, figsize=(3.4, 3.5))
 fig, axes = mcmc.run(
-    NstarMax=NstarMax, Nsegs0=Nsegs0, subtractions=[F0, F1], labelpad=0.01,
-    plot_det_stat=False, return_fig=True, context='paper', fig=fig,
+    NstarMax=NstarMax, Nsegs0=Nsegs0, labelpad=0.01,
+    plot_det_stat=False, return_fig=True, fig=fig,
     axes=axes)
 for ax in axes:
     ax.grid()

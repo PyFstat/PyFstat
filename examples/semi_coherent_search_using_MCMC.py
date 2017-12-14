@@ -58,6 +58,9 @@ mcmc = pyfstat.MCMCSemiCoherentSearch(
     theta_prior=theta_prior, tref=tref, minStartTime=tstart, maxStartTime=tend,
     nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps,
     log10beta_min=log10beta_min)
+mcmc.transform_dictionary = dict(
+    F0=dict(subtractor=F0, symbol='$f-f^\mathrm{s}$'),
+    F1=dict(subtractor=F1, symbol='$\dot{f}-\dot{f}^\mathrm{s}$'))
 mcmc.run()
 mcmc.plot_corner(add_prior=True)
 mcmc.print_summary()

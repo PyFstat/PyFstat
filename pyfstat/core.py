@@ -330,7 +330,8 @@ class ComputeFstat(BaseSearchClass):
 
     @helper_functions.initializer
     def __init__(self, tref, sftfilepattern=None, minStartTime=None,
-                 maxStartTime=None, binary=False, transient=True, BSGL=False,
+                 maxStartTime=None, binary=False, BSGL=False,
+                 transientWindowType=None, t0Band=None, tauBand=None,
                  detectors=None, minCoverFreq=None, maxCoverFreq=None,
                  injectSources=None, injectSqrtSX=None, assumeSqrtSX=None,
                  SSBprec=None):
@@ -347,10 +348,18 @@ class ComputeFstat(BaseSearchClass):
             this epoch
         binary : bool
             If true, search of binary parameters.
-        transient : bool
-            If true, allow for the Fstat to be computed over a transient range.
         BSGL : bool
             If true, compute the BSGL rather than the twoF value.
+        transientWindowType: str
+            If 'rect' or 'exp',
+            allow for the Fstat to be computed over a transient range.
+            ('none' instead of None explicitly calls the transient-window
+            function, but with the full range, for debugging)
+        t0Band, tauBand: int
+            if >0, search t0 in (minStartTime,minStartTime+t0Band)
+                   and tau in (2*Tsft,2*Tsft+tauBand).
+            if =0, only compute CW Fstat with t0=minStartTime,
+                   tau=maxStartTime-minStartTime.
         detectors : str
             Two character reference to the data to use, specify None for no
             contraint. If multiple-separate by comma.
@@ -477,7 +486,7 @@ class ComputeFstat(BaseSearchClass):
 
         logging.info('Initialising FstatInput')
         dFreq = 0
-        if self.transient:
+        if self.transientWindowType:
             self.whatToCompute = lalpulsar.FSTATQ_ATOMS_PER_DET
         else:
             self.whatToCompute = lalpulsar.FSTATQ_2F
@@ -593,14 +602,41 @@ class ComputeFstat(BaseSearchClass):
             self.whatToCompute = (self.whatToCompute +
                                   lalpulsar.FSTATQ_2F_PER_DET)
 
-        if self.transient:
+        if self.transientWindowType:
             logging.info('Initialising transient parameters')
             self.windowRange = lalpulsar.transientWindowRange_t()
-            self.windowRange.type = lalpulsar.TRANSIENT_RECTANGULAR
-            self.windowRange.t0Band = 0
-            self.windowRange.dt0 = 1
-            self.windowRange.tauBand = 0
-            self.windowRange.dtau = 1
+            transientWindowTypes = {'none': lalpulsar.TRANSIENT_NONE,
+                                    'rect': lalpulsar.TRANSIENT_RECTANGULAR,
+                                    'exp':  lalpulsar.TRANSIENT_EXPONENTIAL}
+            if self.transientWindowType in transientWindowTypes:
+                self.windowRange.type = transientWindowTypes[self.transientWindowType]
+            else:
+                raise ValueError(
+                    'Unknown window-type ({}) passed as input, [{}] allows.'
+                    .format(self.transientWindowType,
+                            ', '.join(transientWindowTypes)))
+
+            self.Tsft = int(1.0/SFTCatalog.data[0].header.deltaF)
+            if self.t0Band is None:
+                self.windowRange.t0Band = 0
+                self.windowRange.dt0 = 1
+            else:
+                if not isinstance(self.t0Band, int):
+                    logging.warn('Casting non-integer t0Band={} to int...'
+                                 .format(self.t0Band))
+                    self.t0Band = int(self.t0Band)
+                self.windowRange.t0Band = self.t0Band
+                self.windowRange.dt0 = self.Tsft
+            if self.tauBand is None:
+                self.windowRange.tauBand = 0
+                self.windowRange.dtau = 1
+            else:
+                if not isinstance(self.tauBand, int):
+                    logging.warn('Casting non-integer tauBand={} to int...'
+                                 .format(self.tauBand))
+                    self.tauBand = int(self.tauBand)
+                self.windowRange.tauBand = self.tauBand
+                self.windowRange.dtau = self.Tsft
 
     def get_fullycoherent_twoF(self, tstart, tend, F0, F1, F2, Alpha, Delta,
                                asini=None, period=None, ecc=None, tp=None,
@@ -624,7 +660,7 @@ class ComputeFstat(BaseSearchClass):
                                self.whatToCompute
                                )
 
-        if self.transient is False:
+        if not self.transientWindowType:
             if self.BSGL is False:
                 return self.FstatResults.twoF[0]
 
@@ -636,13 +672,20 @@ class ComputeFstat(BaseSearchClass):
             return log10_BSGL/np.log10(np.exp(1))
 
         self.windowRange.t0 = int(tstart)  # TYPE UINT4
-        self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
+        if self.windowRange.tauBand == 0:
+            # true single-template search also in transient params:
+            # actual (t0,tau) window was set with tstart, tend before
+            self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
+        else:
+            # grid search: start at minimum tau required for nondegenerate
+            # F-stat computation
+            self.windowRange.tau = int(2*self.Tsft)
 
         FS = lalpulsar.ComputeTransientFstatMap(
             self.FstatResults.multiFatoms[0], self.windowRange, False)
 
+        twoF = 2*np.max(FS.F_mn.data)
         if self.BSGL is False:
-            twoF = 2*FS.F_mn.data[0][0]
             if np.isnan(twoF):
                 return 0
             else:
@@ -657,10 +700,17 @@ class ComputeFstat(BaseSearchClass):
         FS1 = lalpulsar.ComputeTransientFstatMap(
             FstatResults_single.multiFatoms[0], self.windowRange, False)
 
-        self.twoFX[0] = 2*FS0.F_mn.data[0][0]
-        self.twoFX[1] = 2*FS1.F_mn.data[0][0]
+        # for now, use the Doppler parameter with
+        # multi-detector F maximised over t0,tau
+        # to return BSGL
+        # FIXME: should we instead compute BSGL over the whole F_mn
+        # and return the maximum of that?
+        idx_maxTwoF = np.argmax(FS.F_mn.data)
+
+        self.twoFX[0] = 2*FS0.F_mn.data[idx_maxTwoF]
+        self.twoFX[1] = 2*FS1.F_mn.data[idx_maxTwoF]
         log10_BSGL = lalpulsar.ComputeBSGL(
-                2*FS.F_mn.data[0][0], self.twoFX, self.BSGLSetup)
+                twoF, self.twoFX, self.BSGLSetup)
 
         return log10_BSGL/np.log10(np.exp(1))
 
@@ -696,8 +746,9 @@ class ComputeFstat(BaseSearchClass):
         max_tau = SFTmaxStartTime - tstart
         taus = np.linspace(min_tau, max_tau, npoints)
         twoFs = []
-        if self.transient is False:
-            self.transient = True
+        if not self.transientWindowType:
+            # still call the transient-Fstat-map function, but using the full range
+            self.transientWindowType = 'none'
             self.init_computefstatistic_single_point()
         for tau in taus:
             twoFs.append(self.get_fullycoherent_twoF(
@@ -868,7 +919,9 @@ class SemiCoherentSearch(ComputeFstat):
 
         self.fs_file_name = "{}/{}_FS.dat".format(self.outdir, self.label)
         self.set_ephemeris_files()
-        self.transient = True
+        self.transientWindowType = 'rect'
+        self.t0Band  = None
+        self.tauBand = None
         self.init_computefstatistic_single_point()
         self.init_semicoherent_parameters()
 
@@ -876,7 +929,7 @@ class SemiCoherentSearch(ComputeFstat):
         logging.info(('Initialising semicoherent parameters from {} to {} in'
                       ' {} segments').format(
             self.minStartTime, self.maxStartTime, self.nsegs))
-        self.transient = True
+        self.transientWindowType = 'rect'
         self.whatToCompute = lalpulsar.FSTATQ_2F+lalpulsar.FSTATQ_ATOMS_PER_DET
         self.tboundaries = np.linspace(self.minStartTime, self.maxStartTime,
                                        self.nsegs+1)
@@ -915,7 +968,7 @@ class SemiCoherentSearch(ComputeFstat):
                                self.whatToCompute
                                )
 
-        #if self.transient is False:
+        #if not self.transientWindowType:
         #    if self.BSGL is False:
         #        return self.FstatResults.twoF[0]
         #    twoF = np.float(self.FstatResults.twoF[0])
@@ -1005,8 +1058,10 @@ class SemiCoherentGlitchSearch(ComputeFstat):
 
         self.fs_file_name = "{}/{}_FS.dat".format(self.outdir, self.label)
         self.set_ephemeris_files()
-        self.transient = True
-        self.binary = False
+        self.transientWindowType = 'rect'
+        self.t0Band  = None
+        self.tauBand = None
+        self.binary  = False
         self.init_computefstatistic_single_point()
 
     def get_semicoherent_nglitch_twoF(self, F0, F1, F2, Alpha, Delta, *args):
