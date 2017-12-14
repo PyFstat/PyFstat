@@ -1224,10 +1224,6 @@ class MCMCSearch(core.BaseSearchClass):
         return d
 
     def _check_old_data_is_okay_to_use(self):
-        if args.use_old_data:
-            logging.info("Forcing use of old data")
-            return True
-
         if os.path.isfile(self.pickle_path) is False:
             logging.info('No pickled data found')
             return False
