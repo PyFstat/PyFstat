@@ -38,16 +38,18 @@ def set_up_command_line_arguments():
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Increase output verbosity [logging.DEBUG]")
     parser.add_argument("-q", "--quite", action="store_true",
-                        help="Decrease output verbosity [logging.WARNGING]")
-    parser.add_argument("-vq", "--very_quite", action="store_true",
-                        help="Increase output verbosity [logging.ERROR]")
+                        help="Decrease output verbosity [logging.WARNING]")
     parser.add_argument("--no-interactive", help="Don't use interactive",
                         action="store_true")
-    parser.add_argument("-c", "--clean", help="Don't use cached data",
-                        action="store_true")
-    parser.add_argument("-u", "--use-old-data", action="store_true")
-    parser.add_argument('-s', "--setup-only", action="store_true")
-    parser.add_argument("--no-template-counting", action="store_true")
+    parser.add_argument("-c", "--clean", action="store_true",
+                        help="Force clean data, never use cached data")
+    fu_parser = parser.add_argument_group(
+        'follow-up options', 'Options related to MCMCFollowUpSearch')
+    fu_parser.add_argument('-s', "--setup-only", action="store_true",
+                           help="Only generate the setup file, don't run")
+    fu_parser.add_argument(
+        "--no-template-counting", action="store_true",
+        help="No counting of templates, useful if the setup is predefined")
     parser.add_argument(
         '-N', type=int, default=3, metavar='N',
         help="Number of threads to use when running in parallel")
