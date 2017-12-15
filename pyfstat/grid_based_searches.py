@@ -683,6 +683,10 @@ class EarthTest(GridSearch):
 
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
+        self.transientWindowType = None
+        self.t0Band = None
+        self.tauBand = None
+
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.nsegs = 1
