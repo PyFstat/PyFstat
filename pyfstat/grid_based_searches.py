@@ -128,7 +128,7 @@ class GridSearch(BaseSearchClass):
         if args.clean:
             return False
         if os.path.isfile(self.out_file) is False:
-            logging.info('No old data found, continuing with grid search')
+            logging.info('No old data found in "{:s}", continuing with grid search'.format(self.out_file))
             return False
         if self.sftfilepattern is not None:
             oldest_sft = min([os.path.getmtime(f) for f in
@@ -139,13 +139,13 @@ class GridSearch(BaseSearchClass):
                 return False
 
         data = np.atleast_2d(np.genfromtxt(self.out_file, delimiter=' '))
-        if np.all(data[:, 0:-1] == self.input_data):
+        if np.all(data[:,0:len(self.coord_arrays)] == self.input_data[:,0:len(self.coord_arrays)]):
             logging.info(
-                'Old data found with matching input, no search performed')
+                'Old data found in "{:s}" with matching input, no search performed'.format(self.out_file))
             return data
         else:
             logging.info(
-                'Old data found, input differs, continuing with grid search')
+                'Old data found in "{:s}", input differs, continuing with grid search'.format(self.out_file))
             return False
         return False
 
