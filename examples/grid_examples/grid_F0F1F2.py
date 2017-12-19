@@ -59,6 +59,6 @@ twoF = search.data[:, -1].reshape((len(F0_vals), len(F1_vals), len(F2_vals)))
 xyz = [F0_vals, F1_vals, F2_vals]
 labels = ['$f - f_0$', '$\dot{f} - \dot{f}_0$', '$\ddot{f} - \ddot{f}_0$',
           '$\widetilde{2\mathcal{F}}$']
-fig, axes = gridcorner.gridcorner(
+fig, axes = gridcorner(
     twoF, xyz, projection='log_mean', labels=labels, whspace=0.1, factor=1.8)
 fig.savefig('{}/{}_projection_matrix.png'.format(outdir, label))
