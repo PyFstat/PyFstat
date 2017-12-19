@@ -32,7 +32,8 @@ class GridSearch(BaseSearchClass):
                  nsegs=1, BSGL=False, minCoverFreq=None, maxCoverFreq=None,
                  detectors=None, SSBprec=None, injectSources=None,
                  input_arrays=False, assumeSqrtSX=None,
-                 transientWindowType=None, t0Band=None, tauBand=None):
+                 transientWindowType=None, t0Band=None, tauBand=None,
+                 outputTransientFstatMap=False):
         """
         Parameters
         ----------
@@ -59,6 +60,9 @@ class GridSearch(BaseSearchClass):
                    and tau in (2*Tsft,2*Tsft+tauBand).
             if =0, only compute CW Fstat with t0=minStartTime,
                    tau=maxStartTime-minStartTime.
+        outputTransientFstatMap: bool
+            if true, write output files for (t0,tau) Fstat maps
+            (one file for each doppler grid point!)
 
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
@@ -124,7 +128,7 @@ class GridSearch(BaseSearchClass):
         if args.clean:
             return False
         if os.path.isfile(self.out_file) is False:
-            logging.info('No old data found, continuing with grid search')
+            logging.info('No old data found in "{:s}", continuing with grid search'.format(self.out_file))
             return False
         if self.sftfilepattern is not None:
             oldest_sft = min([os.path.getmtime(f) for f in
@@ -135,13 +139,13 @@ class GridSearch(BaseSearchClass):
                 return False
 
         data = np.atleast_2d(np.genfromtxt(self.out_file, delimiter=' '))
-        if np.all(data[:, 0:-1] == self.input_data):
+        if np.all(data[:,0:len(self.coord_arrays)] == self.input_data[:,0:len(self.coord_arrays)]):
             logging.info(
-                'Old data found with matching input, no search performed')
+                'Old data found in "{:s}" with matching input, no search performed'.format(self.out_file))
             return data
         else:
             logging.info(
-                'Old data found, input differs, continuing with grid search')
+                'Old data found in "{:s}", input differs, continuing with grid search'.format(self.out_file))
             return False
         return False
 
@@ -157,8 +161,21 @@ class GridSearch(BaseSearchClass):
 
         data = []
         for vals in tqdm(self.input_data):
-            FS = self.search.get_det_stat(*vals)
-            data.append(list(vals) + [FS])
+            detstat = self.search.get_det_stat(*vals)
+            windowRange = getattr(self.search, 'windowRange', None)
+            FstatMap = getattr(self.search, 'FstatMap', None)
+            thisCand = list(vals) + [detstat]
+            if self.transientWindowType:
+                if self.outputTransientFstatMap:
+                    tCWfile = os.path.splitext(self.out_file)[0]+'_tCW_%.16f_%.16f_%.16f_%.16g_%.16g.dat' % (vals[2],vals[5],vals[6],vals[3],vals[4]) # freq alpha delta f1dot f2dot
+                    fo = lal.FileOpen(tCWfile, 'w')
+                    lalpulsar.write_transientFstatMap_to_fp ( fo, FstatMap, windowRange, None )
+                    del fo # instead of lal.FileClose() which is not SWIG-exported
+                Fmn = FstatMap.F_mn.data
+                maxidx = np.unravel_index(Fmn.argmax(), Fmn.shape)
+                thisCand += [windowRange.t0+maxidx[0]*windowRange.dt0,
+                             windowRange.tau+maxidx[1]*windowRange.dtau]
+            data.append(thisCand)
 
         data = np.array(data, dtype=np.float)
         if return_data:
