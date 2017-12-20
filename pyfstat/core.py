@@ -1085,7 +1085,7 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         twoFSum = 0
         for i, theta_i_at_tref in enumerate(thetas):
             ts, te = tboundaries[i], tboundaries[i+1]
-            if te - te > 1800:
+            if te - ts > 1800:
                 twoFVal = self.get_fullycoherent_twoF(
                     ts, te, theta_i_at_tref[1], theta_i_at_tref[2],
                     theta_i_at_tref[3], Alpha, Delta)
