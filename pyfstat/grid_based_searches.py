@@ -5,6 +5,9 @@ import os
 import logging
 import itertools
 from collections import OrderedDict
+import datetime
+import getpass
+import socket
 
 import numpy as np
 import matplotlib
