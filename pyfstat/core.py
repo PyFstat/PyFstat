@@ -1033,7 +1033,7 @@ class SemiCoherentGlitchSearch(ComputeFstat):
 
     @helper_functions.initializer
     def __init__(self, label, outdir, tref, minStartTime, maxStartTime,
-                 nglitch=0, sftfilepattern=None, theta0_idx=0, BSGL=False,
+                 nglitch=1, sftfilepattern=None, theta0_idx=0, BSGL=False,
                  minCoverFreq=None, maxCoverFreq=None, assumeSqrtSX=None,
                  detectors=None, SSBprec=None, injectSources=None):
         """
@@ -1085,11 +1085,11 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         twoFSum = 0
         for i, theta_i_at_tref in enumerate(thetas):
             ts, te = tboundaries[i], tboundaries[i+1]
-
-            twoFVal = self.get_fullycoherent_twoF(
-                ts, te, theta_i_at_tref[1], theta_i_at_tref[2],
-                theta_i_at_tref[3], Alpha, Delta)
-            twoFSum += twoFVal
+            if te - te > 1800:
+                twoFVal = self.get_fullycoherent_twoF(
+                    ts, te, theta_i_at_tref[1], theta_i_at_tref[2],
+                    theta_i_at_tref[3], Alpha, Delta)
+                twoFSum += twoFVal
 
         if np.isfinite(twoFSum):
             return twoFSum
