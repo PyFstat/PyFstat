@@ -186,9 +186,20 @@ class GridSearch(BaseSearchClass):
         if return_data:
             return data
         else:
-            logging.info('Saving data to {}'.format(self.out_file))
-            np.savetxt(self.out_file, data, delimiter=' ')
+            self.save_array_to_disk(data)
             self.data = data
+
+    def get_header(self):
+        header = ';'.join(['date:{}'.format(str(datetime.datetime.now())),
+                           'user:{}'.format(getpass.getuser()),
+                           'hostname:{}'.format(socket.gethostname())])
+        header += '\n' + ' '.join(self.keys)
+        return header
+
+    def save_array_to_disk(self, data):
+        logging.info('Saving data to {}'.format(self.out_file))
+        header = self.get_header()
+        np.savetxt(self.out_file, data, delimiter=' ', header=header)
 
     def convert_F0_to_mismatch(self, F0, F0hat, Tseg):
         DeltaF0 = F0[1] - F0[0]
