@@ -128,7 +128,9 @@ class GridSearch(BaseSearchClass):
         if args.clean:
             return False
         if os.path.isfile(self.out_file) is False:
-            logging.info('No old data found in "{:s}", continuing with grid search'.format(self.out_file))
+            logging.info(
+                'No old data found in "{:s}", continuing with grid search'
+                .format(self.out_file))
             return False
         if self.sftfilepattern is not None:
             oldest_sft = min([os.path.getmtime(f) for f in
@@ -139,13 +141,16 @@ class GridSearch(BaseSearchClass):
                 return False
 
         data = np.atleast_2d(np.genfromtxt(self.out_file, delimiter=' '))
-        if np.all(data[:,0:len(self.coord_arrays)] == self.input_data[:,0:len(self.coord_arrays)]):
+        if np.all(data[:, 0: len(self.coord_arrays)] ==
+                  self.input_data[:, 0:len(self.coord_arrays)]):
             logging.info(
-                'Old data found in "{:s}" with matching input, no search performed'.format(self.out_file))
+                'Old data found in "{:s}" with matching input, no search '
+                'performed'.format(self.out_file))
             return data
         else:
             logging.info(
-                'Old data found in "{:s}", input differs, continuing with grid search'.format(self.out_file))
+                'Old data found in "{:s}", input differs, continuing with '
+                'grid search'.format(self.out_file))
             return False
         return False
 
@@ -165,7 +170,7 @@ class GridSearch(BaseSearchClass):
             windowRange = getattr(self.search, 'windowRange', None)
             FstatMap = getattr(self.search, 'FstatMap', None)
             thisCand = list(vals) + [detstat]
-            if self.transientWindowType:
+            if hasattr(self, 'transientWindowType'):
                 if self.outputTransientFstatMap:
                     tCWfile = os.path.splitext(self.out_file)[0]+'_tCW_%.16f_%.16f_%.16f_%.16g_%.16g.dat' % (vals[2],vals[5],vals[6],vals[3],vals[4]) # freq alpha delta f1dot f2dot
                     fo = lal.FileOpen(tCWfile, 'w')
