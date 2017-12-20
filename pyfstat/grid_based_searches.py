@@ -520,7 +520,7 @@ class GridGlitchSearch(GridSearch):
                  F1s=[0], F2s=[0], delta_F0s=[0], delta_F1s=[0], tglitchs=None,
                  Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
-                 write_after=1000):
+                 BSGL=False, detectors=None, write_after=1000):
 
         """
         Parameters
@@ -538,14 +538,16 @@ class GridGlitchSearch(GridSearch):
 
         For all other parameters, see pyfstat.ComputeFStat.
         """
+        self.input_arrays = False
         if tglitchs is None:
-            self.tglitchs = [self.maxStartTime]
+            raise ValueError('You must specify `tglitchs`')
 
         self.search = SemiCoherentGlitchSearch(
             label=label, outdir=outdir, sftfilepattern=self.sftfilepattern,
             tref=tref, minStartTime=minStartTime, maxStartTime=maxStartTime,
             minCoverFreq=minCoverFreq, maxCoverFreq=maxCoverFreq,
             BSGL=self.BSGL)
+        self.search.get_det_stat = self.search.get_semicoherent_nglitch_twoF
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -554,17 +556,17 @@ class GridGlitchSearch(GridSearch):
                      'delta_F1', 'tglitch']
 
     def get_input_data_array(self):
-        arrays = []
+        logging.info("Generating input data array")
+        coord_arrays = []
         for tup in (self.F0s, self.F1s, self.F2s, self.Alphas, self.Deltas,
                     self.delta_F0s, self.delta_F1s, self.tglitchs):
-            arrays.append(self.get_array_from_tuple(tup))
+            coord_arrays.append(self.get_array_from_tuple(tup))
 
         input_data = []
-        for vals in itertools.product(*arrays):
+        for vals in itertools.product(*coord_arrays):
             input_data.append(vals)
-
-        self.arrays = arrays
         self.input_data = np.array(input_data)
+        self.coord_arrays = coord_arrays
 
 
 class FrequencySlidingWindow(GridSearch):
