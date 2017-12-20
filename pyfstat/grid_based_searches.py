@@ -170,7 +170,7 @@ class GridSearch(BaseSearchClass):
             windowRange = getattr(self.search, 'windowRange', None)
             FstatMap = getattr(self.search, 'FstatMap', None)
             thisCand = list(vals) + [detstat]
-            if hasattr(self, 'transientWindowType'):
+            if getattr(self, 'transientWindowType', None):
                 if self.outputTransientFstatMap:
                     tCWfile = os.path.splitext(self.out_file)[0]+'_tCW_%.16f_%.16f_%.16f_%.16g_%.16g.dat' % (vals[2],vals[5],vals[6],vals[3],vals[4]) # freq alpha delta f1dot f2dot
                     fo = lal.FileOpen(tCWfile, 'w')
