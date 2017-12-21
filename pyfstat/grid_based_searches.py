@@ -530,13 +530,14 @@ class GridUniformPriorSearch():
 class GridGlitchSearch(GridSearch):
     """ Grid search using the SemiCoherentGlitchSearch """
     @helper_functions.initializer
-    def __init__(self, label, outdir, sftfilepattern=None, F0s=[0],
+    def __init__(self, label, outdir='data', sftfilepattern=None, F0s=[0],
                  F1s=[0], F2s=[0], delta_F0s=[0], delta_F1s=[0], tglitchs=None,
                  Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
-                 BSGL=False, detectors=None, write_after=1000):
-
+                 detectors=None):
         """
+        Run a single-glitch grid search
+
         Parameters
         ----------
         label, outdir: str
@@ -546,12 +547,15 @@ class GridGlitchSearch(GridSearch):
             mutiple patterns can be given separated by colons.
         F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
             Length 3 tuple describing the grid for each parameter, e.g
-            [F0min, F0max, dF0], for a fixed value simply give [F0].
+            [F0min, F0max, dF0], for a fixed value simply give [F0]. Note that
+            tglitchs is referenced to zero at minStartTime.
         tref, minStartTime, maxStartTime: int
             GPS seconds of the reference time, start time and end time
 
         For all other parameters, see pyfstat.ComputeFStat.
         """
+
+        self.BSGL = False
         self.input_arrays = False
         if tglitchs is None:
             raise ValueError('You must specify `tglitchs`')
