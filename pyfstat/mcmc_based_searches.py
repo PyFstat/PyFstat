@@ -1601,7 +1601,7 @@ class MCMCGlitchSearch(MCMCSearch):
             'multiplier': 1/86400.,
             'subtractor': 'minStartTime',
             'unit': 'day',
-            'label': 'Glitch time \n days after minStartTime'}
+            'label': '$t^{g}_0$ \n [days]'}
             )
 
     @helper_functions.initializer
@@ -1744,7 +1744,9 @@ class MCMCGlitchSearch(MCMCSearch):
                  ntemps=self.ntemps, theta_keys=self.theta_keys,
                  theta_prior=self.theta_prior,
                  log10beta_min=self.log10beta_min,
-                 theta0_idx=self.theta0_idx, BSGL=self.BSGL)
+                 theta0_idx=self.theta0_idx, BSGL=self.BSGL,
+                 minStartTime=self.minStartTime,
+                 maxStartTime=self.maxStartTime)
         return d
 
     def _apply_corrections_to_p0(self, p0):
@@ -1858,7 +1860,9 @@ class MCMCSemiCoherentSearch(MCMCSearch):
                  ntemps=self.ntemps, theta_keys=self.theta_keys,
                  theta_prior=self.theta_prior,
                  log10beta_min=self.log10beta_min,
-                 BSGL=self.BSGL, nsegs=self.nsegs)
+                 BSGL=self.BSGL, nsegs=self.nsegs,
+                 minStartTime=self.minStartTime,
+                 maxStartTime=self.maxStartTime)
         return d
 
     def _initiate_search_object(self):
