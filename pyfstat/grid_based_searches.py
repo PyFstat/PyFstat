@@ -254,7 +254,7 @@ class GridSearch(BaseSearchClass):
             fig.tight_layout()
             fig.savefig('{}/{}_1D.png'.format(self.outdir, self.label))
         else:
-            return fig, ax
+            return ax
 
     def plot_2D(self, xkey, ykey, ax=None, save=True, vmin=None, vmax=None,
                 add_mismatch=None, xN=None, yN=None, flat_keys=[],
@@ -409,10 +409,12 @@ class SliceGridSearch(GridSearch):
         self.ndim = 4
 
         self.search_keys = ['F0', 'F1', 'Alpha', 'Delta']
-        self.Lambda0 = np.array(Lambda0)
+        if self.Lambda0 is None:
+            raise ValueError('Lambda0 undefined')
         if len(self.Lambda0) != len(self.search_keys):
             raise ValueError(
                 'Lambda0 must be of length {}'.format(len(self.search_keys)))
+        self.Lambda0 = np.array(Lambda0)
 
     def run(self, factor=2, max_n_ticks=4, whspace=0.07, save=True,
             **kwargs):
@@ -613,6 +615,10 @@ class FrequencySlidingWindow(GridSearch):
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
 
+        self.transientWindowType = None
+        self.t0Band = None
+        self.tauBand = None
+
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.set_out_file()
@@ -622,6 +628,7 @@ class FrequencySlidingWindow(GridSearch):
         self.Alphas = [Alpha]
         self.Deltas = [Delta]
         self.input_arrays = False
+        self.keys = ['_', '_', 'F0', 'F1', 'F2', 'Alpha', 'Delta']
 
     def inititate_search_object(self):
         logging.info('Setting up search object')
