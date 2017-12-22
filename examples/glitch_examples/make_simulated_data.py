@@ -1,6 +1,7 @@
 from pyfstat import Writer, GlitchWriter
 import numpy as np
 
+outdir = 'data'
 # First, we generate data with a reasonably strong smooth signal
 
 # Define parameters of the Crab pulsar as an example
@@ -9,19 +10,19 @@ F1 = -1e-10
 F2 = 0
 Alpha = np.radians(83.6292)
 Delta = np.radians(22.0144)
-tref = 362750407.0
 
 # Signal strength
-h0 = 1e-23
+h0 = 5e-24
 
 # Properties of the GW data
 sqrtSX = 1e-22
 tstart = 1000000000
 duration = 100*86400
 tend = tstart+duration
+tref = tstart + 0.5*duration
 
 data = Writer(
-    label='basic', outdir='data', tref=tref, tstart=tstart, F0=F0, F1=F1,
+    label='0_glitch', outdir=outdir, tref=tref, tstart=tstart, F0=F0, F1=F1,
     F2=F2, duration=duration, Alpha=Alpha, Delta=Delta, h0=h0, sqrtSX=sqrtSX)
 data.make_data()
 
@@ -31,11 +32,11 @@ print 'Predicted twoF value: {}\n'.format(twoF)
 
 # Next, taking the same signal parameters, we include a glitch half way through
 dtglitch = duration/2.0
-delta_F0 = 4e-5
+delta_F0 = 5e-6
 delta_F1 = 0
 
 glitch_data = GlitchWriter(
-    label='glitch', outdir='data', tref=tref, tstart=tstart, F0=F0, F1=F1,
+    label='1_glitch', outdir=outdir, tref=tref, tstart=tstart, F0=F0, F1=F1,
     F2=F2, duration=duration, Alpha=Alpha, Delta=Delta, h0=h0, sqrtSX=sqrtSX,
     dtglitch=dtglitch, delta_F0=delta_F0, delta_F1=delta_F1)
 glitch_data.make_data()
@@ -49,7 +50,7 @@ delta_F1 = [0, 0]
 delta_F2 = [0, 0]
 
 two_glitch_data = GlitchWriter(
-    label='twoglitch', outdir='data', tref=tref, tstart=tstart, F0=F0, F1=F1,
+    label='2_glitch', outdir=outdir, tref=tref, tstart=tstart, F0=F0, F1=F1,
     F2=F2, duration=duration, Alpha=Alpha, Delta=Delta, h0=h0, sqrtSX=sqrtSX,
     dtglitch=dtglitch, delta_phi=delta_phi, delta_F0=delta_F0,
     delta_F1=delta_F1, delta_F2=delta_F2)
