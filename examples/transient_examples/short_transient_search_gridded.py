@@ -30,13 +30,12 @@ Alphas = [Alpha]
 Deltas = [Delta]
 
 print('Standard CW search:')
-search1 = pyfstat.TransientGridSearch(
+search1 = pyfstat.GridSearch(
     label='CW', outdir=datadir,
     sftfilepattern=os.path.join(datadir,'*simulated_transient_signal*sft'),
     F0s=F0s, F1s=F1s, F2s=F2s, Alphas=Alphas, Deltas=Deltas, tref=tref,
     minStartTime=minStartTime, maxStartTime=maxStartTime,
-    BSGL=False,
-    outputTransientFstatMap=True)
+    BSGL=False)
 search1.run()
 search1.print_max_twoF()
 
