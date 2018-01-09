@@ -34,9 +34,7 @@ class GridSearch(BaseSearchClass):
                  Deltas, tref=None, minStartTime=None, maxStartTime=None,
                  nsegs=1, BSGL=False, minCoverFreq=None, maxCoverFreq=None,
                  detectors=None, SSBprec=None, injectSources=None,
-                 input_arrays=False, assumeSqrtSX=None,
-                 transientWindowType=None, t0Band=None, tauBand=None,
-                 outputTransientFstatMap=False):
+                 input_arrays=False, assumeSqrtSX=None):
         """
         Parameters
         ----------
@@ -53,19 +51,6 @@ class GridSearch(BaseSearchClass):
             GPS seconds of the reference time, start time and end time
         input_arrays: bool
             if true, use the F0s, F1s, etc as is
-        transientWindowType: str
-            If 'rect' or 'exp', compute atoms so that a transient (t0,tau) map
-            can later be computed.  ('none' instead of None explicitly calls
-            the transient-window function, but with the full range, for
-            debugging). Currently only supported for nsegs=1.
-        t0Band, tauBand: int
-            if >0, search t0 in (minStartTime,minStartTime+t0Band)
-                   and tau in (2*Tsft,2*Tsft+tauBand).
-            if =0, only compute CW Fstat with t0=minStartTime,
-                   tau=maxStartTime-minStartTime.
-        outputTransientFstatMap: bool
-            if true, write output files for (t0,tau) Fstat maps
-            (one file for each doppler grid point!)
 
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
@@ -85,8 +70,6 @@ class GridSearch(BaseSearchClass):
                 tref=self.tref, sftfilepattern=self.sftfilepattern,
                 minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
                 detectors=self.detectors,
-                transientWindowType=self.transientWindowType,
-                t0Band=self.t0Band, tauBand=self.tauBand,
                 minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
                 BSGL=self.BSGL, SSBprec=self.SSBprec,
                 injectSources=self.injectSources,
@@ -170,19 +153,7 @@ class GridSearch(BaseSearchClass):
         data = []
         for vals in tqdm(self.input_data):
             detstat = self.search.get_det_stat(*vals)
-            windowRange = getattr(self.search, 'windowRange', None)
-            FstatMap = getattr(self.search, 'FstatMap', None)
             thisCand = list(vals) + [detstat]
-            if getattr(self, 'transientWindowType', None):
-                if self.outputTransientFstatMap:
-                    tCWfile = os.path.splitext(self.out_file)[0]+'_tCW_%.16f_%.16f_%.16f_%.16g_%.16g.dat' % (vals[2],vals[5],vals[6],vals[3],vals[4]) # freq alpha delta f1dot f2dot
-                    fo = lal.FileOpen(tCWfile, 'w')
-                    lalpulsar.write_transientFstatMap_to_fp ( fo, FstatMap, windowRange, None )
-                    del fo # instead of lal.FileClose() which is not SWIG-exported
-                Fmn = FstatMap.F_mn.data
-                maxidx = np.unravel_index(Fmn.argmax(), Fmn.shape)
-                thisCand += [windowRange.t0+maxidx[0]*windowRange.dt0,
-                             windowRange.tau+maxidx[1]*windowRange.dtau]
             data.append(thisCand)
 
         data = np.array(data, dtype=np.float)
@@ -370,6 +341,109 @@ class GridSearch(BaseSearchClass):
         else:
             self.out_file = '{}/{}_{}_{}.txt'.format(
                 self.outdir, self.label, dets, type(self).__name__)
+
+
+class TransientGridSearch(GridSearch):
+    """ Gridded transient-continous search using ComputeFstat """
+
+    @helper_functions.initializer
+    def __init__(self, label, outdir, sftfilepattern, F0s, F1s, F2s, Alphas,
+                 Deltas, tref=None, minStartTime=None, maxStartTime=None,
+                 BSGL=False, minCoverFreq=None, maxCoverFreq=None,
+                 detectors=None, SSBprec=None, injectSources=None,
+                 input_arrays=False, assumeSqrtSX=None,
+                 transientWindowType=None, t0Band=None, tauBand=None,
+                 outputTransientFstatMap=False):
+        """
+        Parameters
+        ----------
+        label, outdir: str
+            A label and directory to read/write data from/to
+        sftfilepattern: str
+            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            mutiple patterns can be given separated by colons.
+        F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
+            Length 3 tuple describing the grid for each parameter, e.g
+            [F0min, F0max, dF0], for a fixed value simply give [F0]. Unless
+            input_arrays == True, then these are the values to search at.
+        tref, minStartTime, maxStartTime: int
+            GPS seconds of the reference time, start time and end time
+        input_arrays: bool
+            if true, use the F0s, F1s, etc as is
+        transientWindowType: str
+            If 'rect' or 'exp', compute atoms so that a transient (t0,tau) map
+            can later be computed.  ('none' instead of None explicitly calls
+            the transient-window function, but with the full range, for
+            debugging). Currently only supported for nsegs=1.
+        t0Band, tauBand: int
+            if >0, search t0 in (minStartTime,minStartTime+t0Band)
+                   and tau in (2*Tsft,2*Tsft+tauBand).
+            if =0, only compute CW Fstat with t0=minStartTime,
+                   tau=maxStartTime-minStartTime.
+        outputTransientFstatMap: bool
+            if true, write output files for (t0,tau) Fstat maps
+            (one file for each doppler grid point!)
+
+        For all other parameters, see `pyfstat.ComputeFStat` for details
+        """
+
+        self.nsegs = 1
+        if os.path.isdir(outdir) is False:
+            os.mkdir(outdir)
+        self.set_out_file()
+        self.keys = ['_', '_', 'F0', 'F1', 'F2', 'Alpha', 'Delta']
+        self.search_keys = [x+'s' for x in self.keys[2:]]
+        for k in self.search_keys:
+            setattr(self, k, np.atleast_1d(getattr(self, k)))
+
+    def inititate_search_object(self):
+        logging.info('Setting up search object')
+        self.search = ComputeFstat(
+            tref=self.tref, sftfilepattern=self.sftfilepattern,
+            minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
+            detectors=self.detectors,
+            transientWindowType=self.transientWindowType,
+            t0Band=self.t0Band, tauBand=self.tauBand,
+            minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
+            BSGL=self.BSGL, SSBprec=self.SSBprec,
+            injectSources=self.injectSources,
+            assumeSqrtSX=self.assumeSqrtSX)
+        self.search.get_det_stat = self.search.get_fullycoherent_twoF
+
+    def run(self, return_data=False):
+        self.get_input_data_array()
+        old_data = self.check_old_data_is_okay_to_use()
+        if old_data is not False:
+            self.data = old_data
+            return
+
+        if hasattr(self, 'search') is False:
+            self.inititate_search_object()
+
+        data = []
+        for vals in tqdm(self.input_data):
+            detstat = self.search.get_det_stat(*vals)
+            windowRange = getattr(self.search, 'windowRange', None)
+            FstatMap = getattr(self.search, 'FstatMap', None)
+            thisCand = list(vals) + [detstat]
+            if getattr(self, 'transientWindowType', None):
+                if self.outputTransientFstatMap:
+                    tCWfile = os.path.splitext(self.out_file)[0]+'_tCW_%.16f_%.16f_%.16f_%.16g_%.16g.dat' % (vals[2],vals[5],vals[6],vals[3],vals[4]) # freq alpha delta f1dot f2dot
+                    fo = lal.FileOpen(tCWfile, 'w')
+                    lalpulsar.write_transientFstatMap_to_fp ( fo, FstatMap, windowRange, None )
+                    del fo # instead of lal.FileClose() which is not SWIG-exported
+                Fmn = FstatMap.F_mn.data
+                maxidx = np.unravel_index(Fmn.argmax(), Fmn.shape)
+                thisCand += [windowRange.t0+maxidx[0]*windowRange.dt0,
+                             windowRange.tau+maxidx[1]*windowRange.dtau]
+            data.append(thisCand)
+
+        data = np.array(data, dtype=np.float)
+        if return_data:
+            return data
+        else:
+            self.save_array_to_disk(data)
+            self.data = data
 
 
 class SliceGridSearch(GridSearch):

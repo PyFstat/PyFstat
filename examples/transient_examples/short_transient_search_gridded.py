@@ -30,7 +30,7 @@ Alphas = [Alpha]
 Deltas = [Delta]
 
 print('Standard CW search:')
-search1 = pyfstat.GridSearch(
+search1 = pyfstat.TransientGridSearch(
     label='CW', outdir=datadir,
     sftfilepattern=os.path.join(datadir,'*simulated_transient_signal*sft'),
     F0s=F0s, F1s=F1s, F2s=F2s, Alphas=Alphas, Deltas=Deltas, tref=tref,
@@ -44,7 +44,7 @@ search1.plot_1D(xkey='F0',
                xlabel='freq [Hz]', ylabel='$2\mathcal{F}$')
 
 print('with t0,tau bands:')
-search2 = pyfstat.GridSearch(
+search2 = pyfstat.TransientGridSearch(
     label='tCW', outdir=datadir,
     sftfilepattern=os.path.join(datadir,'*simulated_transient_signal*sft'),
     F0s=F0s, F1s=F1s, F2s=F2s, Alphas=Alphas, Deltas=Deltas, tref=tref,
