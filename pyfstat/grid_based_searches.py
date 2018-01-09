@@ -449,7 +449,7 @@ class TransientGridSearch(GridSearch):
                         lalpulsar.write_transientFstatMap_to_fp ( fo, FstatMap, windowRange, None )
                         del fo # instead of lal.FileClose() which is not SWIG-exported
                     else:
-                        np.savetxt(tCWfile, 2.0*F_mn, delimiter=' ')
+                        self.write_F_mn ( tCWfile, F_mn, windowRange)
                 maxidx = np.unravel_index(F_mn.argmax(), F_mn.shape)
                 thisCand += [windowRange.t0+maxidx[0]*windowRange.dt0,
                              windowRange.tau+maxidx[1]*windowRange.dtau]
@@ -463,6 +463,15 @@ class TransientGridSearch(GridSearch):
         else:
             self.save_array_to_disk(data)
             self.data = data
+
+    def write_F_mn (self, tCWfile, F_mn, windowRange ):
+        with open(tCWfile, 'w') as tfp:
+            tfp.write('# t0 [s]     tau [s]     2F\n')
+            for m, F_m in enumerate(F_mn):
+                this_t0 = windowRange.t0 + m * windowRange.dt0
+                for n, this_F in enumerate(F_m):
+                    this_tau = windowRange.tau + n * windowRange.dtau;
+                    tfp.write('  %10d %10d %- 11.8g\n' % (this_t0, this_tau, 2.0*this_F))
 
 
 class SliceGridSearch(GridSearch):
