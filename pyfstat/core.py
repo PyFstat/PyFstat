@@ -660,7 +660,7 @@ class ComputeFstat(BaseSearchClass):
                     if self.dtau:
                         self.windowRange.dtau = self.dtau
 
-            self.tCWFstatMapFeatures, self.gpu_context = tcw.init_transient_fstat_map_features(self.cudaDeviceName)
+            self.tCWFstatMapFeatures, self.gpu_context = tcw.init_transient_fstat_map_features ( self.tCWFstatMapVersion=='pycuda', self.cudaDeviceName )
 
     def get_fullycoherent_twoF(self, tstart, tend, F0, F1, F2, Alpha, Delta,
                                asini=None, period=None, ecc=None, tp=None,
