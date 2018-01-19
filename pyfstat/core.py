@@ -337,7 +337,7 @@ class ComputeFstat(BaseSearchClass):
                  detectors=None, minCoverFreq=None, maxCoverFreq=None,
                  injectSources=None, injectSqrtSX=None, assumeSqrtSX=None,
                  SSBprec=None,
-                 tCWFstatMapVersion='lal'):
+                 tCWFstatMapVersion='lal', cudaDeviceName=None):
         """
         Parameters
         ----------
@@ -388,6 +388,8 @@ class ComputeFstat(BaseSearchClass):
         tCWFstatMapVersion: str
             Choose between standard 'lal' implementation,
             'pycuda' for gpu, and some others for devel/debug.
+        cudaDeviceName: str
+            GPU name to be matched against drv.Device output.
 
         """
 
@@ -658,7 +660,7 @@ class ComputeFstat(BaseSearchClass):
                     if self.dtau:
                         self.windowRange.dtau = self.dtau
 
-            self.tCWFstatMapFeatures = tcw.init_transient_fstat_map_features()
+            self.tCWFstatMapFeatures, self.gpu_context = tcw.init_transient_fstat_map_features(self.cudaDeviceName)
 
     def get_fullycoherent_twoF(self, tstart, tend, F0, F1, F2, Alpha, Delta,
                                asini=None, period=None, ecc=None, tp=None,
@@ -937,6 +939,15 @@ class ComputeFstat(BaseSearchClass):
             del fo # instead of lal.FileClose() which is not SWIG-exported
         else:
             raise RuntimeError('Cannot print atoms vector to file: no FstatResults.multiFatoms, or it is None!')
+
+
+    def __del__(self):
+        """
+        In pyCuda case without autoinit,
+        we need to make sure the context is removed at the end
+        """
+        if hasattr(self,'gpu_context') and self.gpu_context:
+            self.gpu_context.detach()
 
 
 class SemiCoherentSearch(ComputeFstat):

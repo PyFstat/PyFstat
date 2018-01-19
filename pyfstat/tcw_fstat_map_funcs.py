@@ -89,7 +89,7 @@ fstatmap_versions = {
                     }
 
 
-def init_transient_fstat_map_features ( ):
+def init_transient_fstat_map_features ( cudaDeviceName ):
     '''
     Initialization of available modules (or "features") for F-stat maps.
 
@@ -106,12 +106,11 @@ def init_transient_fstat_map_features ( ):
 
     # import GPU features
     have_pycuda          = optional_import('pycuda')
-    have_pycuda_init     = optional_import('pycuda.autoinit', 'autoinit')
     have_pycuda_drv      = optional_import('pycuda.driver', 'drv')
     have_pycuda_gpuarray = optional_import('pycuda.gpuarray', 'gpuarray')
     have_pycuda_tools    = optional_import('pycuda.tools', 'cudatools')
     have_pycuda_compiler = optional_import('pycuda.compiler', 'cudacomp')
-    features['pycuda']   = have_pycuda_drv and have_pycuda_init and have_pycuda_gpuarray and have_pycuda_tools and have_pycuda_compiler
+    features['pycuda']   = have_pycuda_drv and have_pycuda_gpuarray and have_pycuda_tools and have_pycuda_compiler
 
     logging.debug('Got the following features for transient F-stat maps:')
     logging.debug(features)
@@ -119,25 +118,54 @@ def init_transient_fstat_map_features ( ):
     if features['pycuda']:
         logging.debug('CUDA version: {}'.format(drv.get_version()))
 
+        drv.init()
+        logging.debug('Starting with default context, then checking all available devices...')
+        context0 = pycuda.tools.make_default_context()
+
         num_gpus = drv.Device.count()
         logging.debug('Found {} CUDA device(s).'.format(num_gpus))
 
         devices = []
+        devnames = np.empty(num_gpus,dtype='S32')
         for n in range(num_gpus):
-            devices.append(drv.Device(n))
-
-        for n, devn in enumerate(devices):
-            logging.debug('device {} model: {}, RAM: {}MB'.format(n,devn.name(),devn.total_memory()/(2.**20) ))
+            devn = drv.Device(n)
+            devices.append(devn)
+            devnames[n] = devn.name().replace(' ','-').replace('_','-')
+            logging.debug('device {}: model: {}, RAM: {}MB'.format(n,devnames[n],devn.total_memory()/(2.**20) ))
 
         if 'CUDA_DEVICE' in os.environ:
+            devnum0 = int(os.environ['CUDA_DEVICE'])
+        else:
+            devnum0 = 0
+
+        if cudaDeviceName:
+            devmatches = np.where(devnames == cudaDeviceName)[0]
+            if len(devmatches) == 0:
+                context0.detach()
+                raise RuntimeError('Requested CUDA device "{}" not found. Available devices: [{}]'.format(cudaDeviceName,','.join(devnames)))
+            else:
+                devnum = devmatches[0]
+                if len(devmatches) > 1:
+                    logging.warning('Found {} CUDA devices matching name "{}". Choosing first one with index {}.'.format(len(devmatches),cudaDeviceName,devnum))
+            os.environ['CUDA_DEVICE'] = str(devnum)
+        elif 'CUDA_DEVICE' in os.environ:
             devnum = int(os.environ['CUDA_DEVICE'])
         else:
             devnum = 0
-        devn = drv.Device(devnum)
-        logging.info('Choosing CUDA device {}, of {} devices present: {}... (Can be changed through environment variable $CUDA_DEVICE.)'.format(devnum,num_gpus,devn.name()))
-        logging.debug('Available GPU memory: {}/{} MB free'.format(drv.mem_get_info()[0]/(2.**20),drv.mem_get_info()[1]/(2.**20)))
+        devn = devices[devnum]
+        logging.info('Choosing CUDA device {}, of {} devices present: {} (matched to user request "{}")...'.format(devnum,num_gpus,devn.name(),devnames[devnum]))
+        if devnum == devnum0:
+            gpu_context = context0
+        else:
+            context0.pop()
+            gpu_context = pycuda.tools.make_default_context()
+            gpu_context.push()
 
-    return features
+        logging.debug('Available GPU memory: {}/{} MB free'.format(drv.mem_get_info()[0]/(2.**20),drv.mem_get_info()[1]/(2.**20)))
+    else:
+        gpu_context = None
+
+    return features, gpu_context
 
 
 def call_compute_transient_fstat_map ( version, features, multiFstatAtoms=None, windowRange=None ):

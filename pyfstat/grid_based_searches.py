@@ -356,7 +356,7 @@ class TransientGridSearch(GridSearch):
                  dt0=None, dtau=None,
                  outputTransientFstatMap=False,
                  outputAtoms=False,
-                 tCWFstatMapVersion='lal'):
+                 tCWFstatMapVersion='lal', cudaDeviceName=None):
         """
         Parameters
         ----------
@@ -392,6 +392,8 @@ class TransientGridSearch(GridSearch):
         tCWFstatMapVersion: str
             Choose between standard 'lal' implementation,
             'pycuda' for gpu, and some others for devel/debug.
+        cudaDeviceName: str
+            GPU name to be matched against drv.Device output.
 
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
@@ -418,7 +420,8 @@ class TransientGridSearch(GridSearch):
             BSGL=self.BSGL, SSBprec=self.SSBprec,
             injectSources=self.injectSources,
             assumeSqrtSX=self.assumeSqrtSX,
-            tCWFstatMapVersion=self.tCWFstatMapVersion)
+            tCWFstatMapVersion=self.tCWFstatMapVersion,
+            cudaDeviceName=self.cudaDeviceName)
         self.search.get_det_stat = self.search.get_fullycoherent_twoF
 
     def run(self, return_data=False):
@@ -472,6 +475,10 @@ class TransientGridSearch(GridSearch):
                 for n, this_F in enumerate(F_m):
                     this_tau = windowRange.tau + n * windowRange.dtau;
                     tfp.write('  %10d %10d %- 11.8g\n' % (this_t0, this_tau, 2.0*this_F))
+
+    def __del__(self):
+        if hasattr(self,'search'):
+            self.search.__del__()
 
 
 class SliceGridSearch(GridSearch):
