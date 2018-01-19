@@ -139,7 +139,8 @@ def init_transient_fstat_map_features ( cudaDeviceName ):
             devnum0 = 0
 
         if cudaDeviceName:
-            devmatches = np.where(devnames == cudaDeviceName)[0]
+            # allow partial matches in device names
+            devmatches = [devidx for devidx, devname in enumerate(devnames) if cudaDeviceName in devname]
             if len(devmatches) == 0:
                 context0.detach()
                 raise RuntimeError('Requested CUDA device "{}" not found. Available devices: [{}]'.format(cudaDeviceName,','.join(devnames)))
@@ -153,7 +154,7 @@ def init_transient_fstat_map_features ( cudaDeviceName ):
         else:
             devnum = 0
         devn = devices[devnum]
-        logging.info('Choosing CUDA device {}, of {} devices present: {} (matched to user request "{}")...'.format(devnum,num_gpus,devn.name(),devnames[devnum]))
+        logging.info('Choosing CUDA device {}, of {} devices present: {} (matched to user request "{}")...'.format(devnum,num_gpus,devn.name(),cudaDeviceName))
         if devnum == devnum0:
             gpu_context = context0
         else:
