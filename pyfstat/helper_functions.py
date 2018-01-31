@@ -11,12 +11,19 @@ import inspect
 import peakutils
 from functools import wraps
 from scipy.stats.distributions import ncx2
+import numpy as np
 import lal
 import lalpulsar
 
-import matplotlib.pyplot as plt
-import numpy as np
-
+# workaround for matplotlib on X-less remote logins
+if 'DISPLAY' in os.environ:
+    import matplotlib.pyplot as plt
+else:
+    logging.info('No $DISPLAY environment variable found, so importing \
+                  matplotlib.pyplot with non-interactive "Agg" backend.')
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
 
 def set_up_optional_tqdm():
     try:
