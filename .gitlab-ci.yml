@@ -1,11 +1,11 @@
 test_app:
   script:
-    - . /home/greg/lalsuite-install/etc/lalapps-user-env.sh
-    - /home/greg/anaconda2/bin/python tests.py Writer
-    - /home/greg/anaconda2/bin/python tests.py par
-    - /home/greg/anaconda2/bin/python tests.py BaseSearchClass
-    - /home/greg/anaconda2/bin/python tests.py ComputeFstat
-    - /home/greg/anaconda2/bin/python tests.py SemiCoherentSearch
-    - /home/greg/anaconda2/bin/python tests.py SemiCoherentGlitchSearch
-    - /home/greg/anaconda2/bin/python tests.py MCMCSearch
-    - /home/greg/anaconda2/bin/python tests.py GridSearch
+    - . ${HOME}/lalsuite-install/etc/lalapps-user-env.sh
+    - ${HOME}/anaconda2/bin/python tests.py Writer
+    - ${HOME}/anaconda2/bin/python tests.py par
+    - ${HOME}/anaconda2/bin/python tests.py BaseSearchClass
+    - ${HOME}/anaconda2/bin/python tests.py ComputeFstat
+    - ${HOME}/anaconda2/bin/python tests.py SemiCoherentSearch
+    - ${HOME}/anaconda2/bin/python tests.py SemiCoherentGlitchSearch
+    - ${HOME}/anaconda2/bin/python tests.py MCMCSearch
+    - ${HOME}/anaconda2/bin/python tests.py GridSearch
