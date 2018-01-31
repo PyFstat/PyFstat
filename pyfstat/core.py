@@ -981,6 +981,7 @@ class SemiCoherentSearch(ComputeFstat):
         self.t0Band  = None
         self.tauBand = None
         self.tCWFstatMapVersion = 'lal'
+        self.cudaDeviceName = None
         self.init_computefstatistic_single_point()
         self.init_semicoherent_parameters()
 
@@ -1121,6 +1122,7 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         self.t0Band  = None
         self.tauBand = None
         self.tCWFstatMapVersion = 'lal'
+        self.cudaDeviceName = None
         self.binary  = False
         self.init_computefstatistic_single_point()
 
