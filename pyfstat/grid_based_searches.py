@@ -353,6 +353,7 @@ class TransientGridSearch(GridSearch):
                  detectors=None, SSBprec=None, injectSources=None,
                  input_arrays=False, assumeSqrtSX=None,
                  transientWindowType=None, t0Band=None, tauBand=None,
+                 dt0=None, dtau=None,
                  outputTransientFstatMap=False):
         """
         Parameters
@@ -380,6 +381,9 @@ class TransientGridSearch(GridSearch):
                    and tau in (2*Tsft,2*Tsft+tauBand).
             if =0, only compute CW Fstat with t0=minStartTime,
                    tau=maxStartTime-minStartTime.
+        dt0, dtau: int
+            grid resolutions in transient start-time and duration,
+            both default to Tsft
         outputTransientFstatMap: bool
             if true, write output files for (t0,tau) Fstat maps
             (one file for each doppler grid point!)
@@ -404,6 +408,7 @@ class TransientGridSearch(GridSearch):
             detectors=self.detectors,
             transientWindowType=self.transientWindowType,
             t0Band=self.t0Band, tauBand=self.tauBand,
+            dt0=self.dt0, dtau=self.dtau,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL, SSBprec=self.SSBprec,
             injectSources=self.injectSources,
