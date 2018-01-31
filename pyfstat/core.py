@@ -907,6 +907,18 @@ class ComputeFstat(BaseSearchClass):
         else:
             return ax
 
+    def write_atoms_to_file(self, fnamebase=''):
+        multiFatoms = getattr(self.FstatResults, 'multiFatoms', None)
+        if multiFatoms and multiFatoms[0]:
+            dopplerName = lalpulsar.PulsarDopplerParams2String ( self.PulsarDopplerParams )
+            #fnameAtoms = os.path.join(self.outdir,'Fstatatoms_%s.dat' % dopplerName)
+            fnameAtoms = fnamebase + '_Fstatatoms_%s.dat' % dopplerName
+            fo = lal.FileOpen(fnameAtoms, 'w')
+            lalpulsar.write_MultiFstatAtoms_to_fp ( fo, multiFatoms[0] )
+            del fo # instead of lal.FileClose() which is not SWIG-exported
+        else:
+            raise RuntimeError('Cannot print atoms vector to file: no FstatResults.multiFatoms, or it is None!')
+
 
 class SemiCoherentSearch(ComputeFstat):
     """ A semi-coherent search """
