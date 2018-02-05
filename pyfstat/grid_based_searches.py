@@ -354,7 +354,8 @@ class TransientGridSearch(GridSearch):
                  input_arrays=False, assumeSqrtSX=None,
                  transientWindowType=None, t0Band=None, tauBand=None,
                  dt0=None, dtau=None,
-                 outputTransientFstatMap=False):
+                 outputTransientFstatMap=False,
+                 outputAtoms=False):
         """
         Parameters
         ----------
@@ -442,6 +443,8 @@ class TransientGridSearch(GridSearch):
                 thisCand += [windowRange.t0+maxidx[0]*windowRange.dt0,
                              windowRange.tau+maxidx[1]*windowRange.dtau]
             data.append(thisCand)
+            if self.outputAtoms:
+                self.search.write_atoms_to_file(os.path.splitext(self.out_file)[0])
 
         data = np.array(data, dtype=np.float)
         if return_data:
