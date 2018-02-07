@@ -7,7 +7,7 @@ plt.style.use('paper')
 
 label = 'semicoherent_glitch_robust_directed_MCMC_search_on_1_glitch'
 
-Nstar = 100
+Nstar = 1000
 F0_width = np.sqrt(Nstar)*np.sqrt(12)/(np.pi*duration)
 F1_width = np.sqrt(Nstar)*np.sqrt(180)/(np.pi*duration**2)
 
@@ -30,7 +30,7 @@ theta_prior = {
     'Delta': Delta,
     }
 
-ntemps = 2
+ntemps = 3
 log10beta_min = -0.5
 nwalkers = 100
 nsteps = [500, 500]
