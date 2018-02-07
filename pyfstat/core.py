@@ -132,7 +132,7 @@ def _get_dictionary_from_lines(lines, comments, raise_error):
 
 def predict_fstat(h0, cosi, psi, Alpha, Delta, Freq, sftfilepattern,
                   minStartTime, maxStartTime, IFO=None, assumeSqrtSX=None,
-                  **kwargs):
+                  tempory_filename='fs.tmp', **kwargs):
     """ Wrapper to lalapps_PredictFstat
 
     Parameters
@@ -153,7 +153,6 @@ def predict_fstat(h0, cosi, psi, Alpha, Delta, Freq, sftfilepattern,
         The expectation and standard deviation of 2F
 
     """
-    tempory_filename = 'fs.tmp'
 
     cl_pfs = []
     cl_pfs.append("lalapps_PredictFstat")
