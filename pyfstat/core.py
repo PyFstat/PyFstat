@@ -331,6 +331,7 @@ class ComputeFstat(BaseSearchClass):
     def __init__(self, tref, sftfilepattern=None, minStartTime=None,
                  maxStartTime=None, binary=False, BSGL=False,
                  transientWindowType=None, t0Band=None, tauBand=None,
+                 dt0=None, dtau=None,
                  detectors=None, minCoverFreq=None, maxCoverFreq=None,
                  injectSources=None, injectSqrtSX=None, assumeSqrtSX=None,
                  SSBprec=None):
@@ -359,6 +360,9 @@ class ComputeFstat(BaseSearchClass):
                    and tau in (2*Tsft,2*Tsft+tauBand).
             if =0, only compute CW Fstat with t0=minStartTime,
                    tau=maxStartTime-minStartTime.
+        dt0, dtau: int
+            grid resolutions in transient start-time and duration,
+            both default to Tsft
         detectors : str
             Two character reference to the data to use, specify None for no
             contraint. If multiple-separate by comma.
@@ -615,27 +619,38 @@ class ComputeFstat(BaseSearchClass):
                     .format(self.transientWindowType,
                             ', '.join(transientWindowTypes)))
 
+            # default spacing
             self.Tsft = int(1.0/SFTCatalog.data[0].header.deltaF)
-            if self.t0Band is None:
+            self.windowRange.dt0 = self.Tsft
+            self.windowRange.dtau = self.Tsft
+
+            # special treatment of window_type = none ==> replace by rectangular window spanning all the data
+            if self.windowRange.type == lalpulsar.TRANSIENT_NONE:
+                self.windowRange.t0 = int(self.minStartTime)
                 self.windowRange.t0Band = 0
-                self.windowRange.dt0 = 1
-            else:
-                if not isinstance(self.t0Band, int):
-                    logging.warn('Casting non-integer t0Band={} to int...'
-                                 .format(self.t0Band))
-                    self.t0Band = int(self.t0Band)
-                self.windowRange.t0Band = self.t0Band
-                self.windowRange.dt0 = self.Tsft
-            if self.tauBand is None:
+                self.windowRange.tau = int(self.maxStartTime-self.minStartTime)
                 self.windowRange.tauBand = 0
-                self.windowRange.dtau = 1
-            else:
-                if not isinstance(self.tauBand, int):
-                    logging.warn('Casting non-integer tauBand={} to int...'
-                                 .format(self.tauBand))
-                    self.tauBand = int(self.tauBand)
-                self.windowRange.tauBand = self.tauBand
-                self.windowRange.dtau = self.Tsft
+            else: # user-set bands and spacings
+                if self.t0Band is None:
+                    self.windowRange.t0Band = 0
+                else:
+                    if not isinstance(self.t0Band, int):
+                        logging.warn('Casting non-integer t0Band={} to int...'
+                                     .format(self.t0Band))
+                        self.t0Band = int(self.t0Band)
+                    self.windowRange.t0Band = self.t0Band
+                    if self.dt0:
+                        self.windowRange.dt0 = self.dt0
+                if self.tauBand is None:
+                    self.windowRange.tauBand = 0
+                else:
+                    if not isinstance(self.tauBand, int):
+                        logging.warn('Casting non-integer tauBand={} to int...'
+                                     .format(self.tauBand))
+                        self.tauBand = int(self.tauBand)
+                    self.windowRange.tauBand = self.tauBand
+                    if self.dtau:
+                        self.windowRange.dtau = self.dtau
 
     def get_fullycoherent_twoF(self, tstart, tend, F0, F1, F2, Alpha, Delta,
                                asini=None, period=None, ecc=None, tp=None,
@@ -890,6 +905,18 @@ class ComputeFstat(BaseSearchClass):
             return taus, twoFs
         else:
             return ax
+
+    def write_atoms_to_file(self, fnamebase=''):
+        multiFatoms = getattr(self.FstatResults, 'multiFatoms', None)
+        if multiFatoms and multiFatoms[0]:
+            dopplerName = lalpulsar.PulsarDopplerParams2String ( self.PulsarDopplerParams )
+            #fnameAtoms = os.path.join(self.outdir,'Fstatatoms_%s.dat' % dopplerName)
+            fnameAtoms = fnamebase + '_Fstatatoms_%s.dat' % dopplerName
+            fo = lal.FileOpen(fnameAtoms, 'w')
+            lalpulsar.write_MultiFstatAtoms_to_fp ( fo, multiFatoms[0] )
+            del fo # instead of lal.FileClose() which is not SWIG-exported
+        else:
+            raise RuntimeError('Cannot print atoms vector to file: no FstatResults.multiFatoms, or it is None!')
 
 
 class SemiCoherentSearch(ComputeFstat):
