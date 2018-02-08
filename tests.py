@@ -4,6 +4,7 @@ import os
 import shutil
 import pyfstat
 import lalpulsar
+import logging
 
 
 class Test(unittest.TestCase):
@@ -12,7 +13,11 @@ class Test(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         if os.path.isdir(self.outdir):
-            shutil.rmtree(self.outdir)
+            try:
+                shutil.rmtree(self.outdir)
+            except OSError:
+                logging.warning(
+                    "{} not removed prior to tests".format(self.outdir))
         h0 = 1
         sqrtSX = 1
         F0 = 30
@@ -38,7 +43,11 @@ class Test(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         if os.path.isdir(self.outdir):
-            shutil.rmtree(self.outdir)
+            try:
+                shutil.rmtree(self.outdir)
+            except OSError:
+                logging.warning(
+                    "{} not removed prior to tests".format(self.outdir))
 
 
 class Writer(Test):

@@ -259,7 +259,8 @@ transientTauDays = {:1.3f}\n""")
         twoF_expected, twoF_sigma = predict_fstat(
             self.h0, self.cosi, self.psi, self.Alpha, self.Delta, self.F0,
             self.sftfilepath, self.minStartTime, self.maxStartTime,
-            self.detectors, self.sqrtSX) # detectors OR IFO?
+            self.detectors, self.sqrtSX,
+            tempory_filename='{}.tmp'.format(self.label)) # detectors OR IFO?
         return twoF_expected
 
 
