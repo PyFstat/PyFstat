@@ -797,14 +797,14 @@ class FrequencySlidingWindow(GridSearch):
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
 
-        self.transientWindowType = None
+        self.transientWindowType = 'rect'
+        self.nsegs = 1
         self.t0Band = None
         self.tauBand = None
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.set_out_file()
-        self.nsegs = 1
         self.F1s = [F1]
         self.F2s = [F2]
         self.Alphas = [Alpha]
@@ -825,24 +825,24 @@ class FrequencySlidingWindow(GridSearch):
             self.search.get_fullycoherent_twoF)
 
     def get_input_data_array(self):
-        arrays = []
+        coord_arrays = []
         tstarts = [self.minStartTime]
         while tstarts[-1] + self.window_size < self.maxStartTime:
             tstarts.append(tstarts[-1]+self.window_delta)
-        arrays = [tstarts]
+        coord_arrays = [tstarts]
         for tup in (self.F0s, self.F1s, self.F2s,
                     self.Alphas, self.Deltas):
-            arrays.append(self.get_array_from_tuple(tup))
+            coord_arrays.append(self.get_array_from_tuple(tup))
 
         input_data = []
-        for vals in itertools.product(*arrays):
+        for vals in itertools.product(*coord_arrays):
             input_data.append(vals)
 
         input_data = np.array(input_data)
         input_data = np.insert(
             input_data, 1, input_data[:, 0] + self.window_size, axis=1)
 
-        self.arrays = arrays
+        self.coord_arrays = coord_arrays
         self.input_data = np.array(input_data)
 
     def plot_sliding_window(self, F0=None, ax=None, savefig=True,
