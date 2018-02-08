@@ -840,6 +840,18 @@ class ComputeFstat(BaseSearchClass):
         else:
             return ax
 
+    def get_full_CFSv2_output(self, tstart, tend, F0, F1, F2, Alpha, Delta,
+                              tref):
+        """ Basic wrapper around CFSv2 to get the full (h0..) output """
+        cl_CFSv2 = "lalapps_ComputeFstatistic_v2 --minStartTime={} --maxStartTime={} --Freq={} --f1dot={} --f2dot={} --Alpha={} --Delta={} --refTime={} --DataFiles='{}' --outputLoudest='{}' --ephemEarth={} --ephemSun={}"
+        LoudestFile = "loudest.temp"
+        helper_functions.run_commandline(cl_CFSv2.format(
+            tstart, tend, F0, F1, F2, Alpha, Delta, tref, self.sftfilepattern,
+            LoudestFile, self.earth_ephem, self.sun_ephem))
+        loudest = read_par(LoudestFile, return_type='dict')
+        os.remove(LoudestFile)
+        return loudest
+
 
 class SemiCoherentSearch(ComputeFstat):
     """ A semi-coherent search """

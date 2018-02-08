@@ -522,6 +522,101 @@ class GridGlitchSearch(GridSearch):
         self.input_data = np.array(input_data)
 
 
+class SlidingWindow(GridSearch):
+    @helper_functions.initializer
+    def __init__(self, label, outdir, sftfilepattern, F0, F1, F2,
+                 Alpha, Delta, tref, minStartTime=None,
+                 maxStartTime=None, window_size=10*86400, window_delta=86400,
+                 BSGL=False, minCoverFreq=None, maxCoverFreq=None,
+                 detectors=None, SSBprec=None, injectSources=None):
+        """
+        Parameters
+        ----------
+        label, outdir: str
+            A label and directory to read/write data from/to
+        sftfilepattern: str
+            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            mutiple patterns can be given separated by colons.
+        F0, F1, F2, Alpha, Delta: float
+            Fixed values to compute output over
+        tref, minStartTime, maxStartTime: int
+            GPS seconds of the reference time, start time and end time
+
+        For all other parameters, see `pyfstat.ComputeFStat` for details
+        """
+
+        if os.path.isdir(outdir) is False:
+            os.mkdir(outdir)
+        self.set_out_file()
+        self.nsegs = 1
+
+        self.tstarts = [self.minStartTime]
+        while self.tstarts[-1] + self.window_size < self.maxStartTime:
+            self.tstarts.append(self.tstarts[-1]+self.window_delta)
+        self.tmids = np.array(self.tstarts) + .5 * self.window_size
+
+    def inititate_search_object(self):
+        logging.info('Setting up search object')
+        self.search = ComputeFstat(
+            tref=self.tref, sftfilepattern=self.sftfilepattern,
+            minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
+            detectors=self.detectors, transient=True,
+            minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
+            BSGL=self.BSGL, SSBprec=self.SSBprec,
+            injectSources=self.injectSources)
+
+    def check_old_data_is_okay_to_use(self, out_file):
+        if os.path.isfile(out_file):
+            tmids, vals, errvals = np.loadtxt(out_file).T
+            if len(tmids) == len(self.tmids) and (
+                    tmids[0] == self.tmids[0]):
+                self.vals = vals
+                self.errvals = errvals
+                return True
+        return False
+
+    def run(self, key='h0', errkey='dh0'):
+        self.key = key
+        self.errkey = errkey
+        out_file = '{}/{}_{}-sliding-window.txt'.format(
+            self.outdir, self.label, key)
+
+        if self.check_old_data_is_okay_to_use(out_file) is False:
+            self.inititate_search_object()
+            vals = []
+            errvals = []
+            for ts in self.tstarts:
+                loudest = self.search.get_full_CFSv2_output(
+                        ts, ts+self.window_size, self.F0, self.F1, self.F2,
+                        self.Alpha, self.Delta, self.tref)
+                vals.append(loudest[key])
+                errvals.append(loudest[errkey])
+
+            np.savetxt(out_file, np.array([self.tmids, vals, errvals]).T)
+            self.vals = np.array(vals)
+            self.errvals = np.array(errvals)
+
+    def plot_sliding_window(self, factor=1, fig=None, ax=None):
+        if ax is None:
+            fig, ax = plt.subplots()
+        days = (self.tmids-self.minStartTime) / 86400
+        ax.errorbar(days, self.vals*factor, yerr=self.errvals*factor)
+        ax.set_ylabel(self.key)
+        ax.set_xlabel(
+            r'Mid-point (days after $t_\mathrm{{start}}$={})'.format(
+                self.minStartTime))
+        ax.set_title(
+            'Sliding window of {} days in increments of {} days'
+            .format(self.window_size/86400, self.window_delta/86400),
+            )
+
+        if fig:
+            fig.savefig('{}/{}_{}-sliding-window.png'.format(
+                self.outdir, self.label, self.key))
+        else:
+            return ax
+
+
 class FrequencySlidingWindow(GridSearch):
     """ A sliding-window search over the Frequency """
     @helper_functions.initializer
