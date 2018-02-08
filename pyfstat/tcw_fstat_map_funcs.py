@@ -26,39 +26,17 @@ def _optional_import ( modulename, shorthand=None ):
     else:
         shorthandbit = ' as '+shorthand
 
-    if('pycuda' in sys.modules):
-        try:
-            globals()[shorthand] = imp.import_module(modulename)
-            logging.debug('Successfully imported module %s%s.'
-                          % (modulename, shorthandbit))
-            success = True
-        except pycuda._driver.LogicError, e:
-            if e.message == 'cuDeviceGet failed: invalid device ordinal':
-                devn = int(os.environ['CUDA_DEVICE'])
-                raise RuntimeError('Requested CUDA device number {} exceeds' \
-                                   ' number of available devices!' \
-                                   ' Please change through environment' \
-                                   ' variable $CUDA_DEVICE.'.format(devn))
-            else:
-                raise pycuda._driver.LogicError(e.message)
-        except ImportError, e:
-            if e.message == 'No module named '+modulename:
-                logging.debug('No module {:s} found.'.format(modulename))
-                success = False
-            else:
-                raise
-    else:
-        try:
-            globals()[shorthand] = imp.import_module(modulename)
-            logging.debug('Successfully imported module %s%s.'
-                          % (modulename, shorthandbit))
-            success = True
-        except ImportError, e:
-            if e.message == 'No module named '+modulename:
-                logging.debug('No module {:s} found.'.format(modulename))
-                success = False
-            else:
-                raise
+    try:
+        globals()[shorthand] = imp.import_module(modulename)
+        logging.debug('Successfully imported module %s%s.'
+                      % (modulename, shorthandbit))
+        success = True
+    except ImportError, e:
+        if e.message == 'No module named '+modulename:
+            logging.debug('No module {:s} found.'.format(modulename))
+            success = False
+        else:
+            raise
 
     return success
 
@@ -131,7 +109,17 @@ def init_transient_fstat_map_features ( wantCuda=False, cudaDeviceName=None ):
         drv.init()
         logging.debug('Starting with default pyCUDA context,' \
                       ' then checking all available devices...')
-        context0 = pycuda.tools.make_default_context()
+        try:
+            context0 = pycuda.tools.make_default_context()
+        except pycuda._driver.LogicError, e:
+            if e.message == 'cuDeviceGet failed: invalid device ordinal':
+                devn = int(os.environ['CUDA_DEVICE'])
+                raise RuntimeError('Requested CUDA device number {} exceeds' \
+                                   ' number of available devices!' \
+                                   ' Please change through environment' \
+                                   ' variable $CUDA_DEVICE.'.format(devn))
+            else:
+                raise pycuda._driver.LogicError(e.message)
 
         num_gpus = drv.Device.count()
         logging.debug('Found {} CUDA device(s).'.format(num_gpus))
