@@ -435,6 +435,10 @@ class TransientGridSearch(GridSearch):
             self.inititate_search_object()
 
         data = []
+        if self.outputTransientFstatMap:
+            tCWfilebase = os.path.splitext(self.out_file)[0] + '_tCW_'
+            logging.info('Will save per-Doppler Fstatmap' \
+                         ' results to {}*.dat'.format(tCWfilebase))
         for vals in tqdm(self.input_data):
             detstat = self.search.get_det_stat(*vals)
             windowRange = getattr(self.search, 'windowRange', None)
@@ -446,11 +450,18 @@ class TransientGridSearch(GridSearch):
                 else:
                     F_mn = FstatMap.F_mn
                 if self.outputTransientFstatMap:
-                    tCWfile = os.path.splitext(self.out_file)[0]+'_tCW_%.16f_%.16f_%.16f_%.16g_%.16g.dat' % (vals[2],vals[5],vals[6],vals[3],vals[4]) # freq alpha delta f1dot f2dot
+                    # per-Doppler filename convention:
+                    # freq alpha delta f1dot f2dot
+                    tCWfile = ( tCWfilebase
+                                + '%.16f_%.16f_%.16f_%.16g_%.16g.dat' %
+                                (vals[2],vals[5],vals[6],vals[3],vals[4]) )
                     if self.tCWFstatMapVersion == 'lal':
                         fo = lal.FileOpen(tCWfile, 'w')
-                        lalpulsar.write_transientFstatMap_to_fp ( fo, FstatMap, windowRange, None )
-                        del fo # instead of lal.FileClose() which is not SWIG-exported
+                        lalpulsar.write_transientFstatMap_to_fp (
+                            fo, FstatMap, windowRange, None )
+                        # instead of lal.FileClose(),
+                        # which is not SWIG-exported:
+                        del fo
                     else:
                         self.write_F_mn ( tCWfile, F_mn, windowRange)
                 maxidx = np.unravel_index(F_mn.argmax(), F_mn.shape)

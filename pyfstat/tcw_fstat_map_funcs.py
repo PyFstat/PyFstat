@@ -9,7 +9,7 @@ import logging
 import importlib as imp
 
 
-def optional_import ( modulename, shorthand=None ):
+def _optional_import ( modulename, shorthand=None ):
     '''
     Import a module/submodule only if it's available.
 
@@ -29,12 +29,16 @@ def optional_import ( modulename, shorthand=None ):
     if('pycuda' in sys.modules):
         try:
             globals()[shorthand] = imp.import_module(modulename)
-            logging.debug('Successfully imported module %s%s.' % (modulename, shorthandbit))
+            logging.debug('Successfully imported module %s%s.'
+                          % (modulename, shorthandbit))
             success = True
         except pycuda._driver.LogicError, e:
             if e.message == 'cuDeviceGet failed: invalid device ordinal':
                 devn = int(os.environ['CUDA_DEVICE'])
-                raise RuntimeError('Requested CUDA device number {} exceeds number of available devices! Please change through environment variable $CUDA_DEVICE.'.format(devn))
+                raise RuntimeError('Requested CUDA device number {} exceeds' \
+                                   ' number of available devices!' \
+                                   ' Please change through environment' \
+                                   ' variable $CUDA_DEVICE.'.format(devn))
             else:
                 raise pycuda._driver.LogicError(e.message)
         except ImportError, e:
@@ -46,7 +50,8 @@ def optional_import ( modulename, shorthand=None ):
     else:
         try:
             globals()[shorthand] = imp.import_module(modulename)
-            logging.debug('Successfully imported module %s%s.' % (modulename, shorthandbit))
+            logging.debug('Successfully imported module %s%s.'
+                          % (modulename, shorthandbit))
             success = True
         except ImportError, e:
             if e.message == 'No module named '+modulename:
@@ -72,7 +77,11 @@ class pyTransientFstatMap(object):
 
     def __init__(self, N_t0Range, N_tauRange):
         self.F_mn   = np.zeros((N_t0Range, N_tauRange), dtype=np.float32)
-        self.maxF   = float(-1.0) # Initializing to a negative value ensures that we always update at least once and hence return sane t0_d_ML, tau_d_ML even if there is only a single bin where F=0 happens.
+        # Initializing maxF to a negative value ensures
+        # that we always update at least once and hence return
+        # sane t0_d_ML, tau_d_ML
+        # even if there is only a single bin where F=0 happens.
+        self.maxF   = float(-1.0)
         self.t0_ML  = float(0.0)
         self.tau_ML = float(0.0)
 
@@ -100,26 +109,28 @@ def init_transient_fstat_map_features ( wantCuda=False, cudaDeviceName=None ):
 
     features = {}
 
-    have_lal           = optional_import('lal')
-    have_lalpulsar     = optional_import('lalpulsar')
+    have_lal           = _optional_import('lal')
+    have_lalpulsar     = _optional_import('lalpulsar')
     features['lal']    = have_lal and have_lalpulsar
 
     # import GPU features
-    have_pycuda          = optional_import('pycuda')
-    have_pycuda_drv      = optional_import('pycuda.driver', 'drv')
-    have_pycuda_gpuarray = optional_import('pycuda.gpuarray', 'gpuarray')
-    have_pycuda_tools    = optional_import('pycuda.tools', 'cudatools')
-    have_pycuda_compiler = optional_import('pycuda.compiler', 'cudacomp')
-    features['pycuda']   = have_pycuda_drv and have_pycuda_gpuarray and have_pycuda_tools and have_pycuda_compiler
+    have_pycuda          = _optional_import('pycuda')
+    have_pycuda_drv      = _optional_import('pycuda.driver', 'drv')
+    have_pycuda_gpuarray = _optional_import('pycuda.gpuarray', 'gpuarray')
+    have_pycuda_tools    = _optional_import('pycuda.tools', 'cudatools')
+    have_pycuda_compiler = _optional_import('pycuda.compiler', 'cudacomp')
+    features['pycuda']   = ( have_pycuda_drv and have_pycuda_gpuarray and
+                            have_pycuda_tools and have_pycuda_compiler )
 
     logging.debug('Got the following features for transient F-stat maps:')
     logging.debug(features)
 
     if wantCuda and features['pycuda']:
-        logging.debug('CUDA version: {}'.format(drv.get_version()))
+        logging.debug('CUDA version: '+'.'.join(map(str,drv.get_version())))
 
         drv.init()
-        logging.debug('Starting with default context, then checking all available devices...')
+        logging.debug('Starting with default pyCUDA context,' \
+                      ' then checking all available devices...')
         context0 = pycuda.tools.make_default_context()
 
         num_gpus = drv.Device.count()
@@ -131,7 +142,8 @@ def init_transient_fstat_map_features ( wantCuda=False, cudaDeviceName=None ):
             devn = drv.Device(n)
             devices.append(devn)
             devnames[n] = devn.name().replace(' ','-').replace('_','-')
-            logging.debug('device {}: model: {}, RAM: {}MB'.format(n,devnames[n],devn.total_memory()/(2.**20) ))
+            logging.debug('device {}: model: {}, RAM: {}MB'.format(
+                n, devnames[n], devn.total_memory()/(2.**20) ))
 
         if 'CUDA_DEVICE' in os.environ:
             devnum0 = int(os.environ['CUDA_DEVICE'])
@@ -141,14 +153,19 @@ def init_transient_fstat_map_features ( wantCuda=False, cudaDeviceName=None ):
         matchbit = ''
         if cudaDeviceName:
             # allow partial matches in device names
-            devmatches = [devidx for devidx, devname in enumerate(devnames) if cudaDeviceName in devname]
+            devmatches = [devidx for devidx, devname in enumerate(devnames)
+                          if cudaDeviceName in devname]
             if len(devmatches) == 0:
                 context0.detach()
-                raise RuntimeError('Requested CUDA device "{}" not found. Available devices: [{}]'.format(cudaDeviceName,','.join(devnames)))
+                raise RuntimeError('Requested CUDA device "{}" not found.' \
+                                   ' Available devices: [{}]'.format(
+                                      cudaDeviceName,','.join(devnames)))
             else:
                 devnum = devmatches[0]
                 if len(devmatches) > 1:
-                    logging.warning('Found {} CUDA devices matching name "{}". Choosing first one with index {}.'.format(len(devmatches),cudaDeviceName,devnum))
+                    logging.warning('Found {} CUDA devices matching name "{}".' \
+                                    ' Choosing first one with index {}.'.format(
+                                        len(devmatches),cudaDeviceName,devnum))
             os.environ['CUDA_DEVICE'] = str(devnum)
             matchbit =  '(matched to user request "{}")'.format(cudaDeviceName)
         elif 'CUDA_DEVICE' in os.environ:
@@ -156,7 +173,9 @@ def init_transient_fstat_map_features ( wantCuda=False, cudaDeviceName=None ):
         else:
             devnum = 0
         devn = devices[devnum]
-        logging.info('Choosing CUDA device {}, of {} devices present: {}{}...'.format(devnum,num_gpus,devn.name(),matchbit))
+        logging.info('Choosing CUDA device {},' \
+                     ' of {} devices present: {}{}...'.format(
+                         devnum, num_gpus, devn.name(), matchbit))
         if devnum == devnum0:
             gpu_context = context0
         else:
@@ -164,23 +183,28 @@ def init_transient_fstat_map_features ( wantCuda=False, cudaDeviceName=None ):
             gpu_context = pycuda.tools.make_default_context()
             gpu_context.push()
 
-        logging.debug('Available GPU memory: {}/{} MB free'.format(drv.mem_get_info()[0]/(2.**20),drv.mem_get_info()[1]/(2.**20)))
+        _print_GPU_memory_MB('Available')
     else:
         gpu_context = None
 
     return features, gpu_context
 
 
-def call_compute_transient_fstat_map ( version, features, multiFstatAtoms=None, windowRange=None ):
+def call_compute_transient_fstat_map ( version,
+                                       features,
+                                       multiFstatAtoms=None,
+                                       windowRange=None ):
     '''Choose which version of the ComputeTransientFstatMap function to call.'''
 
     if version in fstatmap_versions:
         if features[version]:
             FstatMap = fstatmap_versions[version](multiFstatAtoms, windowRange)
         else:
-            raise Exception('Required module(s) for transient F-stat map method "{}" not available!'.format(version))
+            raise Exception('Required module(s) for transient F-stat map' \
+                            ' method "{}" not available!'.format(version))
     else:
-        raise Exception('Transient F-stat map method "{}" not implemented!'.format(version))
+        raise Exception('Transient F-stat map method "{}"' \
+                        ' not implemented!'.format(version))
     return FstatMap
 
 
@@ -215,10 +239,17 @@ def reshape_FstatAtomsVector ( atomsVector ):
     return atomsDict
 
 
-def get_absolute_kernel_path ( kernel ):
+def _get_absolute_kernel_path ( kernel ):
     pyfstatdir = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
     kernelfile = kernel + '.cu'
     return os.path.join(pyfstatdir,'pyCUDAkernels',kernelfile)
+
+
+def _print_GPU_memory_MB ( key ):
+    mem_used_MB  = drv.mem_get_info()[0]/(2.**20)
+    mem_total_MB = drv.mem_get_info()[1]/(2.**20)
+    logging.debug('{} GPU memory: {:.4f} / {:.4f} MB free'.format(
+                      key, mem_used_MB, mem_total_MB))
 
 
 def pycuda_compute_transient_fstat_map ( multiFstatAtoms, windowRange ):
@@ -237,7 +268,9 @@ def pycuda_compute_transient_fstat_map ( multiFstatAtoms, windowRange ):
     '''
 
     if ( windowRange.type >= lalpulsar.TRANSIENT_LAST ):
-        raise ValueError ('Unknown window-type ({}) passed as input. Allowed are [0,{}].'.format(windowRange.type, lalpulsar.TRANSIENT_LAST-1))
+        raise ValueError ('Unknown window-type ({}) passed as input.' \
+                          ' Allowed are [0,{}].'.format(
+                              windowRange.type, lalpulsar.TRANSIENT_LAST-1))
 
     # internal dict for search/setup parameters
     tCWparams = {}
@@ -264,13 +297,16 @@ def pycuda_compute_transient_fstat_map ( multiFstatAtoms, windowRange ):
     # actual data spans [t0_data, t0_data + tCWparams['numAtoms'] * TAtom]
     # in steps of TAtom
     tCWparams['t0_data'] = int(atoms.data[0].timestamp)
-    tCWparams['t1_data'] = int(atoms.data[tCWparams['numAtoms']-1].timestamp + tCWparams['TAtom'])
+    tCWparams['t1_data'] = int(atoms.data[tCWparams['numAtoms']-1].timestamp
+                               + tCWparams['TAtom'])
 
-    logging.debug('t0_data={:d}, t1_data={:d}'.format(tCWparams['t0_data'],
-                                                      tCWparams['t1_data']))
-    logging.debug('numAtoms={:d}, TAtom={:d}, TAtomHalf={:d}'.format(tCWparams['numAtoms'],
-                                                                     tCWparams['TAtom'],
-                                                                     TAtomHalf))
+    logging.debug('Transient F-stat map:' \
+                  ' t0_data={:d}, t1_data={:d}'.format(
+                      tCWparams['t0_data'], tCWparams['t1_data']))
+    logging.debug('Transient F-stat map:' \
+                  ' numAtoms={:d}, TAtom={:d},' \
+                  ' TAtomHalf={:d}'.format(
+                      tCWparams['numAtoms'], tCWparams['TAtom'], TAtomHalf))
 
     # special treatment of window_type = none
     # ==> replace by rectangular window spanning all the data
@@ -283,16 +319,21 @@ def pycuda_compute_transient_fstat_map ( multiFstatAtoms, windowRange ):
         windowRange.tauBand = 0;
         windowRange.dtau    = tCWparams['TAtom'] # irrelevant
 
-    """ NOTE: indices {i,j} enumerate *actual* atoms and their timestamps t_i, while the
-    * indices {m,n} enumerate the full grid of values in [t0_min, t0_max]x[Tcoh_min, Tcoh_max] in
-    * steps of deltaT. This allows us to deal with gaps in the data in a transparent way.
+    """ NOTE: indices {i,j} enumerate *actual* atoms and their timestamps t_i,
+    * while the indices {m,n} enumerate the full grid of values
+    * in [t0_min, t0_max]x[Tcoh_min, Tcoh_max] in steps of deltaT.
+    * This allows us to deal with gaps in the data in a transparent way.
     *
-    * NOTE2: we operate on the 'binned' atoms returned from XLALmergeMultiFstatAtomsBinned(),
-    * which means we can safely assume all atoms to be lined up perfectly on a 'deltaT' binned grid.
+    * NOTE2: we operate on the 'binned' atoms returned
+    * from XLALmergeMultiFstatAtomsBinned(),
+    * which means we can safely assume all atoms to be lined up
+    * perfectly on a 'deltaT' binned grid.
     *
     * The mapping used will therefore be {i,j} -> {m,n}:
-    *   m = offs_i  / deltaT		= start-time offset from t0_min measured in deltaT
-    *   n = Tcoh_ij / deltaT		= duration Tcoh_ij measured in deltaT,
+    *   m = offs_i  / deltaT
+    *   start-time offset from t0_min measured in deltaT
+    *   n = Tcoh_ij / deltaT
+    *   duration Tcoh_ij measured in deltaT,
     *
     * where
     *   offs_i  = t_i - t0_min
@@ -301,24 +342,31 @@ def pycuda_compute_transient_fstat_map ( multiFstatAtoms, windowRange ):
     """
 
     # We allocate a matrix  {m x n} = t0Range * TcohRange elements
-    # covering the full timerange the transient window-range [t0,t0+t0Band]x[tau,tau+tauBand]
-    tCWparams['N_t0Range']  = int(np.floor( 1.0*windowRange.t0Band / windowRange.dt0 ) + 1)
-    tCWparams['N_tauRange'] = int(np.floor( 1.0*windowRange.tauBand / windowRange.dtau ) + 1)
-    FstatMap = pyTransientFstatMap ( tCWparams['N_t0Range'], tCWparams['N_tauRange'] )
+    # covering the full transient window-range [t0,t0+t0Band]x[tau,tau+tauBand]
+    tCWparams['N_t0Range']  = int(np.floor( 1.0*windowRange.t0Band /
+                                            windowRange.dt0 ) + 1)
+    tCWparams['N_tauRange'] = int(np.floor( 1.0*windowRange.tauBand /
+                                            windowRange.dtau ) + 1)
+    FstatMap = pyTransientFstatMap ( tCWparams['N_t0Range'],
+                                     tCWparams['N_tauRange'] )
 
-    logging.debug('N_t0Range={:d}, N_tauRange={:d}'.format(tCWparams['N_t0Range'],
-                                                           tCWparams['N_tauRange']))
+    logging.debug('Transient F-stat map:' \
+                  ' N_t0Range={:d}, N_tauRange={:d},' \
+                  ' total grid points: {:d}'.format(
+                      tCWparams['N_t0Range'], tCWparams['N_tauRange'],
+                      tCWparams['N_t0Range']*tCWparams['N_tauRange']))
 
     if ( windowRange.type == lalpulsar.TRANSIENT_RECTANGULAR ):
-        FstatMap.F_mn = pycuda_compute_transient_fstat_map_rect ( atomsInputMatrix,
-                                                                  windowRange,
-                                                                  tCWparams )
+        FstatMap.F_mn = pycuda_compute_transient_fstat_map_rect (
+                           atomsInputMatrix, windowRange, tCWparams )
     elif ( windowRange.type == lalpulsar.TRANSIENT_EXPONENTIAL ):
-        FstatMap.F_mn = pycuda_compute_transient_fstat_map_exp ( atomsInputMatrix,
-                                                                 windowRange,
-                                                                 tCWparams )
+        FstatMap.F_mn = pycuda_compute_transient_fstat_map_exp (
+                           atomsInputMatrix, windowRange, tCWparams )
     else:
-        raise ValueError('Invalid transient window type {} not in [{}, {}].'.format(windowRange.type, lalpulsar.TRANSIENT_NONE, lalpulsar.TRANSIENT_LAST-1))
+        raise ValueError('Invalid transient window type {}' \
+                         ' not in [{}, {}].'.format(
+                            windowRange.type, lalpulsar.TRANSIENT_NONE,
+                            lalpulsar.TRANSIENT_LAST-1))
 
     # out of loop: get max2F and ML estimates over the m x n matrix
     FstatMap.maxF = FstatMap.F_mn.max()
@@ -328,23 +376,32 @@ def pycuda_compute_transient_fstat_map ( multiFstatAtoms, windowRange ):
     FstatMap.t0_ML  = windowRange.t0  + maxidx[0] * windowRange.dt0
     FstatMap.tau_ML = windowRange.tau + maxidx[1] * windowRange.dtau
 
-    logging.debug('Done computing transient F-stat map. maxF={}, t0_ML={}, tau_ML={}'.format(FstatMap.maxF , FstatMap.t0_ML, FstatMap.tau_ML))
+    logging.debug('Done computing transient F-stat map.' \
+                  ' maxF={:.4f}, t0_ML={}, tau_ML={}'.format(
+                      FstatMap.maxF , FstatMap.t0_ML, FstatMap.tau_ML))
 
     return FstatMap
 
 
-def pycuda_compute_transient_fstat_map_rect ( atomsInputMatrix, windowRange, tCWparams ):
-    '''only GPU-parallizing outer loop, keeping partial sums with memory in kernel'''
+def pycuda_compute_transient_fstat_map_rect ( atomsInputMatrix,
+                                              windowRange,
+                                              tCWparams ):
+    '''
+    only GPU-parallizing outer loop,
+    keeping partial sums with memory in kernel
+    '''
 
     # gpu data setup and transfer
-    logging.debug('Initial GPU memory: {}/{} MB free'.format(drv.mem_get_info()[0]/(2.**20),drv.mem_get_info()[1]/(2.**20)))
+    _print_GPU_memory_MB('Initial')
     input_gpu = gpuarray.to_gpu ( atomsInputMatrix )
-    Fmn_gpu   = gpuarray.GPUArray ( (tCWparams['N_t0Range'],tCWparams['N_tauRange']), dtype=np.float32 )
-    logging.debug('GPU memory with input+output allocated: {}/{} MB free'.format(drv.mem_get_info()[0]/(2.**20), drv.mem_get_info()[1]/(2.**20)))
+    Fmn_gpu   = gpuarray.GPUArray ( (tCWparams['N_t0Range'],
+                                     tCWparams['N_tauRange']),
+                                    dtype=np.float32 )
+    _print_GPU_memory_MB('After input+output allocation:')
 
     # GPU kernel
     kernel = 'cudaTransientFstatRectWindow'
-    kernelfile = get_absolute_kernel_path ( kernel )
+    kernelfile = _get_absolute_kernel_path ( kernel )
     partial_Fstat_cuda_code = cudacomp.SourceModule(open(kernelfile,'r').read())
     partial_Fstat_cuda = partial_Fstat_cuda_code.get_function(kernel)
     partial_Fstat_cuda.prepare('PIIIIIIIIP')
@@ -354,32 +411,48 @@ def pycuda_compute_transient_fstat_map_rect ( atomsInputMatrix, windowRange, tCW
     blockCols = 1
     gridRows  = int(np.ceil(1.0*tCWparams['N_t0Range']/blockRows))
     gridCols  = 1
-    logging.debug('Looking to compute transient F-stat map over a N={}*{}={} (t0,tau) grid...'.format(tCWparams['N_t0Range'],tCWparams['N_tauRange'],tCWparams['N_t0Range']*tCWparams['N_tauRange']))
 
     # running the kernel
-    logging.debug('Calling kernel with a grid of {}*{}={} blocks of {}*{}={} threads each: {} total threads...'.format(gridRows, gridCols, gridRows*gridCols, blockRows, blockCols, blockRows*blockCols, gridRows*gridCols*blockRows*blockCols))
-    partial_Fstat_cuda.prepared_call ( (gridRows,gridCols), (blockRows,blockCols,1), input_gpu.gpudata, tCWparams['numAtoms'], tCWparams['TAtom'], tCWparams['t0_data'], windowRange.t0, windowRange.dt0, windowRange.tau, windowRange.dtau, tCWparams['N_tauRange'], Fmn_gpu.gpudata )
+    logging.debug('Calling pyCUDA kernel with a grid of {}*{}={} blocks' \
+                  ' of {}*{}={} threads each: {} total threads...'.format(
+                      gridRows, gridCols, gridRows*gridCols,
+                      blockRows, blockCols, blockRows*blockCols,
+                      gridRows*gridCols*blockRows*blockCols))
+    partial_Fstat_cuda.prepared_call ( (gridRows,gridCols),
+                                       (blockRows,blockCols,1),
+                                       input_gpu.gpudata,
+                                       tCWparams['numAtoms'],
+                                       tCWparams['TAtom'],
+                                       tCWparams['t0_data'],
+                                       windowRange.t0, windowRange.dt0,
+                                       windowRange.tau, windowRange.dtau,
+                                       tCWparams['N_tauRange'],
+                                       Fmn_gpu.gpudata )
 
     # return results to host
     F_mn = Fmn_gpu.get()
 
-    logging.debug('Final GPU memory: {}/{} MB free'.format(drv.mem_get_info()[0]/(2.**20),drv.mem_get_info()[1]/(2.**20)))
+    _print_GPU_memory_MB('Final')
 
     return F_mn
 
 
-def pycuda_compute_transient_fstat_map_exp ( atomsInputMatrix, windowRange, tCWparams ):
+def pycuda_compute_transient_fstat_map_exp ( atomsInputMatrix,
+                                             windowRange,
+                                             tCWparams ):
     '''exponential window, inner and outer loop GPU-parallelized'''
 
     # gpu data setup and transfer
-    logging.debug('Initial GPU memory: {}/{} MB free'.format(drv.mem_get_info()[0]/(2.**20),drv.mem_get_info()[1]/(2.**20)))
+    _print_GPU_memory_MB('Initial')
     input_gpu = gpuarray.to_gpu ( atomsInputMatrix )
-    Fmn_gpu   = gpuarray.GPUArray ( (tCWparams['N_t0Range'],tCWparams['N_tauRange']), dtype=np.float32 )
-    logging.debug('GPU memory with input+output allocated: {}/{} MB free'.format(drv.mem_get_info()[0]/(2.**20), drv.mem_get_info()[1]/(2.**20)))
+    Fmn_gpu   = gpuarray.GPUArray ( (tCWparams['N_t0Range'],
+                                     tCWparams['N_tauRange']),
+                                    dtype=np.float32 )
+    _print_GPU_memory_MB('After input+output allocation:')
 
     # GPU kernel
     kernel = 'cudaTransientFstatExpWindow'
-    kernelfile = get_absolute_kernel_path ( kernel )
+    kernelfile = _get_absolute_kernel_path ( kernel )
     partial_Fstat_cuda_code = cudacomp.SourceModule(open(kernelfile,'r').read())
     partial_Fstat_cuda = partial_Fstat_cuda_code.get_function(kernel)
     partial_Fstat_cuda.prepare('PIIIIIIIIIP')
@@ -389,15 +462,28 @@ def pycuda_compute_transient_fstat_map_exp ( atomsInputMatrix, windowRange, tCWp
     blockCols = min(32,tCWparams['N_tauRange'])
     gridRows  = int(np.ceil(1.0*tCWparams['N_t0Range']/blockRows))
     gridCols  = int(np.ceil(1.0*tCWparams['N_tauRange']/blockCols))
-    logging.debug('Looking to compute transient F-stat map over a N={}*{}={} (t0,tau) grid...'.format(tCWparams['N_t0Range'], tCWparams['N_tauRange'], tCWparams['N_t0Range']*tCWparams['N_tauRange']))
 
     # running the kernel
-    logging.debug('Calling kernel with a grid of {}*{}={} blocks of {}*{}={} threads each: {} total threads...'.format(gridRows, gridCols, gridRows*gridCols, blockRows, blockCols, blockRows*blockCols, gridRows*gridCols*blockRows*blockCols))
-    partial_Fstat_cuda.prepared_call ( (gridRows,gridCols), (blockRows,blockCols,1), input_gpu.gpudata, tCWparams['numAtoms'], tCWparams['TAtom'], tCWparams['t0_data'], windowRange.t0, windowRange.dt0, windowRange.tau, windowRange.dtau, tCWparams['N_t0Range'], tCWparams['N_tauRange'], Fmn_gpu.gpudata )
+    logging.debug('Calling kernel with a grid of {}*{}={} blocks' \
+                  ' of {}*{}={} threads each: {} total threads...'.format(
+                      gridRows, gridCols, gridRows*gridCols,
+                      blockRows, blockCols, blockRows*blockCols,
+                      gridRows*gridCols*blockRows*blockCols))
+    partial_Fstat_cuda.prepared_call ( (gridRows,gridCols),
+                                       (blockRows,blockCols,1),
+                                       input_gpu.gpudata,
+                                       tCWparams['numAtoms'],
+                                       tCWparams['TAtom'],
+                                       tCWparams['t0_data'],
+                                       windowRange.t0, windowRange.dt0,
+                                       windowRange.tau, windowRange.dtau,
+                                       tCWparams['N_t0Range'],
+                                       tCWparams['N_tauRange'],
+                                       Fmn_gpu.gpudata )
 
     # return results to host
     F_mn = Fmn_gpu.get()
 
-    logging.debug('Final GPU memory: {}/{} MB free'.format(drv.mem_get_info()[0]/(2.**20),drv.mem_get_info()[1]/(2.**20)))
+    _print_GPU_memory_MB('Final')
 
     return F_mn

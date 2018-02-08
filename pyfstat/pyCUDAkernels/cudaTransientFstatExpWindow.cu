@@ -26,7 +26,8 @@ __global__ void cudaTransientFstatExpWindow ( float *input,
     /* compute Fstat-atom index i_t0 in [0, numAtoms) */
     unsigned int TAtomHalf = TAtom/2; // integer division
     unsigned int t0 = win_t0 + m * win_dt0;
-    int i_tmp = ( t0 - t0_data + TAtomHalf ) / TAtom; // integer round: floor(x+0.5)
+    /* integer round: floor(x+0.5) */
+    int i_tmp = ( t0 - t0_data + TAtomHalf ) / TAtom;
     if ( i_tmp < 0 ) {
         i_tmp = 0;
     }
@@ -35,22 +36,26 @@ __global__ void cudaTransientFstatExpWindow ( float *input,
         i_t0 = numAtoms - 1;
     }
 
-    /* translate n into an atoms end-index for this search interval [t0, t0+Tcoh],
+    /* translate n into an atoms end-index
+     * for this search interval [t0, t0+Tcoh],
      * giving the index range of atoms to sum over
      */
     unsigned int tau = win_tau + n * win_dtau;
 
     /* get end-time t1 of this transient-window search
      * for given tau, what Tcoh should the exponential window cover?
-     * for speed reasons we want to truncate Tcoh = tau * TRANSIENT_EXP_EFOLDING
+     * for speed reasons we want to truncate
+     * Tcoh = tau * TRANSIENT_EXP_EFOLDING
      * with the e-folding factor chosen such that the window-value
      * is practically negligible after that, where it will be set to 0
      */
 //     unsigned int t1 = lround( win_t0 + TRANSIENT_EXP_EFOLDING * win_tau);
     unsigned int t1 = t0 + TRANSIENT_EXP_EFOLDING * tau;
 
-    /* compute window end-time Fstat-atom index i_t1 in [0, numAtoms) */
-    i_tmp = ( t1 - t0_data + TAtomHalf ) / TAtom  - 1; // integer round: floor(x+0.5)
+      /* compute window end-time Fstat-atom index i_t1 in [0, numAtoms)
+       * using integer round: floor(x+0.5)
+       */
+    i_tmp = ( t1 - t0_data + TAtomHalf ) / TAtom  - 1;
     if ( i_tmp < 0 ) {
         i_tmp = 0;
     }

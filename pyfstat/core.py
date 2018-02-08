@@ -632,8 +632,8 @@ class ComputeFstat(BaseSearchClass):
             self.windowRange.dt0 = self.Tsft
             self.windowRange.dtau = self.Tsft
 
-            # special treatment of window_type = none ==> replace by
-            # rectangular window spanning all the data
+            # special treatment of window_type = none
+            # ==> replace by rectangular window spanning all the data
             if self.windowRange.type == lalpulsar.TRANSIENT_NONE:
                 self.windowRange.t0 = int(self.minStartTime)
                 self.windowRange.t0Band = 0
@@ -661,6 +661,7 @@ class ComputeFstat(BaseSearchClass):
                     if self.dtau:
                         self.windowRange.dtau = self.dtau
 
+            logging.info('Initialising transient FstatMap features...')
             self.tCWFstatMapFeatures, self.gpu_context = (
                 tcw.init_transient_fstat_map_features(
                     self.tCWFstatMapVersion == 'pycuda', self.cudaDeviceName))
@@ -707,15 +708,6 @@ class ComputeFstat(BaseSearchClass):
             # F-stat computation
             self.windowRange.tau = int(2*self.Tsft)
 
-        # logging.debug(
-        #     'Calling "%s" version of ComputeTransientFstatMap() with\
-        #     windowRange: (type=%d (%s), t0=%f, t0Band=%f, dt0=%f, tau=%f,\
-        #     tauBand=%f, dtau=%f)...' % (
-        #         self.tCWFstatMapVersion, self.windowRange.type,
-        #         self.transientWindowType, self.windowRange.t0,
-        #         self.windowRange.t0Band, self.windowRange.dt0,
-        #         self.windowRange.tau, self.windowRange.tauBand,
-        #         self.windowRange.dtau))
         self.FstatMap = tcw.call_compute_transient_fstat_map(
             self.tCWFstatMapVersion, self.tCWFstatMapFeatures,
             self.FstatResults.multiFatoms[0], self.windowRange)
@@ -723,13 +715,6 @@ class ComputeFstat(BaseSearchClass):
             F_mn = self.FstatMap.F_mn.data
         else:
             F_mn = self.FstatMap.F_mn
-
-        # logging.debug('maxF:   {}'.format(self.FstatMap.maxF))
-        # logging.debug('t0_ML:  %ds=T0+%fd' % (
-        #     self.FstatMap.t0_ML, (self.FstatMap.t0_ML-tstart)/(3600.*24.)))
-        # logging.debug('tau_ML: %ds=%fd' % (
-        #     self.FstatMap.tau_ML, self.FstatMap.tau_ML/(3600.*24.)))
-        # logging.debug('F_mn:   {}'.format(F_mn))
 
         twoF = 2*np.max(F_mn)
         if self.BSGL is False:

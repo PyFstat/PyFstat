@@ -20,7 +20,8 @@ __global__ void cudaTransientFstatRectWindow ( float *input,
   /* compute Fstat-atom index i_t0 in [0, numAtoms) */
   unsigned int TAtomHalf = TAtom/2; // integer division
   unsigned int t0 = win_t0 + m * win_dt0;
-  int i_tmp = ( t0 - t0_data + TAtomHalf ) / TAtom; // integer round: floor(x+0.5)
+  /* integer round: floor(x+0.5) */
+  int i_tmp = ( t0 - t0_data + TAtomHalf ) / TAtom;
   if ( i_tmp < 0 ) {
     i_tmp = 0;
   }
@@ -46,7 +47,8 @@ __global__ void cudaTransientFstatRectWindow ( float *input,
 
     if ( (m < N_tauRange) && (n < N_tauRange) ) {
 
-      /* translate n into an atoms end-index for this search interval [t0, t0+Tcoh],
+      /* translate n into an atoms end-index
+       * for this search interval [t0, t0+Tcoh],
        * giving the index range of atoms to sum over
        */
       unsigned int tau = win_tau + n * win_dtau;
@@ -54,8 +56,10 @@ __global__ void cudaTransientFstatRectWindow ( float *input,
       /* get end-time t1 of this transient-window search */
       unsigned int t1 = t0 + tau;
 
-      /* compute window end-time Fstat-atom index i_t1 in [0, numAtoms) */
-      i_tmp = ( t1 - t0_data + TAtomHalf ) / TAtom  - 1; // integer round: floor(x+0.5)
+      /* compute window end-time Fstat-atom index i_t1 in [0, numAtoms)
+       * using integer round: floor(x+0.5)
+       */
+      i_tmp = ( t1 - t0_data + TAtomHalf ) / TAtom  - 1;
       if ( i_tmp < 0 ) {
         i_tmp = 0;
       }
@@ -72,7 +76,8 @@ __global__ void cudaTransientFstatRectWindow ( float *input,
         /* sum up atoms,
          * special optimiziation in the rectangular-window case:
          * just add on to previous tau values,
-         * ie re-use the sum over [i_t0, i_t1_last] from the pevious tau-loop iteration
+         * ie re-use the sum over [i_t0, i_t1_last]
+         from the pevious tau-loop iteration
          */
         Ad    += input[i*input_cols+0]; // a2_alpha
         Bd    += input[i*input_cols+1]; // b2_alpha
