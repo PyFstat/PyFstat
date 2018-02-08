@@ -5,6 +5,9 @@ import os
 import logging
 import itertools
 from collections import OrderedDict
+import datetime
+import getpass
+import socket
 
 import numpy as np
 import matplotlib
@@ -25,13 +28,17 @@ class GridSearch(BaseSearchClass):
                   'Alpha': r'$\alpha$', 'Delta': r'$\delta$'}
     tex_labels0 = {'F0': '$-f_0$', 'F1': '$-\dot{f}_0$', 'F2': '$-\ddot{f}_0$',
                    'Alpha': r'$-\alpha_0$', 'Delta': r'$-\delta_0$'}
+    search_labels = ['minStartTime', 'maxStartTime', 'F0s', 'F1s', 'F2s',
+                     'Alphas', 'Deltas']
 
     @helper_functions.initializer
     def __init__(self, label, outdir, sftfilepattern, F0s, F1s, F2s, Alphas,
                  Deltas, tref=None, minStartTime=None, maxStartTime=None,
                  nsegs=1, BSGL=False, minCoverFreq=None, maxCoverFreq=None,
                  detectors=None, SSBprec=None, injectSources=None,
-                 input_arrays=False, assumeSqrtSX=None):
+                 input_arrays=False, assumeSqrtSX=None,
+                 transientWindowType=None, t0Band=None, tauBand=None,
+                 outputTransientFstatMap=False):
         """
         Parameters
         ----------
@@ -48,8 +55,25 @@ class GridSearch(BaseSearchClass):
             GPS seconds of the reference time, start time and end time
         input_arrays: bool
             if true, use the F0s, F1s, etc as is
+        transientWindowType: str
+            If 'rect' or 'exp', compute atoms so that a transient (t0,tau) map
+            can later be computed.  ('none' instead of None explicitly calls
+            the transient-window function, but with the full range, for
+            debugging). Currently only supported for nsegs=1.
+        t0Band, tauBand: int
+            if >0, search t0 in (minStartTime,minStartTime+t0Band)
+                   and tau in (2*Tsft,2*Tsft+tauBand).
+            if =0, only compute CW Fstat with t0=minStartTime,
+                   tau=maxStartTime-minStartTime.
+        outputTransientFstatMap: bool
+            if true, write output files for (t0,tau) Fstat maps
+            (one file for each doppler grid point!)
 
         For all other parameters, see `pyfstat.ComputeFStat` for details
+
+        Note: if a large number of grid points are used, checks against cached
+        data may be slow as the array is loaded into memory. To avoid this, run
+        with the `clean` option which uses a generator instead.
         """
 
         if os.path.isdir(outdir) is False:
@@ -66,7 +90,9 @@ class GridSearch(BaseSearchClass):
             self.search = ComputeFstat(
                 tref=self.tref, sftfilepattern=self.sftfilepattern,
                 minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
-                detectors=self.detectors, transient=False,
+                detectors=self.detectors,
+                transientWindowType=self.transientWindowType,
+                t0Band=self.t0Band, tauBand=self.tauBand,
                 minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
                 BSGL=self.BSGL, SSBprec=self.SSBprec,
                 injectSources=self.injectSources,
@@ -97,21 +123,25 @@ class GridSearch(BaseSearchClass):
     def get_input_data_array(self):
         logging.info("Generating input data array")
         coord_arrays = []
-        for tup in ([self.minStartTime], [self.maxStartTime], self.F0s,
-                    self.F1s, self.F2s, self.Alphas, self.Deltas):
-            coord_arrays.append(self.get_array_from_tuple(tup))
-
-        input_data = []
-        for vals in itertools.product(*coord_arrays):
-                input_data.append(vals)
-        self.input_data = np.array(input_data)
+        for sl in self.search_labels:
+            coord_arrays.append(
+                self.get_array_from_tuple(np.atleast_1d(getattr(self, sl))))
         self.coord_arrays = coord_arrays
+        self.total_iterations = np.prod([len(ca) for ca in coord_arrays])
+
+        if args.clean is False:
+            input_data = []
+            for vals in itertools.product(*coord_arrays):
+                    input_data.append(vals)
+            self.input_data = np.array(input_data)
 
     def check_old_data_is_okay_to_use(self):
         if args.clean:
             return False
         if os.path.isfile(self.out_file) is False:
-            logging.info('No old data found, continuing with grid search')
+            logging.info(
+                'No old data found in "{:s}", continuing with grid search'
+                .format(self.out_file))
             return False
         if self.sftfilepattern is not None:
             oldest_sft = min([os.path.getmtime(f) for f in
@@ -122,38 +152,72 @@ class GridSearch(BaseSearchClass):
                 return False
 
         data = np.atleast_2d(np.genfromtxt(self.out_file, delimiter=' '))
-        if np.all(data[:, 0:-1] == self.input_data):
+        if np.all(data[:, 0: len(self.coord_arrays)] ==
+                  self.input_data[:, 0:len(self.coord_arrays)]):
             logging.info(
-                'Old data found with matching input, no search performed')
+                'Old data found in "{:s}" with matching input, no search '
+                'performed'.format(self.out_file))
             return data
         else:
             logging.info(
-                'Old data found, input differs, continuing with grid search')
+                'Old data found in "{:s}", input differs, continuing with '
+                'grid search'.format(self.out_file))
             return False
         return False
 
     def run(self, return_data=False):
         self.get_input_data_array()
-        old_data = self.check_old_data_is_okay_to_use()
-        if old_data is not False:
-            self.data = old_data
-            return
+
+        if args.clean:
+            iterable = itertools.product(*self.coord_arrays)
+        else:
+            old_data = self.check_old_data_is_okay_to_use()
+            iterable = self.input_data
+
+            if old_data is not False:
+                self.data = old_data
+                return
 
         if hasattr(self, 'search') is False:
             self.inititate_search_object()
 
         data = []
-        for vals in tqdm(self.input_data):
-            FS = self.search.get_det_stat(*vals)
-            data.append(list(vals) + [FS])
+        for vals in tqdm(iterable,
+                         total=getattr(self, 'total_iterations', None)):
+            detstat = self.search.get_det_stat(*vals)
+            windowRange = getattr(self.search, 'windowRange', None)
+            FstatMap = getattr(self.search, 'FstatMap', None)
+            thisCand = list(vals) + [detstat]
+            if getattr(self, 'transientWindowType', None):
+                if self.outputTransientFstatMap:
+                    tCWfile = os.path.splitext(self.out_file)[0]+'_tCW_%.16f_%.16f_%.16f_%.16g_%.16g.dat' % (vals[2],vals[5],vals[6],vals[3],vals[4]) # freq alpha delta f1dot f2dot
+                    fo = lal.FileOpen(tCWfile, 'w')
+                    lalpulsar.write_transientFstatMap_to_fp ( fo, FstatMap, windowRange, None )
+                    del fo # instead of lal.FileClose() which is not SWIG-exported
+                Fmn = FstatMap.F_mn.data
+                maxidx = np.unravel_index(Fmn.argmax(), Fmn.shape)
+                thisCand += [windowRange.t0+maxidx[0]*windowRange.dt0,
+                             windowRange.tau+maxidx[1]*windowRange.dtau]
+            data.append(thisCand)
 
         data = np.array(data, dtype=np.float)
         if return_data:
             return data
         else:
-            logging.info('Saving data to {}'.format(self.out_file))
-            np.savetxt(self.out_file, data, delimiter=' ')
+            self.save_array_to_disk(data)
             self.data = data
+
+    def get_header(self):
+        header = ';'.join(['date:{}'.format(str(datetime.datetime.now())),
+                           'user:{}'.format(getpass.getuser()),
+                           'hostname:{}'.format(socket.gethostname())])
+        header += '\n' + ' '.join(self.keys)
+        return header
+
+    def save_array_to_disk(self, data):
+        logging.info('Saving data to {}'.format(self.out_file))
+        header = self.get_header()
+        np.savetxt(self.out_file, data, delimiter=' ', header=header)
 
     def convert_F0_to_mismatch(self, F0, F0hat, Tseg):
         DeltaF0 = F0[1] - F0[0]
@@ -205,7 +269,7 @@ class GridSearch(BaseSearchClass):
             fig.tight_layout()
             fig.savefig('{}/{}_1D.png'.format(self.outdir, self.label))
         else:
-            return fig, ax
+            return ax
 
     def plot_2D(self, xkey, ykey, ax=None, save=True, vmin=None, vmax=None,
                 add_mismatch=None, xN=None, yN=None, flat_keys=[],
@@ -286,6 +350,16 @@ class GridSearch(BaseSearchClass):
             return ax
 
     def get_max_twoF(self):
+        """ Get the maximum twoF over the grid
+
+        Returns
+        -------
+        d: dict
+            Dictionary containing, 'minStartTime', 'maxStartTime', 'F0', 'F1',
+            'F2', 'Alpha', 'Delta' and 'twoF' of maximum
+
+        """
+
         twoF = self.data[:, -1]
         idx = np.argmax(twoF)
         v = self.data[idx, :]
@@ -350,10 +424,12 @@ class SliceGridSearch(GridSearch):
         self.ndim = 4
 
         self.search_keys = ['F0', 'F1', 'Alpha', 'Delta']
-        self.Lambda0 = np.array(Lambda0)
+        if self.Lambda0 is None:
+            raise ValueError('Lambda0 undefined')
         if len(self.Lambda0) != len(self.search_keys):
             raise ValueError(
                 'Lambda0 must be of length {}'.format(len(self.search_keys)))
+        self.Lambda0 = np.array(Lambda0)
 
     def run(self, factor=2, max_n_ticks=4, whspace=0.07, save=True,
             **kwargs):
@@ -470,14 +546,18 @@ class GridUniformPriorSearch():
 
 class GridGlitchSearch(GridSearch):
     """ Grid search using the SemiCoherentGlitchSearch """
+    search_labels = ['F0s', 'F1s', 'F2s', 'Alphas', 'Deltas', 'delta_F0s',
+                     'delta_F1s', 'tglitchs']
+
     @helper_functions.initializer
-    def __init__(self, label, outdir, sftfilepattern=None, F0s=[0],
+    def __init__(self, label, outdir='data', sftfilepattern=None, F0s=[0],
                  F1s=[0], F2s=[0], delta_F0s=[0], delta_F1s=[0], tglitchs=None,
                  Alphas=[0], Deltas=[0], tref=None, minStartTime=None,
                  maxStartTime=None, minCoverFreq=None, maxCoverFreq=None,
-                 write_after=1000):
-
+                 detectors=None):
         """
+        Run a single-glitch grid search
+
         Parameters
         ----------
         label, outdir: str
@@ -487,39 +567,31 @@ class GridGlitchSearch(GridSearch):
             mutiple patterns can be given separated by colons.
         F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
             Length 3 tuple describing the grid for each parameter, e.g
-            [F0min, F0max, dF0], for a fixed value simply give [F0].
+            [F0min, F0max, dF0], for a fixed value simply give [F0]. Note that
+            tglitchs is referenced to zero at minStartTime.
         tref, minStartTime, maxStartTime: int
             GPS seconds of the reference time, start time and end time
 
         For all other parameters, see pyfstat.ComputeFStat.
         """
+
+        self.BSGL = False
+        self.input_arrays = False
         if tglitchs is None:
-            self.tglitchs = [self.maxStartTime]
+            raise ValueError('You must specify `tglitchs`')
 
         self.search = SemiCoherentGlitchSearch(
             label=label, outdir=outdir, sftfilepattern=self.sftfilepattern,
             tref=tref, minStartTime=minStartTime, maxStartTime=maxStartTime,
             minCoverFreq=minCoverFreq, maxCoverFreq=maxCoverFreq,
             BSGL=self.BSGL)
+        self.search.get_det_stat = self.search.get_semicoherent_nglitch_twoF
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.set_out_file()
         self.keys = ['F0', 'F1', 'F2', 'Alpha', 'Delta', 'delta_F0',
                      'delta_F1', 'tglitch']
-
-    def get_input_data_array(self):
-        arrays = []
-        for tup in (self.F0s, self.F1s, self.F2s, self.Alphas, self.Deltas,
-                    self.delta_F0s, self.delta_F1s, self.tglitchs):
-            arrays.append(self.get_array_from_tuple(tup))
-
-        input_data = []
-        for vals in itertools.product(*arrays):
-            input_data.append(vals)
-
-        self.arrays = arrays
-        self.input_data = np.array(input_data)
 
 
 class SlidingWindow(GridSearch):
@@ -643,6 +715,10 @@ class FrequencySlidingWindow(GridSearch):
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
 
+        self.transientWindowType = None
+        self.t0Band = None
+        self.tauBand = None
+
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.set_out_file()
@@ -652,13 +728,14 @@ class FrequencySlidingWindow(GridSearch):
         self.Alphas = [Alpha]
         self.Deltas = [Delta]
         self.input_arrays = False
+        self.keys = ['_', '_', 'F0', 'F1', 'F2', 'Alpha', 'Delta']
 
     def inititate_search_object(self):
         logging.info('Setting up search object')
         self.search = ComputeFstat(
             tref=self.tref, sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq, maxCoverFreq=self.maxCoverFreq,
-            detectors=self.detectors, transient=True,
+            detectors=self.detectors, transientWindowType=self.transientWindowType,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL, SSBprec=self.SSBprec,
             injectSources=self.injectSources)
@@ -755,6 +832,10 @@ class EarthTest(GridSearch):
 
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
+        self.transientWindowType = None
+        self.t0Band = None
+        self.tauBand = None
+
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.nsegs = 1
@@ -864,10 +945,15 @@ class EarthTest(GridSearch):
                   r'$\Delta P_\mathrm{spin}$ [min]',
                   r'$2\mathcal{F}$']
 
-        from projection_matrix import projection_matrix
+        try:
+            from gridcorner import gridcorner
+        except ImportError:
+            raise ImportError(
+                "Python module 'gridcorner' not found, please install from "
+                "https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner")
 
-        fig, axes = projection_matrix(data, xyz, projection=projection,
-                                      factor=1.6, labels=labels)
+        fig, axes = gridcorner(data, xyz, projection=projection, factor=1.6,
+                               labels=labels)
         axes[-1][-1].axvline((lal.DAYJUL_SI - lal.DAYSID_SI)/60.0, color='C3')
         plt.suptitle(
             'T={:.1f} days, $f$={:.2f} Hz, $\log\mathcal{{B}}_{{S/A}}$={:.1f},'
