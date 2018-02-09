@@ -82,6 +82,9 @@ class MCMCSearch(core.BaseSearchClass):
         ('none' instead of None explicitly calls the transient-window function,
         but with the full range, for debugging)
         Currently only supported for nsegs=1.
+    tCWFstatMapVersion: str
+        Choose between standard 'lal' implementation,
+        'pycuda' for gpu, and some others for devel/debug.
 
     Attributes
     ----------
@@ -115,7 +118,7 @@ class MCMCSearch(core.BaseSearchClass):
                  rhohatmax=1000, binary=False, BSGL=False,
                  SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
                  injectSources=None, assumeSqrtSX=None,
-                 transientWindowType=None):
+                 transientWindowType=None, tCWFstatMapVersion='lal'):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -161,7 +164,8 @@ class MCMCSearch(core.BaseSearchClass):
             transientWindowType=self.transientWindowType,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             binary=self.binary, injectSources=self.injectSources,
-            assumeSqrtSX=self.assumeSqrtSX, SSBprec=self.SSBprec)
+            assumeSqrtSX=self.assumeSqrtSX, SSBprec=self.SSBprec,
+            tCWFstatMapVersion=self.tCWFstatMapVersion)
         if self.minStartTime is None:
             self.minStartTime = self.search.minStartTime
         if self.maxStartTime is None:
@@ -2212,7 +2216,8 @@ class MCMCTransientSearch(MCMCSearch):
             transientWindowType=self.transientWindowType,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL, binary=self.binary,
-            injectSources=self.injectSources)
+            injectSources=self.injectSources,
+            tCWFstatMapVersion=self.tCWFstatMapVersion)
         if self.minStartTime is None:
             self.minStartTime = self.search.minStartTime
         if self.maxStartTime is None:

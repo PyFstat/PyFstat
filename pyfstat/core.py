@@ -13,6 +13,7 @@ import scipy.optimize
 import lal
 import lalpulsar
 import pyfstat.helper_functions as helper_functions
+import pyfstat.tcw_fstat_map_funcs as tcw
 
 # workaround for matplotlib on X-less remote logins
 if 'DISPLAY' in os.environ:
@@ -334,7 +335,8 @@ class ComputeFstat(BaseSearchClass):
                  dt0=None, dtau=None,
                  detectors=None, minCoverFreq=None, maxCoverFreq=None,
                  injectSources=None, injectSqrtSX=None, assumeSqrtSX=None,
-                 SSBprec=None):
+                 SSBprec=None,
+                 tCWFstatMapVersion='lal', cudaDeviceName=None):
         """
         Parameters
         ----------
@@ -382,6 +384,11 @@ class ComputeFstat(BaseSearchClass):
         SSBprec : int
             Flag to set the SSB calculation: 0=Newtonian, 1=relativistic,
             2=relativisitic optimised, 3=DMoff, 4=NO_SPIN
+        tCWFstatMapVersion: str
+            Choose between standard 'lal' implementation,
+            'pycuda' for gpu, and some others for devel/debug.
+        cudaDeviceName: str
+            GPU name to be matched against drv.Device output.
 
         """
 
@@ -624,13 +631,14 @@ class ComputeFstat(BaseSearchClass):
             self.windowRange.dt0 = self.Tsft
             self.windowRange.dtau = self.Tsft
 
-            # special treatment of window_type = none ==> replace by rectangular window spanning all the data
+            # special treatment of window_type = none
+            # ==> replace by rectangular window spanning all the data
             if self.windowRange.type == lalpulsar.TRANSIENT_NONE:
                 self.windowRange.t0 = int(self.minStartTime)
                 self.windowRange.t0Band = 0
                 self.windowRange.tau = int(self.maxStartTime-self.minStartTime)
                 self.windowRange.tauBand = 0
-            else: # user-set bands and spacings
+            else:  # user-set bands and spacings
                 if self.t0Band is None:
                     self.windowRange.t0Band = 0
                 else:
@@ -651,6 +659,11 @@ class ComputeFstat(BaseSearchClass):
                     self.windowRange.tauBand = self.tauBand
                     if self.dtau:
                         self.windowRange.dtau = self.dtau
+
+            logging.info('Initialising transient FstatMap features...')
+            self.tCWFstatMapFeatures, self.gpu_context = (
+                tcw.init_transient_fstat_map_features(
+                    self.tCWFstatMapVersion == 'pycuda', self.cudaDeviceName))
 
     def get_fullycoherent_twoF(self, tstart, tend, F0, F1, F2, Alpha, Delta,
                                asini=None, period=None, ecc=None, tp=None,
@@ -694,9 +707,13 @@ class ComputeFstat(BaseSearchClass):
             # F-stat computation
             self.windowRange.tau = int(2*self.Tsft)
 
-        self.FstatMap = lalpulsar.ComputeTransientFstatMap(
-            self.FstatResults.multiFatoms[0], self.windowRange, False)
-        F_mn = self.FstatMap.F_mn.data
+        self.FstatMap = tcw.call_compute_transient_fstat_map(
+            self.tCWFstatMapVersion, self.tCWFstatMapFeatures,
+            self.FstatResults.multiFatoms[0], self.windowRange)
+        if self.tCWFstatMapVersion == 'lal':
+            F_mn = self.FstatMap.F_mn.data
+        else:
+            F_mn = self.FstatMap.F_mn
 
         twoF = 2*np.max(F_mn)
         if self.BSGL is False:
@@ -931,6 +948,15 @@ class ComputeFstat(BaseSearchClass):
             raise RuntimeError('Cannot print atoms vector to file: no FstatResults.multiFatoms, or it is None!')
 
 
+    def __del__(self):
+        """
+        In pyCuda case without autoinit,
+        we need to make sure the context is removed at the end
+        """
+        if hasattr(self,'gpu_context') and self.gpu_context:
+            self.gpu_context.detach()
+
+
 class SemiCoherentSearch(ComputeFstat):
     """ A semi-coherent search """
 
@@ -961,6 +987,8 @@ class SemiCoherentSearch(ComputeFstat):
         self.transientWindowType = 'rect'
         self.t0Band  = None
         self.tauBand = None
+        self.tCWFstatMapVersion = 'lal'
+        self.cudaDeviceName = None
         self.init_computefstatistic_single_point()
         self.init_semicoherent_parameters()
 
@@ -1100,6 +1128,8 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         self.transientWindowType = 'rect'
         self.t0Band  = None
         self.tauBand = None
+        self.tCWFstatMapVersion = 'lal'
+        self.cudaDeviceName = None
         self.binary  = False
         self.init_computefstatistic_single_point()
 
