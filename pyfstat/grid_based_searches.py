@@ -355,7 +355,8 @@ class TransientGridSearch(GridSearch):
                  transientWindowType=None, t0Band=None, tauBand=None,
                  dt0=None, dtau=None,
                  outputTransientFstatMap=False,
-                 outputAtoms=False):
+                 outputAtoms=False,
+                 tCWFstatMapVersion='lal', cudaDeviceName=None):
         """
         Parameters
         ----------
@@ -388,6 +389,11 @@ class TransientGridSearch(GridSearch):
         outputTransientFstatMap: bool
             if true, write output files for (t0,tau) Fstat maps
             (one file for each doppler grid point!)
+        tCWFstatMapVersion: str
+            Choose between standard 'lal' implementation,
+            'pycuda' for gpu, and some others for devel/debug.
+        cudaDeviceName: str
+            GPU name to be matched against drv.Device output.
 
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
@@ -413,7 +419,9 @@ class TransientGridSearch(GridSearch):
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL, SSBprec=self.SSBprec,
             injectSources=self.injectSources,
-            assumeSqrtSX=self.assumeSqrtSX)
+            assumeSqrtSX=self.assumeSqrtSX,
+            tCWFstatMapVersion=self.tCWFstatMapVersion,
+            cudaDeviceName=self.cudaDeviceName)
         self.search.get_det_stat = self.search.get_fullycoherent_twoF
 
     def run(self, return_data=False):
@@ -427,19 +435,36 @@ class TransientGridSearch(GridSearch):
             self.inititate_search_object()
 
         data = []
+        if self.outputTransientFstatMap:
+            tCWfilebase = os.path.splitext(self.out_file)[0] + '_tCW_'
+            logging.info('Will save per-Doppler Fstatmap' \
+                         ' results to {}*.dat'.format(tCWfilebase))
         for vals in tqdm(self.input_data):
             detstat = self.search.get_det_stat(*vals)
             windowRange = getattr(self.search, 'windowRange', None)
             FstatMap = getattr(self.search, 'FstatMap', None)
             thisCand = list(vals) + [detstat]
             if getattr(self, 'transientWindowType', None):
+                if self.tCWFstatMapVersion == 'lal':
+                    F_mn = FstatMap.F_mn.data
+                else:
+                    F_mn = FstatMap.F_mn
                 if self.outputTransientFstatMap:
-                    tCWfile = os.path.splitext(self.out_file)[0]+'_tCW_%.16f_%.16f_%.16f_%.16g_%.16g.dat' % (vals[2],vals[5],vals[6],vals[3],vals[4]) # freq alpha delta f1dot f2dot
-                    fo = lal.FileOpen(tCWfile, 'w')
-                    lalpulsar.write_transientFstatMap_to_fp ( fo, FstatMap, windowRange, None )
-                    del fo # instead of lal.FileClose() which is not SWIG-exported
-                Fmn = FstatMap.F_mn.data
-                maxidx = np.unravel_index(Fmn.argmax(), Fmn.shape)
+                    # per-Doppler filename convention:
+                    # freq alpha delta f1dot f2dot
+                    tCWfile = ( tCWfilebase
+                                + '%.16f_%.16f_%.16f_%.16g_%.16g.dat' %
+                                (vals[2],vals[5],vals[6],vals[3],vals[4]) )
+                    if self.tCWFstatMapVersion == 'lal':
+                        fo = lal.FileOpen(tCWfile, 'w')
+                        lalpulsar.write_transientFstatMap_to_fp (
+                            fo, FstatMap, windowRange, None )
+                        # instead of lal.FileClose(),
+                        # which is not SWIG-exported:
+                        del fo
+                    else:
+                        self.write_F_mn ( tCWfile, F_mn, windowRange)
+                maxidx = np.unravel_index(F_mn.argmax(), F_mn.shape)
                 thisCand += [windowRange.t0+maxidx[0]*windowRange.dt0,
                              windowRange.tau+maxidx[1]*windowRange.dtau]
             data.append(thisCand)
@@ -452,6 +477,19 @@ class TransientGridSearch(GridSearch):
         else:
             self.save_array_to_disk(data)
             self.data = data
+
+    def write_F_mn (self, tCWfile, F_mn, windowRange ):
+        with open(tCWfile, 'w') as tfp:
+            tfp.write('# t0 [s]     tau [s]     2F\n')
+            for m, F_m in enumerate(F_mn):
+                this_t0 = windowRange.t0 + m * windowRange.dt0
+                for n, this_F in enumerate(F_m):
+                    this_tau = windowRange.tau + n * windowRange.dtau;
+                    tfp.write('  %10d %10d %- 11.8g\n' % (this_t0, this_tau, 2.0*this_F))
+
+    def __del__(self):
+        if hasattr(self,'search'):
+            self.search.__del__()
 
 
 class SliceGridSearch(GridSearch):
