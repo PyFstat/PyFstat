@@ -1508,15 +1508,13 @@ class MCMCSearch(core.BaseSearchClass):
         print('p-value = {}'.format(p_val))
         return p_val
 
-    def compute_evidence(self, write_to_file='Evidences.txt'):
+    def compute_evidence(self, make_plots=False, write_to_file=None):
         """ Computes the evidence/marginal likelihood for the model """
         betas = self.betas
         mean_lnlikes = np.mean(np.mean(self.all_lnlikelihood, axis=1), axis=1)
 
         mean_lnlikes = mean_lnlikes[::-1]
         betas = betas[::-1]
-
-        fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(6, 8))
 
         if any(np.isinf(mean_lnlikes)):
             print("WARNING mean_lnlikes contains inf: recalculating without"
@@ -1539,22 +1537,27 @@ class MCMCSearch(core.BaseSearchClass):
             EvidenceDict[self.label] = [log10evidence, log10evidence_err]
             self.write_evidence_file_from_dict(EvidenceDict, write_to_file)
 
-        ax1.semilogx(betas, mean_lnlikes, "-o")
-        ax1.set_xlabel(r"$\beta$")
-        ax1.set_ylabel(r"$\langle \log(\mathcal{L}) \rangle$")
-        min_betas = []
-        evidence = []
-        for i in range(len(betas)/2):
-            min_betas.append(betas[i])
-            lnZ = np.trapz(mean_lnlikes[i:], betas[i:])
-            evidence.append(lnZ/np.log(10))
+        if make_plots:
+            fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(6, 8))
+            ax1.semilogx(betas, mean_lnlikes, "-o")
+            ax1.set_xlabel(r"$\beta$")
+            ax1.set_ylabel(r"$\langle \log(\mathcal{L}) \rangle$")
+            min_betas = []
+            evidence = []
+            for i in range(int(len(betas)/2.)):
+                min_betas.append(betas[i])
+                lnZ = np.trapz(mean_lnlikes[i:], betas[i:])
+                evidence.append(lnZ/np.log(10))
 
-        ax2.semilogx(min_betas, evidence, "-o")
-        ax2.set_ylabel(r"$\int_{\beta_{\textrm{Min}}}^{\beta=1}" +
-                       r"\langle \log(\mathcal{L})\rangle d\beta$", size=16)
-        ax2.set_xlabel(r"$\beta_{\textrm{min}}$")
-        plt.tight_layout()
-        fig.savefig("{}/{}_beta_lnl.png".format(self.outdir, self.label))
+            ax2.semilogx(min_betas, evidence, "-o")
+            ax2.set_ylabel(r"$\int_{\beta_{\textrm{Min}}}^{\beta=1}" +
+                           r"\langle \log(\mathcal{L})\rangle d\beta$",
+                           size=16)
+            ax2.set_xlabel(r"$\beta_{\textrm{min}}$")
+            plt.tight_layout()
+            fig.savefig("{}/{}_beta_lnl.png".format(self.outdir, self.label))
+
+        return log10evidence, log10evidence_err
 
     @staticmethod
     def read_evidence_file_to_dict(evidence_file_name='Evidences.txt'):
