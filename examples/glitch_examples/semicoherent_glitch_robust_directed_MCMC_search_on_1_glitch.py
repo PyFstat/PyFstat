@@ -47,5 +47,5 @@ mcmc.transform_dictionary['F1'] = dict(
     subtractor=F1, symbol='$\dot{f}-\dot{f}^\mathrm{s}$')
 
 mcmc.run()
-mcmc.plot_corner()
+mcmc.plot_corner(label_offset=0.15)
 mcmc.print_summary()
