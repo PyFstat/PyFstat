@@ -353,6 +353,7 @@ class TransientGridSearch(GridSearch):
                  detectors=None, SSBprec=None, injectSources=None,
                  input_arrays=False, assumeSqrtSX=None,
                  transientWindowType=None, t0Band=None, tauBand=None,
+                 tauMin = None,
                  dt0=None, dtau=None,
                  outputTransientFstatMap=False,
                  outputAtoms=False,
@@ -380,9 +381,11 @@ class TransientGridSearch(GridSearch):
             debugging). Currently only supported for nsegs=1.
         t0Band, tauBand: int
             if >0, search t0 in (minStartTime,minStartTime+t0Band)
-                   and tau in (2*Tsft,2*Tsft+tauBand).
+                   and tau in (tauMin,2*Tsft+tauBand).
             if =0, only compute CW Fstat with t0=minStartTime,
                    tau=maxStartTime-minStartTime.
+        tauMin: int
+            defaults to 2*Tsft
         dt0, dtau: int
             grid resolutions in transient start-time and duration,
             both default to Tsft
@@ -415,6 +418,7 @@ class TransientGridSearch(GridSearch):
             detectors=self.detectors,
             transientWindowType=self.transientWindowType,
             t0Band=self.t0Band, tauBand=self.tauBand,
+            tauMin=self.tauMin,
             dt0=self.dt0, dtau=self.dtau,
             minStartTime=self.minStartTime, maxStartTime=self.maxStartTime,
             BSGL=self.BSGL, SSBprec=self.SSBprec,
@@ -738,6 +742,7 @@ class FrequencySlidingWindow(GridSearch):
         self.transientWindowType = None
         self.t0Band = None
         self.tauBand = None
+        self.tauMin = None
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -855,6 +860,7 @@ class EarthTest(GridSearch):
         self.transientWindowType = None
         self.t0Band = None
         self.tauBand = None
+        self.tauMin = None
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
