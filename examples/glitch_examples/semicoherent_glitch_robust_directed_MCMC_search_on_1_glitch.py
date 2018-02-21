@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pyfstat
-from make_simulated_data import tstart, duration, tref, F0, F1, F2, Alpha, Delta, outdir
+from make_simulated_data import tstart, duration, tref, F0, F1, F2, Alpha, Delta, delta_F0, dtglitch, outdir
 
 plt.style.use('paper')
 
@@ -33,19 +33,19 @@ theta_prior = {
 ntemps = 3
 log10beta_min = -0.5
 nwalkers = 100
-nsteps = [500, 500]
+nsteps = [500, 1000]
 
 mcmc = pyfstat.MCMCGlitchSearch(
     label=label, sftfilepattern='data/*1_glitch*sft', theta_prior=theta_prior,
     tref=tref, minStartTime=tstart, maxStartTime=tstart+duration,
     nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps,
     log10beta_min=log10beta_min, nglitch=1)
-
+print delta_F0
 mcmc.transform_dictionary['F0'] = dict(
     subtractor=F0, symbol='$f-f^\mathrm{s}$')
 mcmc.transform_dictionary['F1'] = dict(
     subtractor=F1, symbol='$\dot{f}-\dot{f}^\mathrm{s}$')
 
 mcmc.run()
-mcmc.plot_corner(label_offset=0.15)
+mcmc.plot_corner(label_offset=0.15, truths=[0, 0, delta_F0, 50])
 mcmc.print_summary()

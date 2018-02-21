@@ -1,7 +1,7 @@
 import pyfstat
 import numpy as np
 import matplotlib.pyplot as plt
-from make_simulated_data import tstart, duration, tref, F0, F1, F2, Alpha, Delta, outdir
+from make_simulated_data import tstart, duration, tref, F0, F1, F2, Alpha, Delta, delta_F0, outdir
 
 try:
     from gridcorner import gridcorner
@@ -45,9 +45,10 @@ tglitch_vals_days = (tglitch_vals-tstart) / 86400.
 twoF = search.data[:, -1].reshape((len(F0_vals), len(F1_vals),
                                    len(delta_F0s_vals), len(tglitch_vals)))
 xyz = [F0_vals, F1_vals, delta_F0s_vals, tglitch_vals_days]
-labels = ['$f - f_0$\n[Hz]', '$\dot{f} - \dot{f}_0$\n[Hz/s]',
+labels = ['$f - f^\mathrm{s}$\n[Hz]', '$\dot{f} - \dot{f}^\mathrm{s}$\n[Hz/s]',
           '$\delta f$\n[Hz]', '$t^g_0$\n[days]', '$\widehat{2\mathcal{F}}$']
 fig, axes = gridcorner(
-    twoF, xyz, projection='log_mean', whspace=0.1, factor=1.2, labels=labels)
+    twoF, xyz, projection='log_mean', whspace=0.1, factor=1.2, labels=labels,
+    showDvals=False, lines=[0, 0, delta_F0, 50])
 fig.savefig('{}/{}_projection_matrix.png'.format(outdir, label),
             bbox_inches='tight')
