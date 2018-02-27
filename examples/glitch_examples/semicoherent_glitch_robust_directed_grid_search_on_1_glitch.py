@@ -12,7 +12,7 @@ except ImportError:
 
 label = 'semicoherent_glitch_robust_directed_grid_search_on_1_glitch'
 
-plt.style.use('paper')
+plt.style.use('./paper.mplstyle')
 
 Nstar = 1000
 F0_width = np.sqrt(Nstar)*np.sqrt(12)/(np.pi*duration)
@@ -28,6 +28,8 @@ max_delta_F0 = 1e-5
 tglitchs = [tstart+0.1*duration, tstart+0.9*duration, 0.8*float(duration)/N]
 delta_F0s = [0, max_delta_F0, max_delta_F0/N]
 delta_F1s = [0]
+
+print 'Prior widths=', F0_width, F1_width
 
 search = pyfstat.GridGlitchSearch(
     label, outdir, 'data/*1_glitch*sft', F0s=F0s, F1s=F1s, F2s=F2s,
@@ -48,7 +50,7 @@ xyz = [F0_vals, F1_vals, delta_F0s_vals, tglitch_vals_days]
 labels = ['$f - f^\mathrm{s}$\n[Hz]', '$\dot{f} - \dot{f}^\mathrm{s}$\n[Hz/s]',
           '$\delta f$\n[Hz]', '$t^g_0$\n[days]', '$\widehat{2\mathcal{F}}$']
 fig, axes = gridcorner(
-    twoF, xyz, projection='log_mean', whspace=0.1, factor=1.2, labels=labels,
-    showDvals=False, lines=[0, 0, delta_F0, 50])
+    twoF, xyz, projection='log_mean', labels=labels,
+    showDvals=False, lines=[0, 0, delta_F0, 50], label_offset=0.35)
 fig.savefig('{}/{}_projection_matrix.png'.format(outdir, label),
             bbox_inches='tight')

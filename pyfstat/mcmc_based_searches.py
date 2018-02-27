@@ -743,7 +743,7 @@ class MCMCSearch(core.BaseSearchClass):
                                          max_n_ticks=4,
                                          plot_contours=True,
                                          plot_datapoints=True,
-                                         label_kwargs={'fontsize': 12},
+                                         #label_kwargs={'fontsize': 12},
                                          data_kwargs={'alpha': 0.1,
                                                       'ms': 0.5},
                                          range=_range,
@@ -762,10 +762,10 @@ class MCMCSearch(core.BaseSearchClass):
                 ax.set_rasterization_zorder(-10)
 
                 for tick in ax.xaxis.get_major_ticks():
-                    tick.label.set_fontsize(8)
+                    #tick.label.set_fontsize(8)
                     tick.label.set_rotation('horizontal')
                 for tick in ax.yaxis.get_major_ticks():
-                    tick.label.set_fontsize(8)
+                    #tick.label.set_fontsize(8)
                     tick.label.set_rotation('vertical')
 
             plt.tight_layout(h_pad=0.0, w_pad=0.0)

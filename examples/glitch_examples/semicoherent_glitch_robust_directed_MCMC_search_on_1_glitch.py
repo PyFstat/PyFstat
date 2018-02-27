@@ -1,9 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pyfstat
+import gridcorner
 from make_simulated_data import tstart, duration, tref, F0, F1, F2, Alpha, Delta, delta_F0, dtglitch, outdir
 
-plt.style.use('paper')
+plt.style.use('./paper.mplstyle')
 
 label = 'semicoherent_glitch_robust_directed_MCMC_search_on_1_glitch'
 
@@ -47,5 +48,7 @@ mcmc.transform_dictionary['F1'] = dict(
     subtractor=F1, symbol='$\dot{f}-\dot{f}^\mathrm{s}$')
 
 mcmc.run()
-mcmc.plot_corner(label_offset=0.15, truths=[0, 0, delta_F0, 50])
+fig_and_axes = gridcorner._get_fig_and_axes(4, 2, 0.05)
+mcmc.plot_corner(label_offset=0.35, truths=[0, 0, delta_F0, 50],
+                 fig_and_axes=fig_and_axes)
 mcmc.print_summary()
