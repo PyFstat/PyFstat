@@ -1,7 +1,8 @@
 import pyfstat
 import numpy as np
 import matplotlib.pyplot as plt
-from make_simulated_data import tstart, duration, tref, F0, F1, F2, Alpha, Delta, delta_F0, outdir
+from make_simulated_data import tstart, duration, tref, F0, F1, F2, Alpha, Delta, delta_F0, outdir, dtglitch
+import time
 
 try:
     from gridcorner import gridcorner
@@ -17,7 +18,7 @@ plt.style.use('./paper.mplstyle')
 Nstar = 1000
 F0_width = np.sqrt(Nstar)*np.sqrt(12)/(np.pi*duration)
 F1_width = np.sqrt(Nstar)*np.sqrt(180)/(np.pi*duration**2)
-N = 30
+N = 20
 F0s = [F0-F0_width/2., F0+F0_width/2., F0_width/N]
 F1s = [F1-F1_width/2., F1+F1_width/2., F1_width/N]
 F2s = [F2]
@@ -29,14 +30,15 @@ tglitchs = [tstart+0.1*duration, tstart+0.9*duration, 0.8*float(duration)/N]
 delta_F0s = [0, max_delta_F0, max_delta_F0/N]
 delta_F1s = [0]
 
-print 'Prior widths=', F0_width, F1_width
 
+t1 = time.time()
 search = pyfstat.GridGlitchSearch(
     label, outdir, 'data/*1_glitch*sft', F0s=F0s, F1s=F1s, F2s=F2s,
     Alphas=Alphas, Deltas=Deltas, tref=tref, minStartTime=tstart,
     maxStartTime=tstart+duration, tglitchs=tglitchs, delta_F0s=delta_F0s,
     delta_F1s=delta_F1s)
 search.run()
+dT = time.time() - t1
 
 F0_vals = np.unique(search.data[:, 0]) - F0
 F1_vals = np.unique(search.data[:, 1]) - F1
@@ -51,6 +53,11 @@ labels = ['$f - f^\mathrm{s}$\n[Hz]', '$\dot{f} - \dot{f}^\mathrm{s}$\n[Hz/s]',
           '$\delta f$\n[Hz]', '$t^g_0$\n[days]', '$\widehat{2\mathcal{F}}$']
 fig, axes = gridcorner(
     twoF, xyz, projection='log_mean', labels=labels,
-    showDvals=False, lines=[0, 0, delta_F0, 50], label_offset=0.35)
+    showDvals=False, lines=[0, 0, delta_F0, dtglitch/86400.], label_offset=0.35)
 fig.savefig('{}/{}_projection_matrix.png'.format(outdir, label),
             bbox_inches='tight')
+
+
+print('Prior widths =', F0_width, F1_width)
+print("Actual run time = {}".format(dT))
+print("Actual number of grid points = {}".format(search.data.shape[0]))

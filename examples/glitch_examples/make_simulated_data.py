@@ -17,7 +17,7 @@ h0 = 5e-24
 # Properties of the GW data
 sqrtSX = 1e-22
 tstart = 1000000000
-duration = 100*86400
+duration = 50*86400
 tend = tstart+duration
 tref = tstart + 0.5*duration
 
@@ -25,10 +25,6 @@ data = Writer(
     label='0_glitch', outdir=outdir, tref=tref, tstart=tstart, F0=F0, F1=F1,
     F2=F2, duration=duration, Alpha=Alpha, Delta=Delta, h0=h0, sqrtSX=sqrtSX)
 data.make_data()
-
-# The predicted twoF, given by lalapps_predictFstat can be accessed by
-twoF = data.predict_fstat()
-print 'Predicted twoF value: {}\n'.format(twoF)
 
 # Next, taking the same signal parameters, we include a glitch half way through
 dtglitch = duration/2.0
