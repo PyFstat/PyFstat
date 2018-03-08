@@ -246,7 +246,7 @@ class GridSearch(BaseSearchClass):
                 add_mismatch=None, xN=None, yN=None, flat_keys=[],
                 rel_flat_idxs=[], flatten_method=np.max, title=None,
                 predicted_twoF=None, cm=None, cbarkwargs={}, x0=None, y0=None,
-                colorbar=False):
+                colorbar=False, xrescale=1, yrescale=1):
         """ Plots a 2D grid of 2F values
 
         Parameters
@@ -287,7 +287,8 @@ class GridSearch(BaseSearchClass):
             if cm is None:
                 cm = plt.cm.viridis
 
-        pax = ax.pcolormesh(X, Y, Z, cmap=cm, vmin=vmin, vmax=vmax)
+        pax = ax.pcolormesh(
+            X*xrescale, Y*yrescale, Z, cmap=cm, vmin=vmin, vmax=vmax)
         if colorbar:
             cb = plt.colorbar(pax, ax=ax, **cbarkwargs)
             cb.set_label('$2\mathcal{F}$')
@@ -295,8 +296,8 @@ class GridSearch(BaseSearchClass):
         if add_mismatch:
             self.add_mismatch_to_ax(ax, x, y, xkey, ykey, *add_mismatch)
 
-        ax.set_xlim(x[0], x[-1])
-        ax.set_ylim(y[0], y[-1])
+        ax.set_xlim(x[0]*xrescale, x[-1]*xrescale)
+        ax.set_ylim(y[0]*yrescale, y[-1]*yrescale)
         if x0:
             ax.set_xlabel(self.tex_labels[xkey]+self.tex_labels0[xkey])
         else:
@@ -884,7 +885,8 @@ class FrequencySlidingWindow(GridSearch):
         self.input_data = np.array(input_data)
 
     def plot_sliding_window(self, F0=None, ax=None, savefig=True,
-                            colorbar=True, timestamps=False):
+                            colorbar=True, timestamps=False,
+                            F0rescale=1, **kwargs):
         data = self.data
         if ax is None:
             ax = plt.subplot()
@@ -901,7 +903,7 @@ class FrequencySlidingWindow(GridSearch):
             ax.set_ylabel('Frequency [Hz]')
         twoF = twoF.reshape((len(tmids), len(frequencies)))
         Y, X = np.meshgrid(frequencies, dts)
-        pax = ax.pcolormesh(X, Y, twoF)
+        pax = ax.pcolormesh(X, Y*F0rescale, twoF, **kwargs)
         if colorbar:
             cb = plt.colorbar(pax, ax=ax)
             cb.set_label('$2\mathcal{F}$')
