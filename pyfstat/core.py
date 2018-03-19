@@ -665,11 +665,11 @@ class ComputeFstat(BaseSearchClass):
                 tcw.init_transient_fstat_map_features(
                     self.tCWFstatMapVersion == 'pycuda', self.cudaDeviceName))
 
-    def get_fullycoherent_twoF(self, tstart, tend, F0, F1, F2, Alpha, Delta,
-                               asini=None, period=None, ecc=None, tp=None,
-                               argp=None):
+    def get_fullycoherent_twoF(self, tstart, tend, F0, F1, F2=0, F3=0,
+                               Alpha=0, Delta=0, asini=None, period=None,
+                               ecc=None, tp=None, argp=None):
         """ Returns twoF or ln(BSGL) fully-coherently at a single point """
-        self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
+        self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, F3, 0, 0, 0])
         self.PulsarDopplerParams.Alpha = Alpha
         self.PulsarDopplerParams.Delta = Delta
         if self.binary:
@@ -1155,8 +1155,9 @@ class SemiCoherentGlitchSearch(ComputeFstat):
             ts, te = tboundaries[i], tboundaries[i+1]
             if te - ts > 1800:
                 twoFVal = self.get_fullycoherent_twoF(
-                    ts, te, theta_i_at_tref[1], theta_i_at_tref[2],
-                    theta_i_at_tref[3], Alpha, Delta)
+                    tstart=ts, tend=te, F0=theta_i_at_tref[1],
+                    F2=theta_i_at_tref[2], F3=theta_i_at_tref[3],
+                    Alpha=Alpha, Delta=Delta)
                 twoFSum += twoFVal
 
         if np.isfinite(twoFSum):
@@ -1181,15 +1182,15 @@ class SemiCoherentGlitchSearch(ComputeFstat):
             theta_post_glitch_at_glitch, tref - tglitch)
 
         twoFsegA = self.get_fullycoherent_twoF(
-            self.minStartTime, tglitch, theta[0], theta[1], theta[2], Alpha,
-            Delta)
+            self.minStartTime, tglitch, F0=theta[0], F1=theta[1], F2=theta[2],
+            Alpha=Alpha, Delta=Delta)
 
         if tglitch == self.maxStartTime:
             return twoFsegA
 
         twoFsegB = self.get_fullycoherent_twoF(
-            tglitch, self.maxStartTime, theta_post_glitch[0],
-            theta_post_glitch[1], theta_post_glitch[2], Alpha,
-            Delta)
+            tglitch, self.maxStartTime, F0=theta_post_glitch[0],
+            F1=theta_post_glitch[1], F2=theta_post_glitch[2], Alpha=Alpha,
+            Delta=Delta)
 
         return twoFsegA + twoFsegB

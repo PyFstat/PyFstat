@@ -102,12 +102,12 @@ class MCMCSearch(core.BaseSearchClass):
     """
 
     symbol_dictionary = dict(
-        F0='$f$', F1='$\dot{f}$', F2='$\ddot{f}$', Alpha=r'$\alpha$',
-        Delta='$\delta$', asini='asini', period='P', ecc='ecc', tp='tp',
-        argp='argp')
+        F0='$f$', F1='$\dot{f}$', F2='$\ddot{f}$', F3='$\dddot{f}$',
+        Alpha=r'$\alpha$', Delta='$\delta$', asini='asini', period='P',
+        ecc='ecc', tp='tp', argp='argp')
     unit_dictionary = dict(
-        F0='Hz', F1='Hz/s', F2='Hz/s$^2$', Alpha=r'rad', Delta='rad',
-        asini='', period='s', ecc='', tp='', argp='')
+        F0='Hz', F1='Hz/s', F2='Hz/s$^2$', F3='Hz/s$^3$', Alpha=r'rad',
+        Delta='rad', asini='', period='s', ecc='', tp='', argp='')
     transform_dictionary = {}
 
     @helper_functions.initializer
@@ -184,18 +184,21 @@ class MCMCSearch(core.BaseSearchClass):
         return twoF/2.0 + self.likelihoodcoef
 
     def _unpack_input_theta(self):
-        full_theta_keys = ['F0', 'F1', 'F2', 'Alpha', 'Delta']
+        full_theta_keys = ['F0', 'F1', 'F2', 'F3', 'Alpha', 'Delta']
         if self.binary:
             full_theta_keys += [
                 'asini', 'period', 'ecc', 'tp', 'argp']
         full_theta_keys_copy = copy.copy(full_theta_keys)
 
-        full_theta_symbols = ['$f$', '$\dot{f}$', '$\ddot{f}$', r'$\alpha$',
-                              r'$\delta$']
+        full_theta_symbols = ['$f$', '$\dot{f}$', '$\ddot{f}$', r'$\ddot{f}$',
+                              r'$\alpha$', r'$\delta$']
         if self.binary:
             full_theta_symbols += [
                 'asini', 'period', 'ecc', 'tp', 'argp']
 
+        for default in ['F1', 'F2', 'F3']:
+            if default not in self.theta_prior:
+                self.theta_prior[default] = 0
         self.theta_keys = []
         fixed_theta_dict = {}
         for key, val in self.theta_prior.iteritems():

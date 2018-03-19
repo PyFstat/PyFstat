@@ -22,7 +22,7 @@ class Writer(BaseSearchClass):
     """ Instance object for generating SFTs """
     @helper_functions.initializer
     def __init__(self, label='Test', tstart=700000000, duration=100*86400,
-                 tref=None, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
+                 tref=None, F0=30, F1=1e-10, F2=0, F3=0, F4=0, Alpha=5e-3,
                  Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, phi=0, Tsft=1800,
                  outdir=".", sqrtSX=1, Band=4, detectors='H1',
                  minStartTime=None, maxStartTime=None, add_noise=True,
@@ -37,7 +37,7 @@ class Writer(BaseSearchClass):
         tref: float or None
             reference time (default is None, which sets the reference time to
             tstart)
-        F0, F1, F2, Alpha, Delta, h0, cosi, psi, phi: float
+        F0, F1, F2, F3, F4, Alpha, Delta, h0, cosi, psi, phi: float
             frequency, sky-position, and amplitude parameters
         Tsft: float
             the sft duration
@@ -70,7 +70,8 @@ class Writer(BaseSearchClass):
         self.data_duration = self.maxStartTime - self.minStartTime
         numSFTs = int(float(self.data_duration) / self.Tsft)
 
-        self.theta = np.array([self.phi, self.F0, self.F1, self.F2])
+        self.theta = np.array([self.phi, self.F0, self.F1, self.F2, self.F3,
+                               self.F4])
 
         if os.path.isdir(self.outdir) is False:
             os.makedirs(self.outdir)
@@ -93,7 +94,7 @@ class Writer(BaseSearchClass):
         self.run_makefakedata()
 
     def get_base_template(self, i, Alpha, Delta, h0, cosi, psi, phi, F0,
-                          F1, F2, tref):
+                          F1, F2, F3, F4, tref):
         return (
 """[TS{}]
 Alpha = {:1.18e}
@@ -105,35 +106,42 @@ phi0 = {:1.18e}
 Freq = {:1.18e}
 f1dot = {:1.18e}
 f2dot = {:1.18e}
+f3dot = {:1.18e}
+f4dot = {:1.18e}
 refTime = {:10.6f}""")
 
     def get_single_config_line_cw(
-            self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref):
-        template = (self.get_base_template(
-            i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref) + """\n""")
+            self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, F3, F4,
+            tref):
+        template = (
+            self.get_base_template(
+                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, F3, F4, tref)
+            + """\n""")
         return template.format(
-            i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref)
+            i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, F3, F4, tref)
 
     def get_single_config_line_tcw(
-            self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref,
-            window, tstart, duration_days):
+            self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, F3, F4,
+            tref, window, tstart, duration_days):
         template = (self.get_base_template(
-            i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref) + """
+            i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, F3, F4, tref)
+            + """
 transientWindowType = {:s}
 transientStartTime = {:10.3f}
 transientTauDays = {:1.3f}\n""")
         return template.format(i, Alpha, Delta, h0, cosi, psi, phi, F0, F1,
-                               F2, tref, window, tstart, duration_days)
+                               F2, F3, F4, tref, window, tstart, duration_days)
 
     def get_single_config_line(self, i, Alpha, Delta, h0, cosi, psi, phi, F0,
-                               F1, F2, tref, window, tstart, duration_days):
+                               F1, F2, F3, F4, tref, window, tstart,
+                               duration_days):
         if window == 'none':
             return self.get_single_config_line_cw(
-                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref)
+                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, F3, F4, tref)
         else:
             return self.get_single_config_line_tcw(
-                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref, window,
-                tstart, duration_days)
+                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, F3, F4, tref,
+                window, tstart, duration_days)
 
     def make_cff(self):
         """
@@ -143,7 +151,7 @@ transientTauDays = {:1.3f}\n""")
 
         content = self.get_single_config_line(
             0, self.Alpha, self.Delta, self.h0, self.cosi, self.psi,
-            self.phi, self.F0, self.F1, self.F2, self.tref,
+            self.phi, self.F0, self.F1, self.F2, self.F3, self.F4, self.tref,
             self.transientWindowType, self.tstart, self.duration_days)
 
         if self.check_if_cff_file_needs_rewritting(content):
@@ -152,7 +160,7 @@ transientTauDays = {:1.3f}\n""")
             config_file.close()
 
     def calculate_fmin_Band(self):
-        self.fmin = self.F0 - .5 * self.Band
+        self.fmin = np.max([self.F0 - .5 * self.Band, 0.1])
 
     def check_cached_data_okay_to_use(self, cl_mfd):
         """ Check if cached data exists and, if it does, if it can be used """
@@ -269,8 +277,8 @@ class GlitchWriter(Writer):
     @helper_functions.initializer
     def __init__(self, label='Test', tstart=700000000, duration=100*86400,
                  dtglitch=None, delta_phi=0, delta_F0=0, delta_F1=0,
-                 delta_F2=0, tref=None, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
-                 Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, phi=0, Tsft=1800,
+                 delta_F2=0, tref=None, F0=30, F1=1e-10, F2=0, F3=0, F4=0,
+                 Alpha=5e-3, Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, phi=0, Tsft=1800,
                  outdir=".", sqrtSX=1, Band=4, detectors='H1',
                  minStartTime=None, maxStartTime=None, add_noise=True,
                  transientWindowType='rect'):
@@ -327,7 +335,7 @@ class GlitchWriter(Writer):
         self.durations_days = (tbs[1:] - tbs[:-1]) / 86400
 
         self.delta_thetas = np.atleast_2d(
-                np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T)
+                np.array([delta_phi, delta_F0, delta_F1, delta_F2, 0, 0]).T)
 
     def make_cff(self):
         """
@@ -343,8 +351,8 @@ class GlitchWriter(Writer):
                                            self.tbounds[:-1])):
             line = self.get_single_config_line(
                 i, self.Alpha, self.Delta, self.h0, self.cosi, self.psi,
-                t[0], t[1], t[2], t[3], self.tref, self.transientWindowType,
-                ts, d)
+                t[0], t[1], t[2], t[3], t[4], t[5], self.tref,
+                self.transientWindowType, ts, d)
 
             content += line
 
