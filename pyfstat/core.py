@@ -332,6 +332,7 @@ class ComputeFstat(BaseSearchClass):
     def __init__(self, tref, sftfilepattern=None, minStartTime=None,
                  maxStartTime=None, binary=False, BSGL=False,
                  transientWindowType=None, t0Band=None, tauBand=None,
+                 tauMin=None,
                  dt0=None, dtau=None,
                  detectors=None, minCoverFreq=None, maxCoverFreq=None,
                  injectSources=None, injectSqrtSX=None, assumeSqrtSX=None,
@@ -359,9 +360,11 @@ class ComputeFstat(BaseSearchClass):
             function, but with the full range, for debugging)
         t0Band, tauBand: int
             if >0, search t0 in (minStartTime,minStartTime+t0Band)
-                   and tau in (2*Tsft,2*Tsft+tauBand).
+                   and tau in (tauMin,2*Tsft+tauBand).
             if =0, only compute CW Fstat with t0=minStartTime,
                    tau=maxStartTime-minStartTime.
+        tauMin: int
+            defaults to 2*Tsft
         dt0, dtau: int
             grid resolutions in transient start-time and duration,
             both default to Tsft
@@ -659,6 +662,14 @@ class ComputeFstat(BaseSearchClass):
                     self.windowRange.tauBand = self.tauBand
                     if self.dtau:
                         self.windowRange.dtau = self.dtau
+                    if self.tauMin is None:
+                        self.windowRange.tau = int(2*self.Tsft)
+                    else:
+                        if not isinstance(self.tauMin, int):
+                            logging.warn('Casting non-integer tauMin={} to int...'
+                                         .format(self.tauMin))
+                            self.tauMin = int(self.tauMin)
+                        self.windowRange.tau = self.tauMin
 
             logging.info('Initialising transient FstatMap features...')
             self.tCWFstatMapFeatures, self.gpu_context = (
@@ -702,10 +713,6 @@ class ComputeFstat(BaseSearchClass):
             # true single-template search also in transient params:
             # actual (t0,tau) window was set with tstart, tend before
             self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
-        else:
-            # grid search: start at minimum tau required for nondegenerate
-            # F-stat computation
-            self.windowRange.tau = int(2*self.Tsft)
 
         self.FstatMap = tcw.call_compute_transient_fstat_map(
             self.tCWFstatMapVersion, self.tCWFstatMapFeatures,
