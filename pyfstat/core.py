@@ -120,10 +120,14 @@ def _get_dictionary_from_lines(lines, comments, raise_error):
             try:
                 key, val = line.rstrip('\n').split('=')
                 key = key.strip()
-                try:
-                    d[key] = np.float64(eval(val.rstrip('; ')))
-                except NameError:
-                    d[key] = val.rstrip('; ')
+                val = val.strip()
+                if (val[0] in ["'", '"']) and (val[-1] in ["'", '"']):
+                    d[key] = val.lstrip('"').lstrip("'").rstrip('"').rstrip("'")
+                else:
+                    try:
+                        d[key] = np.float64(eval(val.rstrip('; ')))
+                    except NameError:
+                        d[key] = val.rstrip('; ')
             except SyntaxError:
                 if raise_error:
                     raise IOError('Line {} not understood'.format(line))
