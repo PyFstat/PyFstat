@@ -42,18 +42,22 @@ dT = time.time() - t1
 
 F0_vals = np.unique(search.data[:, 0]) - F0
 F1_vals = np.unique(search.data[:, 1]) - F1
-delta_F0s_vals = np.unique(search.data[:, 5])
+delta_F0s_vals = np.unique(search.data[:, 5]) - delta_F0
 tglitch_vals = np.unique(search.data[:, 7])
-tglitch_vals_days = (tglitch_vals-tstart) / 86400.
+tglitch_vals_days = (tglitch_vals-tstart) / 86400. - dtglitch/86400.
 
 twoF = search.data[:, -1].reshape((len(F0_vals), len(F1_vals),
                                    len(delta_F0s_vals), len(tglitch_vals)))
-xyz = [F0_vals, F1_vals, delta_F0s_vals, tglitch_vals_days]
-labels = ['$f - f^\mathrm{s}$\n[Hz]', '$\dot{f} - \dot{f}^\mathrm{s}$\n[Hz/s]',
-          '$\delta f$\n[Hz]', '$t^g_0$\n[days]', '$\widehat{2\mathcal{F}}$']
+xyz = [F0_vals*1e6, F1_vals*1e12, delta_F0s_vals*1e6, tglitch_vals_days]
+labels = ['$f - f_\mathrm{s}$\n[$\mu$Hz]',
+          '$\dot{f} - \dot{f}_\mathrm{s}$\n[$p$Hz/s]',
+          '$\delta f-\delta f_\mathrm{s}$\n[$\mu$Hz]',
+          '$t^\mathrm{g} - t^\mathrm{g}_\mathrm{s}$\n[d]',
+          '$\widehat{2\mathcal{F}}$']
 fig, axes = gridcorner(
     twoF, xyz, projection='log_mean', labels=labels,
-    showDvals=False, lines=[0, 0, delta_F0, dtglitch/86400.], label_offset=0.35)
+    showDvals=False, lines=[0, 0, 0, 0], label_offset=0.25,
+    max_n_ticks=4)
 fig.savefig('{}/{}_projection_matrix.png'.format(outdir, label),
             bbox_inches='tight')
 

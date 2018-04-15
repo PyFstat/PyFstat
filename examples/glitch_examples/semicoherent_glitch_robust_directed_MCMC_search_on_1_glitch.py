@@ -43,15 +43,23 @@ mcmc = pyfstat.MCMCGlitchSearch(
     nsteps=nsteps, nwalkers=nwalkers, ntemps=ntemps,
     log10beta_min=log10beta_min, nglitch=1)
 mcmc.transform_dictionary['F0'] = dict(
-    subtractor=F0, symbol='$f-f^\mathrm{s}$')
+    subtractor=F0, multiplier=1e6, symbol='$f-f_\mathrm{s}$')
+mcmc.unit_dictionary['F0'] = '$\mu$Hz'
 mcmc.transform_dictionary['F1'] = dict(
-    subtractor=F1, symbol='$\dot{f}-\dot{f}^\mathrm{s}$')
+    subtractor=F1, multiplier=1e12, symbol='$\dot{f}-\dot{f}_\mathrm{s}$')
+mcmc.unit_dictionary['F1'] = '$p$Hz/s'
+mcmc.transform_dictionary['delta_F0'] = dict(
+    multiplier=1e6, subtractor=delta_F0,
+    symbol='$\delta f-\delta f_\mathrm{s}$')
+mcmc.unit_dictionary['delta_F0'] = '$\mu$Hz/s'
+mcmc.transform_dictionary['tglitch']['subtractor'] = tstart + dtglitch
+mcmc.transform_dictionary['tglitch']['label'] ='$t^\mathrm{g}-t^\mathrm{g}_\mathrm{s}$\n[d]'
 
 t1 = time.time()
 mcmc.run()
 dT = time.time() - t1
 fig_and_axes = gridcorner._get_fig_and_axes(4, 2, 0.05)
-mcmc.plot_corner(label_offset=0.35, truths=[0, 0, delta_F0, 50],
+mcmc.plot_corner(label_offset=0.25, truths=[0, 0, 0, 0],
                  fig_and_axes=fig_and_axes)
 mcmc.print_summary()
 
