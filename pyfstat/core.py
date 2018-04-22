@@ -136,7 +136,7 @@ def _get_dictionary_from_lines(lines, comments, raise_error):
 
 
 def predict_fstat(h0, cosi, psi, Alpha, Delta, Freq, sftfilepattern,
-                  minStartTime, maxStartTime, IFO=None, assumeSqrtSX=None,
+                  minStartTime, maxStartTime, IFOs=None, assumeSqrtSX=None,
                   tempory_filename='fs.tmp', **kwargs):
     """ Wrapper to lalapps_PredictFstat
 
@@ -147,7 +147,7 @@ def predict_fstat(h0, cosi, psi, Alpha, Delta, Freq, sftfilepattern,
     sftfilepattern : str
         Pattern matching the sftfiles to use.
     minStartTime, maxStartTime : int
-    IFO : str
+    IFOs : str
         See `lalapps_PredictFstat --help`
     assumeSqrtSX : float or None
         See `lalapps_PredictFstat --help`, if None this option is not used
@@ -171,12 +171,8 @@ def predict_fstat(h0, cosi, psi, Alpha, Delta, Freq, sftfilepattern,
     cl_pfs.append("--DataFiles='{}'".format(sftfilepattern))
     if assumeSqrtSX:
         cl_pfs.append("--assumeSqrtSX={}".format(assumeSqrtSX))
-    if IFO:
-        if ',' in IFO:
-            logging.warning('Multiple detector selection not available, using'
-                            ' all available data')
-        else:
-            cl_pfs.append("--IFO={}".format(IFO))
+    #if IFOs:
+    #    cl_pfs.append("--IFOs={}".format(IFOs))
 
     cl_pfs.append("--minStartTime={}".format(int(minStartTime)))
     cl_pfs.append("--maxStartTime={}".format(int(maxStartTime)))
