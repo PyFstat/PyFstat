@@ -153,7 +153,7 @@ class ComputeFstat(Test):
 
     def test_run_computefstatistic_single_point(self):
         Writer = pyfstat.Writer(self.label, outdir=self.outdir, duration=86400,
-                                h0=1, sqrtSX=1, detectors='H1,L1')
+                                h0=1, sqrtSX=1, detectors='H1')
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
 
