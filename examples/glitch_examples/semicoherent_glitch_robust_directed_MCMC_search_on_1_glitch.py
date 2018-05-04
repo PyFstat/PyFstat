@@ -5,7 +5,7 @@ import gridcorner
 import time
 from make_simulated_data import tstart, duration, tref, F0, F1, F2, Alpha, Delta, delta_F0, dtglitch, outdir
 
-#plt.style.use('./paper.mplstyle')
+plt.style.use('./paper.mplstyle')
 
 label = 'semicoherent_glitch_robust_directed_MCMC_search_on_1_glitch'
 
@@ -61,7 +61,6 @@ dT = time.time() - t1
 fig_and_axes = gridcorner._get_fig_and_axes(4, 2, 0.05)
 mcmc.plot_corner(label_offset=0.25, truths=[0, 0, 0, 0],
                  fig_and_axes=fig_and_axes, quantiles=(0.16, 0.84))
-#mcmc.plot_chainconsumer(truth=[0, 0, 0, 0], label_offset=0.5)
 
 mcmc.print_summary()
 
