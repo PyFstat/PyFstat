@@ -3,6 +3,7 @@
 import numpy as np
 import os
 import logging
+from time import time
 
 # optional imports
 import importlib as imp
@@ -185,14 +186,16 @@ def call_compute_transient_fstat_map ( version,
 
     if version in fstatmap_versions:
         if features[version]:
+            time0 = time()
             FstatMap = fstatmap_versions[version](multiFstatAtoms, windowRange)
+            timingFstatMap = time()-time0
         else:
             raise Exception('Required module(s) for transient F-stat map' \
                             ' method "{}" not available!'.format(version))
     else:
         raise Exception('Transient F-stat map method "{}"' \
                         ' not implemented!'.format(version))
-    return FstatMap
+    return FstatMap, timingFstatMap
 
 
 def reshape_FstatAtomsVector ( atomsVector ):

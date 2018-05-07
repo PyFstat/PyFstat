@@ -459,10 +459,12 @@ class TransientGridSearch(GridSearch):
             tCWfilebase = os.path.splitext(self.out_file)[0] + '_tCW_'
             logging.info('Will save per-Doppler Fstatmap' \
                          ' results to {}*.dat'.format(tCWfilebase))
+        self.timingFstatMap = 0.
         for vals in tqdm(self.input_data):
             detstat = self.search.get_det_stat(*vals)
             windowRange = getattr(self.search, 'windowRange', None)
             FstatMap = getattr(self.search, 'FstatMap', None)
+            self.timingFstatMap += getattr(self.search, 'timingFstatMap', None)
             thisCand = list(vals) + [detstat]
             if getattr(self, 'transientWindowType', None):
                 if self.tCWFstatMapVersion == 'lal':
@@ -490,6 +492,8 @@ class TransientGridSearch(GridSearch):
             data.append(thisCand)
             if self.outputAtoms:
                 self.search.write_atoms_to_file(os.path.splitext(self.out_file)[0])
+
+        logging.info('Total time spent computing transient F-stat maps: {:.2f}s'.format(self.timingFstatMap))
 
         data = np.array(data, dtype=np.float)
         if return_data:
