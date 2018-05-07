@@ -5,6 +5,11 @@ continuous gravitational wave (CW) searches.
 
 For documentation, please use the [wiki](https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat/wikis/home).
 
+In the
+[examples](https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat/tree/master/examples),
+we have a number of scripts demonstrating different use cases.
+
+
 ## Installation
 
 ### `python` installation
