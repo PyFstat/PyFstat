@@ -714,7 +714,7 @@ class ComputeFstat(BaseSearchClass):
             # actual (t0,tau) window was set with tstart, tend before
             self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
 
-        self.FstatMap = tcw.call_compute_transient_fstat_map(
+        self.FstatMap, self.timingFstatMap = tcw.call_compute_transient_fstat_map(
             self.tCWFstatMapVersion, self.tCWFstatMapFeatures,
             self.FstatResults.multiFatoms[0], self.windowRange)
         if self.tCWFstatMapVersion == 'lal':
