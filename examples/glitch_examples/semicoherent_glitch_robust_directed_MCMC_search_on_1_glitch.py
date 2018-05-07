@@ -60,7 +60,9 @@ mcmc.run()
 dT = time.time() - t1
 fig_and_axes = gridcorner._get_fig_and_axes(4, 2, 0.05)
 mcmc.plot_corner(label_offset=0.25, truths=[0, 0, 0, 0],
-                 fig_and_axes=fig_and_axes, quantiles=(0.16, 0.84))
+                 fig_and_axes=fig_and_axes, quantiles=(0.16, 0.84),
+                 hist_kwargs=dict(lw=1.5, zorder=-1),
+                 truth_color='C3')
 
 mcmc.print_summary()
 
