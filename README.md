@@ -118,3 +118,24 @@ here, we use the default ephemeris files provided with `lalsuite`.
 
 This project is open to development, please feel free to contact us
 for advice or just jump in and submit a pull request.
+
+## Citing this work
+
+If you use `PyFstat` in a publication we would appreciate if you cite the
+original paper introducing the code, the [ADS page can be found
+here](http://adsabs.harvard.edu/abs/2018arXiv180205450A) and the version
+release:
+
+```
+@misc{pyfstat,
+  author       = {{Ashton}, G. and {Keitel}, D.},
+  title        = {{PyFstat-v1.2}},
+  month        = may,
+  year         = 2018,
+  doi          = {10.5281/zenodo.1243931},
+  url          = {https://doi.org/10.5281/zenodo.1243931},
+  note= {\url{https://doi.org/10.5281/zenodo.1243931}}
+}
+```
+
+
