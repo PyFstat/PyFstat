@@ -110,7 +110,6 @@ class MCMCSearch(core.BaseSearchClass):
         asini='', period='s', ecc='', tp='', argp='')
     transform_dictionary = {}
 
-    @helper_functions.initializer
     def __init__(self, theta_prior, tref, label, outdir='data',
                  minStartTime=None, maxStartTime=None, sftfilepattern=None,
                  detectors=None, nsteps=[100, 100], nwalkers=100, ntemps=1,
@@ -119,6 +118,30 @@ class MCMCSearch(core.BaseSearchClass):
                  SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
                  injectSources=None, assumeSqrtSX=None,
                  transientWindowType=None, tCWFstatMapVersion='lal'):
+
+        self.theta_prior = theta_prior
+        self.tref = tref
+        self.label = label
+        self.outdir = outdir
+        self.minStartTime = minStartTime
+        self.maxStartTime = maxStartTime
+        self.sftfilepattern = sftfilepattern
+        self.detectors = detectors
+        self.nsteps = nsteps
+        self.nwalkers = nwalkers
+        self.ntemps = ntemps
+        self.log10beta_min = log10beta_min
+        self.theta_initial = theta_initial
+        self.rhohatmax = rhohatmax
+        self.binary = binary
+        self.BSGL = BSGL
+        self.SSBprec = SSBprec
+        self.minCoverFreq = minCoverFreq
+        self.maxCoverFreq = maxCoverFreq
+        self.injectSources = injectSources
+        self.assumeSqrtSX = assumeSqrtSX
+        self.transientWindowType = transientWindowType
+        self.tCWFstatMapVersion = tCWFstatMapVersion
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -1889,17 +1912,63 @@ class MCMCGlitchSearch(MCMCSearch):
 class MCMCSemiCoherentSearch(MCMCSearch):
     """ MCMC search for a signal using the semi-coherent ComputeFstat
 
-    See parent MCMCSearch for a list of all additional parameters, here we list
-    only the additional init parameters of this class.
-
     Parameters
     ----------
+    theta_prior: dict
+        Dictionary of priors and fixed values for the search parameters.
+        For each parameters (key of the dict), if it is to be held fixed
+        the value should be the constant float, if it is be searched, the
+        value should be a dictionary of the prior.
+    tref, minStartTime, maxStartTime: int
+        GPS seconds of the reference time, start time and end time. While tref
+        is requirede, minStartTime and maxStartTime default to None in which
+        case all available data is used.
+    label, outdir: str
+        A label and output directory (optional, defaults is `'data'`) to
+        name files
+    sftfilepattern: str, optional
+        Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+        mutiple patterns can be given separated by colons.
+    detectors: str, optional
+        Two character reference to the detectors to use, specify None for no
+        contraint and comma separate for multiple references.
+    nsteps: list (2,), optional
+        Number of burn-in and production steps to take, [nburn, nprod]. See
+        `pyfstat.MCMCSearch.setup_initialisation()` for details on adding
+        initialisation steps.
+    nwalkers, ntemps: int, optional
+        The number of walkers and temperates to use in the parallel
+        tempered PTSampler.
+    log10beta_min float < 0, optional
+        The  log_10(beta) value, if given the set of betas passed to PTSampler
+        are generated from `np.logspace(0, log10beta_min, ntemps)` (given
+        in descending order to ptemcee).
+    theta_initial: dict, array, optional
+        A dictionary of distribution about which to distribute the
+        initial walkers about
+    rhohatmax: float, optional
+        Upper bound for the SNR scale parameter (required to normalise the
+        Bayes factor) - this needs to be carefully set when using the
+        evidence.
+    binary: bool, optional
+        If true, search over binary parameters
+    BSGL: bool, optional
+        If true, use the BSGL statistic
+    SSBPrec: int, optional
+        SSBPrec (SSB precision) to use when calling ComputeFstat
+    minCoverFreq, maxCoverFreq: float, optional
+        Minimum and maximum instantaneous frequency which will be covered
+        over the SFT time span as passed to CreateFstatInput
+    injectSources: dict, optional
+        If given, inject these properties into the SFT files before running
+        the search
+    assumeSqrtSX: float, optional
+        Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}
     nsegs: int
         The number of segments
 
     """
 
-    @helper_functions.initializer
     def __init__(self, theta_prior, tref, label, outdir='data',
                  minStartTime=None, maxStartTime=None, sftfilepattern=None,
                  detectors=None, nsteps=[100, 100], nwalkers=100, ntemps=1,
@@ -1908,6 +1977,29 @@ class MCMCSemiCoherentSearch(MCMCSearch):
                  SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
                  injectSources=None, assumeSqrtSX=None,
                  nsegs=None):
+
+        self.theta_prior = theta_prior
+        self.tref = tref
+        self.label = label
+        self.outdir = outdir
+        self.minStartTime = minStartTime
+        self.maxStartTime = maxStartTime
+        self.sftfilepattern = sftfilepattern
+        self.detectors = detectors
+        self.nsteps = nsteps
+        self.nwalkers = nwalkers
+        self.ntemps = ntemps
+        self.log10beta_min = log10beta_min
+        self.theta_initial = theta_initial
+        self.rhohatmax = rhohatmax
+        self.binary = binary
+        self.BSGL = BSGL
+        self.SSBprec = SSBprec
+        self.minCoverFreq = minCoverFreq
+        self.maxCoverFreq = maxCoverFreq
+        self.injectSources = injectSources
+        self.assumeSqrtSX = assumeSqrtSX
+        self.nsegs = nsegs
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -1975,9 +2067,127 @@ class MCMCSemiCoherentSearch(MCMCSearch):
 class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
     """ A follow up procudure increasing the coherence time in a zoom
 
-    See parent MCMCSemiCoherentSearch for a list of all additional parameters
+    Parameters
+    ----------
+    theta_prior: dict
+        Dictionary of priors and fixed values for the search parameters.
+        For each parameters (key of the dict), if it is to be held fixed
+        the value should be the constant float, if it is be searched, the
+        value should be a dictionary of the prior.
+    tref, minStartTime, maxStartTime: int
+        GPS seconds of the reference time, start time and end time. While tref
+        is requirede, minStartTime and maxStartTime default to None in which
+        case all available data is used.
+    label, outdir: str
+        A label and output directory (optional, defaults is `'data'`) to
+        name files
+    sftfilepattern: str, optional
+        Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+        mutiple patterns can be given separated by colons.
+    detectors: str, optional
+        Two character reference to the detectors to use, specify None for no
+        contraint and comma separate for multiple references.
+    nsteps: list (2,), optional
+        Number of burn-in and production steps to take, [nburn, nprod]. See
+        `pyfstat.MCMCSearch.setup_initialisation()` for details on adding
+        initialisation steps.
+    nwalkers, ntemps: int, optional
+        The number of walkers and temperates to use in the parallel
+        tempered PTSampler.
+    log10beta_min float < 0, optional
+        The  log_10(beta) value, if given the set of betas passed to PTSampler
+        are generated from `np.logspace(0, log10beta_min, ntemps)` (given
+        in descending order to ptemcee).
+    theta_initial: dict, array, optional
+        A dictionary of distribution about which to distribute the
+        initial walkers about
+    rhohatmax: float, optional
+        Upper bound for the SNR scale parameter (required to normalise the
+        Bayes factor) - this needs to be carefully set when using the
+        evidence.
+    binary: bool, optional
+        If true, search over binary parameters
+    BSGL: bool, optional
+        If true, use the BSGL statistic
+    SSBPrec: int, optional
+        SSBPrec (SSB precision) to use when calling ComputeFstat
+    minCoverFreq, maxCoverFreq: float, optional
+        Minimum and maximum instantaneous frequency which will be covered
+        over the SFT time span as passed to CreateFstatInput
+    injectSources: dict, optional
+        If given, inject these properties into the SFT files before running
+        the search
+    assumeSqrtSX: float, optional
+        Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}
+ 
+    Attributes
+    ----------
+    symbol_dictionary: dict
+        Key, val pairs of the parameters (i.e. `F0`, `F1`), to Latex math
+        symbols for plots
+    unit_dictionary: dict
+        Key, val pairs of the parameters (i.e. `F0`, `F1`), and the
+        units (i.e. `Hz`)
+    transform_dictionary: dict
+        Key, val pairs of the parameters (i.e. `F0`, `F1`), where the key is
+        itself a dictionary which can item `multiplier`, `subtractor`, or
+        `unit` by which to transform by and update the units.
 
     """
+
+    def __init__(self, theta_prior, tref, label, outdir='data',
+                 minStartTime=None, maxStartTime=None, sftfilepattern=None,
+                 detectors=None, nsteps=[100, 100], nwalkers=100, ntemps=1,
+                 log10beta_min=-5, theta_initial=None,
+                 rhohatmax=1000, binary=False, BSGL=False,
+                 SSBprec=None, minCoverFreq=None, maxCoverFreq=None,
+                 injectSources=None, assumeSqrtSX=None):
+
+        self.theta_prior = theta_prior
+        self.tref = tref
+        self.label = label
+        self.outdir = outdir
+        self.minStartTime = minStartTime
+        self.maxStartTime = maxStartTime
+        self.sftfilepattern = sftfilepattern
+        self.detectors = detectors
+        self.nsteps = nsteps
+        self.nwalkers = nwalkers
+        self.ntemps = ntemps
+        self.log10beta_min = log10beta_min
+        self.theta_initial = theta_initial
+        self.rhohatmax = rhohatmax
+        self.binary = binary
+        self.BSGL = BSGL
+        self.SSBprec = SSBprec
+        self.minCoverFreq = minCoverFreq
+        self.maxCoverFreq = maxCoverFreq
+        self.injectSources = injectSources
+        self.assumeSqrtSX = assumeSqrtSX
+        self.nsegs = None
+
+        if os.path.isdir(outdir) is False:
+            os.mkdir(outdir)
+        self._add_log_file()
+        logging.info(('Set-up MCMC semi-coherent search for model {} on data'
+                      '{}').format(
+            self.label, self.sftfilepattern))
+        self.pickle_path = '{}/{}_saved_data.p'.format(self.outdir, self.label)
+        self._unpack_input_theta()
+        self.ndim = len(self.theta_keys)
+        if self.log10beta_min:
+            self.betas = np.logspace(0, self.log10beta_min, self.ntemps)
+        else:
+            self.betas = None
+        if args.clean and os.path.isfile(self.pickle_path):
+            os.rename(self.pickle_path, self.pickle_path+".old")
+
+        self._log_input()
+
+        if self.nsegs:
+            self._set_likelihoodcoef()
+        else:
+            logging.info('Value `nsegs` not yet provided')
 
     def _get_data_dictionary_to_save(self):
         d = dict(nwalkers=self.nwalkers, ntemps=self.ntemps,
