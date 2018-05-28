@@ -131,7 +131,7 @@ class MCMCSearch(core.BaseSearchClass):
         self.nwalkers = nwalkers
         self.ntemps = ntemps
         self.log10beta_min = log10beta_min
-        self.theta_initial = self.theta_initial
+        self.theta_initial = theta_initial
         self.rhohatmax = rhohatmax
         self.binary = binary
         self.BSGL = BSGL
@@ -1990,7 +1990,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         self.nwalkers = nwalkers
         self.ntemps = ntemps
         self.log10beta_min = log10beta_min
-        self.theta_initial = self.theta_initial
+        self.theta_initial = theta_initial
         self.rhohatmax = rhohatmax
         self.binary = binary
         self.BSGL = BSGL
@@ -2155,7 +2155,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         self.nwalkers = nwalkers
         self.ntemps = ntemps
         self.log10beta_min = log10beta_min
-        self.theta_initial = self.theta_initial
+        self.theta_initial = theta_initial
         self.rhohatmax = rhohatmax
         self.binary = binary
         self.BSGL = BSGL
