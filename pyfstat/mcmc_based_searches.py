@@ -2157,6 +2157,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         """
 
         self.nsegs = 1
+        self._set_likelihoodcoef()
         self._initiate_search_object()
         run_setup = self.init_run_setup(
             run_setup, NstarMax=NstarMax, Nsegs0=Nsegs0, log_table=log_table,
@@ -2241,7 +2242,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes
         self.all_lnlikelihood = all_lnlikelihood
-        self._save_data(sampler, samples, lnprobs, lnlikes, all_lnlikelihood)
+        self._save_data(sampler, samples, lnprobs, lnlikes, all_lnlikelihood,
+                        sampler.chain)
 
         if create_plots:
             try:
