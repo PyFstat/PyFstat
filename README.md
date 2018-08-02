@@ -97,8 +97,11 @@ the module will be installed to whichever python executable you call it from.
 
 ### Ephemeris installation
 
-The scripts require a path to ephemeris files in order to use the
-`lalpulsar.ComputeFstat` module. This can either be specified when initialising
+The scripts require paths to earth and sun ephemeris files in order to use the
+`lalpulsar.ComputeFstat` module. This should be automatically picked up from
+the $LALPULSAR_DATADIR environment variable, defaulting to the
+00-40-DE421 ephemerides or 00-19-DE421 as a backup.
+Alternatively, these can either be manually specified when initialising
 each search (as one of the arguments), or simply by placing a file
 `~/.pyfstat.conf` into your home directory which looks like
 
@@ -106,7 +109,7 @@ each search (as one of the arguments), or simply by placing a file
 earth_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/earth00-19-DE421.dat.gz'
 sun_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/sun00-19-DE421.dat.gz'
 ```
-here, we use the default ephemeris files provided with `lalsuite`.
+Paths set in this way will take precedence over the environment variable.
 
 ### Contributors
 
