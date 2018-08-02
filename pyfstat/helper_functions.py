@@ -92,6 +92,8 @@ def set_up_command_line_arguments():
 def get_ephemeris_files():
     """ Returns the earth_ephem and sun_ephem """
     config_file = os.path.expanduser('~')+'/.pyfstat.conf'
+    env_var = 'LALPULSAR_DATADIR'
+    please = 'Please provide the ephemerides paths when initialising searches.'
     if os.path.isfile(config_file):
         d = {}
         with open(config_file, 'r') as f:
@@ -101,11 +103,27 @@ def get_ephemeris_files():
                 for item in [' ', "'", '"', '\n']:
                     v = v.replace(item, '')
                 d[k] = v
-        earth_ephem = d['earth_ephem']
-        sun_ephem = d['sun_ephem']
+        try:
+            earth_ephem = d['earth_ephem']
+            sun_ephem = d['sun_ephem']
+        except:
+            logging.warning('No [earth/sun]_ephem found in '+config_file+'. '+please)
+            earth_ephem = None
+            sun_ephem = None
+    elif env_var in os.environ.keys():
+        earth_ephem = os.path.join(os.environ[env_var],'earth00-40-DE421.dat.gz')
+        sun_ephem = os.path.join(os.environ[env_var],'sun00-40-DE421.dat.gz')
+        if not ( os.path.isfile(earth_ephem) and os.path.isfile(sun_ephem) ):
+            earth_ephem = os.path.join(os.environ[env_var],'earth00-19-DE421.dat.gz')
+            sun_ephem = os.path.join(os.environ[env_var],'sun00-19-DE421.dat.gz')
+            if not ( os.path.isfile(earth_ephem) and os.path.isfile(sun_ephem) ):
+                logging.warning('No [earth/sun]00-[19/40]-DE421 ephemerides '
+                                'found in the '+os.environ[env_var]+' directory. '+please)
+                earth_ephem = None
+                sun_ephem = None
     else:
-        logging.warning('No ~/.pyfstat.conf file found please provide the '
-                        'paths when initialising searches')
+        logging.warning('No '+config_file+' file or $'+env_var+' environment '
+                        'variable found. '+please)
         earth_ephem = None
         sun_ephem = None
     return earth_ephem, sun_ephem
