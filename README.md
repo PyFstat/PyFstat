@@ -63,6 +63,9 @@ $ git clone https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat.git
   a histogram of the loaded SFT data
 * [pathos](https://pypi.python.org/pypi/pathos), if installed, this provides
   support for multiprocessing some functions.
+* [pycuda](https://pypi.org/project/pycuda/), required for the tCWFstatMapVersion=pycuda
+  option of the TransientGridSearch class.
+  (Note: 'pip install pycuda' requires a working nvcc compiler in your path.)
 
 For an introduction to installing modules see
 [here](https://docs.python.org/3.5/installing/index.html). If you are using
