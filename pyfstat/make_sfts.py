@@ -120,10 +120,10 @@ refTime = {:10.6f}""")
         template = (self.get_base_template(
             i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref) + """
 transientWindowType = {:s}
-transientStartTime = {:10.3f}
-transientTauDays = {:1.3f}\n""")
+transientStartTime = {:10.0f}
+transientTau = {:10.0f}\n""")
         return template.format(i, Alpha, Delta, h0, cosi, psi, phi, F0, F1,
-                               F2, tref, window, tstart, duration_days)
+                               F2, tref, window, tstart, duration_days*86400)
 
     def get_single_config_line(self, i, Alpha, Delta, h0, cosi, psi, phi, F0,
                                F1, F2, tref, window, tstart, duration_days):

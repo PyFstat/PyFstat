@@ -530,8 +530,17 @@ class ComputeFstat(BaseSearchClass):
                 self.injectSources))
             PPV = lalpulsar.CreatePulsarParamsVector(1)
             PP = PPV.data[0]
-            PP.Amp.h0 = self.injectSources['h0']
-            PP.Amp.cosi = self.injectSources['cosi']
+            h0 = self.injectSources['h0']
+            cosi = self.injectSources['cosi']
+            use_aPlus = ('aPlus' in dir(PP.Amp))
+            print("use_aPlus = {}".format(use_aPlus))
+            if use_aPlus:  # lalsuite interface changed in aff93c45
+                PP.Amp.aPlus = 0.5 * h0 * (1.0 + cosi**2)
+                PP.Amp.aCross = h0 * cosi
+            else:
+                PP.Amp.h0 = h0
+                PP.Amp.cosi = cosi
+
             PP.Amp.phi0 = self.injectSources['phi0']
             PP.Amp.psi = self.injectSources['psi']
             PP.Doppler.Alpha = self.injectSources['Alpha']
@@ -681,14 +690,14 @@ class ComputeFstat(BaseSearchClass):
                                argp=None):
         """ Returns twoF or ln(BSGL) fully-coherently at a single point """
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
-        self.PulsarDopplerParams.Alpha = Alpha
-        self.PulsarDopplerParams.Delta = Delta
+        self.PulsarDopplerParams.Alpha = float(Alpha)
+        self.PulsarDopplerParams.Delta = float(Delta)
         if self.binary:
-            self.PulsarDopplerParams.asini = asini
-            self.PulsarDopplerParams.period = period
-            self.PulsarDopplerParams.ecc = ecc
-            self.PulsarDopplerParams.tp = tp
-            self.PulsarDopplerParams.argp = argp
+            self.PulsarDopplerParams.asini = float(asini)
+            self.PulsarDopplerParams.period = float(period)
+            self.PulsarDopplerParams.ecc = float(ecc)
+            self.PulsarDopplerParams.tp = float(tp)
+            self.PulsarDopplerParams.argp = float(argp)
 
         lalpulsar.ComputeFstat(self.FstatResults,
                                self.FstatInput,
@@ -1026,14 +1035,14 @@ class SemiCoherentSearch(ComputeFstat):
         """ Returns twoF or ln(BSGL) semi-coherently at a single point """
 
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
-        self.PulsarDopplerParams.Alpha = Alpha
-        self.PulsarDopplerParams.Delta = Delta
+        self.PulsarDopplerParams.Alpha = float(Alpha)
+        self.PulsarDopplerParams.Delta = float(Delta)
         if self.binary:
-            self.PulsarDopplerParams.asini = asini
-            self.PulsarDopplerParams.period = period
-            self.PulsarDopplerParams.ecc = ecc
-            self.PulsarDopplerParams.tp = tp
-            self.PulsarDopplerParams.argp = argp
+            self.PulsarDopplerParams.asini = float(asini)
+            self.PulsarDopplerParams.period = float(period)
+            self.PulsarDopplerParams.ecc = float(ecc)
+            self.PulsarDopplerParams.tp = float(tp)
+            self.PulsarDopplerParams.argp = float(argp)
 
         lalpulsar.ComputeFstat(self.FstatResults,
                                self.FstatInput,
