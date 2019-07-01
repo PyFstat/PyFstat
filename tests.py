@@ -93,7 +93,6 @@ class par(Test):
     label = 'TestPar'
 
     def test(self):
-        os.system('mkdir {}'.format(self.outdir))
         os.system(
             'echo "x=100\ny=10" > {}/{}.par'.format(self.outdir, self.label))
 

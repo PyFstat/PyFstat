@@ -12,7 +12,7 @@ import socket
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from scipy.misc import logsumexp
+from scipy.special import logsumexp
 
 import pyfstat.helper_functions as helper_functions
 from pyfstat.core import (BaseSearchClass, ComputeFstat,
