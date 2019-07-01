@@ -1,5 +1,5 @@
 """ Searches using MCMC-based methods """
-from __future__ import division, absolute_import, print_function
+
 
 import sys
 import os
@@ -221,7 +221,7 @@ class MCMCSearch(core.BaseSearchClass):
 
         self.theta_keys = []
         fixed_theta_dict = {}
-        for key, val in self.theta_prior.iteritems():
+        for key, val in self.theta_prior.items():
             if type(val) is dict:
                 fixed_theta_dict[key] = 0
                 self.theta_keys.append(key)
@@ -953,7 +953,7 @@ class MCMCSearch(core.BaseSearchClass):
         See the pyfstat.core.plot_twoF_cumulative function for further details
         """
         d, maxtwoF = self.get_max_twoF()
-        for key, val in self.theta_prior.iteritems():
+        for key, val in self.theta_prior.items():
             if key not in d:
                 d[key] = val
 
@@ -1223,8 +1223,8 @@ class MCMCSearch(core.BaseSearchClass):
     def _generate_scattered_p0(self, p):
         """ Generate a set of p0s scattered about p """
         p0 = [[p + self.scatter_val * p * np.random.randn(self.ndim)
-               for i in xrange(self.nwalkers)]
-              for j in xrange(self.ntemps)]
+               for i in range(self.nwalkers)]
+              for j in range(self.ntemps)]
         return p0
 
     def _generate_initial_p0(self):
@@ -1349,7 +1349,7 @@ class MCMCSearch(core.BaseSearchClass):
                 setattr(self, key, new_d[key])
 
         mod_keys = []
-        for key in new_d.keys():
+        for key in list(new_d.keys()):
             if key in old_d:
                 if new_d[key] != old_d[key]:
                     mod_keys.append((key, old_d[key], new_d[key]))
@@ -1486,10 +1486,10 @@ class MCMCSearch(core.BaseSearchClass):
             if hasattr(self, 'theta0_index'):
                 f.write('theta0_index = {}\n'.format(self.theta0_idx))
             if method == 'med':
-                for key, val in median_std_d.iteritems():
+                for key, val in median_std_d.items():
                     f.write('{} = {:1.16e}\n'.format(key, val))
             if method == 'twoFmax':
-                for key, val in max_twoF_d.iteritems():
+                for key, val in max_twoF_d.items():
                     f.write('{} = {:1.16e}\n'.format(key, val))
 
     def generate_loudest(self):
@@ -1514,7 +1514,7 @@ class MCMCSearch(core.BaseSearchClass):
             f.write(r"\begin{tabular}{c l c} \hline" + '\n'
                     r"Parameter & & &  \\ \hhline{====}")
 
-            for key, prior in self.theta_prior.iteritems():
+            for key, prior in self.theta_prior.items():
                 if type(prior) is dict:
                     Type = prior['type']
                     if Type == "unif":
@@ -1546,10 +1546,10 @@ class MCMCSearch(core.BaseSearchClass):
         if hasattr(self, 'theta0_idx'):
             logging.info('theta0 index: {}'.format(self.theta0_idx))
         logging.info('Max twoF: {} with parameters:'.format(max_twoF))
-        for k in np.sort(max_twoFd.keys()):
+        for k in np.sort(list(max_twoFd.keys())):
             print('  {:10s} = {:1.9e}'.format(k, max_twoFd[k]))
         logging.info('Median +/- std for production values')
-        for k in np.sort(median_std_d.keys()):
+        for k in np.sort(list(median_std_d.keys())):
             if 'std' not in k:
                 logging.info('  {:10s} = {:1.9e} +/- {:1.9e}'.format(
                     k, median_std_d[k], median_std_d[k+'_std']))
@@ -1668,7 +1668,7 @@ class MCMCSearch(core.BaseSearchClass):
 
     def write_evidence_file_from_dict(self, EvidenceDict, evidence_file_name):
         with open(evidence_file_name, 'w+') as f:
-            for key, val in EvidenceDict.iteritems():
+            for key, val in EvidenceDict.items():
                 f.write('{} {} {}\n'.format(key, val[0], val[1]))
 
 
@@ -1801,7 +1801,7 @@ class MCMCGlitchSearch(MCMCSearch):
                                r'$\delta$'] + full_glitch_symbols)
         self.theta_keys = []
         fixed_theta_dict = {}
-        for key, val in self.theta_prior.iteritems():
+        for key, val in self.theta_prior.items():
             if type(val) is dict:
                 fixed_theta_dict[key] = 0
                 if key in glitch_keys:
@@ -1863,7 +1863,7 @@ class MCMCGlitchSearch(MCMCSearch):
 
         fig, ax = plt.subplots()
         d, maxtwoF = self.get_max_twoF()
-        for key, val in self.theta_prior.iteritems():
+        for key, val in self.theta_prior.items():
             if key not in d:
                 d[key] = val
 
@@ -2223,7 +2223,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
     def check_old_run_setup(self, old_setup, **kwargs):
         try:
-            truths = [val == old_setup[key] for key, val in kwargs.iteritems()]
+            truths = [val == old_setup[key] for key, val in kwargs.items()]
             if all(truths):
                 return True
             else:
@@ -2540,7 +2540,7 @@ class MCMCTransientSearch(MCMCSearch):
 
         self.theta_keys = []
         fixed_theta_dict = {}
-        for key, val in self.theta_prior.iteritems():
+        for key, val in self.theta_prior.items():
             if type(val) is dict:
                 fixed_theta_dict[key] = 0
                 self.theta_keys.append(key)

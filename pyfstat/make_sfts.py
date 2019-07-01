@@ -1,5 +1,5 @@
 """ pyfstat tools to generate sfts """
-from __future__ import division, absolute_import, print_function
+
 
 import numpy as np
 import logging
@@ -120,10 +120,10 @@ refTime = {:10.6f}""")
         template = (self.get_base_template(
             i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref) + """
 transientWindowType = {:s}
-transientStartTime = {:10.3f}
-transientTauDays = {:1.3f}\n""")
+transientStartTime = {:10.0f}
+transientTau = {:10.0f}\n""")
         return template.format(i, Alpha, Delta, h0, cosi, psi, phi, F0, F1,
-                               F2, tref, window, tstart, duration_days)
+                               F2, tref, window, tstart, duration_days*86400)
 
     def get_single_config_line(self, i, Alpha, Delta, h0, cosi, psi, phi, F0,
                                F1, F2, tref, window, tstart, duration_days):
@@ -477,7 +477,7 @@ class FrequencyModulatedArtifactWriter(Writer):
 
         linePhi = 0
         lineFreq_old = 0
-        for i in tqdm(range(self.nsfts)):
+        for i in tqdm(list(range(self.nsfts))):
             mid_time = self.tstart + (i+.5)*self.Tsft
             lineFreq = self.get_frequency(mid_time)
 
@@ -517,7 +517,7 @@ class FrequencyModulatedArtifactWriter(Writer):
             logging.info('Using {} threads'.format(args.N))
             try:
                 with pathos.pools.ProcessPool(args.N) as p:
-                    list(tqdm(p.imap(self.make_ith_sft, range(self.nsfts)),
+                    list(tqdm(p.imap(self.make_ith_sft, list(range(self.nsfts))),
                               total=self.nsfts))
             except KeyboardInterrupt:
                 p.terminate()
@@ -525,7 +525,7 @@ class FrequencyModulatedArtifactWriter(Writer):
             logging.info(
                 "No multiprocessing requested or `pathos` not install, cont."
                 " without multiprocessing")
-            for i in tqdm(range(self.nsfts)):
+            for i in tqdm(list(range(self.nsfts))):
                 self.make_ith_sft(i)
 
         self.concatenate_sft_files()

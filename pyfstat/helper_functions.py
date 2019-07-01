@@ -110,7 +110,7 @@ def get_ephemeris_files():
             logging.warning('No [earth/sun]_ephem found in '+config_file+'. '+please)
             earth_ephem = None
             sun_ephem = None
-    elif env_var in os.environ.keys():
+    elif env_var in list(os.environ.keys()):
         earth_ephem = os.path.join(os.environ[env_var],'earth00-40-DE421.dat.gz')
         sun_ephem = os.path.join(os.environ[env_var],'sun00-40-DE421.dat.gz')
         if not ( os.path.isfile(earth_ephem) and os.path.isfile(sun_ephem) ):

@@ -62,6 +62,6 @@ fig.savefig('{}/{}_projection_matrix.png'.format(outdir, label),
             bbox_inches='tight')
 
 
-print('Prior widths =', F0_width, F1_width)
-print("Actual run time = {}".format(dT))
-print("Actual number of grid points = {}".format(search.data.shape[0]))
+print(('Prior widths =', F0_width, F1_width))
+print(("Actual run time = {}".format(dT)))
+print(("Actual number of grid points = {}".format(search.data.shape[0])))

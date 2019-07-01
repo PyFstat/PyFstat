@@ -1,5 +1,5 @@
 """ Searches using grid-based methods """
-from __future__ import division, absolute_import, print_function
+
 
 import os
 import logging
@@ -12,7 +12,7 @@ import socket
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from scipy.misc import logsumexp
+from scipy.special import logsumexp
 
 import pyfstat.helper_functions as helper_functions
 from pyfstat.core import (BaseSearchClass, ComputeFstat,
@@ -342,7 +342,7 @@ class GridSearch(BaseSearchClass):
     def print_max_twoF(self):
         d = self.get_max_twoF()
         print('Max twoF values for {}:'.format(self.label))
-        for k, v in d.iteritems():
+        for k, v in d.items():
             print('  {}={}'.format(k, v))
 
     def set_out_file(self, extra_label=None):
@@ -1006,7 +1006,7 @@ class EarthTest(GridSearch):
         vals = [self.minStartTime, self.maxStartTime, self.F0, self.F1,
                 self.F2, self.Alpha, self.Delta]
         self.special_data = {'zero': [0, 0, 0]}
-        for key, (dR, dphi, dP) in self.special_data.iteritems():
+        for key, (dR, dphi, dP) in self.special_data.items():
             rescaleRadius = (1 + dR / lal.REARTH_SI)
             rescalePeriod = (1 + dP / lal.DAYSID_SI)
             lalpulsar.BarycenterModifyEarthRotation(

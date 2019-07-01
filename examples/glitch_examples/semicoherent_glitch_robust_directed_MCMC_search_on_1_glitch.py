@@ -66,5 +66,5 @@ mcmc.plot_corner(label_offset=0.25, truths=[0, 0, 0, 0],
 
 mcmc.print_summary()
 
-print('Prior widths =', F0_width, F1_width)
-print("Actual run time = {}".format(dT))
+print(('Prior widths =', F0_width, F1_width))
+print(("Actual run time = {}".format(dT)))

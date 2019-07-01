@@ -93,7 +93,6 @@ class par(Test):
     label = 'TestPar'
 
     def test(self):
-        os.system('mkdir {}'.format(self.outdir))
         os.system(
             'echo "x=100\ny=10" > {}/{}.par'.format(self.outdir, self.label))
 
@@ -315,10 +314,10 @@ class SemiCoherentGlitchSearch(Test):
         Writer.tend = maxStartTime
         FSB = Writer.predict_fstat()
 
-        print FSA, FSB
+        print(FSA, FSB)
         predicted_FS = (FSA + FSB)
 
-        print(predicted_FS, FS)
+        print((predicted_FS, FS))
         self.assertTrue(np.abs((FS - predicted_FS))/predicted_FS < 0.3)
 
 
@@ -359,8 +358,8 @@ class MCMCSearch(Test):
         search.run(create_plots=False)
         _, FS = search.get_max_twoF()
 
-        print('Predicted twoF is {} while recovered is {}'.format(
-                predicted_FS, FS))
+        print(('Predicted twoF is {} while recovered is {}'.format(
+                predicted_FS, FS)))
         self.assertTrue(
             FS > predicted_FS or np.abs((FS-predicted_FS))/predicted_FS < 0.3)
 
