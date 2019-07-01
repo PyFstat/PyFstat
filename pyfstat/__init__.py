@@ -1,4 +1,4 @@
-from __future__ import division as _division
+
 
 from .core import BaseSearchClass, ComputeFstat, SemiCoherentSearch, SemiCoherentGlitchSearch
 from .make_sfts import Writer, GlitchWriter, FrequencyModulatedArtifactWriter, FrequencyAmplitudeModulatedArtifactWriter

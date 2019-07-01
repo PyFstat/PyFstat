@@ -3,7 +3,7 @@
 Provides functions to aid in calculating the optimal setup for zoom follow up
 
 """
-from __future__ import division, absolute_import, print_function
+
 
 import logging
 import numpy as np

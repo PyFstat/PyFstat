@@ -27,13 +27,13 @@ data.make_data()
 
 # The predicted twoF, given by lalapps_predictFstat can be accessed by
 twoF = data.predict_fstat()
-print 'Predicted twoF value: {}\n'.format(twoF)
+print('Predicted twoF value: {}\n'.format(twoF))
 
 DeltaF0 = 1e-7
 DeltaF1 = 1e-13
 VF0 = (np.pi * duration * DeltaF0)**2 / 3.0
 VF1 = (np.pi * duration**2 * DeltaF1)**2 * 4/45.
-print '\nV={:1.2e}, VF0={:1.2e}, VF1={:1.2e}\n'.format(VF0*VF1, VF0, VF1)
+print('\nV={:1.2e}, VF0={:1.2e}, VF1={:1.2e}\n'.format(VF0*VF1, VF0, VF1))
 
 theta_prior = {'F0': {'type': 'unif',
                       'lower': F0-DeltaF0/2.,
