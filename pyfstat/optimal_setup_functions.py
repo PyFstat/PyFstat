@@ -14,8 +14,8 @@ import pyfstat.helper_functions as helper_functions
 
 
 def get_optimal_setup(
-        NstarMax, Nsegs0, tref, minStartTime, maxStartTime, prior,
-        detector_names):
+    NstarMax, Nsegs0, tref, minStartTime, maxStartTime, prior, detector_names
+):
     """ Using an optimisation step, calculate the optimal setup ladder
 
     Parameters
@@ -37,14 +37,14 @@ def get_optimal_setup(
 
     """
 
-    logging.info('Calculating optimal setup for NstarMax={}, Nsegs0={}'.format(
-        NstarMax, Nsegs0))
+    logging.info(
+        "Calculating optimal setup for NstarMax={}, Nsegs0={}".format(NstarMax, Nsegs0)
+    )
 
     Nstar_0 = get_Nstar_estimate(
-        Nsegs0, tref, minStartTime, maxStartTime, prior,
-        detector_names)
-    logging.info(
-        'Stage {}, nsegs={}, Nstar={}'.format(0, Nsegs0, int(Nstar_0)))
+        Nsegs0, tref, minStartTime, maxStartTime, prior, detector_names
+    )
+    logging.info("Stage {}, nsegs={}, Nstar={}".format(0, Nsegs0, int(Nstar_0)))
 
     nsegs_vals = [Nsegs0]
     Nstar_vals = [Nstar_0]
@@ -53,25 +53,27 @@ def get_optimal_setup(
     nsegs_i = Nsegs0
     while nsegs_i > 1:
         nsegs_i, Nstar_i = _get_nsegs_ip1(
-            nsegs_i, NstarMax, tref, minStartTime, maxStartTime, prior,
-            detector_names)
+            nsegs_i, NstarMax, tref, minStartTime, maxStartTime, prior, detector_names
+        )
         nsegs_vals.append(nsegs_i)
         Nstar_vals.append(Nstar_i)
         i += 1
-        logging.info(
-            'Stage {}, nsegs={}, Nstar={}'.format(i, nsegs_i, int(Nstar_i)))
+        logging.info("Stage {}, nsegs={}, Nstar={}".format(i, nsegs_i, int(Nstar_i)))
 
     return nsegs_vals, Nstar_vals
 
 
-def _get_nsegs_ip1(nsegs_i, NstarMax, tref, minStartTime, maxStartTime, prior,
-                   detector_names):
+def _get_nsegs_ip1(
+    nsegs_i, NstarMax, tref, minStartTime, maxStartTime, prior, detector_names
+):
     """ Calculate Nsegs_{i+1} given Nsegs_{i} """
 
     log10NstarMax = np.log10(NstarMax)
-    log10Nstari = np.log10(get_Nstar_estimate(
-        nsegs_i, tref, minStartTime, maxStartTime, prior,
-        detector_names))
+    log10Nstari = np.log10(
+        get_Nstar_estimate(
+            nsegs_i, tref, minStartTime, maxStartTime, prior, detector_names
+        )
+    )
 
     def f(nsegs_ip1):
         if nsegs_ip1[0] > nsegs_i:
@@ -82,24 +84,30 @@ def _get_nsegs_ip1(nsegs_i, NstarMax, tref, minStartTime, maxStartTime, prior,
         if nsegs_ip1 == 0:
             nsegs_ip1 = 1
         Nstarip1 = get_Nstar_estimate(
-            nsegs_ip1, tref, minStartTime, maxStartTime, prior, detector_names)
+            nsegs_ip1, tref, minStartTime, maxStartTime, prior, detector_names
+        )
         if Nstarip1 is None:
             return 1e6
         else:
             log10Nstarip1 = np.log10(Nstarip1)
             return np.abs(log10Nstari + log10NstarMax - log10Nstarip1)
-    res = scipy.optimize.minimize(f, .4*nsegs_i, method='Powell', tol=1,
-                                  options={'maxiter': 10})
-    logging.info('{} with {} evaluations'.format(res['message'], res['nfev']))
+
+    res = scipy.optimize.minimize(
+        f, 0.4 * nsegs_i, method="Powell", tol=1, options={"maxiter": 10}
+    )
+    logging.info("{} with {} evaluations".format(res["message"], res["nfev"]))
     nsegs_ip1 = int(res.x)
     if nsegs_ip1 == 0:
         nsegs_ip1 = 1
     if res.success:
-        return nsegs_ip1, get_Nstar_estimate(
-            nsegs_ip1, tref, minStartTime, maxStartTime, prior,
-            detector_names)
+        return (
+            nsegs_ip1,
+            get_Nstar_estimate(
+                nsegs_ip1, tref, minStartTime, maxStartTime, prior, detector_names
+            ),
+        )
     else:
-        raise ValueError('Optimisation unsuccesful')
+        raise ValueError("Optimisation unsuccesful")
 
 
 def _extract_data_from_prior(prior):
@@ -121,7 +129,7 @@ def _extract_data_from_prior(prior):
         Fidicual frequency
 
     """
-    keys = ['Alpha', 'Delta', 'F0', 'F1', 'F2']
+    keys = ["Alpha", "Delta", "F0", "F1", "F2"]
     spindown_keys = keys[3:]
     sky_keys = keys[:2]
     lims = []
@@ -129,14 +137,14 @@ def _extract_data_from_prior(prior):
     lims_idxs = []
     for i, key in enumerate(keys):
         if type(prior[key]) == dict:
-            if prior[key]['type'] == 'unif':
-                lims.append([prior[key]['lower'], prior[key]['upper']])
+            if prior[key]["type"] == "unif":
+                lims.append([prior[key]["lower"], prior[key]["upper"]])
                 lims_keys.append(key)
                 lims_idxs.append(i)
             else:
                 raise ValueError(
-                    "Prior type {} not yet supported".format(
-                        prior[key]['type']))
+                    "Prior type {} not yet supported".format(prior[key]["type"])
+                )
         elif key not in spindown_keys:
             lims.append([prior[key], 0])
     lims = np.array(lims)
@@ -149,16 +157,15 @@ def _extract_data_from_prior(prior):
         p.append(basex)
     spindowns = np.sum([np.sum(lims_keys == k) for k in spindown_keys])
     sky = any([key in lims_keys for key in sky_keys])
-    if type(prior['F0']) == dict:
-        fiducial_freq = prior['F0']['upper']
+    if type(prior["F0"]) == dict:
+        fiducial_freq = prior["F0"]["upper"]
     else:
-        fiducial_freq = prior['F0']
+        fiducial_freq = prior["F0"]
 
     return np.array(p).T, spindowns, sky, fiducial_freq
 
 
-def get_Nstar_estimate(
-        nsegs, tref, minStartTime, maxStartTime, prior, detector_names):
+def get_Nstar_estimate(nsegs, tref, minStartTime, maxStartTime, prior, detector_names):
     """ Returns N* estimated from the super-sky metric
 
     Parameters
@@ -189,29 +196,35 @@ def get_Nstar_estimate(
     in_phys = helper_functions.convert_array_to_gsl_matrix(in_phys)
     out_rssky = helper_functions.convert_array_to_gsl_matrix(out_rssky)
 
-    tboundaries = np.linspace(minStartTime, maxStartTime, nsegs+1)
+    tboundaries = np.linspace(minStartTime, maxStartTime, nsegs + 1)
 
     ref_time = lal.LIGOTimeGPS(tref)
     segments = lal.SegListCreate()
-    for j in range(len(tboundaries)-1):
-        seg = lal.SegCreate(lal.LIGOTimeGPS(tboundaries[j]),
-                            lal.LIGOTimeGPS(tboundaries[j+1]),
-                            j)
+    for j in range(len(tboundaries) - 1):
+        seg = lal.SegCreate(
+            lal.LIGOTimeGPS(tboundaries[j]), lal.LIGOTimeGPS(tboundaries[j + 1]), j
+        )
         lal.SegListAppend(segments, seg)
     detNames = lal.CreateStringVector(*detector_names)
     detectors = lalpulsar.MultiLALDetector()
     lalpulsar.ParseMultiLALDetector(detectors, detNames)
     detector_weights = None
-    detector_motion = (lalpulsar.DETMOTION_SPIN
-                       + lalpulsar.DETMOTION_ORBIT)
+    detector_motion = lalpulsar.DETMOTION_SPIN + lalpulsar.DETMOTION_ORBIT
     ephemeris = lalpulsar.InitBarycenter(earth_ephem, sun_ephem)
     try:
         SSkyMetric = lalpulsar.ComputeSuperskyMetrics(
-            lalpulsar.SUPERSKY_METRIC_TYPE, spindowns, ref_time, segments,
-            fiducial_freq, detectors, detector_weights, detector_motion,
-            ephemeris)
+            lalpulsar.SUPERSKY_METRIC_TYPE,
+            spindowns,
+            ref_time,
+            segments,
+            fiducial_freq,
+            detectors,
+            detector_weights,
+            detector_motion,
+            ephemeris,
+        )
     except RuntimeError as e:
-        logging.warning('Encountered run-time error {}'.format(e))
+        logging.warning("Encountered run-time error {}".format(e))
         raise RuntimeError("Calculation of the SSkyMetric failed")
 
     if sky:
@@ -220,7 +233,8 @@ def get_Nstar_estimate(
         i = 2
 
     lalpulsar.ConvertPhysicalToSuperskyPoints(
-        out_rssky, in_phys, SSkyMetric.semi_rssky_transf)
+        out_rssky, in_phys, SSkyMetric.semi_rssky_transf
+    )
 
     d = out_rssky.data
 
@@ -230,10 +244,13 @@ def get_Nstar_estimate(
     parallelepiped = (d[i:, 1:].T - d[i:, 0]).T
 
     Nstars = []
-    for j in range(1, len(g)+1):
+    for j in range(1, len(g) + 1):
         dV = np.abs(np.linalg.det(parallelepiped[:j, :j]))
         sqrtdetG = np.sqrt(np.abs(np.linalg.det(g[:j, :j])))
         Nstars.append(sqrtdetG * dV)
-    logging.debug('Nstar for each dimension = {}'.format(
-        ', '.join(["{:1.1e}".format(n) for n in Nstars])))
+    logging.debug(
+        "Nstar for each dimension = {}".format(
+            ", ".join(["{:1.1e}".format(n) for n in Nstars])
+        )
+    )
     return np.max(Nstars)

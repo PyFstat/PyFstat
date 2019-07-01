@@ -5,12 +5,13 @@
 
 import numpy as np
 import logging
+
 try:
     from astropy import units as u
     from astropy.coordinates import SkyCoord
     from astropy.time import Time
 except ImportError:
-    logging.warning('Python module astropy not installed')
+    logging.warning("Python module astropy not installed")
 import lal
 
 # Assume Earth goes around Sun in a non-wobbling circle at constant speed;
@@ -20,22 +21,20 @@ import lal
 
 
 def _eqToEcl(alpha, delta):
-    source = SkyCoord(alpha*u.radian, delta*u.radian, frame='gcrs')
-    out = source.transform_to('geocentrictrueecliptic')
+    source = SkyCoord(alpha * u.radian, delta * u.radian, frame="gcrs")
+    out = source.transform_to("geocentrictrueecliptic")
     return np.array([out.lon.radian, out.lat.radian])
 
 
 def _eclToEq(lon, lat):
-    source = SkyCoord(lon*u.radian, lat*u.radian,
-                      frame='geocentrictrueecliptic')
-    out = source.transform_to('gcrs')
+    source = SkyCoord(lon * u.radian, lat * u.radian, frame="geocentrictrueecliptic")
+    out = source.transform_to("gcrs")
     return np.array([out.ra.radian, out.dec.radian])
 
 
-def _calcDopplerWings(
-        s_freq, s_alpha, s_delta, lonStart, lonStop, numTimes=100):
+def _calcDopplerWings(s_freq, s_alpha, s_delta, lonStart, lonStop, numTimes=100):
     e_longitudes = np.linspace(lonStart, lonStop, numTimes)
-    v_over_c = 2*np.pi*lal.AU_SI/lal.YRSID_SI/lal.C_SI
+    v_over_c = 2 * np.pi * lal.AU_SI / lal.YRSID_SI / lal.C_SI
     s_lon, s_lat = _eqToEcl(s_alpha, s_delta)
 
     vertical = s_lat
@@ -45,8 +44,8 @@ def _calcDopplerWings(
     F0min, F0max = np.amin(dopplerShifts), np.amax(dopplerShifts)
 
     # Add twice the spin-modulation
-    SpinModulationMax = 2*np.pi*lal.REARTH_SI/lal.DAYSID_SI/lal.C_SI * s_freq
-    return F0min - 2*SpinModulationMax, F0max + 2*SpinModulationMax
+    SpinModulationMax = 2 * np.pi * lal.REARTH_SI / lal.DAYSID_SI / lal.C_SI * s_freq
+    return F0min - 2 * SpinModulationMax, F0max + 2 * SpinModulationMax
 
 
 def _calcSpindownWings(freq, fdot, minStartTime, maxStartTime):
@@ -54,8 +53,7 @@ def _calcSpindownWings(freq, fdot, minStartTime, maxStartTime):
     return 0.5 * timespan * np.abs(fdot) * np.array([-1, 1])
 
 
-def get_frequency_range_of_signal(F0, F1, Alpha, Delta, minStartTime,
-                                  maxStartTime):
+def get_frequency_range_of_signal(F0, F1, Alpha, Delta, minStartTime, maxStartTime):
     """ Calculate the frequency range that a signal will occupy
 
     Parameters
@@ -78,14 +76,14 @@ def get_frequency_range_of_signal(F0, F1, Alpha, Delta, minStartTime,
     YEAR_IN_DAYS = lal.YRSID_SI / lal.DAYSID_SI
     tEquinox = 79
 
-    minStartTime_t = Time(minStartTime, format='gps').to_datetime().timetuple()
-    maxStartTime_t = Time(maxStartTime, format='gps').to_datetime().timetuple()
+    minStartTime_t = Time(minStartTime, format="gps").to_datetime().timetuple()
+    maxStartTime_t = Time(maxStartTime, format="gps").to_datetime().timetuple()
     tStart_days = minStartTime_t.tm_yday - tEquinox
     tStop_days = maxStartTime_t.tm_yday - tEquinox
-    tStop_days += (maxStartTime_t.tm_year-minStartTime_t.tm_year)*YEAR_IN_DAYS
+    tStop_days += (maxStartTime_t.tm_year - minStartTime_t.tm_year) * YEAR_IN_DAYS
 
-    lonStart = 2*np.pi*tStart_days/YEAR_IN_DAYS - np.pi
-    lonStop = 2*np.pi*tStop_days/YEAR_IN_DAYS - np.pi
+    lonStart = 2 * np.pi * tStart_days / YEAR_IN_DAYS - np.pi
+    lonStop = 2 * np.pi * tStop_days / YEAR_IN_DAYS - np.pi
 
     dopplerWings = _calcDopplerWings(F0, Alpha, Delta, lonStart, lonStop)
     spindownWings = _calcSpindownWings(F0, F1, minStartTime, maxStartTime)

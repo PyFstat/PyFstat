@@ -20,13 +20,33 @@ class KeyboardInterruptError(Exception):
 
 class Writer(BaseSearchClass):
     """ Instance object for generating SFTs """
+
     @helper_functions.initializer
-    def __init__(self, label='Test', tstart=700000000, duration=100*86400,
-                 tref=None, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
-                 Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, phi=0, Tsft=1800,
-                 outdir=".", sqrtSX=1, Band=4, detectors='H1',
-                 minStartTime=None, maxStartTime=None, add_noise=True,
-                 transientWindowType='none'):
+    def __init__(
+        self,
+        label="Test",
+        tstart=700000000,
+        duration=100 * 86400,
+        tref=None,
+        F0=30,
+        F1=1e-10,
+        F2=0,
+        Alpha=5e-3,
+        Delta=6e-2,
+        h0=0.1,
+        cosi=0.0,
+        psi=0.0,
+        phi=0,
+        Tsft=1800,
+        outdir=".",
+        sqrtSX=1,
+        Band=4,
+        detectors="H1",
+        minStartTime=None,
+        maxStartTime=None,
+        add_noise=True,
+        transientWindowType="none",
+    ):
         """
         Parameters
         ----------
@@ -53,7 +73,7 @@ class Writer(BaseSearchClass):
         self.calculate_fmin_Band()
 
         self.tbounds = [self.tstart, self.tend]
-        logging.info('Using segment boundaries {}'.format(self.tbounds))
+        logging.info("Using segment boundaries {}".format(self.tbounds))
 
     def basic_setup(self):
         self.tstart = int(self.tstart)
@@ -65,7 +85,7 @@ class Writer(BaseSearchClass):
             self.maxStartTime = self.tend
         self.minStartTime = int(self.minStartTime)
         self.maxStartTime = int(self.maxStartTime)
-        self.duration_days = (self.tend-self.tstart) / 86400
+        self.duration_days = (self.tend - self.tstart) / 86400
 
         self.data_duration = self.maxStartTime - self.minStartTime
         numSFTs = int(float(self.data_duration) / self.Tsft)
@@ -79,23 +99,28 @@ class Writer(BaseSearchClass):
         self.config_file_name = "{}/{}.cff".format(self.outdir, self.label)
         self.sftfilenames = [
             lalpulsar.OfficialSFTFilename(
-                dets[0], dets[1], numSFTs, self.Tsft, self.minStartTime,
-                self.data_duration, self.label)
-            for dets in self.detectors.split(',')]
-        self.sftfilepath = ';'.join([
-            '{}/{}'.format(self.outdir, fn) for fn in self.sftfilenames])
-        self.IFOs = (
-            ",".join(['"{}"'.format(d) for d in self.detectors.split(",")]))
+                dets[0],
+                dets[1],
+                numSFTs,
+                self.Tsft,
+                self.minStartTime,
+                self.data_duration,
+                self.label,
+            )
+            for dets in self.detectors.split(",")
+        ]
+        self.sftfilepath = ";".join(
+            ["{}/{}".format(self.outdir, fn) for fn in self.sftfilenames]
+        )
+        self.IFOs = ",".join(['"{}"'.format(d) for d in self.detectors.split(",")])
 
     def make_data(self):
-        ''' A convienience wrapper to generate a cff file then sfts '''
+        """ A convienience wrapper to generate a cff file then sfts """
         self.make_cff()
         self.run_makefakedata()
 
-    def get_base_template(self, i, Alpha, Delta, h0, cosi, psi, phi, F0,
-                          F1, F2, tref):
-        return (
-"""[TS{}]
+    def get_base_template(self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref):
+        return """[TS{}]
 Alpha = {:1.18e}
 Delta = {:1.18e}
 h0 = {:1.18e}
@@ -105,35 +130,100 @@ phi0 = {:1.18e}
 Freq = {:1.18e}
 f1dot = {:1.18e}
 f2dot = {:1.18e}
-refTime = {:10.6f}""")
+refTime = {:10.6f}"""
 
     def get_single_config_line_cw(
-            self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref):
-        template = (self.get_base_template(
-            i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref) + """\n""")
-        return template.format(
-            i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref)
+        self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
+    ):
+        template = (
+            self.get_base_template(
+                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
+            )
+            + """\n"""
+        )
+        return template.format(i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref)
 
     def get_single_config_line_tcw(
-            self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref,
-            window, tstart, duration_days):
-        template = (self.get_base_template(
-            i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref) + """
+        self,
+        i,
+        Alpha,
+        Delta,
+        h0,
+        cosi,
+        psi,
+        phi,
+        F0,
+        F1,
+        F2,
+        tref,
+        window,
+        tstart,
+        duration_days,
+    ):
+        template = (
+            self.get_base_template(
+                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
+            )
+            + """
 transientWindowType = {:s}
 transientStartTime = {:10.0f}
-transientTau = {:10.0f}\n""")
-        return template.format(i, Alpha, Delta, h0, cosi, psi, phi, F0, F1,
-                               F2, tref, window, tstart, duration_days*86400)
+transientTau = {:10.0f}\n"""
+        )
+        return template.format(
+            i,
+            Alpha,
+            Delta,
+            h0,
+            cosi,
+            psi,
+            phi,
+            F0,
+            F1,
+            F2,
+            tref,
+            window,
+            tstart,
+            duration_days * 86400,
+        )
 
-    def get_single_config_line(self, i, Alpha, Delta, h0, cosi, psi, phi, F0,
-                               F1, F2, tref, window, tstart, duration_days):
-        if window == 'none':
+    def get_single_config_line(
+        self,
+        i,
+        Alpha,
+        Delta,
+        h0,
+        cosi,
+        psi,
+        phi,
+        F0,
+        F1,
+        F2,
+        tref,
+        window,
+        tstart,
+        duration_days,
+    ):
+        if window == "none":
             return self.get_single_config_line_cw(
-                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref)
+                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
+            )
         else:
             return self.get_single_config_line_tcw(
-                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref, window,
-                tstart, duration_days)
+                i,
+                Alpha,
+                Delta,
+                h0,
+                cosi,
+                psi,
+                phi,
+                F0,
+                F1,
+                F2,
+                tref,
+                window,
+                tstart,
+                duration_days,
+            )
 
     def make_cff(self):
         """
@@ -142,9 +232,21 @@ transientTau = {:10.0f}\n""")
         """
 
         content = self.get_single_config_line(
-            0, self.Alpha, self.Delta, self.h0, self.cosi, self.psi,
-            self.phi, self.F0, self.F1, self.F2, self.tref,
-            self.transientWindowType, self.tstart, self.duration_days)
+            0,
+            self.Alpha,
+            self.Delta,
+            self.h0,
+            self.cosi,
+            self.psi,
+            self.phi,
+            self.F0,
+            self.F1,
+            self.F2,
+            self.tref,
+            self.transientWindowType,
+            self.tstart,
+            self.duration_days,
+        )
 
         if self.check_if_cff_file_needs_rewritting(content):
             config_file = open(self.config_file_name, "w+")
@@ -152,7 +254,7 @@ transientTau = {:10.0f}\n""")
             config_file.close()
 
     def calculate_fmin_Band(self):
-        self.fmin = self.F0 - .5 * self.Band
+        self.fmin = self.F0 - 0.5 * self.Band
 
     def check_cached_data_okay_to_use(self, cl_mfd):
         """ Check if cached data exists and, if it does, if it can be used """
@@ -160,32 +262,34 @@ transientTau = {:10.0f}\n""")
         getmtime = os.path.getmtime
 
         if os.path.isfile(self.sftfilepath) is False:
-            logging.info('No SFT file matching {} found'.format(
-                self.sftfilepath))
+            logging.info("No SFT file matching {} found".format(self.sftfilepath))
             return False
         else:
-            logging.info('Matching SFT file found')
+            logging.info("Matching SFT file found")
 
         if getmtime(self.sftfilepath) < getmtime(self.config_file_name):
             logging.info(
-                ('The config file {} has been modified since the sft file {} '
-                 + 'was created').format(
-                    self.config_file_name, self.sftfilepath))
+                (
+                    "The config file {} has been modified since the sft file {} "
+                    + "was created"
+                ).format(self.config_file_name, self.sftfilepath)
+            )
             return False
 
         logging.info(
-            'The config file {} is older than the sft file {}'.format(
-                self.config_file_name, self.sftfilepath))
-        logging.info('Checking contents of cff file')
-        cl_dump = 'lalapps_SFTdumpheader {} | head -n 20'.format(
-            self.sftfilepath)
+            "The config file {} is older than the sft file {}".format(
+                self.config_file_name, self.sftfilepath
+            )
+        )
+        logging.info("Checking contents of cff file")
+        cl_dump = "lalapps_SFTdumpheader {} | head -n 20".format(self.sftfilepath)
         output = helper_functions.run_commandline(cl_dump)
-        calls = [line for line in output.split('\n') if line[:3] == 'lal']
+        calls = [line for line in output.split("\n") if line[:3] == "lal"]
         if calls[0] == cl_mfd:
-            logging.info('Contents matched, use old sft file')
+            logging.info("Contents matched, use old sft file")
             return True
         else:
-            logging.info('Contents unmatched, create new sft file')
+            logging.info("Contents unmatched, create new sft file")
             return False
 
     def check_if_cff_file_needs_rewritting(self, content):
@@ -195,24 +299,24 @@ transientTau = {:10.0f}\n""")
         overwriting to allow cached data to be used
         """
         if os.path.isfile(self.config_file_name) is False:
-            logging.info('No config file {} found'.format(
-                self.config_file_name))
+            logging.info("No config file {} found".format(self.config_file_name))
             return True
         else:
-            logging.info('Config file {} already exists'.format(
-                self.config_file_name))
+            logging.info("Config file {} already exists".format(self.config_file_name))
 
-        with open(self.config_file_name, 'r') as f:
+        with open(self.config_file_name, "r") as f:
             file_content = f.read()
             if file_content == content:
                 logging.info(
-                    'File contents match, no update of {} required'.format(
-                        self.config_file_name))
+                    "File contents match, no update of {} required".format(
+                        self.config_file_name
+                    )
+                )
                 return False
             else:
                 logging.info(
-                    'File contents unmatched, updating {}'.format(
-                        self.config_file_name))
+                    "File contents unmatched, updating {}".format(self.config_file_name)
+                )
                 return True
 
     def run_makefakedata(self):
@@ -225,29 +329,27 @@ transientTau = {:10.0f}\n""")
             pass
 
         cl_mfd = []
-        cl_mfd.append('lalapps_Makefakedata_v5')
-        cl_mfd.append('--outSingleSFT=TRUE')
+        cl_mfd.append("lalapps_Makefakedata_v5")
+        cl_mfd.append("--outSingleSFT=TRUE")
         cl_mfd.append('--outSFTdir="{}"'.format(self.outdir))
         cl_mfd.append('--outLabel="{}"'.format(self.label))
-        cl_mfd.append('--IFOs={}'.format(self.IFOs))
+        cl_mfd.append("--IFOs={}".format(self.IFOs))
         if self.add_noise:
             cl_mfd.append('--sqrtSX="{}"'.format(self.sqrtSX))
         if self.minStartTime is None:
-            cl_mfd.append('--startTime={:0.0f}'.format(float(self.tstart)))
+            cl_mfd.append("--startTime={:0.0f}".format(float(self.tstart)))
         else:
-            cl_mfd.append('--startTime={:0.0f}'.format(
-                float(self.minStartTime)))
+            cl_mfd.append("--startTime={:0.0f}".format(float(self.minStartTime)))
         if self.maxStartTime is None:
-            cl_mfd.append('--duration={}'.format(int(self.duration)))
+            cl_mfd.append("--duration={}".format(int(self.duration)))
         else:
             data_duration = self.maxStartTime - self.minStartTime
-            cl_mfd.append('--duration={}'.format(int(data_duration)))
-        cl_mfd.append('--fmin={:.16g}'.format(self.fmin))
-        cl_mfd.append('--Band={:.16g}'.format(self.Band))
-        cl_mfd.append('--Tsft={}'.format(self.Tsft))
+            cl_mfd.append("--duration={}".format(int(data_duration)))
+        cl_mfd.append("--fmin={:.16g}".format(self.fmin))
+        cl_mfd.append("--Band={:.16g}".format(self.Band))
+        cl_mfd.append("--Tsft={}".format(self.Tsft))
         if self.h0 != 0:
-            cl_mfd.append('--injectionSources="{}"'.format(
-                self.config_file_name))
+            cl_mfd.append('--injectionSources="{}"'.format(self.config_file_name))
 
         cl_mfd = " ".join(cl_mfd)
 
@@ -257,23 +359,56 @@ transientTau = {:10.0f}\n""")
     def predict_fstat(self):
         """ Wrapper to lalapps_PredictFstat """
         twoF_expected, twoF_sigma = predict_fstat(
-            self.h0, self.cosi, self.psi, self.Alpha, self.Delta, self.F0,
-            self.sftfilepath, self.minStartTime, self.maxStartTime,
-            self.detectors, self.sqrtSX,
-            tempory_filename='{}.tmp'.format(self.label)) # detectors OR IFO?
+            self.h0,
+            self.cosi,
+            self.psi,
+            self.Alpha,
+            self.Delta,
+            self.F0,
+            self.sftfilepath,
+            self.minStartTime,
+            self.maxStartTime,
+            self.detectors,
+            self.sqrtSX,
+            tempory_filename="{}.tmp".format(self.label),
+        )  # detectors OR IFO?
         return twoF_expected
 
 
 class GlitchWriter(Writer):
     """ Instance object for generating SFTs containing glitch signals """
+
     @helper_functions.initializer
-    def __init__(self, label='Test', tstart=700000000, duration=100*86400,
-                 dtglitch=None, delta_phi=0, delta_F0=0, delta_F1=0,
-                 delta_F2=0, tref=None, F0=30, F1=1e-10, F2=0, Alpha=5e-3,
-                 Delta=6e-2, h0=0.1, cosi=0.0, psi=0.0, phi=0, Tsft=1800,
-                 outdir=".", sqrtSX=1, Band=4, detectors='H1',
-                 minStartTime=None, maxStartTime=None, add_noise=True,
-                 transientWindowType='rect'):
+    def __init__(
+        self,
+        label="Test",
+        tstart=700000000,
+        duration=100 * 86400,
+        dtglitch=None,
+        delta_phi=0,
+        delta_F0=0,
+        delta_F1=0,
+        delta_F2=0,
+        tref=None,
+        F0=30,
+        F1=1e-10,
+        F2=0,
+        Alpha=5e-3,
+        Delta=6e-2,
+        h0=0.1,
+        cosi=0.0,
+        psi=0.0,
+        phi=0,
+        Tsft=1800,
+        outdir=".",
+        sqrtSX=1,
+        Band=4,
+        detectors="H1",
+        minStartTime=None,
+        maxStartTime=None,
+        add_noise=True,
+        transientWindowType="rect",
+    ):
         """
         Parameters
         ----------
@@ -303,12 +438,14 @@ class GlitchWriter(Writer):
         self.basic_setup()
         self.calculate_fmin_Band()
 
-        shapes = np.array([np.shape(x) for x in [self.delta_phi, self.delta_F0,
-                                                 self.delta_F1, self.delta_F2]]
-                          )
+        shapes = np.array(
+            [
+                np.shape(x)
+                for x in [self.delta_phi, self.delta_F0, self.delta_F1, self.delta_F2]
+            ]
+        )
         if not np.all(shapes == shapes[0]):
-            raise ValueError('all delta_* must be the same shape: {}'.format(
-                shapes))
+            raise ValueError("all delta_* must be the same shape: {}".format(shapes))
 
         for d in self.delta_phi, self.delta_F0, self.delta_F1, self.delta_F2:
             if np.size(d) == 1:
@@ -319,15 +456,15 @@ class GlitchWriter(Writer):
         else:
             self.dtglitch = np.atleast_1d(self.dtglitch)
             self.tglitch = self.tstart + self.dtglitch
-            self.tbounds = np.concatenate((
-                [self.tstart], self.tglitch, [self.tend]))
-        logging.info('Using segment boundaries {}'.format(self.tbounds))
+            self.tbounds = np.concatenate(([self.tstart], self.tglitch, [self.tend]))
+        logging.info("Using segment boundaries {}".format(self.tbounds))
 
         tbs = np.array(self.tbounds)
         self.durations_days = (tbs[1:] - tbs[:-1]) / 86400
 
         self.delta_thetas = np.atleast_2d(
-                np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T)
+            np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T
+        )
 
     def make_cff(self):
         """
@@ -335,16 +472,28 @@ class GlitchWriter(Writer):
 
         """
 
-        thetas = self._calculate_thetas(self.theta, self.delta_thetas,
-                                        self.tbounds)
+        thetas = self._calculate_thetas(self.theta, self.delta_thetas, self.tbounds)
 
-        content = ''
-        for i, (t, d, ts) in enumerate(zip(thetas, self.durations_days,
-                                           self.tbounds[:-1])):
+        content = ""
+        for i, (t, d, ts) in enumerate(
+            zip(thetas, self.durations_days, self.tbounds[:-1])
+        ):
             line = self.get_single_config_line(
-                i, self.Alpha, self.Delta, self.h0, self.cosi, self.psi,
-                t[0], t[1], t[2], t[3], self.tref, self.transientWindowType,
-                ts, d)
+                i,
+                self.Alpha,
+                self.Delta,
+                self.h0,
+                self.cosi,
+                self.psi,
+                t[0],
+                t[1],
+                t[2],
+                t[3],
+                self.tref,
+                self.transientWindowType,
+                ts,
+                d,
+            )
 
             content += line
 
@@ -358,11 +507,29 @@ class FrequencyModulatedArtifactWriter(Writer):
     """ Instance object for generating SFTs containing artifacts """
 
     @helper_functions.initializer
-    def __init__(self, label, outdir=".", tstart=700000000,
-                 duration=86400, F0=30, F1=0, tref=None, h0=10, Tsft=1800,
-                 sqrtSX=1, Band=4, Pmod=lal.DAYSID_SI, Pmod_phi=0, Pmod_amp=1,
-                 Alpha=None, Delta=None, IFO='H1', minStartTime=None,
-                 maxStartTime=None, detectors='H1'):
+    def __init__(
+        self,
+        label,
+        outdir=".",
+        tstart=700000000,
+        duration=86400,
+        F0=30,
+        F1=0,
+        tref=None,
+        h0=10,
+        Tsft=1800,
+        sqrtSX=1,
+        Band=4,
+        Pmod=lal.DAYSID_SI,
+        Pmod_phi=0,
+        Pmod_amp=1,
+        Alpha=None,
+        Delta=None,
+        IFO="H1",
+        minStartTime=None,
+        maxStartTime=None,
+        detectors="H1",
+    ):
         """
         Parameters
         ----------
@@ -391,24 +558,28 @@ class FrequencyModulatedArtifactWriter(Writer):
         if os.path.isdir(self.outdir) is False:
             os.makedirs(self.outdir)
         if tref is None:
-            raise ValueError('Input `tref` not specified')
+            raise ValueError("Input `tref` not specified")
 
         self.nsfts = int(np.ceil(self.duration / self.Tsft))
-        self.duration = self.duration / 86400.
+        self.duration = self.duration / 86400.0
         self.calculate_fmin_Band()
 
         self.cosi = 0
         self.Fmax = F0
 
         if Alpha is not None and Delta is not None:
-            self.n = np.array([np.cos(Alpha)*np.cos(Delta),
-                               np.sin(Alpha)*np.cos(Delta),
-                               np.sin(Delta)])
+            self.n = np.array(
+                [
+                    np.cos(Alpha) * np.cos(Delta),
+                    np.sin(Alpha) * np.cos(Delta),
+                    np.sin(Delta),
+                ]
+            )
 
     def get_frequency(self, t):
         DeltaFDrift = self.F1 * (t - self.tref)
 
-        phir = 2*np.pi*t/self.Pmod + self.Pmod_phi
+        phir = 2 * np.pi * t / self.Pmod + self.Pmod_phi
 
         if self.Alpha is not None and self.Delta is not None:
             spin_posvel = lalpulsar.PosVel3D_t()
@@ -416,23 +587,34 @@ class FrequencyModulatedArtifactWriter(Writer):
             det = lal.CachedDetectors[4]
             ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
             lalpulsar.DetectorPosVel(
-                spin_posvel, orbit_posvel, lal.LIGOTimeGPS(t), det, ephems,
-                lalpulsar.DETMOTION_ORBIT)
+                spin_posvel,
+                orbit_posvel,
+                lal.LIGOTimeGPS(t),
+                det,
+                ephems,
+                lalpulsar.DETMOTION_ORBIT,
+            )
             # Pos and vel returned in units of c
             DeltaFOrbital = np.dot(self.n, orbit_posvel.vel) * self.Fmax
 
-            if self.IFO == 'H1':
+            if self.IFO == "H1":
                 Lambda = lal.LHO_4K_DETECTOR_LATITUDE_RAD
-            elif self.IFO == 'L1':
+            elif self.IFO == "L1":
                 Lambda = lal.LLO_4K_DETECTOR_LATITUDE_RAD
 
             DeltaFSpin = (
-                self.Pmod_amp*lal.REARTH_SI/lal.C_SI*2*np.pi/self.Pmod*(
-                   np.cos(self.Delta)*np.cos(Lambda)*np.sin(self.Alpha-phir)
-                   ) * self.Fmax)
+                self.Pmod_amp
+                * lal.REARTH_SI
+                / lal.C_SI
+                * 2
+                * np.pi
+                / self.Pmod
+                * (np.cos(self.Delta) * np.cos(Lambda) * np.sin(self.Alpha - phir))
+                * self.Fmax
+            )
         else:
             DeltaFOrbital = 0
-            DeltaFSpin = 2*np.pi*self.Pmod_amp/self.Pmod*np.cos(phir)
+            DeltaFSpin = 2 * np.pi * self.Pmod_amp / self.Pmod * np.cos(phir)
 
         f = self.F0 + DeltaFDrift + DeltaFOrbital + DeltaFSpin
         return f
@@ -442,34 +624,43 @@ class FrequencyModulatedArtifactWriter(Writer):
 
     def concatenate_sft_files(self):
         SFTFilename = lalpulsar.OfficialSFTFilename(
-            self.IFO[0], self.IFO[1], self.nsfts, self.Tsft, int(self.tstart),
-            int(self.duration), self.label)
+            self.IFO[0],
+            self.IFO[1],
+            self.nsfts,
+            self.Tsft,
+            int(self.tstart),
+            int(self.duration),
+            self.label,
+        )
 
         # If the file already exists, simply remove it for now (no caching
         # implemented)
         helper_functions.run_commandline(
-            'rm {}/{}'.format(self.outdir, SFTFilename), raise_error=False,
-            log_level=10)
+            "rm {}/{}".format(self.outdir, SFTFilename), raise_error=False, log_level=10
+        )
 
-        cl_splitSFTS = (
-            'lalapps_splitSFTs -fs {} -fb {} -fe {} -o {}/{} -i {}/*sft'
-            .format(self.fmin, self.Band, self.fmin+self.Band, self.outdir,
-                    SFTFilename, self.tmp_outdir))
+        cl_splitSFTS = "lalapps_splitSFTs -fs {} -fb {} -fe {} -o {}/{} -i {}/*sft".format(
+            self.fmin,
+            self.Band,
+            self.fmin + self.Band,
+            self.outdir,
+            SFTFilename,
+            self.tmp_outdir,
+        )
         helper_functions.run_commandline(cl_splitSFTS)
-        helper_functions.run_commandline('rm {} -r'.format(self.tmp_outdir))
-        files = glob.glob('{}/{}*'.format(self.outdir, SFTFilename))
+        helper_functions.run_commandline("rm {} -r".format(self.tmp_outdir))
+        files = glob.glob("{}/{}*".format(self.outdir, SFTFilename))
         if len(files) == 1:
             fn = files[0]
-            fn_new = fn.split('.')[0] + '.sft'
-            helper_functions.run_commandline('mv {} {}'.format(
-                fn, fn_new))
+            fn_new = fn.split(".")[0] + ".sft"
+            helper_functions.run_commandline("mv {} {}".format(fn, fn_new))
         else:
             raise IOError(
-                'Attempted to rename file, but multiple files found: {}'
-                .format(files))
+                "Attempted to rename file, but multiple files found: {}".format(files)
+            )
 
     def pre_compute_evolution(self):
-        logging.info('Precomputing evolution parameters')
+        logging.info("Precomputing evolution parameters")
         self.lineFreqs = []
         self.linePhis = []
         self.lineh0s = []
@@ -478,21 +669,27 @@ class FrequencyModulatedArtifactWriter(Writer):
         linePhi = 0
         lineFreq_old = 0
         for i in tqdm(list(range(self.nsfts))):
-            mid_time = self.tstart + (i+.5)*self.Tsft
+            mid_time = self.tstart + (i + 0.5) * self.Tsft
             lineFreq = self.get_frequency(mid_time)
 
             self.mid_times.append(mid_time)
             self.lineFreqs.append(lineFreq)
-            self.linePhis.append(linePhi + np.pi*self.Tsft*(lineFreq_old+lineFreq))
+            self.linePhis.append(
+                linePhi + np.pi * self.Tsft * (lineFreq_old + lineFreq)
+            )
             self.lineh0s.append(self.get_h0(mid_time))
 
             lineFreq_old = lineFreq
 
     def make_ith_sft(self, i):
         try:
-            self.run_makefakedata_v4(self.mid_times[i], self.lineFreqs[i],
-                                     self.linePhis[i], self.lineh0s[i],
-                                     self.tmp_outdir)
+            self.run_makefakedata_v4(
+                self.mid_times[i],
+                self.lineFreqs[i],
+                self.linePhis[i],
+                self.lineh0s[i],
+                self.tmp_outdir,
+            )
         except KeyboardInterrupt:
             raise KeyboardInterruptError()
 
@@ -500,31 +697,39 @@ class FrequencyModulatedArtifactWriter(Writer):
         self.maxStartTime = None
         self.duration = self.Tsft
 
-        self.tmp_outdir = '{}/{}_tmp'.format(self.outdir, self.label)
+        self.tmp_outdir = "{}/{}_tmp".format(self.outdir, self.label)
         if os.path.isdir(self.tmp_outdir) is True:
             raise ValueError(
-                'Temporary directory {} already exists, please rename'.format(
-                    self.tmp_outdir))
+                "Temporary directory {} already exists, please rename".format(
+                    self.tmp_outdir
+                )
+            )
         else:
             os.makedirs(self.tmp_outdir)
 
         self.pre_compute_evolution()
 
-        logging.info('Generating SFTs')
+        logging.info("Generating SFTs")
 
-        if args.N > 1 and pkgutil.find_loader('pathos') is not None:
+        if args.N > 1 and pkgutil.find_loader("pathos") is not None:
             import pathos.pools
-            logging.info('Using {} threads'.format(args.N))
+
+            logging.info("Using {} threads".format(args.N))
             try:
                 with pathos.pools.ProcessPool(args.N) as p:
-                    list(tqdm(p.imap(self.make_ith_sft, list(range(self.nsfts))),
-                              total=self.nsfts))
+                    list(
+                        tqdm(
+                            p.imap(self.make_ith_sft, list(range(self.nsfts))),
+                            total=self.nsfts,
+                        )
+                    )
             except KeyboardInterrupt:
                 p.terminate()
         else:
             logging.info(
                 "No multiprocessing requested or `pathos` not install, cont."
-                " without multiprocessing")
+                " without multiprocessing"
+            )
             for i in tqdm(list(range(self.nsfts))):
                 self.make_ith_sft(i)
 
@@ -533,27 +738,28 @@ class FrequencyModulatedArtifactWriter(Writer):
     def run_makefakedata_v4(self, mid_time, lineFreq, linePhi, h0, tmp_outdir):
         """ Generate the sft data using the --lineFeature option """
         cl_mfd = []
-        cl_mfd.append('lalapps_Makefakedata_v4')
-        cl_mfd.append('--outSingleSFT=FALSE')
+        cl_mfd.append("lalapps_Makefakedata_v4")
+        cl_mfd.append("--outSingleSFT=FALSE")
         cl_mfd.append('--outSFTbname="{}"'.format(tmp_outdir))
-        cl_mfd.append('--IFO={}'.format(self.IFO))
+        cl_mfd.append("--IFO={}".format(self.IFO))
         cl_mfd.append('--noiseSqrtSh="{}"'.format(self.sqrtSX))
-        cl_mfd.append('--startTime={:0.0f}'.format(mid_time-self.Tsft/2.0))
-        cl_mfd.append('--refTime={:0.0f}'.format(mid_time))
-        cl_mfd.append('--duration={}'.format(int(self.duration)))
-        cl_mfd.append('--fmin={:.16g}'.format(self.fmin))
-        cl_mfd.append('--Band={:.16g}'.format(self.Band))
-        cl_mfd.append('--Tsft={}'.format(self.Tsft))
-        cl_mfd.append('--Freq={}'.format(lineFreq))
-        cl_mfd.append('--phi0={}'.format(linePhi))
-        cl_mfd.append('--h0={}'.format(h0))
-        cl_mfd.append('--cosi={}'.format(self.cosi))
-        cl_mfd.append('--lineFeature=TRUE')
+        cl_mfd.append("--startTime={:0.0f}".format(mid_time - self.Tsft / 2.0))
+        cl_mfd.append("--refTime={:0.0f}".format(mid_time))
+        cl_mfd.append("--duration={}".format(int(self.duration)))
+        cl_mfd.append("--fmin={:.16g}".format(self.fmin))
+        cl_mfd.append("--Band={:.16g}".format(self.Band))
+        cl_mfd.append("--Tsft={}".format(self.Tsft))
+        cl_mfd.append("--Freq={}".format(lineFreq))
+        cl_mfd.append("--phi0={}".format(linePhi))
+        cl_mfd.append("--h0={}".format(h0))
+        cl_mfd.append("--cosi={}".format(self.cosi))
+        cl_mfd.append("--lineFeature=TRUE")
         cl_mfd = " ".join(cl_mfd)
         helper_functions.run_commandline(cl_mfd, log_level=10)
 
 
 class FrequencyAmplitudeModulatedArtifactWriter(FrequencyModulatedArtifactWriter):
     """ Instance object for generating SFTs containing artifacts """
+
     def get_h0(self, t):
-            return self.h0*np.sin(2*np.pi*t/self.Pmod+self. Pmod_phi)
+        return self.h0 * np.sin(2 * np.pi * t / self.Pmod + self.Pmod_phi)
