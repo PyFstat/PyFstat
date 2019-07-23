@@ -550,12 +550,8 @@ class GridSearch(Test):
             tref=self.tref,
             Lambda0=[30, 0, 0, 0],
         )
-        search.run()
-        self.assertTrue(
-            os.path.isfile(
-                "{}/{}_slice_projection.png".format(search.outdir, search.label)
-            )
-        )
+        fig, axes = search.run(save=False)
+        self.assertTrue(fig is not None)
 
     def test_glitch_grid_search(self):
         search = pyfstat.GridGlitchSearch(
