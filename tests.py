@@ -5,7 +5,7 @@ import shutil
 import pyfstat
 import lalpulsar
 import logging
-
+import time
 
 class Test(unittest.TestCase):
     outdir = "TestData"
@@ -85,6 +85,7 @@ class Writer(Test):
         Writer.run_makefakedata()
         time_second = os.path.getmtime(Writer.sftfilepath)
         self.assertTrue(time_first == time_second)
+        time.sleep(1)  # make sure timestamp is actually different!
         os.system("touch {}".format(Writer.config_file_name))
         Writer.run_makefakedata()
         time_third = os.path.getmtime(Writer.sftfilepath)
