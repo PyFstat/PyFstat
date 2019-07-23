@@ -31,11 +31,8 @@ def _optional_import(modulename, shorthand=None):
         logging.debug("Successfully imported module %s%s." % (modulename, shorthandbit))
         success = True
     except ImportError as e:
-        if e.message == "No module named " + modulename:
-            logging.debug("No module {:s} found.".format(modulename))
-            success = False
-        else:
-            raise
+        logging.debug("Failed to import module {:s}.".format(modulename))
+        success = False
 
     return success
 
