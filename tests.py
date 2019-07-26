@@ -5,7 +5,7 @@ import shutil
 import pyfstat
 import lalpulsar
 import logging
-
+import time
 
 class Test(unittest.TestCase):
     outdir = "TestData"
@@ -85,6 +85,7 @@ class Writer(Test):
         Writer.run_makefakedata()
         time_second = os.path.getmtime(Writer.sftfilepath)
         self.assertTrue(time_first == time_second)
+        time.sleep(1)  # make sure timestamp is actually different!
         os.system("touch {}".format(Writer.config_file_name))
         Writer.run_makefakedata()
         time_third = os.path.getmtime(Writer.sftfilepath)
@@ -550,12 +551,8 @@ class GridSearch(Test):
             tref=self.tref,
             Lambda0=[30, 0, 0, 0],
         )
-        search.run()
-        self.assertTrue(
-            os.path.isfile(
-                "{}/{}_slice_projection.png".format(search.outdir, search.label)
-            )
-        )
+        fig, axes = search.run(save=False)
+        self.assertTrue(fig is not None)
 
     def test_glitch_grid_search(self):
         search = pyfstat.GridGlitchSearch(
