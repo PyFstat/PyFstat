@@ -31,6 +31,5 @@ setup(
         "bashplotlib",
         "peakutils",
         "pathos",
-        "pycuda",
     ],
 )
