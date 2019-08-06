@@ -284,8 +284,8 @@ transientTau = {:10.0f}\n"""
         logging.info("Checking contents of cff file")
         cl_dump = "lalapps_SFTdumpheader {} | head -n 20".format(self.sftfilepath)
         output = helper_functions.run_commandline(cl_dump)
-        calls = [line for line in output.split("\n") if line[:3] == "lal"]
-        if calls[0] == cl_mfd:
+        found = [True for line in output.split("\n") if line[-len(cl_mfd) :] == cl_mfd]
+        if any(found):
             logging.info("Contents matched, use old sft file")
             return True
         else:

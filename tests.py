@@ -7,6 +7,7 @@ import lalpulsar
 import logging
 import time
 
+
 class Test(unittest.TestCase):
     outdir = "TestData"
 
