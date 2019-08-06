@@ -31,8 +31,9 @@ pytest:
     when: always
     expire_in: 24h
 
-.static:
+static:
   stage: Static Analysis
+  tags: [ pyFstat ]
   script:
     - source ${VENV_DIR}/bin/activate
     - black --check .
