@@ -599,7 +599,7 @@ class TransientGridSearch(GridSearch):
             detstat = self.search.get_det_stat(*vals)
             windowRange = getattr(self.search, "windowRange", None)
             FstatMap = getattr(self.search, "FstatMap", None)
-            self.timingFstatMap += getattr(self.search, "timingFstatMap", None)
+            self.timingFstatMap += getattr(self.search, "timingFstatMap", 0.0)
             thisCand = list(vals) + [detstat]
             if getattr(self, "transientWindowType", None):
                 if self.tCWFstatMapVersion == "lal":
