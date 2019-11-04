@@ -13,7 +13,10 @@ setup(
     version="0.2",
     author="Gregory Ashton",
     author_email="gregory.ashton@ligo.org",
-    packages=find_packages(where="pyfstat"),
+    description="python wrappers for lalpulsar F-statistic code",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    packages=find_packages(),
     include_package_data=True,
     package_data={
         "pyfstat": [
@@ -31,5 +34,6 @@ setup(
         "bashplotlib",
         "peakutils",
         "pathos",
+        "lalsuite",
     ],
 )
