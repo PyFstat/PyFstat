@@ -350,6 +350,10 @@ transientTau = {:10.0f}\n"""
         cl_mfd.append("--Tsft={}".format(self.Tsft))
         if self.h0 != 0:
             cl_mfd.append('--injectionSources="{}"'.format(self.config_file_name))
+        if self.earth_ephem is not None:
+            cl_mfd.append('--ephemEarth="{}"'.format(self.earth_ephem))
+        if self.sun_ephem is not None:
+            cl_mfd.append('--ephemSun="{}"'.format(self.sun_ephem))
 
         cl_mfd = " ".join(cl_mfd)
 
