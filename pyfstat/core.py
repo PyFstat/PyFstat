@@ -159,6 +159,8 @@ def predict_fstat(
     IFOs=None,
     assumeSqrtSX=None,
     tempory_filename="fs.tmp",
+    earth_ephem=None,
+    sun_ephem=None,
     **kwargs
 ):
     """ Wrapper to lalapps_PredictFstat
@@ -200,6 +202,11 @@ def predict_fstat(
     cl_pfs.append("--minStartTime={}".format(int(minStartTime)))
     cl_pfs.append("--maxStartTime={}".format(int(maxStartTime)))
     cl_pfs.append("--outputFstat={}".format(tempory_filename))
+
+    if earth_ephem is not None:
+        cl_pfs.append("--ephemEarth='{}'".format(earth_ephem))
+    if sun_ephem is not None:
+        cl_pfs.append("--ephemSun='{}'".format(sun_ephem))
 
     cl_pfs = " ".join(cl_pfs)
     helper_functions.run_commandline(cl_pfs)

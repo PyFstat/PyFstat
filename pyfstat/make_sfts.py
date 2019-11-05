@@ -377,6 +377,8 @@ transientTau = {:10.0f}\n"""
             self.detectors,
             self.sqrtSX,
             tempory_filename="{}.tmp".format(self.label),
+            earth_ephem=self.earth_ephem,
+            sun_ephem=self.sun_ephem
         )  # detectors OR IFO?
         return twoF_expected
 
