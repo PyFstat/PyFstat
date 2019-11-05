@@ -350,10 +350,12 @@ transientTau = {:10.0f}\n"""
         cl_mfd.append("--Tsft={}".format(self.Tsft))
         if self.h0 != 0:
             cl_mfd.append('--injectionSources="{}"'.format(self.config_file_name))
-        if self.earth_ephem is not None:
-            cl_mfd.append('--ephemEarth="{}"'.format(self.earth_ephem))
-        if self.sun_ephem is not None:
-            cl_mfd.append('--ephemSun="{}"'.format(self.sun_ephem))
+        earth_ephem = getattr(self, "earth_ephem", None)
+        sun_ephem = getattr(self, "sun_ephem", None)
+        if earth_ephem is not None:
+            cl_mfd.append('--ephemEarth="{}"'.format(earth_ephem))
+        if sun_ephem is not None:
+            cl_mfd.append('--ephemSun="{}"'.format(sun_ephem))
 
         cl_mfd = " ".join(cl_mfd)
 
@@ -439,6 +441,7 @@ class GlitchWriter(Writer):
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
 
+        self.set_ephemeris_files()
         self.basic_setup()
         self.calculate_fmin_Band()
 
@@ -758,6 +761,12 @@ class FrequencyModulatedArtifactWriter(Writer):
         cl_mfd.append("--h0={}".format(h0))
         cl_mfd.append("--cosi={}".format(self.cosi))
         cl_mfd.append("--lineFeature=TRUE")
+        earth_ephem = getattr(self, "earth_ephem", None)
+        sun_ephem = getattr(self, "sun_ephem", None)
+        if earth_ephem is not None:
+            cl_mfd.append('--ephemEarth="{}"'.format(earth_ephem))
+        if sun_ephem is not None:
+            cl_mfd.append('--ephemSun="{}"'.format(sun_ephem))
         cl_mfd = " ".join(cl_mfd)
         helper_functions.run_commandline(cl_mfd, log_level=10)
 
