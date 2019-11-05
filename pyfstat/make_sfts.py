@@ -281,15 +281,23 @@ transientTau = {:10.0f}\n"""
                 self.config_file_name, self.sftfilepath
             )
         )
-        logging.info("Checking contents of cff file")
+        #logging.info("Checking contents of cff file") # FIXME: check doesn't seem to exist...?
+        #if not XXX:
+            #logging.info("Contents unmatched")
+            #return False
+        logging.info("Checking commandline against existing SFT header")
         cl_dump = "lalapps_SFTdumpheader {} | head -n 20".format(self.sftfilepath)
         output = helper_functions.run_commandline(cl_dump)
-        found = [True for line in output.split("\n") if line[-len(cl_mfd) :] == cl_mfd]
-        if any(found):
-            logging.info("Contents matched, use old sft file")
+        header_lines_lalapps = [line for line in output.split("\n") if "lalapps" in line]
+        if len(header_lines_lalapps)==0:
+            logging.info("Could not obtain comparison commandline from old SFT header")
+            return False
+        cl_old = header_lines_lalapps[0]
+        if helper_functions.match_commandlines(cl_old,cl_mfd):
+            logging.info("Commandline matched with old SFT header, use old sft file")
             return True
         else:
-            logging.info("Contents unmatched, create new sft file")
+            logging.info("Commandlines unmatched, create new sft file")
             return False
 
     def check_if_cff_file_needs_rewritting(self, content):
@@ -358,8 +366,8 @@ transientTau = {:10.0f}\n"""
             cl_mfd.append('--ephemSun="{}"'.format(sun_ephem))
 
         cl_mfd = " ".join(cl_mfd)
-
-        if self.check_cached_data_okay_to_use(cl_mfd) is False:
+        check_ok = self.check_cached_data_okay_to_use(cl_mfd)
+        if check_ok is False:
             helper_functions.run_commandline(cl_mfd)
 
     def predict_fstat(self):

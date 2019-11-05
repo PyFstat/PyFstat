@@ -369,3 +369,16 @@ def twoFDMoffThreshold(
         return twoFDMoffthreshold_below_threshold
     else:
         return 10 ** (prefactor * np.log10(twoFon - offset))
+
+
+def match_commandlines(cl1, cl2, be_strict_about_full_executable_path=False):
+    """ Check if two commandlines match element-by-element, regardless of order """
+    cl1s = cl1.split(" ")
+    cl2s = cl2.split(" ")
+    # first item will be the executable name
+    # by default be generous here and do not worry about full paths
+    if not be_strict_about_full_executable_path:
+        cl1s[0] = os.path.basename(cl1s[0])
+        cl2s[0] = os.path.basename(cl2s[0])
+    unmatched = np.setxor1d(cl1s,cl2s)
+    return len(unmatched)==0
