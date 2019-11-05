@@ -345,7 +345,8 @@ class BaseSearchClass(object):
             Paths of the two files containing positions of Earth and Sun,
             respectively at evenly spaced times, as passed to CreateFstatInput
 
-        Note: If not manually set, default values in ~/.pyfstat are used
+        Note: If not manually set, default values from get_ephemeris_files()
+              are used (looking in ~/.pyfstat or $LALPULSAR_DATADIR)
 
         """
 
@@ -353,8 +354,12 @@ class BaseSearchClass(object):
 
         if earth_ephem is None:
             self.earth_ephem = earth_ephem_default
+        else:
+            self.earth_ephem = earth_ephem
         if sun_ephem is None:
             self.sun_ephem = sun_ephem_default
+        else:
+            self.sun_ephem = sun_ephem
 
 
 class ComputeFstat(BaseSearchClass):
