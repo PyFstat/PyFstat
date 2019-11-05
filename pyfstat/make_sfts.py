@@ -263,14 +263,18 @@ transientTau = {:10.0f}\n"""
 
         logging.info("Checking if cached data good to reuse...")
         if os.path.isfile(self.sftfilepath) is False:
-            logging.info("No SFT file matching {} found. {}".format(self.sftfilepath, need_new))
+            logging.info(
+                "No SFT file matching {} found. {}".format(self.sftfilepath, need_new)
+            )
             return False
         else:
             logging.info("OK: Matching SFT file found.")
 
         if "injectionSources" in cl_mfd:
             if os.path.isfile(self.config_file_name):
-                if os.path.getmtime(self.sftfilepath) < os.path.getmtime(self.config_file_name):
+                if os.path.getmtime(self.sftfilepath) < os.path.getmtime(
+                    self.config_file_name
+                ):
                     logging.info(
                         (
                             "The config file {} has been modified since the SFT file {} "
@@ -281,24 +285,34 @@ transientTau = {:10.0f}\n"""
                 else:
                     logging.info(
                         "OK: The config file {} is older than the SFT file {}".format(
-                            self.config_file_name, self.sftfilepath)
+                            self.config_file_name, self.sftfilepath
+                        )
+                    )
                     # NOTE: at this point we assume it's safe to re-use, since
                     # check_if_cff_file_needs_rewritting()
                     # should have already been called before
-                    )
             else:
-                raise RuntimeError("Commandline requires file '{}' but it is missing.".format(self.config_file_name))
+                raise RuntimeError(
+                    "Commandline requires file '{}' but it is missing.".format(
+                        self.config_file_name
+                    )
+                )
 
         logging.info("Checking new commandline against existing SFT header...")
         cl_dump = "lalapps_SFTdumpheader {} | head -n 20".format(self.sftfilepath)
         output = helper_functions.run_commandline(cl_dump)
-        header_lines_lalapps = [line for line in output.split("\n") if "lalapps" in line]
-        if len(header_lines_lalapps)==0:
-            logging.info("Could not obtain comparison commandline from old SFT header. "+need_new)
+        header_lines_lalapps = [
+            line for line in output.split("\n") if "lalapps" in line
+        ]
+        if len(header_lines_lalapps) == 0:
+            logging.info(
+                "Could not obtain comparison commandline from old SFT header. "
+                + need_new
+            )
             return False
         cl_old = header_lines_lalapps[0]
-        if not helper_functions.match_commandlines(cl_old,cl_mfd):
-            logging.info("Commandlines unmatched. "+need_new)
+        if not helper_functions.match_commandlines(cl_old, cl_mfd):
+            logging.info("Commandlines unmatched. " + need_new)
             return False
         else:
             logging.info("OK: Commandline matched with old SFT header.")
@@ -329,7 +343,9 @@ transientTau = {:10.0f}\n"""
                 return False
             else:
                 logging.info(
-                    "File contents unmatched, updating {}.".format(self.config_file_name)
+                    "File contents unmatched, updating {}.".format(
+                        self.config_file_name
+                    )
                 )
                 return True
 
@@ -392,7 +408,7 @@ transientTau = {:10.0f}\n"""
             self.sqrtSX,
             tempory_filename="{}.tmp".format(self.label),
             earth_ephem=self.earth_ephem,
-            sun_ephem=self.sun_ephem
+            sun_ephem=self.sun_ephem,
         )  # detectors OR IFO?
         return twoF_expected
 
