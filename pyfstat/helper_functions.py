@@ -146,15 +146,16 @@ def get_ephemeris_files():
             earth_ephem = None
             sun_ephem = None
     elif env_var in list(os.environ.keys()):
-        earth_ephem = os.path.join(os.environ[env_var], "earth00-40-DE421.dat.gz")
-        sun_ephem = os.path.join(os.environ[env_var], "sun00-40-DE421.dat.gz")
+        ephem_version = "DE405"
+        earth_ephem = os.path.join(os.environ[env_var], "earth00-40-{:s}.dat.gz".format(ephemversion))
+        sun_ephem = os.path.join(os.environ[env_var], "sun00-40-{:s}.dat.gz".format(ephemversion))
         if not (os.path.isfile(earth_ephem) and os.path.isfile(sun_ephem)):
-            earth_ephem = os.path.join(os.environ[env_var], "earth00-19-DE421.dat.gz")
-            sun_ephem = os.path.join(os.environ[env_var], "sun00-19-DE421.dat.gz")
+            earth_ephem = os.path.join(os.environ[env_var], "earth00-19-{:s}.dat.gz".format(ephemversion))
+            sun_ephem = os.path.join(os.environ[env_var], "sun00-19-{:s}.dat.gz".format(ephemversion))
             if not (os.path.isfile(earth_ephem) and os.path.isfile(sun_ephem)):
                 logging.warning(
-                    "No [earth/sun]00-[19/40]-DE421 ephemerides "
-                    "found in the " + os.environ[env_var] + " directory. " + please
+                    "Default [earth/sun]00-[19/40]-{:s} ephemerides ".format(ephemversion)
+                    "not found in the " + os.environ[env_var] + " directory. " + please
                 )
                 earth_ephem = None
                 sun_ephem = None
