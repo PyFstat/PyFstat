@@ -80,12 +80,16 @@ class Writer(Test):
         Writer = pyfstat.Writer(self.label, outdir=self.outdir, duration=3600)
         if os.path.isfile(Writer.sftfilepath):
             os.remove(Writer.sftfilepath)
+        # first run: make everything from scratch
         Writer.make_cff()
         Writer.run_makefakedata()
         time_first = os.path.getmtime(Writer.sftfilepath)
+        # second run: should re-use .cff and .sft
+        Writer.make_cff()
         Writer.run_makefakedata()
         time_second = os.path.getmtime(Writer.sftfilepath)
         self.assertTrue(time_first == time_second)
+        # third run: touch the .cff to force regeneration
         time.sleep(1)  # make sure timestamp is actually different!
         os.system("touch {}".format(Writer.config_file_name))
         Writer.run_makefakedata()
