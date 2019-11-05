@@ -554,10 +554,9 @@ class ComputeFstat(BaseSearchClass):
 
         logging.info("Initialising FstatInput")
         dFreq = 0
+        self.whatToCompute = lalpulsar.FSTATQ_2F
         if self.transientWindowType or self.computeAtoms:
-            self.whatToCompute = lalpulsar.FSTATQ_ATOMS_PER_DET
-        else:
-            self.whatToCompute = lalpulsar.FSTATQ_2F
+            self.whatToCompute += lalpulsar.FSTATQ_ATOMS_PER_DET
 
         FstatOAs = lalpulsar.FstatOptionalArgs()
         FstatOAs.randSeed = lalpulsar.FstatOptionalArgsDefaults.randSeed
