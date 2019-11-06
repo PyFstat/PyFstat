@@ -259,38 +259,65 @@ transientTau = {:10.0f}\n"""
     def check_cached_data_okay_to_use(self, cl_mfd):
         """ Check if cached data exists and, if it does, if it can be used """
 
-        getmtime = os.path.getmtime
+        need_new = "Will create new SFT file."
 
+        logging.info("Checking if cached data good to reuse...")
         if os.path.isfile(self.sftfilepath) is False:
-            logging.info("No SFT file matching {} found".format(self.sftfilepath))
+            logging.info(
+                "No SFT file matching {} found. {}".format(self.sftfilepath, need_new)
+            )
             return False
         else:
-            logging.info("Matching SFT file found")
+            logging.info("OK: Matching SFT file found.")
 
-        if getmtime(self.sftfilepath) < getmtime(self.config_file_name):
-            logging.info(
-                (
-                    "The config file {} has been modified since the sft file {} "
-                    + "was created"
-                ).format(self.config_file_name, self.sftfilepath)
-            )
-            return False
+        if "injectionSources" in cl_mfd:
+            if os.path.isfile(self.config_file_name):
+                if os.path.getmtime(self.sftfilepath) < os.path.getmtime(
+                    self.config_file_name
+                ):
+                    logging.info(
+                        (
+                            "The config file {} has been modified since the SFT file {} "
+                            + "was created. {}"
+                        ).format(self.config_file_name, self.sftfilepath, need_new)
+                    )
+                    return False
+                else:
+                    logging.info(
+                        "OK: The config file {} is older than the SFT file {}".format(
+                            self.config_file_name, self.sftfilepath
+                        )
+                    )
+                    # NOTE: at this point we assume it's safe to re-use, since
+                    # check_if_cff_file_needs_rewritting()
+                    # should have already been called before
+            else:
+                raise RuntimeError(
+                    "Commandline requires file '{}' but it is missing.".format(
+                        self.config_file_name
+                    )
+                )
 
-        logging.info(
-            "The config file {} is older than the sft file {}".format(
-                self.config_file_name, self.sftfilepath
-            )
-        )
-        logging.info("Checking contents of cff file")
+        logging.info("Checking new commandline against existing SFT header...")
         cl_dump = "lalapps_SFTdumpheader {} | head -n 20".format(self.sftfilepath)
         output = helper_functions.run_commandline(cl_dump)
-        found = [True for line in output.split("\n") if line[-len(cl_mfd) :] == cl_mfd]
-        if any(found):
-            logging.info("Contents matched, use old sft file")
-            return True
-        else:
-            logging.info("Contents unmatched, create new sft file")
+        header_lines_lalapps = [
+            line for line in output.split("\n") if "lalapps" in line
+        ]
+        if len(header_lines_lalapps) == 0:
+            logging.info(
+                "Could not obtain comparison commandline from old SFT header. "
+                + need_new
+            )
             return False
+        cl_old = header_lines_lalapps[0]
+        if not helper_functions.match_commandlines(cl_old, cl_mfd):
+            logging.info("Commandlines unmatched. " + need_new)
+            return False
+        else:
+            logging.info("OK: Commandline matched with old SFT header.")
+        logging.info("Looks like cached data matches current options, will re-use it!")
+        return True
 
     def check_if_cff_file_needs_rewritting(self, content):
         """ Check if the .cff file has changed
@@ -298,24 +325,27 @@ transientTau = {:10.0f}\n"""
         Returns True if the file should be overwritten - where possible avoid
         overwriting to allow cached data to be used
         """
+        logging.info("Checking if we can re-use injection config file...")
         if os.path.isfile(self.config_file_name) is False:
-            logging.info("No config file {} found".format(self.config_file_name))
+            logging.info("No config file {} found.".format(self.config_file_name))
             return True
         else:
-            logging.info("Config file {} already exists".format(self.config_file_name))
+            logging.info("Config file {} already exists.".format(self.config_file_name))
 
         with open(self.config_file_name, "r") as f:
             file_content = f.read()
             if file_content == content:
                 logging.info(
-                    "File contents match, no update of {} required".format(
+                    "File contents match, no update of {} required.".format(
                         self.config_file_name
                     )
                 )
                 return False
             else:
                 logging.info(
-                    "File contents unmatched, updating {}".format(self.config_file_name)
+                    "File contents unmatched, updating {}.".format(
+                        self.config_file_name
+                    )
                 )
                 return True
 
@@ -350,10 +380,16 @@ transientTau = {:10.0f}\n"""
         cl_mfd.append("--Tsft={}".format(self.Tsft))
         if self.h0 != 0:
             cl_mfd.append('--injectionSources="{}"'.format(self.config_file_name))
+        earth_ephem = getattr(self, "earth_ephem", None)
+        sun_ephem = getattr(self, "sun_ephem", None)
+        if earth_ephem is not None:
+            cl_mfd.append('--ephemEarth="{}"'.format(earth_ephem))
+        if sun_ephem is not None:
+            cl_mfd.append('--ephemSun="{}"'.format(sun_ephem))
 
         cl_mfd = " ".join(cl_mfd)
-
-        if self.check_cached_data_okay_to_use(cl_mfd) is False:
+        check_ok = self.check_cached_data_okay_to_use(cl_mfd)
+        if check_ok is False:
             helper_functions.run_commandline(cl_mfd)
 
     def predict_fstat(self):
@@ -371,6 +407,8 @@ transientTau = {:10.0f}\n"""
             self.detectors,
             self.sqrtSX,
             tempory_filename="{}.tmp".format(self.label),
+            earth_ephem=self.earth_ephem,
+            sun_ephem=self.sun_ephem,
         )  # detectors OR IFO?
         return twoF_expected
 
@@ -435,6 +473,7 @@ class GlitchWriter(Writer):
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
 
+        self.set_ephemeris_files()
         self.basic_setup()
         self.calculate_fmin_Band()
 
@@ -754,6 +793,12 @@ class FrequencyModulatedArtifactWriter(Writer):
         cl_mfd.append("--h0={}".format(h0))
         cl_mfd.append("--cosi={}".format(self.cosi))
         cl_mfd.append("--lineFeature=TRUE")
+        earth_ephem = getattr(self, "earth_ephem", None)
+        sun_ephem = getattr(self, "sun_ephem", None)
+        if earth_ephem is not None:
+            cl_mfd.append('--ephemEarth="{}"'.format(earth_ephem))
+        if sun_ephem is not None:
+            cl_mfd.append('--ephemSun="{}"'.format(sun_ephem))
         cl_mfd = " ".join(cl_mfd)
         helper_functions.run_commandline(cl_mfd, log_level=10)
 

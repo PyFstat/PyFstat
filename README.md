@@ -12,9 +12,10 @@ we have a number of scripts demonstrating different use cases.
 
 ## Installation
 
-### `python` installation
-The scripts are written in `python 2.7+` and therefore require a working
-`python` installation. While many systems come with a system wide python
+### python installation
+This package works best with `python3.5+`,
+with higher versions to be required soon.
+While many systems come with a system wide python
 installation, it can often be easier to manage a user-specific python
 installation. This way one does not require root access to install or remove
 modules. One method to do this, is to use the `conda` system, either through
@@ -82,7 +83,7 @@ $ ./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpu
 ```
 
 
-### `pyfstat` installation
+### PyFstat installation
 
 The module and associated scripts can be installed system wide (or to the currently active venv),
 assuming you are in the source directory, via
@@ -97,14 +98,37 @@ $ python -c 'import pyfstat'
 if no error message is output, then you have installed `pyfstat`. Note that
 the module will be installed to whichever python executable you call it from.
 
-### Ephemeris installation
+### Ephemerides installation
 
-The scripts require paths to earth and sun ephemeris files in order to use the
-`lalpulsar.ComputeFstat` module. This should be automatically picked up from
-the $LALPULSAR_DATADIR environment variable, defaulting to the
-00-40-DE421 ephemerides or 00-19-DE421 as a backup.
-Alternatively, these can either be manually specified when initialising
-each search (as one of the arguments), or simply by placing a file
+PyFstat requires paths to earth and sun ephemerides files
+in order to use the `lalpulsar.ComputeFstat` module and various `lalapps` tools.
+
+If you have done `pip install lalsuite`,
+you need to manually download at least these two files:
+*  [earth00-40-DE405.dat.gz](https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/src/earth00-40-DE405.dat.gz)
+*  [sun00-40-DE405.dat.gz](https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/src/sun00-40-DE405.dat.gz)
+
+(Other ephemerides versions exist, but these should be sufficient for most applications.)
+You then need to tell PyFstat where to find these files,
+by either setting an environment variable $LALPULSAR_DATADIR
+or by creating a `~/.pyfstat.conf` file as described further below.
+If you are working with a virtual environment,
+you should be able to get a full working ephemerides installation with these commands:
+```
+mkdir $VIRTUAL_ENV/share/lalpulsar
+wget https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/src/earth00-40-DE405.dat.gz -P $VIRTUAL_ENV/share/lalpulsar
+wget https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/src/sun00-40-DE405.dat.gz -P $VIRTUAL_ENV/share/lalpulsar
+echo 'export LALPULSAR_DATADIR=$VIRTUAL_ENV/share/lalpulsar' >> ${VIRTUAL_ENV}/bin/activate
+deactivate
+source path/to/venv/bin/activate
+```
+
+If instead you have built and installed lalsuite from source,
+and set your path up properly through something like
+`source $MYLALPATH/etc/lalsuite-user-env.sh`,
+then the ephemerides path should be automatically picked up from
+the $LALPULSAR_DATADIR environment variable.
+Alternatively, you can place a file
 `~/.pyfstat.conf` into your home directory which looks like
 
 ```
@@ -112,6 +136,9 @@ earth_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/earth00-19-DE421.da
 sun_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/sun00-19-DE421.dat.gz'
 ```
 Paths set in this way will take precedence over the environment variable.
+
+Finally, you can manually specify ephemerides files when initialising
+each PyFstat search (as one of the arguments).
 
 ### Contributors
 
