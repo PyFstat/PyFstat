@@ -34,20 +34,31 @@ to `conda`, `pip` is more universal).
 
 This can be installed with
 ```
-$ conda install pip
+conda install pip
 ```
 
-### Clone the repository
+### install PyFstat the easy way
 
-In a terminal, clone the directory:
+Currently, the easiest way to install PyFstat is to point pip to this git repository,
+which will give you the latest master version:
+```
+pip install git+https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat
+```
+or, if you have an ssh key installed in this gitlab instance:
+```
+pip install git+ssh://git@gitlab.aei.uni-hannover.de/GregAshton/PyFstat
+```
 
-```
-$ git clone https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat.git
-```
+(The release on Zenodo is outdated and might not even install depending on your python version.
+New Zenodo and/or PyPi releases are on our to-do list.)
+
+See further down for installing manually from a local git clone.
+
 
 ### Dependencies
 
-`pyfstat` uses the following external python modules:
+PyFstat uses the following external python modules,
+which should all be pulled in automatically if you use pip:
 
 * [numpy](http://www.numpy.org/)
 * [matplotlib](http://matplotlib.org/) >= 1.4
@@ -66,12 +77,13 @@ $ git clone https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat.git
   option of the TransientGridSearch class.
   (Note: 'pip install pycuda' requires a working nvcc compiler in your path.)
 
-For an introduction to installing modules see
-[here](https://docs.python.org/3.5/installing/index.html). If you are using
-`pip`, to install all of these modules, run
+In case the automatic install doesn't properly pull in all dependencies,
+to install all of these modules manually, you can also run
 ```
-$ pip install -r /PATH/TO/THIS/DIRECTORY/requirements.txt
+pip install -r /PATH/TO/THIS/DIRECTORY/requirements.txt
 ```
+For a general introduction to installing modules, see
+[here](https://docs.python.org/3.5/installing/index.html).
 
 If you prefer to make your own LALSuite installation
 [https://git.ligo.org/lscsoft/lalsuite/](from source),
@@ -79,21 +91,35 @@ make sure it is **swig-enabled** and contains at least the `lalpulsar` package.
 A minimal confuration line to use would be e.g.:
 
 ```
-$ ./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpulsar --enable-lalapps --enable-swig
+./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpulsar --enable-lalapps --enable-swig
 ```
 
 
-### PyFstat installation
+### PyFstat installation from source
 
-The module and associated scripts can be installed system wide (or to the currently active venv),
+In a terminal, clone the directory:
+
+```
+git clone https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat.git
+```
+
+The module and associated scripts can be installed system wide
+(or to the currently active venv),
 assuming you are in the source directory, via
 ```
-$ python setup.py install
+python setup.py install
 ```
-or simply add this directory to your python path. To check that the installation
+As a developer, alternatively
+```
+python setup.py develop
+```
+can be useful so you can directly see any changes you make in action.
+Alternatively, add the source directory directly to your python path.
+
+To check that the installation
 was successful, run
 ```
-$ python -c 'import pyfstat'
+python -c 'import pyfstat'
 ```
 if no error message is output, then you have installed `pyfstat`. Note that
 the module will be installed to whichever python executable you call it from.
