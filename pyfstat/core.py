@@ -396,6 +396,7 @@ class ComputeFstat(BaseSearchClass):
         SSBprec=None,
         tCWFstatMapVersion="lal",
         cudaDeviceName=None,
+        computeAtoms=False,
     ):
         """
         Parameters
@@ -417,6 +418,7 @@ class ComputeFstat(BaseSearchClass):
             allow for the Fstat to be computed over a transient range.
             ('none' instead of None explicitly calls the transient-window
             function, but with the full range, for debugging)
+            (if not None, will also force atoms regardless of computeAtoms option)
         t0Band, tauBand: int
             if >0, search t0 in (minStartTime,minStartTime+t0Band)
                    and tau in (tauMin,2*Tsft+tauBand).
@@ -451,6 +453,8 @@ class ComputeFstat(BaseSearchClass):
             'pycuda' for gpu, and some others for devel/debug.
         cudaDeviceName: str
             GPU name to be matched against drv.Device output.
+        computeAtoms: bool
+            request atoms calculations regardless of transientWindowType
 
         """
 
@@ -562,10 +566,9 @@ class ComputeFstat(BaseSearchClass):
 
         logging.info("Initialising FstatInput")
         dFreq = 0
-        if self.transientWindowType:
-            self.whatToCompute = lalpulsar.FSTATQ_ATOMS_PER_DET
-        else:
-            self.whatToCompute = lalpulsar.FSTATQ_2F
+        self.whatToCompute = lalpulsar.FSTATQ_2F
+        if self.transientWindowType or self.computeAtoms:
+            self.whatToCompute += lalpulsar.FSTATQ_ATOMS_PER_DET
 
         FstatOAs = lalpulsar.FstatOptionalArgs()
         FstatOAs.randSeed = lalpulsar.FstatOptionalArgsDefaults.randSeed

@@ -574,6 +574,7 @@ class TransientGridSearch(GridSearch):
             assumeSqrtSX=self.assumeSqrtSX,
             tCWFstatMapVersion=self.tCWFstatMapVersion,
             cudaDeviceName=self.cudaDeviceName,
+            computeAtoms=self.outputAtoms,
         )
         self.search.get_det_stat = self.search.get_fullycoherent_twoF
 
