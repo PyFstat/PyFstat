@@ -146,15 +146,24 @@ def get_ephemeris_files():
             earth_ephem = None
             sun_ephem = None
     elif env_var in list(os.environ.keys()):
-        earth_ephem = os.path.join(os.environ[env_var], "earth00-40-DE421.dat.gz")
-        sun_ephem = os.path.join(os.environ[env_var], "sun00-40-DE421.dat.gz")
+        ephem_version = "DE405"
+        earth_ephem = os.path.join(
+            os.environ[env_var], "earth00-40-{:s}.dat.gz".format(ephem_version)
+        )
+        sun_ephem = os.path.join(
+            os.environ[env_var], "sun00-40-{:s}.dat.gz".format(ephem_version)
+        )
         if not (os.path.isfile(earth_ephem) and os.path.isfile(sun_ephem)):
-            earth_ephem = os.path.join(os.environ[env_var], "earth00-19-DE421.dat.gz")
-            sun_ephem = os.path.join(os.environ[env_var], "sun00-19-DE421.dat.gz")
+            earth_ephem = os.path.join(
+                os.environ[env_var], "earth00-19-{:s}.dat.gz".format(ephem_version)
+            )
+            sun_ephem = os.path.join(
+                os.environ[env_var], "sun00-19-{:s}.dat.gz".format(ephem_version)
+            )
             if not (os.path.isfile(earth_ephem) and os.path.isfile(sun_ephem)):
                 logging.warning(
-                    "No [earth/sun]00-[19/40]-DE421 ephemerides "
-                    "found in the " + os.environ[env_var] + " directory. " + please
+                    "Default [earth/sun]00-[19/40]-" + ephem_version + " ephemerides "
+                    "not found in the " + os.environ[env_var] + " directory. " + please
                 )
                 earth_ephem = None
                 sun_ephem = None
@@ -368,3 +377,16 @@ def twoFDMoffThreshold(
         return twoFDMoffthreshold_below_threshold
     else:
         return 10 ** (prefactor * np.log10(twoFon - offset))
+
+
+def match_commandlines(cl1, cl2, be_strict_about_full_executable_path=False):
+    """ Check if two commandlines match element-by-element, regardless of order """
+    cl1s = cl1.split(" ")
+    cl2s = cl2.split(" ")
+    # first item will be the executable name
+    # by default be generous here and do not worry about full paths
+    if not be_strict_about_full_executable_path:
+        cl1s[0] = os.path.basename(cl1s[0])
+        cl2s[0] = os.path.basename(cl2s[0])
+    unmatched = np.setxor1d(cl1s, cl2s)
+    return len(unmatched) == 0
