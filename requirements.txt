@@ -8,4 +8,4 @@ tqdm
 bashplotlib
 peakutils
 pathos
-pycuda
+lalsuite

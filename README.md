@@ -46,7 +46,7 @@ $ git clone https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat.git
 
 ### Dependencies
 
-`pyfstat` makes uses the following external python modules:
+`pyfstat` uses the following external python modules:
 
 * [numpy](http://www.numpy.org/)
 * [matplotlib](http://matplotlib.org/) >= 1.4
@@ -55,14 +55,12 @@ $ git clone https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat.git
 * [corner](https://pypi.python.org/pypi/corner/)
 * [dill](https://pypi.python.org/pypi/dill)
 * [peakutils](https://pypi.python.org/pypi/PeakUtils)
+* [pathos](https://pypi.python.org/pypi/pathos)
+* [tqdm](https://pypi.python.org/pypi/tqdm)
+* [bashplotlib](https://github.com/glamp/bashplotlib)
+* [lalsuite](https://pypi.org/project/lalsuite/)
 
 *Optional*
-* [tqdm](https://pypi.python.org/pypi/tqdm)(optional), if installed, this
-  provides a useful progress bar and estimate of the remaining run-time.
-* [bashplotlib](https://github.com/glamp/bashplotlib), if installed, presents
-  a histogram of the loaded SFT data
-* [pathos](https://pypi.python.org/pypi/pathos), if installed, this provides
-  support for multiprocessing some functions.
 * [pycuda](https://pypi.org/project/pycuda/), required for the tCWFstatMapVersion=pycuda
   option of the TransientGridSearch class.
   (Note: 'pip install pycuda' requires a working nvcc compiler in your path.)
@@ -74,10 +72,10 @@ For an introduction to installing modules see
 $ pip install -r /PATH/TO/THIS/DIRECTORY/requirements.txt
 ```
 
-In addition to these modules, you also need a working **swig-enabled**
-[`lalapps`](http://software.ligo.org/docs/lalsuite/lalsuite/) with
-  at least `lalpulsar`. A minimal confuration line to use when installing
-`lalapps` is
+If you prefer to make your own LALSuite installation
+[https://git.ligo.org/lscsoft/lalsuite/](from source),
+make sure it is **swig-enabled** and contains at least the `lalpulsar` package.
+A minimal confuration line to use would be e.g.:
 
 ```
 $ ./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpulsar --enable-lalapps --enable-swig
@@ -86,7 +84,8 @@ $ ./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpu
 
 ### `pyfstat` installation
 
-The script can be installed system wide, assuming you are in the source directory, via
+The module and associated scripts can be installed system wide (or to the currently active venv),
+assuming you are in the source directory, via
 ```
 $ python setup.py install
 ```
