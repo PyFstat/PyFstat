@@ -36,5 +36,5 @@ static:
   tags: [ pyFstat ]
   script:
     - source ${VENV_DIR}/bin/activate
-    - black --check .
+    - black --check --diff .
     # - flake8 .  ## not ready
