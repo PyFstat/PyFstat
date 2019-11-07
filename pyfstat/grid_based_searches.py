@@ -314,7 +314,7 @@ class GridSearch(BaseSearchClass):
         ax.set_ylabel(ylabel)
         if savefig:
             fig.tight_layout()
-            fig.savefig("{}/{}_1D.png".format(self.outdir, self.label))
+            fig.savefig(os.path.join(self.outdir, self.label + "_1D.png"))
         else:
             return ax
 
@@ -413,7 +413,7 @@ class GridSearch(BaseSearchClass):
 
         if save:
             fig.tight_layout()
-            fig.savefig("{}/{}_2D.png".format(self.outdir, self.label))
+            fig.savefig(os.path.join(self.outdir, self.label + "_2D.png"))
         else:
             return ax
 
@@ -455,12 +455,16 @@ class GridSearch(BaseSearchClass):
         else:
             dets = "NA"
         if extra_label:
-            self.out_file = "{}/{}_{}_{}_{}.txt".format(
-                self.outdir, self.label, dets, type(self).__name__, extra_label
+            self.out_file = os.path.join(
+                self.outdir,
+                "{}_{}_{}_{}.txt".format(
+                    self.label, dets, type(self).__name__, extra_label
+                ),
             )
         else:
-            self.out_file = "{}/{}_{}_{}.txt".format(
-                self.outdir, self.label, dets, type(self).__name__
+            self.out_file = os.path.join(
+                self.outdir,
+                "{}_{}_{}.txt".format(self.label, dets, type(self).__name__),
             )
 
 
@@ -826,7 +830,7 @@ class SliceGridSearch(GridSearch):
             axes[i, i].set_ylabel("$2\mathcal{F}$")
 
         if save:
-            fig.savefig("{}/{}_slice_projection.png".format(self.outdir, self.label))
+            fig.savefig(os.path.join(self.outdir, self.label + "_slice_projection.png"))
         else:
             return fig, axes
 
@@ -1049,7 +1053,9 @@ class SlidingWindow(GridSearch):
     def run(self, key="h0", errkey="dh0"):
         self.key = key
         self.errkey = errkey
-        out_file = "{}/{}_{}-sliding-window.txt".format(self.outdir, self.label, key)
+        out_file = os.path.join(
+            self.outdir, "{}_{}-sliding-window.txt".format(self.label, key)
+        )
 
         if self.check_old_data_is_okay_to_use(out_file) is False:
             self.inititate_search_object()
@@ -1090,7 +1096,9 @@ class SlidingWindow(GridSearch):
 
         if fig:
             fig.savefig(
-                "{}/{}_{}-sliding-window.png".format(self.outdir, self.label, self.key)
+                os.path.join(
+                    self.outdir, "{}_{}-sliding-window.png".format(self.label, self.key)
+                )
             )
         else:
             return ax
@@ -1239,7 +1247,7 @@ class FrequencySlidingWindow(GridSearch):
             ax.set_title(ax.get_title(), y=1.18)
         if savefig:
             plt.tight_layout()
-            plt.savefig("{}/{}_sliding_window.png".format(self.outdir, self.label))
+            plt.savefig(os.path.join(self.outdir, self.label + "_sliding_window.png"))
         else:
             return ax
 
@@ -1454,7 +1462,7 @@ class EarthTest(GridSearch):
             y=0.99,
             size=14,
         )
-        fig.savefig("{}/{}_projection_matrix.png".format(self.outdir, self.label))
+        fig.savefig(os.path.join(self.outdir, self.label + "_projection_matrix.png"))
 
     def plot(self, key, prior_widths=None):
         Bsa, FmaxMismatch = self.marginalised_bayes_factor(prior_widths)
@@ -1479,7 +1487,7 @@ class EarthTest(GridSearch):
             )
         )
         fig.tight_layout()
-        fig.savefig("{}/{}_1D.png".format(self.outdir, self.label))
+        fig.savefig(os.path.join(self.outdir, self.label + "_1D.png"))
 
 
 class DMoff_NO_SPIN(GridSearch):

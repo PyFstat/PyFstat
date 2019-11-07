@@ -96,7 +96,7 @@ class Writer(BaseSearchClass):
             os.makedirs(self.outdir)
         if self.tref is None:
             self.tref = self.tstart
-        self.config_file_name = "{}/{}.cff".format(self.outdir, self.label)
+        self.config_file_name = os.path.join(self.outdir, self.label + ".cff")
         self.sftfilenames = [
             lalpulsar.OfficialSFTFilename(
                 dets[0],
@@ -110,7 +110,7 @@ class Writer(BaseSearchClass):
             for dets in self.detectors.split(",")
         ]
         self.sftfilepath = ";".join(
-            ["{}/{}".format(self.outdir, fn) for fn in self.sftfilenames]
+            [os.path.join(self.outdir, fn) for fn in self.sftfilenames]
         )
         self.IFOs = ",".join(['"{}"'.format(d) for d in self.detectors.split(",")])
 
@@ -354,7 +354,7 @@ transientTau = {:10.0f}\n"""
 
         # Remove old data:
         try:
-            os.unlink("{}/*{}*.sft".format(self.outdir, self.label))
+            os.unlink(os.path.join(self.outdir, "*" + self.label + "*.sft"))
         except OSError:
             pass
 
@@ -671,24 +671,21 @@ class FrequencyModulatedArtifactWriter(Writer):
             int(self.duration),
             self.label,
         )
+        SFTFile_fullpath = os.path.join(self.outdir, SFTFilename)
 
         # If the file already exists, simply remove it for now (no caching
         # implemented)
         helper_functions.run_commandline(
-            "rm {}/{}".format(self.outdir, SFTFilename), raise_error=False, log_level=10
+            "rm {}".format(SFTFile_fullpath), raise_error=False, log_level=10
         )
 
-        cl_splitSFTS = "lalapps_splitSFTs -fs {} -fb {} -fe {} -o {}/{} -i {}/*sft".format(
-            self.fmin,
-            self.Band,
-            self.fmin + self.Band,
-            self.outdir,
-            SFTFilename,
-            self.tmp_outdir,
+        inpattern = os.path.join(self.tmp_outdir, "*sft")
+        cl_splitSFTS = "lalapps_splitSFTs -fs {} -fb {} -fe {} -o {} -i {}".format(
+            self.fmin, self.Band, self.fmin + self.Band, SFTFile_fullpath, inpattern
         )
         helper_functions.run_commandline(cl_splitSFTS)
         helper_functions.run_commandline("rm {} -r".format(self.tmp_outdir))
-        files = glob.glob("{}/{}*".format(self.outdir, SFTFilename))
+        files = glob.glob(SFTFile_fullpath + "*")
         if len(files) == 1:
             fn = files[0]
             fn_new = fn.split(".")[0] + ".sft"
@@ -736,7 +733,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         self.maxStartTime = None
         self.duration = self.Tsft
 
-        self.tmp_outdir = "{}/{}_tmp".format(self.outdir, self.label)
+        self.tmp_outdir = os.path.join(self.outdir, self.label + "_tmp")
         if os.path.isdir(self.tmp_outdir) is True:
             raise ValueError(
                 "Temporary directory {} already exists, please rename".format(

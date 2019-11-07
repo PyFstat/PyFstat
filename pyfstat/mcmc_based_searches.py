@@ -188,7 +188,7 @@ class MCMCSearch(core.BaseSearchClass):
             logging.info("No sftfilepattern given")
         if injectSources:
             logging.info("Inject sources: {}".format(injectSources))
-        self.pickle_path = "{}/{}_saved_data.p".format(self.outdir, self.label)
+        self.pickle_path = os.path.join(self.outdir, self.label + "_saved_data.p")
         self._unpack_input_theta()
         self.ndim = len(self.theta_keys)
         if self.log10beta_min:
@@ -609,7 +609,9 @@ class MCMCSearch(core.BaseSearchClass):
                 fig, axes = self._plot_walkers(sampler, **kwargs)
                 fig.tight_layout()
                 fig.savefig(
-                    "{}/{}_init_{}_walkers.png".format(self.outdir, self.label, j)
+                    os.path.join(
+                        self.outdir, "{}_init_{}_walkers.png".format(self.label, j)
+                    )
                 )
 
             p0 = self._get_new_p0(sampler)
@@ -629,7 +631,7 @@ class MCMCSearch(core.BaseSearchClass):
             try:
                 fig, axes = self._plot_walkers(sampler, nprod=nprod, **kwargs)
                 fig.tight_layout()
-                fig.savefig("{}/{}_walkers.png".format(self.outdir, self.label))
+                fig.savefig(os.path.join(self.outdir, self.label + "_walkers.png"))
             except RuntimeError as e:
                 logging.warning("Failed to save walker plots due to Erro {}".format(e))
 
@@ -802,7 +804,7 @@ class MCMCSearch(core.BaseSearchClass):
                 ax.hist(self.samples, bins=50, histtype="stepfilled")
                 ax.set_xlabel(self.theta_symbols[0])
 
-            fig.savefig("{}/{}_corner.png".format(self.outdir, self.label), dpi=dpi)
+            fig.savefig(os.path.join(self.outdir, self.label + "_corner.png"), dpi=dpi)
             return
 
         with plt.rc_context(rc_context):
@@ -881,7 +883,7 @@ class MCMCSearch(core.BaseSearchClass):
 
             if save_fig:
                 fig_triangle.savefig(
-                    "{}/{}_corner.png".format(self.outdir, self.label), dpi=dpi
+                    os.path.join(self.outdir, self.label + "_corner.png"), dpi=dpi
                 )
             else:
                 return fig, axes
@@ -936,7 +938,7 @@ class MCMCSearch(core.BaseSearchClass):
             fig.subplots_adjust(hspace=0.05, wspace=0.05)
 
         if save_fig:
-            fig.savefig("{}/{}_corner.png".format(self.outdir, self.label), dpi=dpi)
+            fig.savefig(os.path.join(self.outdir, self.label + "_corner.png"), dpi=dpi)
         else:
             return fig
 
@@ -1023,7 +1025,7 @@ class MCMCSearch(core.BaseSearchClass):
         labs = [l.get_label() for l in lns]
         axes[0].legend(lns, labs, loc=1, framealpha=0.8)
 
-        fig.savefig("{}/{}_prior_posterior.png".format(self.outdir, self.label))
+        fig.savefig(os.path.join(self.outdir, self.label + "_prior_posterior.png"))
 
     def plot_cumulative_max(self, **kwargs):
         """ Plot the cumulative twoF for the maximum posterior estimate
@@ -1643,17 +1645,13 @@ class MCMCSearch(core.BaseSearchClass):
 
     def write_par(self, method="med"):
         """ Writes a .par of the best-fit params with an estimated std """
-        logging.info(
-            "Writing {}/{}.par using the {} method".format(
-                self.outdir, self.label, method
-            )
-        )
+        filename = os.path.join(self.outdir, self.label + ".par")
+        logging.info("Writing {} using the {} method".format(filename, method))
 
         median_std_d = self.get_median_stds()
         max_twoF_d, max_twoF = self.get_max_twoF()
 
         logging.info("Writing par file with max twoF = {}".format(max_twoF))
-        filename = "{}/{}.par".format(self.outdir, self.label)
         with open(filename, "w+") as f:
             f.write("MaxtwoF = {}\n".format(max_twoF))
             f.write("tref = {}\n".format(self.tref))
@@ -1673,9 +1671,10 @@ class MCMCSearch(core.BaseSearchClass):
         for key in ["Alpha", "Delta", "F0", "F1"]:
             if key not in params:
                 params[key] = self.theta_prior[key]
+        filename = os.path.join(self.outdir, self.label + ".loudest")
         cmd = (
             'lalapps_ComputeFstatistic_v2 -a {} -d {} -f {} -s {} -D "{}"'
-            ' --refTime={} --outputLoudest="{}/{}.loudest" '
+            ' --refTime={} --outputLoudest="{}" '
             "--minStartTime={} --maxStartTime={}"
         ).format(
             params["Alpha"],
@@ -1684,8 +1683,7 @@ class MCMCSearch(core.BaseSearchClass):
             params["F1"],
             self.sftfilepattern,
             params["tref"],
-            self.outdir,
-            self.label,
+            filename,
             self.minStartTime,
             self.maxStartTime,
         )
@@ -1693,7 +1691,7 @@ class MCMCSearch(core.BaseSearchClass):
 
     def write_prior_table(self):
         """ Generate a .tex file of the prior """
-        with open("{}/{}_prior.tex".format(self.outdir, self.label), "w") as f:
+        with open(os.path.join(self.outdir, self.label + "_prior.tex"), "w") as f:
             f.write(
                 r"\begin{tabular}{c l c} \hline" + "\n"
                 r"Parameter & & &  \\ \hhline{====}"
@@ -1860,7 +1858,7 @@ class MCMCSearch(core.BaseSearchClass):
             )
             ax2.set_xlabel(r"$\beta_{\textrm{min}}$")
             plt.tight_layout()
-            fig.savefig("{}/{}_beta_lnl.png".format(self.outdir, self.label))
+            fig.savefig(os.path.join(self.outdir, self.label + "_beta_lnl.png"))
 
         return log10evidence, log10evidence_err
 
@@ -1966,7 +1964,7 @@ class MCMCGlitchSearch(MCMCSearch):
                 "Set-up MCMC glitch search with {} glitches for model {}" " on data {}"
             ).format(self.nglitch, self.label, self.sftfilepattern)
         )
-        self.pickle_path = "{}/{}_saved_data.p".format(self.outdir, self.label)
+        self.pickle_path = os.path.join(self.outdir, self.label + "_saved_data.p")
         self._unpack_input_theta()
         self.ndim = len(self.theta_keys)
         if self.log10beta_min:
@@ -2189,7 +2187,7 @@ class MCMCGlitchSearch(MCMCSearch):
             ax.plot(ts + taus, twoFs)
 
         ax.set_xlabel("GPS time")
-        fig.savefig("{}/{}_twoFcumulative.png".format(self.outdir, self.label))
+        fig.savefig(os.path.join(self.outdir, self.label + "_twoFcumulative.png"))
 
 
 class MCMCSemiCoherentSearch(MCMCSearch):
@@ -2309,7 +2307,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
                 self.label, self.sftfilepattern
             )
         )
-        self.pickle_path = "{}/{}_saved_data.p".format(self.outdir, self.label)
+        self.pickle_path = os.path.join(self.outdir, self.label + "_saved_data.p")
         self._unpack_input_theta()
         self.ndim = len(self.theta_keys)
         if self.log10beta_min:
@@ -2508,7 +2506,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 self.label, self.sftfilepattern
             )
         )
-        self.pickle_path = "{}/{}_saved_data.p".format(self.outdir, self.label)
+        self.pickle_path = os.path.join(self.outdir, self.label + "_saved_data.p")
         self._unpack_input_theta()
         self.ndim = len(self.theta_keys)
         if self.log10beta_min:
@@ -2603,7 +2601,9 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         if run_setup is None:
             logging.info("No run_setup provided")
 
-            run_setup_input_file = "{}/{}_run_setup.p".format(self.outdir, self.label)
+            run_setup_input_file = os.path.join(
+                self.outdir, self.label + "_run_setup.p"
+            )
 
             if os.path.isfile(run_setup_input_file):
                 logging.info(
@@ -2699,7 +2699,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 )
 
         if gen_tex_table:
-            filename = "{}/{}_run_setup.tex".format(self.outdir, self.label)
+            filename = os.path.join(self.outdir, self.label + "_run_setup.tex")
             with open(filename, "w+") as f:
                 f.write(r"\begin{tabular}{c|ccc}" + "\n")
                 f.write(
@@ -2884,7 +2884,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             if return_fig:
                 return fig, axes
             else:
-                fig.savefig("{}/{}_walkers.png".format(self.outdir, self.label))
+                fig.savefig(os.path.join(self.outdir, self.label + "_walkers.png"))
 
 
 class MCMCTransientSearch(MCMCSearch):
