@@ -131,8 +131,8 @@ in order to use the `lalpulsar.ComputeFstat` module and various `lalapps` tools.
 
 If you have done `pip install lalsuite`,
 you need to manually download at least these two files:
-*  [earth00-40-DE405.dat.gz](https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/src/earth00-40-DE405.dat.gz)
-*  [sun00-40-DE405.dat.gz](https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/src/sun00-40-DE405.dat.gz)
+*  [earth00-40-DE405.dat.gz](https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/earth00-40-DE405.dat.gz)
+*  [sun00-40-DE405.dat.gz](https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/sun00-40-DE405.dat.gz)
 
 (Other ephemerides versions exist, but these should be sufficient for most applications.)
 You then need to tell PyFstat where to find these files,
@@ -142,8 +142,8 @@ If you are working with a virtual environment,
 you should be able to get a full working ephemerides installation with these commands:
 ```
 mkdir $VIRTUAL_ENV/share/lalpulsar
-wget https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/src/earth00-40-DE405.dat.gz -P $VIRTUAL_ENV/share/lalpulsar
-wget https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/src/sun00-40-DE405.dat.gz -P $VIRTUAL_ENV/share/lalpulsar
+wget https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/earth00-40-DE405.dat.gz -P $VIRTUAL_ENV/share/lalpulsar
+wget https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/sun00-40-DE405.dat.gz -P $VIRTUAL_ENV/share/lalpulsar
 echo 'export LALPULSAR_DATADIR=$VIRTUAL_ENV/share/lalpulsar' >> ${VIRTUAL_ENV}/bin/activate
 deactivate
 source path/to/venv/bin/activate
