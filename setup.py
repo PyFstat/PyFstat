@@ -23,7 +23,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="PyFstat",
-    version="0.2",
+    version="1.3",
     author="Gregory Ashton, David Keitel, Reinhard Prix",
     author_email="gregory.ashton@ligo.org",
     license="MIT",
