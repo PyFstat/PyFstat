@@ -394,9 +394,10 @@ def match_commandlines(cl1, cl2, be_strict_about_full_executable_path=False):
 
 def get_version_information():
     version_file = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), 'pyfstat/.version')
+        os.path.dirname(os.path.dirname(__file__)), "pyfstat/.version"
+    )
     try:
-        with open(version_file, 'r') as f:
+        with open(version_file, "r") as f:
             return f.readline().rstrip()
     except EnvironmentError:
         print("No version information file '.version' found")

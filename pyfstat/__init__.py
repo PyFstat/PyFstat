@@ -29,4 +29,5 @@ from .grid_based_searches import (
 
 
 from .helper_functions import get_version_information
+
 __version__ = get_version_information()
