@@ -3,11 +3,13 @@
 This is a python package providing an interface to perform F-statistic based
 continuous gravitational wave (CW) searches.
 
-For documentation, please use the [wiki](https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat/wikis/home).
-
-In the
-[examples](https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat/tree/master/examples),
-we have a number of scripts demonstrating different use cases.
+Getting started:
+* This README provides information on installation, contributing and citing.
+* Additional usage documentation will be added to the
+[project wiki](https://github.com/PyFstat/PyFstat/wiki) (work in progress).
+* We also have a number of
+[examples](./examples),
+demonstrating different use cases.
 
 ![Integration Tests](https://github.com/PyFstat/PyFstat/workflows/Integration%20Tests/badge.svg)
 
@@ -43,17 +45,16 @@ conda install pip
 Currently, the easiest way to install PyFstat is to point pip to this git repository,
 which will give you the latest master version:
 ```
-pip install git+https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat
+pip install git+https://github.com/PyFstat/PyFstat
 ```
-or, if you have an ssh key installed in this gitlab instance:
+or, if you have an ssh key installed in github:
 ```
-pip install git+ssh://git@gitlab.aei.uni-hannover.de/GregAshton/PyFstat
+pip install git+ssh://git@https://github.com/PyFstatn/PyFstat
 ```
 
-(The release on Zenodo is outdated and might not even install depending on your python version.
-New Zenodo and/or PyPi releases are on our to-do list.)
-
-See further down for installing manually from a local git clone.
+See further down for installing manually from a
+[Zenodo source release](https://doi.org/10.5281/zenodo.1243930)
+or from a local git clone.
 
 
 ### Dependencies
@@ -87,8 +88,8 @@ For a general introduction to installing modules, see
 [here](https://docs.python.org/3.5/installing/index.html).
 
 If you prefer to make your own LALSuite installation
-[https://git.ligo.org/lscsoft/lalsuite/](from source),
-make sure it is **swig-enabled** and contains at least the `lalpulsar` package.
+[from source](https://git.ligo.org/lscsoft/lalsuite/),
+make sure it is **swig-enabled** and contains at least the `lalpulsar` and `lalapps` packages.
 A minimal confuration line to use would be e.g.:
 
 ```
@@ -98,10 +99,10 @@ A minimal confuration line to use would be e.g.:
 
 ### PyFstat installation from source
 
-In a terminal, clone the directory:
+In a terminal, clone this repository:
 
 ```
-git clone https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat.git
+git clone https://github.com/PyFstat/PyFstat.git
 ```
 
 The module and associated scripts can be installed system wide
@@ -176,25 +177,30 @@ each PyFstat search (as one of the arguments).
 * Sylvia Zhu
 
 This project is open to development, please feel free to contact us
-for advice or just jump in and submit a pull request.
+for advice or just jump in and submit an issue or pull request.
 
 ## Citing this work
 
 If you use `PyFstat` in a publication we would appreciate if you cite the
-original paper introducing the code, the [ADS page can be found
-here](http://adsabs.harvard.edu/abs/2018arXiv180205450A) and the version
-release:
-
+original paper introducing the code
+([ADS page can be found here](http://adsabs.harvard.edu/abs/2018arXiv180205450A))
+and a DOI for the software itself.
+If you'd like to cite the package in general,
+please refer to the [version-independent Zenodo listing](https://doi.org/10.5281/zenodo.1243930)
+or use directly the following BibTeX entry:
 ```
 @misc{pyfstat,
-  author       = {{Ashton}, G. and {Keitel}, D.},
-  title        = {{PyFstat-v1.2}},
-  month        = may,
-  year         = 2018,
-  doi          = {10.5281/zenodo.1243931},
-  url          = {https://doi.org/10.5281/zenodo.1243931},
-  note= {\url{https://doi.org/10.5281/zenodo.1243931}}
+  author       = {Ashton, Gregory and
+                  Keitel, David and
+                  Prix, Reinhard},
+  title        = {PyFstat},
+  month        = jan,
+  year         = 2020,
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.3620860},
+  url          = {https://doi.org/10.5281/zenodo.3620860}
+  note         = {\url{https://doi.org/10.5281/zenodo.3620860}}
 }
 ```
-
-
+From [Zenodo](https://doi.org/10.5281/zenodo.1243930)
+you can also obtain DOIs for individual versioned releases.
