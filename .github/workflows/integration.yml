@@ -1,0 +1,41 @@
+name: Integration Tests
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7]
+    env:
+      LALPULSAR_DATADIR: ${{ github.workspace }}/ephem
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Set up ephemerides
+      run: |
+        export EPHEM_SRC=https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib
+        echo "LALPULSAR_DATADIR: $LALPULSAR_DATADIR"
+        mkdir $LALPULSAR_DATADIR
+        wget $EPHEM_SRC/earth00-40-DE405.dat.gz -P $LALPULSAR_DATADIR
+        wget $EPHEM_SRC/sun00-40-DE405.dat.gz -P $LALPULSAR_DATADIR
+        echo "Successfully downloaded ephemerides:"
+        ls -l $LALPULSAR_DATADIR
+    - name: Test with pytest
+      run: |
+        pip install pytest
+        # make sure to test *installed* version of pyFstat
+        pip install -e $GITHUB_WORKSPACE
+        (cd .. && pytest $GITHUB_WORKSPACE/tests.py --log-file=$GITHUB_WORKSPACE/tests.log)
+    - name: Style check with black
+      run: |
+        pip install black
+        black --check --diff .
