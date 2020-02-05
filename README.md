@@ -9,6 +9,7 @@ In the
 [examples](https://gitlab.aei.uni-hannover.de/GregAshton/PyFstat/tree/master/examples),
 we have a number of scripts demonstrating different use cases.
 
+![Integration Tests](https://github.com/PyFstat/PyFstat/workflows/Integration%20Tests/badge.svg)
 
 ## Installation
 
