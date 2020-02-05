@@ -756,7 +756,10 @@ class ComputeFstat(BaseSearchClass):
                         self.windowRange.tau = self.tauMin
 
             logging.info("Initialising transient FstatMap features...")
-            self.tCWFstatMapFeatures, self.gpu_context = tcw.init_transient_fstat_map_features(
+            (
+                self.tCWFstatMapFeatures,
+                self.gpu_context,
+            ) = tcw.init_transient_fstat_map_features(
                 self.tCWFstatMapVersion == "pycuda", self.cudaDeviceName
             )
 
