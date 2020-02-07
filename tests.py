@@ -220,7 +220,7 @@ class ComputeFstat(Test):
         )
         self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
 
-    def run_computefstatistic_single_point_no_noise(self):
+    def test_run_computefstatistic_single_point_no_noise(self):
         Writer = pyfstat.Writer(
             self.label,
             outdir=self.outdir,
