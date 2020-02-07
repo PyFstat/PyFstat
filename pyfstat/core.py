@@ -477,18 +477,22 @@ class ComputeFstat(BaseSearchClass):
         if self.sftfilepattern is None:
             for k in ["minStartTime", "maxStartTime", "detectors"]:
                 if getattr(self, k) is None:
-                    raise ValueError('You must provide "{}" to injectSources'.format(k))
+                    raise ValueError(
+                        "If sftfilepattern==None, you must provide" " '{}'.".format(k)
+                    )
             C1 = getattr(self, "injectSources", None) is None
             C2 = getattr(self, "injectSqrtSX", None) is None
             if C1 and C2:
                 raise ValueError(
-                    "You must specify either one of injectSources" " or injectSqrtSX"
+                    "If sftfilepattern==None, you must specify either one of"
+                    " injectSources or injectSqrtSX."
                 )
             SFTCatalog = lalpulsar.SFTCatalog()
             Tsft = 1800
             Toverlap = 0
             Tspan = self.maxStartTime - self.minStartTime
-            detNames = lal.CreateStringVector(*[d for d in self.detectors.split(",")])
+            self.detector_names = self.detectors.split(",")
+            detNames = lal.CreateStringVector(*[d for d in self.detector_names])
             multiTimestamps = lalpulsar.MakeMultiTimestamps(
                 self.minStartTime, Tspan, Tsft, Toverlap, detNames.length
             )
@@ -631,10 +635,26 @@ class ComputeFstat(BaseSearchClass):
         else:
             FstatOAs.injectSources = lalpulsar.FstatOptionalArgsDefaults.injectSources
         if hasattr(self, "injectSqrtSX") and self.injectSqrtSX is not None:
-            raise ValueError("injectSqrtSX not implemented")
+            self.injectSqrtSX = np.atleast_1d(self.injectSqrtSX)
+            if len(self.injectSqrtSX) != len(self.detector_names):
+                raise ValueError(
+                    "injectSqrtSX must be of same length as detector_names ({}!={})".format(
+                        len(self.injectSqrtSX), len(detector_names)
+                    )
+                )
+            FstatOAs.injectSqrtSX = lalpulsar.MultiNoiseFloor()
+            FstatOAs.injectSqrtSX.length = len(self.injectSqrtSX)
+            FstatOAs.injectSqrtSX.sqrtSn[
+                : FstatOAs.injectSqrtSX.length
+            ] = self.injectSqrtSX
         else:
-            FstatOAs.InjectSqrtSX = lalpulsar.FstatOptionalArgsDefaults.injectSqrtSX
+            FstatOAs.injectSqrtSX = lalpulsar.FstatOptionalArgsDefaults.injectSqrtSX
         if self.minCoverFreq is None or self.maxCoverFreq is None:
+            if self.sftfilepattern is None:
+                raise ValueError(
+                    "If sftfilepattern==None, you must set minCoverFreq and"
+                    " maxCoverFreq manually."
+                )
             fAs = [d.header.f0 for d in SFTCatalog.data]
             fBs = [
                 d.header.f0 + (d.numBins - 1) * d.header.deltaF for d in SFTCatalog.data
