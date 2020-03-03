@@ -1,5 +1,6 @@
 import pyfstat
 import numpy as np
+import os
 
 # Properties of the GW data
 sqrtSX = 1e-23
@@ -17,11 +18,12 @@ tref = 0.5 * (tstart + tend)
 
 depth = 100
 h0 = sqrtSX / depth
-data_label = "twoF_cumulative"
+data_label = os.path.splitext(os.path.basename(__file__))[0]
+outdir = os.path.join("example_data", data_label)
 
 data = pyfstat.Writer(
     label=data_label,
-    outdir="data",
+    outdir=outdir,
     tref=tref,
     tstart=tstart,
     F0=F0,
@@ -60,9 +62,9 @@ nwalkers = 100
 nsteps = [50, 50]
 
 mcmc = pyfstat.MCMCSearch(
-    label="twoF_cumulative",
-    outdir="data",
-    sftfilepattern="data/*" + data_label + "*sft",
+    label=data_label,
+    outdir=outdir,
+    sftfilepattern=os.path.join(outdir, "*" + data_label + "*sft"),
     theta_prior=theta_prior,
     tref=tref,
     minStartTime=tstart,

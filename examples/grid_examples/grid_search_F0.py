@@ -1,6 +1,7 @@
 import pyfstat
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 F0 = 30.0
 F1 = 0
@@ -16,13 +17,15 @@ tend = tstart + duration
 tref = 0.5 * (tstart + tend)
 
 depth = 70
-data_label = "grided_frequency_depth_{:1.0f}".format(depth)
-
 h0 = sqrtSX / depth
+
+example_name = os.path.splitext(os.path.basename(__file__))[0]
+data_label = "{:s}_depth_{:1.0f}".format(example_name, depth)
+outdir = os.path.join("example_data", example_name)
 
 data = pyfstat.Writer(
     label=data_label,
-    outdir="data",
+    outdir=outdir,
     tref=tref,
     tstart=tstart,
     F0=F0,
@@ -45,9 +48,9 @@ F2s = [F2]
 Alphas = [Alpha]
 Deltas = [Delta]
 search = pyfstat.GridSearch(
-    "grided_frequency_search",
-    "data",
-    "data/*" + data_label + "*sft",
+    example_name,
+    outdir,
+    os.path.join(outdir, "*" + data_label + "*sft"),
     F0s,
     F1s,
     F2s,
@@ -79,4 +82,4 @@ ax.set_xticks(xticks)
 xticklabels = ["$f_0 {-} 10\Delta f$", "$f_0$", "$f_0 {+} 10\Delta f$"]
 ax.set_xticklabels(xticklabels)
 plt.tight_layout()
-fig.savefig("{}/{}_1D.png".format(search.outdir, search.label), dpi=300)
+fig.savefig(os.path.join(search.outdir, search.label + "_1D.png"), dpi=300)

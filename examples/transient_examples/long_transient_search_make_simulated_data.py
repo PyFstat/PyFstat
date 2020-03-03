@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import pyfstat
+import os
 
 F0 = 30.0
 F1 = -1e-10
@@ -18,9 +19,11 @@ tref = minStartTime
 h0 = 1e-23
 sqrtSX = 1e-22
 
+outdir = os.path.join("example_data", "long_transient")
+
 transient = pyfstat.Writer(
     label="simulated_transient_signal",
-    outdir="data_l",
+    outdir=outdir,
     tref=tref,
     tstart=transient_tstart,
     F0=F0,

@@ -5,8 +5,6 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-datadir = "data_s"
-
 F0 = 30.0
 F1 = -1e-10
 F2 = 0
@@ -29,11 +27,13 @@ F2s = [F2]
 Alphas = [Alpha]
 Deltas = [Delta]
 
+outdir = os.path.join("example_data", "long_transient")
+
 print("Standard CW search:")
 search1 = pyfstat.GridSearch(
     label="CW",
-    outdir=datadir,
-    sftfilepattern=os.path.join(datadir, "*simulated_transient_signal*sft"),
+    outdir=outdir,
+    sftfilepattern=os.path.join(outdir, "*simulated_transient_signal*sft"),
     F0s=F0s,
     F1s=F1s,
     F2s=F2s,
@@ -52,8 +52,8 @@ search1.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\mathcal{F}$")
 print("with t0,tau bands:")
 search2 = pyfstat.TransientGridSearch(
     label="tCW",
-    outdir=datadir,
-    sftfilepattern=os.path.join(datadir, "*simulated_transient_signal*sft"),
+    outdir=outdir,
+    sftfilepattern=os.path.join(outdir, "*simulated_transient_signal*sft"),
     F0s=F0s,
     F1s=F1s,
     F2s=F2s,

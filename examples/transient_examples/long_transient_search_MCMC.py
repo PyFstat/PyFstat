@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import pyfstat
+import os
 
 F0 = 30.0
 F1 = -1e-10
@@ -35,10 +36,12 @@ log10beta_min = -1
 nwalkers = 100
 nsteps = [100, 100]
 
+outdir = os.path.join("example_data", "long_transient")
+
 mcmc = pyfstat.MCMCTransientSearch(
     label="transient_search",
-    outdir="data_l",
-    sftfilepattern="data_l/*simulated_transient_signal*sft",
+    outdir=outdir,
+    sftfilepattern=os.path.join(outdir, "*simulated_transient_signal*sft"),
     theta_prior=theta_prior,
     tref=tref,
     minStartTime=minStartTime,

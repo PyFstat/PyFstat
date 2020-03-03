@@ -1,6 +1,7 @@
 import pyfstat
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 F0 = 30.0
 F1 = -1e-10
@@ -16,8 +17,8 @@ tend = tstart + duration
 tref = 0.5 * (tstart + tend)
 
 depth = 40
-label = "semicoherent_directed_follow_up"
-outdir = "data"
+label = os.path.splitext(os.path.basename(__file__))[0]
+outdir = os.path.join("example_data", label)
 
 h0 = sqrtSX / depth
 
@@ -61,7 +62,7 @@ nsteps = [100, 100]
 mcmc = pyfstat.MCMCFollowUpSearch(
     label=label,
     outdir=outdir,
-    sftfilepattern="{}/*{}*sft".format(outdir, label),
+    sftfilepattern=os.path.join(outdir, "*{}*sft".format(label)),
     theta_prior=theta_prior,
     tref=tref,
     minStartTime=tstart,
@@ -90,4 +91,4 @@ for ax in axes:
     ax.set_xticklabels([str(s) for s in np.arange(0, 700, 100)])
 axes[-1].set_xlabel(r"$\textrm{Number of steps}$", labelpad=0.1)
 fig.tight_layout()
-fig.savefig("{}/{}_walkers.png".format(mcmc.outdir, mcmc.label), dpi=400)
+fig.savefig(os.path.join(mcmc.outdir, mcmc.label + "_walkers.png"), dpi=400)

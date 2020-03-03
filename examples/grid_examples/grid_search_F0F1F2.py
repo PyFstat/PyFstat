@@ -1,6 +1,7 @@
 import pyfstat
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 try:
     from gridcorner import gridcorner
@@ -24,8 +25,8 @@ tend = tstart + duration
 tref = 0.5 * (tstart + tend)
 
 depth = 20
-label = "grid_F0F1F2"
-outdir = "data"
+label = os.path.splitext(os.path.basename(__file__))[0]
+outdir = os.path.join("example_data", label)
 
 h0 = sqrtSX / depth
 
@@ -59,8 +60,8 @@ F2s = [F2 - DeltaF2 / 2.0, F2 + DeltaF2 / 2.0, dF2]
 Alphas = [Alpha]
 Deltas = [Delta]
 search = pyfstat.GridSearch(
-    "grid_F0F1F2",
-    "data",
+    "grid_search_F0F1F2",
+    outdir,
     data.sftfilepath,
     F0s,
     F1s,
@@ -87,4 +88,4 @@ labels = [
 fig, axes = gridcorner(
     twoF, xyz, projection="log_mean", labels=labels, whspace=0.1, factor=1.8
 )
-fig.savefig("{}/{}_projection_matrix.png".format(outdir, label))
+fig.savefig(os.path.join(outdir, label + "_projection_matrix.png"))

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import pyfstat
+import os
 
 F0 = 30.0
 F1 = -1e-10
@@ -21,9 +22,11 @@ detectors = "H1,L1"
 
 Tsft = 1800
 
+outdir = os.path.join("example_data", "short_transient")
+
 transient = pyfstat.Writer(
     label="simulated_transient_signal",
-    outdir="data_s",
+    outdir=outdir,
     tref=tref,
     tstart=transient_tstart,
     duration=transient_duration,

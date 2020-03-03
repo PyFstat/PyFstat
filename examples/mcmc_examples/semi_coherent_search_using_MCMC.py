@@ -1,5 +1,6 @@
 import pyfstat
 import numpy as np
+import os
 
 # Properties of the GW data
 sqrtSX = 1e-23
@@ -17,8 +18,8 @@ tref = 0.5 * (tstart + tend)
 
 depth = 10
 h0 = sqrtSX / depth
-label = "semicoherent_search_using_MCMC"
-outdir = "data"
+label = os.path.splitext(os.path.basename(__file__))[0]
+outdir = os.path.join("example_data", label)
 
 data = pyfstat.Writer(
     label=label,
@@ -63,7 +64,7 @@ mcmc = pyfstat.MCMCSemiCoherentSearch(
     label=label,
     outdir=outdir,
     nsegs=10,
-    sftfilepattern="{}/*{}*sft".format(outdir, label),
+    sftfilepattern=os.path.join(outdir, "*{}*sft".format(label)),
     theta_prior=theta_prior,
     tref=tref,
     minStartTime=tstart,
