@@ -203,14 +203,14 @@ def texify_float(x, d=2):
 
 def initializer(func):
     """ Decorator function to automatically assign the parameters to self """
-    names, varargs, keywords, defaults = inspect.getargspec(func)
+    argspec = inspect.getfullargspec(func)
 
     @wraps(func)
     def wrapper(self, *args, **kargs):
-        for name, arg in list(zip(names[1:], args)) + list(kargs.items()):
+        for name, arg in list(zip(argspec.args[1:], args)) + list(kargs.items()):
             setattr(self, name, arg)
 
-        for name, default in zip(reversed(names), reversed(defaults)):
+        for name, default in zip(reversed(argspec.args), reversed(argspec.defaults)):
             if not hasattr(self, name):
                 setattr(self, name, default)
 
