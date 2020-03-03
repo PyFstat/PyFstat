@@ -18,36 +18,36 @@ class Test(unittest.TestCase):
                 shutil.rmtree(self.outdir)
             except OSError:
                 logging.warning("{} not removed prior to tests".format(self.outdir))
-        h0 = 1
-        sqrtSX = 1
-        F0 = 30
-        F1 = -1e-10
-        F2 = 0
-        minStartTime = 700000000
-        duration = 2 * 86400
-        Alpha = 5e-3
-        Delta = 1.2
-        tref = minStartTime
+        self.h0 = 1
+        self.sqrtSX = 1
+        self.F0 = 30
+        self.F1 = -1e-10
+        self.F2 = 0
+        self.minStartTime = 700000000
+        self.duration = 2 * 86400
+        self.maxStartTime = self.minStartTime + self.duration
+        self.Alpha = 5e-3
+        self.Delta = 1.2
+        self.tref = self.minStartTime
+        self.detectors = "H1"
         Writer = pyfstat.Writer(
-            F0=F0,
-            F1=F1,
-            F2=F2,
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
             label="test",
-            h0=h0,
-            sqrtSX=sqrtSX,
+            h0=self.h0,
+            sqrtSX=self.sqrtSX,
             outdir=self.outdir,
-            tstart=minStartTime,
-            Alpha=Alpha,
-            Delta=Delta,
-            tref=tref,
-            duration=duration,
+            tstart=self.minStartTime,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+            tref=self.tref,
+            duration=self.duration,
             Band=4,
+            detectors=self.detectors,
         )
         Writer.make_data()
         self.sftfilepath = Writer.sftfilepath
-        self.minStartTime = minStartTime
-        self.maxStartTime = minStartTime + duration
-        self.duration = duration
 
     @classmethod
     def tearDownClass(self):
@@ -177,7 +177,29 @@ class BaseSearchClass(Test):
 class ComputeFstat(Test):
     label = "TestComputeFstat"
 
-    def test_run_computefstatistic_single_point(self):
+    def test_run_computefstatistic_single_point_injectSqrtSX(self):
+
+        search_H1L1 = pyfstat.ComputeFstat(
+            tref=self.minStartTime,
+            minStartTime=self.minStartTime,
+            maxStartTime=self.maxStartTime,
+            detectors=self.detectors,
+            injectSqrtSX=self.sqrtSX,
+            minCoverFreq=self.F0 - 0.1,
+            maxCoverFreq=self.F0 + 0.1,
+        )
+        FS = search_H1L1.get_fullycoherent_twoF(
+            tstart=self.minStartTime,
+            tend=self.maxStartTime,
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+        )
+        self.assertTrue(FS > 0.0)
+
+    def test_run_computefstatistic_single_point_with_SFTs(self):
         Writer = pyfstat.Writer(
             self.label,
             outdir=self.outdir,
@@ -224,7 +246,7 @@ class ComputeFstat(Test):
         )
         self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
 
-    def run_computefstatistic_single_point_no_noise(self):
+    def test_run_computefstatistic_single_point_no_noise(self):
         Writer = pyfstat.Writer(
             self.label,
             outdir=self.outdir,
@@ -240,6 +262,43 @@ class ComputeFstat(Test):
             tref=Writer.tref,
             assumeSqrtSX=1,
             sftfilepattern=os.path.join(Writer.outdir, "*{}*sft".format(Writer.label)),
+        )
+        FS = search.get_fullycoherent_twoF(
+            Writer.tstart,
+            Writer.tend,
+            Writer.F0,
+            Writer.F1,
+            Writer.F2,
+            Writer.Alpha,
+            Writer.Delta,
+        )
+        self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
+
+    def test_run_computefstatistic_single_point_no_noise_manual_ephem(self):
+        Writer = pyfstat.Writer(
+            self.label,
+            outdir=self.outdir,
+            add_noise=False,
+            duration=86400,
+            h0=1,
+            sqrtSX=1,
+        )
+        Writer.make_data()
+        predicted_FS = Writer.predict_fstat()
+
+        # let's get the default ephemeris files (to be sure their paths exist)
+        # and then pretend we pass them manually, to test those class options
+        (
+            earth_ephem_default,
+            sun_ephem_default,
+        ) = pyfstat.helper_functions.get_ephemeris_files()
+
+        search = pyfstat.ComputeFstat(
+            tref=Writer.tref,
+            assumeSqrtSX=1,
+            sftfilepattern=os.path.join(Writer.outdir, "*" + Writer.label + "*sft"),
+            earth_ephem=earth_ephem_default,
+            sun_ephem=sun_ephem_default,
         )
         FS = search.get_fullycoherent_twoF(
             Writer.tstart,

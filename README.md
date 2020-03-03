@@ -78,6 +78,16 @@ which should all be pulled in automatically if you use pip:
 * [pycuda](https://pypi.org/project/pycuda/), required for the tCWFstatMapVersion=pycuda
   option of the TransientGridSearch class.
   (Note: 'pip install pycuda' requires a working nvcc compiler in your path.)
+* [pytest](https://docs.pytest.org) for running the test suite locally (`python -m pytest tests.py`)
+* developers are also highly encouraged to use the [black](https://black.readthedocs.io) style checker locally
+(`black --check --diff .`),
+as it is required to pass by the online integration pipeline
+* some of the [examples](./examples) require [gridcorner](https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner);
+for pip users this is most conveniently installed by
+```
+pip install git+https://gitlab.aei.uni-hannover.de/dkeitel/gridcorner
+```
+(This fork is s temporary recommendation until the main version is upgraded for compatibility with current scipy and python3.)
 
 In case the automatic install doesn't properly pull in all dependencies,
 to install all of these modules manually, you can also run

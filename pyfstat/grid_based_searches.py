@@ -78,6 +78,8 @@ class GridSearch(BaseSearchClass):
         injectSources=None,
         input_arrays=False,
         assumeSqrtSX=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         """
         Parameters
@@ -126,6 +128,8 @@ class GridSearch(BaseSearchClass):
                 SSBprec=self.SSBprec,
                 injectSources=self.injectSources,
                 assumeSqrtSX=self.assumeSqrtSX,
+                earth_ephem=self.earth_ephem,
+                sun_ephem=self.sun_ephem,
             )
             self.search.get_det_stat = self.search.get_fullycoherent_twoF
         else:
@@ -503,6 +507,8 @@ class TransientGridSearch(GridSearch):
         outputAtoms=False,
         tCWFstatMapVersion="lal",
         cudaDeviceName=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         """
         Parameters
@@ -579,6 +585,8 @@ class TransientGridSearch(GridSearch):
             tCWFstatMapVersion=self.tCWFstatMapVersion,
             cudaDeviceName=self.cudaDeviceName,
             computeAtoms=self.outputAtoms,
+            earth_ephem=self.earth_ephem,
+            sun_ephem=self.sun_ephem,
         )
         self.search.get_det_stat = self.search.get_fullycoherent_twoF
 
@@ -696,6 +704,8 @@ class SliceGridSearch(GridSearch):
         input_arrays=False,
         assumeSqrtSX=None,
         Lambda0=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         """
         Parameters
@@ -761,6 +771,8 @@ class SliceGridSearch(GridSearch):
             tref=self.tref,
             minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime,
+            earth_ephem=self.earth_ephem,
+            sun_ephem=self.sun_ephem,
         )
 
         for i, ikey in enumerate(self.search_keys):
@@ -855,6 +867,8 @@ class GridUniformPriorSearch:
         nsegs=1,
         SSBprec=None,
         injectSources=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         dF0 = (theta_prior["F0"]["upper"] - theta_prior["F0"]["lower"]) / NF0
         dF1 = (theta_prior["F1"]["upper"] - theta_prior["F1"]["lower"]) / NF1
@@ -878,6 +892,8 @@ class GridUniformPriorSearch:
             maxCoverFreq=maxCoverFreq,
             nsegs=nsegs,
             SSBprec=SSBprec,
+            earth_ephem=earth_ephem,
+            sun_ephem=sun_ephem,
         )
 
     def run(self):
@@ -921,6 +937,8 @@ class GridGlitchSearch(GridSearch):
         minCoverFreq=None,
         maxCoverFreq=None,
         detectors=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         """
         Run a single-glitch grid search
@@ -957,6 +975,8 @@ class GridGlitchSearch(GridSearch):
             minCoverFreq=minCoverFreq,
             maxCoverFreq=maxCoverFreq,
             BSGL=self.BSGL,
+            earth_ephem=earth_ephem,
+            sun_ephem=sun_ephem,
         )
         self.search.get_det_stat = self.search.get_semicoherent_nglitch_twoF
 
@@ -998,6 +1018,8 @@ class SlidingWindow(GridSearch):
         detectors=None,
         SSBprec=None,
         injectSources=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         """
         Parameters
@@ -1039,6 +1061,8 @@ class SlidingWindow(GridSearch):
             BSGL=self.BSGL,
             SSBprec=self.SSBprec,
             injectSources=self.injectSources,
+            earth_ephem=self.earth_ephem,
+            sun_ephem=self.sun_ephem,
         )
 
     def check_old_data_is_okay_to_use(self, out_file):
@@ -1129,6 +1153,8 @@ class FrequencySlidingWindow(GridSearch):
         detectors=None,
         SSBprec=None,
         injectSources=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         """
         Parameters
@@ -1178,6 +1204,8 @@ class FrequencySlidingWindow(GridSearch):
             BSGL=self.BSGL,
             SSBprec=self.SSBprec,
             injectSources=self.injectSources,
+            earth_ephem=self.earth_ephem,
+            sun_ephem=self.sun_ephem,
         )
         self.search.get_det_stat = self.search.get_fullycoherent_twoF
 
@@ -1284,6 +1312,8 @@ class EarthTest(GridSearch):
         detectors=None,
         injectSources=None,
         assumeSqrtSX=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         """
         Parameters
@@ -1507,6 +1537,8 @@ class DMoff_NO_SPIN(GridSearch):
         detectors=None,
         injectSources=None,
         assumeSqrtSX=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         """
         Parameters

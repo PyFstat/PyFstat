@@ -203,10 +203,13 @@ def predict_fstat(
     cl_pfs.append("--maxStartTime={}".format(int(maxStartTime)))
     cl_pfs.append("--outputFstat={}".format(tempory_filename))
 
-    if earth_ephem is not None:
-        cl_pfs.append("--ephemEarth='{}'".format(earth_ephem))
-    if sun_ephem is not None:
-        cl_pfs.append("--ephemSun='{}'".format(sun_ephem))
+    earth_ephem_default, sun_ephem_default = helper_functions.get_ephemeris_files()
+    if earth_ephem is None:
+        earth_ephem = earth_ephem_default
+    if sun_ephem is None:
+        sun_ephem = sun_ephem_default
+    cl_pfs.append("--ephemEarth='{}'".format(earth_ephem))
+    cl_pfs.append("--ephemSun='{}'".format(sun_ephem))
 
     cl_pfs = " ".join(cl_pfs)
     helper_functions.run_commandline(cl_pfs)
@@ -397,6 +400,8 @@ class ComputeFstat(BaseSearchClass):
         tCWFstatMapVersion="lal",
         cudaDeviceName=None,
         computeAtoms=False,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         """
         Parameters
@@ -455,10 +460,18 @@ class ComputeFstat(BaseSearchClass):
             GPU name to be matched against drv.Device output.
         computeAtoms: bool
             request atoms calculations regardless of transientWindowType
+        earth_ephem: str
+            Earth ephemeris file path
+            if None, will check standard sources as per
+            helper_functions.get_ephemeris_files()
+        sun_ephem: str
+            Sun ephemeris file path
+            if None, will check standard sources as per
+            helper_functions.get_ephemeris_files()
 
         """
 
-        self.set_ephemeris_files()
+        self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.init_computefstatistic_single_point()
 
     def _get_SFTCatalog(self):
@@ -477,18 +490,22 @@ class ComputeFstat(BaseSearchClass):
         if self.sftfilepattern is None:
             for k in ["minStartTime", "maxStartTime", "detectors"]:
                 if getattr(self, k) is None:
-                    raise ValueError('You must provide "{}" to injectSources'.format(k))
+                    raise ValueError(
+                        "If sftfilepattern==None, you must provide" " '{}'.".format(k)
+                    )
             C1 = getattr(self, "injectSources", None) is None
             C2 = getattr(self, "injectSqrtSX", None) is None
             if C1 and C2:
                 raise ValueError(
-                    "You must specify either one of injectSources" " or injectSqrtSX"
+                    "If sftfilepattern==None, you must specify either one of"
+                    " injectSources or injectSqrtSX."
                 )
             SFTCatalog = lalpulsar.SFTCatalog()
             Tsft = 1800
             Toverlap = 0
             Tspan = self.maxStartTime - self.minStartTime
-            detNames = lal.CreateStringVector(*[d for d in self.detectors.split(",")])
+            self.detector_names = self.detectors.split(",")
+            detNames = lal.CreateStringVector(*[d for d in self.detector_names])
             multiTimestamps = lalpulsar.MakeMultiTimestamps(
                 self.minStartTime, Tspan, Tsft, Toverlap, detNames.length
             )
@@ -631,10 +648,26 @@ class ComputeFstat(BaseSearchClass):
         else:
             FstatOAs.injectSources = lalpulsar.FstatOptionalArgsDefaults.injectSources
         if hasattr(self, "injectSqrtSX") and self.injectSqrtSX is not None:
-            raise ValueError("injectSqrtSX not implemented")
+            self.injectSqrtSX = np.atleast_1d(self.injectSqrtSX)
+            if len(self.injectSqrtSX) != len(self.detector_names):
+                raise ValueError(
+                    "injectSqrtSX must be of same length as detector_names ({}!={})".format(
+                        len(self.injectSqrtSX), len(detector_names)
+                    )
+                )
+            FstatOAs.injectSqrtSX = lalpulsar.MultiNoiseFloor()
+            FstatOAs.injectSqrtSX.length = len(self.injectSqrtSX)
+            FstatOAs.injectSqrtSX.sqrtSn[
+                : FstatOAs.injectSqrtSX.length
+            ] = self.injectSqrtSX
         else:
-            FstatOAs.InjectSqrtSX = lalpulsar.FstatOptionalArgsDefaults.injectSqrtSX
+            FstatOAs.injectSqrtSX = lalpulsar.FstatOptionalArgsDefaults.injectSqrtSX
         if self.minCoverFreq is None or self.maxCoverFreq is None:
+            if self.sftfilepattern is None:
+                raise ValueError(
+                    "If sftfilepattern==None, you must set minCoverFreq and"
+                    " maxCoverFreq manually."
+                )
             fAs = [d.header.f0 for d in SFTCatalog.data]
             fBs = [
                 d.header.f0 + (d.numBins - 1) * d.header.deltaF for d in SFTCatalog.data
@@ -1165,6 +1198,8 @@ class SemiCoherentSearch(ComputeFstat):
         injectSources=None,
         assumeSqrtSX=None,
         SSBprec=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         """
         Parameters
@@ -1183,7 +1218,7 @@ class SemiCoherentSearch(ComputeFstat):
         """
 
         self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
-        self.set_ephemeris_files()
+        self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.transientWindowType = "rect"
         self.t0Band = None
         self.tauBand = None
@@ -1337,6 +1372,8 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         detectors=None,
         SSBprec=None,
         injectSources=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         """
         Parameters
@@ -1360,7 +1397,7 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         """
 
         self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
-        self.set_ephemeris_files()
+        self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.transientWindowType = "rect"
         self.t0Band = None
         self.tauBand = None
