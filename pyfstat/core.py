@@ -1106,7 +1106,7 @@ class ComputeFstat(BaseSearchClass):
                         color=detector_colors[d.lower()],
                         alpha=0.5,
                         label=(
-                            "Predicted $2\mathcal{{F}}$ 1-$\sigma$ band ({})".format(
+                            r"Predicted $2\mathcal{{F}}$ 1-$\sigma$ band ({})".format(
                                 d.upper()
                             )
                         ),

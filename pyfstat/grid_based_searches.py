@@ -32,16 +32,16 @@ class GridSearch(BaseSearchClass):
     """ Gridded search using ComputeFstat """
 
     tex_labels = {
-        "F0": "$f$",
-        "F1": "$\dot{f}$",
-        "F2": "$\ddot{f}$",
+        "F0": r"$f$",
+        "F1": r"$\dot{f}$",
+        "F2": r"$\ddot{f}$",
         "Alpha": r"$\alpha$",
         "Delta": r"$\delta$",
     }
     tex_labels0 = {
-        "F0": "$-f_0$",
-        "F1": "$-\dot{f}_0$",
-        "F2": "$-\ddot{f}_0$",
+        "F0": r"$-f_0$",
+        "F1": r"$-\dot{f}_0$",
+        "F2": r"$-\ddot{f}_0$",
         "Alpha": r"$-\alpha_0$",
         "Delta": r"$-\delta_0$",
     }
@@ -296,7 +296,7 @@ class GridSearch(BaseSearchClass):
         xrescale=1,
         savefig=True,
         xlabel=None,
-        ylabel="$\widetilde{2\mathcal{F}}$",
+        ylabel=r"$\widetilde{2\mathcal{F}}$",
     ):
         if ax is None:
             fig, ax = plt.subplots()
@@ -391,7 +391,7 @@ class GridSearch(BaseSearchClass):
         )
         if colorbar:
             cb = plt.colorbar(pax, ax=ax, **cbarkwargs)
-            cb.set_label("$2\mathcal{F}$")
+            cb.set_label(r"$2\mathcal{F}$")
 
         if add_mismatch:
             self.add_mismatch_to_ax(ax, x, y, xkey, ykey, *add_mismatch)
@@ -841,7 +841,7 @@ class SliceGridSearch(GridSearch):
             axes[-1, i].set_xlabel(self.tex_labels[ikey] + self.tex_labels0[ikey])
             if i > 0:
                 axes[i, 0].set_ylabel(self.tex_labels[ikey] + self.tex_labels0[ikey])
-            axes[i, i].set_ylabel("$2\mathcal{F}$")
+            axes[i, i].set_ylabel(r"$2\mathcal{F}$")
 
         if save:
             fig.savefig(os.path.join(self.outdir, self.label + "_slice_projection.png"))
@@ -1253,15 +1253,15 @@ class FrequencySlidingWindow(GridSearch):
         dts = (tmids - self.minStartTime) / 86400.0
         if F0:
             frequencies = frequencies - F0
-            ax.set_ylabel("Frequency - $f_0$ [Hz] \n $f_0={:0.2f}$".format(F0))
+            ax.set_ylabel(r"Frequency - $f_0$ [Hz] \n $f_0={:0.2f}$".format(F0))
         else:
-            ax.set_ylabel("Frequency [Hz]")
+            ax.set_ylabel(r"Frequency [Hz]")
         twoF = twoF.reshape((len(tmids), len(frequencies)))
         Y, X = np.meshgrid(frequencies, dts)
         pax = ax.pcolormesh(X, Y * F0rescale, twoF, **kwargs)
         if colorbar:
             cb = plt.colorbar(pax, ax=ax)
-            cb.set_label("$2\mathcal{F}$")
+            cb.set_label(r"$2\mathcal{F}$")
         ax.set_xlabel(
             r"Mid-point (days after $t_\mathrm{{start}}$={})".format(self.minStartTime)
         )
@@ -1273,7 +1273,7 @@ class FrequencySlidingWindow(GridSearch):
         if timestamps:
             axT = ax.twiny()
             axT.set_xlim(tmids[0] * 1e-9, tmids[-1] * 1e-9)
-            axT.set_xlabel("Mid-point timestamp [GPS $10^{9}$ s]")
+            axT.set_xlabel(r"Mid-point timestamp [GPS $10^{9}$ s]")
             ax.set_title(ax.get_title(), y=1.18)
         if savefig:
             plt.tight_layout()
@@ -1286,9 +1286,9 @@ class EarthTest(GridSearch):
     """ """
 
     tex_labels = {
-        "deltaRadius": "$\Delta R$ [m]",
-        "phaseOffset": "phase-offset [rad]",
-        "deltaPspin": "$\Delta P_\mathrm{spin}$ [s]",
+        "deltaRadius": r"$\Delta R$ [m]",
+        "phaseOffset": r"phase-offset [rad]",
+        "deltaPspin": r"$\Delta P_\mathrm{spin}$ [s]",
     }
 
     @helper_functions.initializer
@@ -1486,7 +1486,7 @@ class EarthTest(GridSearch):
         )
         axes[-1][-1].axvline((lal.DAYJUL_SI - lal.DAYSID_SI) / 60.0, color="C3")
         plt.suptitle(
-            "T={:.1f} days, $f$={:.2f} Hz, $\log\mathcal{{B}}_{{S/A}}$={:.1f},"
+            r"T={:.1f} days, $f$={:.2f} Hz, $\log\mathcal{{B}}_{{S/A}}$={:.1f},"
             r" $\frac{{\mathcal{{F}}_0-\mathcal{{F}}_\mathrm{{max}}}}"
             r"{{\mathcal{{F}}_0}}={:.1e}$".format(
                 self.duration / 86400, self.F0, Bsa, FmaxMismatch
@@ -1514,7 +1514,7 @@ class EarthTest(GridSearch):
             key, xrescale=rescales_defaults[key], xlabel=labels[key], savefig=False
         )
         ax.set_title(
-            "T={} days, $f$={} Hz, $\log\mathcal{{B}}_{{S/A}}$={:.1f}".format(
+            r"T={} days, $f$={} Hz, $\log\mathcal{{B}}_{{S/A}}$={:.1f}".format(
                 self.duration / 86400, self.F0, Bsa
             )
         )

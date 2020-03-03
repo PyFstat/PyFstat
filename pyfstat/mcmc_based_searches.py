@@ -102,25 +102,25 @@ class MCMCSearch(core.BaseSearchClass):
     """
 
     symbol_dictionary = dict(
-        F0="$f$",
-        F1="$\dot{f}$",
-        F2="$\ddot{f}$",
+        F0=r"$f$",
+        F1=r"$\dot{f}$",
+        F2=r"$\ddot{f}$",
         Alpha=r"$\alpha$",
-        Delta="$\delta$",
-        asini="asini",
-        period="P",
-        ecc="ecc",
-        tp="tp",
-        argp="argp",
+        Delta=r"$\delta$",
+        asini=r"asini",
+        period=r"P",
+        ecc=r"ecc",
+        tp=r"tp",
+        argp=r"argp",
     )
     unit_dictionary = dict(
-        F0="Hz",
-        F1="Hz/s",
-        F2="Hz/s$^2$",
+        F0=r"Hz",
+        F1=r"Hz/s",
+        F2=r"Hz/s$^2$",
         Alpha=r"rad",
-        Delta="rad",
+        Delta=r"rad",
         asini="",
-        period="s",
+        period=r"s",
         ecc="",
         tp="",
         argp="",
@@ -262,9 +262,9 @@ class MCMCSearch(core.BaseSearchClass):
         full_theta_keys_copy = copy.copy(full_theta_keys)
 
         full_theta_symbols = [
-            "$f$",
-            "$\dot{f}$",
-            "$\ddot{f}$",
+            r"$f$",
+            r"$\dot{f}$",
+            r"$\ddot{f}$",
             r"$\alpha$",
             r"$\delta$",
         ]
@@ -1908,31 +1908,31 @@ class MCMCGlitchSearch(MCMCSearch):
     """
 
     symbol_dictionary = dict(
-        F0="$f$",
-        F1="$\dot{f}$",
-        F2="$\ddot{f}$",
+        F0=r"$f$",
+        F1=r"$\dot{f}$",
+        F2=r"$\ddot{f}$",
         Alpha=r"$\alpha$",
-        Delta="$\delta$",
-        delta_F0="$\delta f$",
-        delta_F1="$\delta \dot{f}$",
-        tglitch="$t_\mathrm{glitch}$",
+        Delta=r"$\delta$",
+        delta_F0=r"$\delta f$",
+        delta_F1=r"$\delta \dot{f}$",
+        tglitch=r"$t_\mathrm{glitch}$",
     )
     unit_dictionary = dict(
-        F0="Hz",
-        F1="Hz/s",
-        F2="Hz/s$^2$",
+        F0=r"Hz",
+        F1=r"Hz/s",
+        F2=r"Hz/s$^2$",
         Alpha=r"rad",
-        Delta="rad",
-        delta_F0="Hz",
-        delta_F1="Hz/s",
-        tglitch="s",
+        Delta=r"rad",
+        delta_F0=r"Hz",
+        delta_F1=r"Hz/s",
+        tglitch=r"s",
     )
     transform_dictionary = dict(
         tglitch={
             "multiplier": 1 / 86400.0,
             "subtractor": "minStartTime",
             "unit": "day",
-            "label": "$t^{g}_0$ \n [d]",
+            "label": r"$t^{g}_0$ \n [d]",
         }
     )
 
@@ -2067,14 +2067,14 @@ class MCMCGlitchSearch(MCMCSearch):
         full_theta_keys = ["F0", "F1", "F2", "Alpha", "Delta"] + full_glitch_keys
         full_theta_keys_copy = copy.copy(full_theta_keys)
 
-        glitch_symbols = ["$\delta f$", "$\delta \dot{f}$", r"$t_{glitch}$"]
+        glitch_symbols = [r"$\delta f$", r"$\delta \dot{f}$", r"$t_{glitch}$"]
         full_glitch_symbols = list(
             np.array([[gs] * self.nglitch for gs in glitch_symbols]).flatten()
         )
         full_theta_symbols = [
-            "$f$",
-            "$\dot{f}$",
-            "$\ddot{f}$",
+            r"$f$",
+            r"$\dot{f}$",
+            r"$\ddot{f}$",
             r"$\alpha$",
             r"$\delta$",
         ] + full_glitch_symbols
@@ -2918,22 +2918,22 @@ class MCMCTransientSearch(MCMCSearch):
     """
 
     symbol_dictionary = dict(
-        F0="$f$",
-        F1="$\dot{f}$",
-        F2="$\ddot{f}$",
+        F0=r"$f$",
+        F1=r"$\dot{f}$",
+        F2=r"$\ddot{f}$",
         Alpha=r"$\alpha$",
-        Delta="$\delta$",
-        transient_tstart="$t_\mathrm{start}$",
-        transient_duration="$\Delta T$",
+        Delta=r"$\delta$",
+        transient_tstart=r"$t_\mathrm{start}$",
+        transient_duration=r"$\Delta T$",
     )
     unit_dictionary = dict(
-        F0="Hz",
-        F1="Hz/s",
-        F2="Hz/s$^2$",
+        F0=r"Hz",
+        F1=r"Hz/s",
+        F2=r"Hz/s$^2$",
         Alpha=r"rad",
-        Delta="rad",
-        transient_tstart="s",
-        transient_duration="s",
+        Delta=r"rad",
+        transient_tstart=r"s",
+        transient_duration=r"s",
     )
 
     transform_dictionary = dict(
@@ -3002,9 +3002,9 @@ class MCMCTransientSearch(MCMCSearch):
         full_theta_symbols = [
             r"$t_{\rm start}$",
             r"$\Delta T$",
-            "$f$",
-            "$\dot{f}$",
-            "$\ddot{f}$",
+            r"$f$",
+            r"$\dot{f}$",
+            r"$\ddot{f}$",
             r"$\alpha$",
             r"$\delta$",
         ]
