@@ -94,7 +94,7 @@ def read_par(
 
     """
     if filename is None:
-        filename = "{}/{}.{}".format(outdir, label, suffix)
+        filename = os.path.join(outdir, "{}.{}".format(label, suffix))
     if os.path.isfile(filename) is False:
         raise ValueError("No file {} found".format(filename))
     d = {}
@@ -223,7 +223,7 @@ class BaseSearchClass(object):
 
     def _add_log_file(self):
         """ Log output to a file, requires class to have outdir and label """
-        logfilename = "{}/{}.log".format(self.outdir, self.label)
+        logfilename = os.path.join(self.outdir, self.label + ".log")
         fh = logging.FileHandler(logfilename)
         fh.setLevel(logging.INFO)
         fh.setFormatter(
@@ -978,7 +978,7 @@ class ComputeFstat(BaseSearchClass):
         """
 
         if pfs_input is None:
-            if os.path.isfile("{}/{}.loudest".format(outdir, label)) is False:
+            if os.path.isfile(os.path.join(outdir, label + ".loudest")) is False:
                 raise ValueError("Need a loudest file to add the predicted Fstat")
             loudest = read_par(label=label, outdir=outdir, suffix="loudest")
             pfs_input = {
@@ -1125,7 +1125,7 @@ class ComputeFstat(BaseSearchClass):
             ax.set_title(title)
         if savefig:
             plt.tight_layout()
-            plt.savefig("{}/{}_twoFcumulative.png".format(outdir, label))
+            plt.savefig(os.path.join(outdir, label + "_twoFcumulative.png"))
             return taus, twoFs
         else:
             return ax
@@ -1217,7 +1217,7 @@ class SemiCoherentSearch(ComputeFstat):
         For all other parameters, see pyfstat.ComputeFStat.
         """
 
-        self.fs_file_name = "{}/{}_FS.dat".format(self.outdir, self.label)
+        self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.transientWindowType = "rect"
         self.t0Band = None
@@ -1396,7 +1396,7 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         For all other parameters, see pyfstat.ComputeFStat.
         """
 
-        self.fs_file_name = "{}/{}_FS.dat".format(self.outdir, self.label)
+        self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.transientWindowType = "rect"
         self.t0Band = None

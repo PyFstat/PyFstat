@@ -124,7 +124,7 @@ def set_up_command_line_arguments():
 
 def get_ephemeris_files():
     """ Returns the earth_ephem and sun_ephem """
-    config_file = os.path.expanduser("~") + "/.pyfstat.conf"
+    config_file = os.path.join(os.path.expanduser("~"), ".pyfstat.conf")
     env_var = "LALPULSAR_DATADIR"
     please = "Please provide the ephemerides paths when initialising searches."
     if os.path.isfile(config_file):

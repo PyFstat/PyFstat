@@ -64,7 +64,9 @@ class Writer(Test):
     def test_make_cff(self):
         Writer = pyfstat.Writer(self.label, outdir=self.outdir)
         Writer.make_cff()
-        self.assertTrue(os.path.isfile("./{}/{}.cff".format(self.outdir, self.label)))
+        self.assertTrue(
+            os.path.isfile(os.path.join(".", self.outdir, self.label + ".cff"))
+        )
 
     def test_run_makefakedata(self):
         Writer = pyfstat.Writer(self.label, outdir=self.outdir, duration=3600)
@@ -72,7 +74,9 @@ class Writer(Test):
         Writer.run_makefakedata()
         self.assertTrue(
             os.path.isfile(
-                "./{}/H-2_H1_1800SFT_TestWriter-700000000-3600.sft".format(self.outdir)
+                os.path.join(
+                    ".", self.outdir, "H-2_H1_1800SFT_TestWriter-700000000-3600.sft"
+                )
             )
         )
 
@@ -107,11 +111,10 @@ class par(Test):
     label = "TestPar"
 
     def test(self):
-        os.system('echo "x=100\ny=10" > {}/{}.par'.format(self.outdir, self.label))
+        parfile = os.path.join(self.outdir, self.label + ".par")
+        os.system('echo "x=100\ny=10" > ' + parfile)
 
-        par = pyfstat.core.read_par(
-            "{}/{}.par".format(self.outdir, self.label), return_type="Bunch"
-        )
+        par = pyfstat.core.read_par(parfile, return_type="Bunch")
         self.assertTrue(par.x == 100)
         self.assertTrue(par.y == 10)
 
@@ -208,9 +211,10 @@ class ComputeFstat(Test):
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
 
+        sftfilepattern = os.path.join(Writer.outdir, "*{}*sft".format(Writer.label))
+
         search_H1L1 = pyfstat.ComputeFstat(
-            tref=Writer.tref,
-            sftfilepattern="{}/*{}*sft".format(Writer.outdir, Writer.label),
+            tref=Writer.tref, sftfilepattern=sftfilepattern,
         )
         FS = search_H1L1.get_fullycoherent_twoF(
             Writer.tstart,
@@ -228,7 +232,7 @@ class ComputeFstat(Test):
         search_H1 = pyfstat.ComputeFstat(
             tref=Writer.tref,
             detectors="H1",
-            sftfilepattern="{}/*{}*sft".format(Writer.outdir, Writer.label),
+            sftfilepattern=sftfilepattern,
             SSBprec=lalpulsar.SSBPREC_RELATIVISTIC,
         )
         FS = search_H1.get_fullycoherent_twoF(
@@ -257,7 +261,7 @@ class ComputeFstat(Test):
         search = pyfstat.ComputeFstat(
             tref=Writer.tref,
             assumeSqrtSX=1,
-            sftfilepattern="{}/*{}*sft".format(Writer.outdir, Writer.label),
+            sftfilepattern=os.path.join(Writer.outdir, "*{}*sft".format(Writer.label)),
         )
         FS = search.get_fullycoherent_twoF(
             Writer.tstart,
@@ -383,7 +387,7 @@ class SemiCoherentSearch(Test):
             label=self.label,
             outdir=self.outdir,
             nsegs=2,
-            sftfilepattern="{}/*{}*sft".format(Writer.outdir, Writer.label),
+            sftfilepattern=os.path.join(Writer.outdir, "*{}*sft".format(Writer.label)),
             tref=Writer.tref,
             minStartTime=Writer.tstart,
             maxStartTime=Writer.tend,
@@ -424,7 +428,7 @@ class SemiCoherentSearch(Test):
             label=self.label,
             outdir=self.outdir,
             nsegs=2,
-            sftfilepattern="{}/*{}*sft".format(Writer.outdir, Writer.label),
+            sftfilepattern=os.path.join(Writer.outdir, "*{}*sft".format(Writer.label)),
             tref=Writer.tref,
             minStartTime=Writer.tstart,
             maxStartTime=Writer.tend,
@@ -466,7 +470,7 @@ class SemiCoherentGlitchSearch(Test):
         search = pyfstat.SemiCoherentGlitchSearch(
             label=self.label,
             outdir=self.outdir,
-            sftfilepattern="{}/*{}*sft".format(Writer.outdir, Writer.label),
+            sftfilepattern=os.path.join(Writer.outdir, "*{}*sft".format(Writer.label)),
             tref=Writer.tref,
             minStartTime=Writer.tstart,
             maxStartTime=Writer.tend,
@@ -549,7 +553,7 @@ class MCMCSearch(Test):
             outdir=self.outdir,
             theta_prior=theta,
             tref=tref,
-            sftfilepattern="{}/*{}*sft".format(Writer.outdir, Writer.label),
+            sftfilepattern=os.path.join(Writer.outdir, "*{}*sft".format(Writer.label)),
             minStartTime=minStartTime,
             maxStartTime=maxStartTime,
             nsteps=[100, 100],
