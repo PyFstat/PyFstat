@@ -396,8 +396,10 @@ class GridSearch(BaseSearchClass):
         if add_mismatch:
             self.add_mismatch_to_ax(ax, x, y, xkey, ykey, *add_mismatch)
 
-        ax.set_xlim(x[0] * xrescale, x[-1] * xrescale)
-        ax.set_ylim(y[0] * yrescale, y[-1] * yrescale)
+        if x[-1] > x[0]:
+            ax.set_xlim(x[0] * xrescale, x[-1] * xrescale)
+        if y[-1] > y[0]:
+            ax.set_ylim(y[0] * yrescale, y[-1] * yrescale)
         if x0:
             ax.set_xlabel(self.tex_labels[xkey] + self.tex_labels0[xkey])
         else:
