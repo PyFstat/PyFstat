@@ -270,6 +270,43 @@ class ComputeFstat(Test):
         )
         self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
 
+    def test_run_computefstatistic_single_point_no_noise_manual_ephem(self):
+        Writer = pyfstat.Writer(
+            self.label,
+            outdir=self.outdir,
+            add_noise=False,
+            duration=86400,
+            h0=1,
+            sqrtSX=1,
+        )
+        Writer.make_data()
+        predicted_FS = Writer.predict_fstat()
+
+        # let's get the default ephemeris files (to be sure their paths exist)
+        # and then pretend we pass them manually, to test those class options
+        (
+            earth_ephem_default,
+            sun_ephem_default,
+        ) = pyfstat.helper_functions.get_ephemeris_files()
+
+        search = pyfstat.ComputeFstat(
+            tref=Writer.tref,
+            assumeSqrtSX=1,
+            sftfilepattern=os.path.join(Writer.outdir, "*" + Writer.label + "*sft"),
+            earth_ephem=earth_ephem_default,
+            sun_ephem=sun_ephem_default,
+        )
+        FS = search.get_fullycoherent_twoF(
+            Writer.tstart,
+            Writer.tend,
+            Writer.F0,
+            Writer.F1,
+            Writer.F2,
+            Writer.Alpha,
+            Writer.Delta,
+        )
+        self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
+
     def test_injectSources(self):
         # This seems to be writing with a signal...
         Writer = pyfstat.Writer(

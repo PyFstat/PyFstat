@@ -152,6 +152,8 @@ class MCMCSearch(core.BaseSearchClass):
         assumeSqrtSX=None,
         transientWindowType=None,
         tCWFstatMapVersion="lal",
+        earth_ephem=None,
+        sun_ephem=None,
     ):
 
         self.theta_prior = theta_prior
@@ -177,6 +179,7 @@ class MCMCSearch(core.BaseSearchClass):
         self.assumeSqrtSX = assumeSqrtSX
         self.transientWindowType = transientWindowType
         self.tCWFstatMapVersion = tCWFstatMapVersion
+        self.set_ephemeris_files(earth_ephem, sun_ephem)
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -229,6 +232,8 @@ class MCMCSearch(core.BaseSearchClass):
             assumeSqrtSX=self.assumeSqrtSX,
             SSBprec=self.SSBprec,
             tCWFstatMapVersion=self.tCWFstatMapVersion,
+            earth_ephem=self.earth_ephem,
+            sun_ephem=self.sun_ephem,
         )
         if self.minStartTime is None:
             self.minStartTime = self.search.minStartTime
@@ -1689,6 +1694,10 @@ class MCMCSearch(core.BaseSearchClass):
             self.minStartTime,
             self.maxStartTime,
         )
+        if self.earth_ephem is not None:
+            cmd += " --ephemEarth='{}'".format(self.earth_ephem)
+        if self.sun_ephem is not None:
+            cmd += " --ephemSun='{}'".format(self.sun_ephem)
         subprocess.call([cmd], shell=True)
 
     def write_prior_table(self):
@@ -1956,6 +1965,8 @@ class MCMCGlitchSearch(MCMCSearch):
         dtglitchmin=1 * 86400,
         theta0_idx=0,
         nglitch=1,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
 
         if os.path.isdir(outdir) is False:
@@ -1979,6 +1990,7 @@ class MCMCGlitchSearch(MCMCSearch):
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
         self._log_input()
         self._set_likelihoodcoef()
+        self.set_ephemeris_files(earth_ephem, sun_ephem)
 
     def _set_likelihoodcoef(self):
         self.likelihoodcoef = (self.nglitch + 1) * np.log(70.0 / self.rhohatmax ** 4)
@@ -1999,6 +2011,8 @@ class MCMCGlitchSearch(MCMCSearch):
             nglitch=self.nglitch,
             theta0_idx=self.theta0_idx,
             injectSources=self.injectSources,
+            earth_ephem=self.earth_ephem,
+            sun_ephem=self.sun_ephem,
         )
         if self.minStartTime is None:
             self.minStartTime = self.search.minStartTime
@@ -2276,6 +2290,8 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         injectSources=None,
         assumeSqrtSX=None,
         nsegs=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
 
         self.theta_prior = theta_prior
@@ -2300,6 +2316,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         self.injectSources = injectSources
         self.assumeSqrtSX = assumeSqrtSX
         self.nsegs = nsegs
+        self.set_ephemeris_files(earth_ephem, sun_ephem)
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -2361,6 +2378,8 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             detectors=self.detectors,
             injectSources=self.injectSources,
             assumeSqrtSX=self.assumeSqrtSX,
+            earth_ephem=self.earth_ephem,
+            sun_ephem=self.sun_ephem,
         )
         if self.minStartTime is None:
             self.minStartTime = self.search.minStartTime
@@ -2475,6 +2494,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         maxCoverFreq=None,
         injectSources=None,
         assumeSqrtSX=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
 
         self.theta_prior = theta_prior
@@ -2499,6 +2520,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         self.injectSources = injectSources
         self.assumeSqrtSX = assumeSqrtSX
         self.nsegs = None
+        self.set_ephemeris_files(earth_ephem, sun_ephem)
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -2945,6 +2967,8 @@ class MCMCTransientSearch(MCMCSearch):
             binary=self.binary,
             injectSources=self.injectSources,
             tCWFstatMapVersion=self.tCWFstatMapVersion,
+            earth_ephem=self.earth_ephem,
+            sun_ephem=self.sun_ephem,
         )
         if self.minStartTime is None:
             self.minStartTime = self.search.minStartTime

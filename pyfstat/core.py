@@ -203,10 +203,13 @@ def predict_fstat(
     cl_pfs.append("--maxStartTime={}".format(int(maxStartTime)))
     cl_pfs.append("--outputFstat={}".format(tempory_filename))
 
-    if earth_ephem is not None:
-        cl_pfs.append("--ephemEarth='{}'".format(earth_ephem))
-    if sun_ephem is not None:
-        cl_pfs.append("--ephemSun='{}'".format(sun_ephem))
+    earth_ephem_default, sun_ephem_default = helper_functions.get_ephemeris_files()
+    if earth_ephem is None:
+        earth_ephem = earth_ephem_default
+    if sun_ephem is None:
+        sun_ephem = sun_ephem_default
+    cl_pfs.append("--ephemEarth='{}'".format(earth_ephem))
+    cl_pfs.append("--ephemSun='{}'".format(sun_ephem))
 
     cl_pfs = " ".join(cl_pfs)
     helper_functions.run_commandline(cl_pfs)
@@ -397,6 +400,8 @@ class ComputeFstat(BaseSearchClass):
         tCWFstatMapVersion="lal",
         cudaDeviceName=None,
         computeAtoms=False,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         """
         Parameters
@@ -455,10 +460,18 @@ class ComputeFstat(BaseSearchClass):
             GPU name to be matched against drv.Device output.
         computeAtoms: bool
             request atoms calculations regardless of transientWindowType
+        earth_ephem: str
+            Earth ephemeris file path
+            if None, will check standard sources as per
+            helper_functions.get_ephemeris_files()
+        sun_ephem: str
+            Sun ephemeris file path
+            if None, will check standard sources as per
+            helper_functions.get_ephemeris_files()
 
         """
 
-        self.set_ephemeris_files()
+        self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.init_computefstatistic_single_point()
 
     def _get_SFTCatalog(self):
@@ -1185,6 +1198,8 @@ class SemiCoherentSearch(ComputeFstat):
         injectSources=None,
         assumeSqrtSX=None,
         SSBprec=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         """
         Parameters
@@ -1203,7 +1218,7 @@ class SemiCoherentSearch(ComputeFstat):
         """
 
         self.fs_file_name = "{}/{}_FS.dat".format(self.outdir, self.label)
-        self.set_ephemeris_files()
+        self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.transientWindowType = "rect"
         self.t0Band = None
         self.tauBand = None
@@ -1357,6 +1372,8 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         detectors=None,
         SSBprec=None,
         injectSources=None,
+        earth_ephem=None,
+        sun_ephem=None,
     ):
         """
         Parameters
@@ -1380,7 +1397,7 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         """
 
         self.fs_file_name = "{}/{}_FS.dat".format(self.outdir, self.label)
-        self.set_ephemeris_files()
+        self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.transientWindowType = "rect"
         self.t0Band = None
         self.tauBand = None
