@@ -1658,16 +1658,16 @@ class MCMCSearch(core.BaseSearchClass):
 
         logging.info("Writing par file with max twoF = {}".format(max_twoF))
         with open(filename, "w+") as f:
-            f.write("MaxtwoF = {}\n".format(max_twoF))
-            f.write("tref = {}\n".format(self.tref))
+            f.write(r"MaxtwoF = {}\n".format(max_twoF))
+            f.write(r"tref = {}\n".format(self.tref))
             if hasattr(self, "theta0_index"):
-                f.write("theta0_index = {}\n".format(self.theta0_idx))
+                f.write(r"theta0_index = {}\n".format(self.theta0_idx))
             if method == "med":
                 for key, val in median_std_d.items():
-                    f.write("{} = {:1.16e}\n".format(key, val))
+                    f.write(r"{} = {:1.16e}\n".format(key, val))
             if method == "twoFmax":
                 for key, val in max_twoF_d.items():
-                    f.write("{} = {:1.16e}\n".format(key, val))
+                    f.write(r"{} = {:1.16e}\n".format(key, val))
 
     def generate_loudest(self):
         """ Use lalapps_ComputeFstatistic_v2 to produce a .loudest file """
@@ -1724,11 +1724,11 @@ class MCMCSearch(core.BaseSearchClass):
 
                     u = self.unit_dictionary[key]
                     s = self.symbol_dictionary[key]
-                    f.write("\n")
+                    f.write(r"\n")
                     a = helper_functions.texify_float(a)
                     b = helper_functions.texify_float(b)
-                    f.write(" " + line.format(s, a, b, u) + r" \\")
-            f.write("\n\end{tabular}\n")
+                    f.write(r" " + line.format(s, a, b, u) + r" \\")
+            f.write(r"\n\end{tabular}\n")
 
     def print_summary(self):
         """ Prints a summary of the max twoF found to the terminal """
@@ -1884,7 +1884,7 @@ class MCMCSearch(core.BaseSearchClass):
     def write_evidence_file_from_dict(self, EvidenceDict, evidence_file_name):
         with open(evidence_file_name, "w+") as f:
             for key, val in EvidenceDict.items():
-                f.write("{} {} {}\n".format(key, val[0], val[1]))
+                f.write(r"{} {} {}\n".format(key, val[0], val[1]))
 
 
 class MCMCGlitchSearch(MCMCSearch):
@@ -2728,7 +2728,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                     r"Stage & $N_\mathrm{seg}$ &"
                     r"$T_\mathrm{coh}^{\rm days}$ &"
                     r"$\mathcal{N}^*(\Nseg^{(\ell)}, \Delta\mathbf{\lambda}^{(0)})$ \\ \hline"
-                    "\n"
+                    r"\n"
                 )
                 for i, rs in enumerate(run_setup):
                     Tcoh = float(self.maxStartTime - self.minStartTime) / rs[1] / 86400
