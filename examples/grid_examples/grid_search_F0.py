@@ -10,14 +10,16 @@ Alpha = 1.0
 Delta = 1.5
 
 # Properties of the GW data
-sqrtSX = 1e-23
+depth = 70
+sqrtS = "1e-23"
+h0 = float(sqrtS) / depth
+IFOs = "H1"
+# IFOs = "H1,L1"
+sqrtSX = ",".join(np.repeat(sqrtS, len(IFOs.split(","))))
 tstart = 1000000000
 duration = 100 * 86400
 tend = tstart + duration
 tref = 0.5 * (tstart + tend)
-
-depth = 70
-h0 = sqrtSX / depth
 
 example_name = os.path.splitext(os.path.basename(__file__))[0]
 data_label = "{:s}_depth_{:1.0f}".format(example_name, depth)
@@ -36,6 +38,7 @@ data = pyfstat.Writer(
     Delta=Delta,
     h0=h0,
     sqrtSX=sqrtSX,
+    detectors=IFOs,
 )
 data.make_data()
 
@@ -59,6 +62,7 @@ search = pyfstat.GridSearch(
     tref,
     tstart,
     tend,
+    BSGL=False,
 )
 search.run()
 
