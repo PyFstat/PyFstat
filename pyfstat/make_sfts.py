@@ -406,7 +406,7 @@ transientTau = {:10.0f}\n"""
             self.maxStartTime,
             self.detectors,
             self.sqrtSX,
-            tempory_filename="{}.tmp".format(self.label),
+            tempory_filename=os.path.join(self.outdir, self.label + ".tmp"),
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
         )  # detectors OR IFO?
