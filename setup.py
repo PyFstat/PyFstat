@@ -20,6 +20,7 @@ def write_version_file(version):
         A path to the version file
 
     """
+    vstring = version
     try:
         git_log = subprocess.check_output(
             ["git", "log", "-1", "--pretty=%h %ai"]
@@ -29,9 +30,10 @@ def write_version_file(version):
             + subprocess.check_output(["git", "diff", "--cached", "."])
         ).decode("utf-8")
         if git_diff == "":
-            git_status = "(CLEAN) " + git_log
+            git_status = "CLEAN " + git_log
         else:
-            git_status = "(UNCLEAN) " + git_log
+            git_status = "UNCLEAN " + git_log
+        vstring += " git status {}".format(git_status)
     except Exception as e:
         print("Unable to obtain git version information, exception: {}".format(e))
         git_status = ""
@@ -39,7 +41,7 @@ def write_version_file(version):
     version_file = ".version"
     if path.isfile(version_file) is False:
         with open("pyfstat/" + version_file, "w+") as f:
-            f.write("{}: {}".format(version, git_status))
+            f.write(vstring)
         print("Done", version_file, version, git_status)
 
     return version_file
