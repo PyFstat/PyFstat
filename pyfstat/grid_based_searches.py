@@ -252,6 +252,9 @@ class GridSearch(BaseSearchClass):
                 "date: {}".format(str(datetime.datetime.now())),
                 "user: {}".format(getpass.getuser()),
                 "hostname: {}".format(socket.gethostname()),
+                "PyFstat version: {}".format(
+                    helper_functions.get_version_information()
+                ),
             ]
         )
         header += "\n" + " ".join(self.keys)
