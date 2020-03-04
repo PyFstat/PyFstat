@@ -16,13 +16,12 @@ demonstrating different use cases.
 ## Installation
 
 ### python installation
-This package works best with `python3.5+`,
-with higher versions to be required soon.
+This package requires `python3.6+`.
 While many systems come with a system wide python
 installation, it can often be easier to manage a user-specific python
 installation. This way one does not require root access to install or remove
 modules. One method to do this, is to use the `conda` system, either through
-the stripped down [miniconda](http://conda.pydata.org/miniconda.html)
+the stripped down [miniconda](https://conda.pydata.org/miniconda.html)
 installation, or the full-featured
 [anaconda](https://www.continuum.io/downloads) (these are essentially the
 same, but the `anaconda` version installs a variety of useful packages such as
@@ -85,9 +84,8 @@ as it is required to pass by the online integration pipeline
 * some of the [examples](./examples) require [gridcorner](https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner);
 for pip users this is most conveniently installed by
 ```
-pip install git+https://gitlab.aei.uni-hannover.de/dkeitel/gridcorner
+pip install git+https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner
 ```
-(This fork is s temporary recommendation until the main version is upgraded for compatibility with current scipy and python3.)
 
 In case the automatic install doesn't properly pull in all dependencies,
 to install all of these modules manually, you can also run
@@ -95,7 +93,7 @@ to install all of these modules manually, you can also run
 pip install -r /PATH/TO/THIS/DIRECTORY/requirements.txt
 ```
 For a general introduction to installing modules, see
-[here](https://docs.python.org/3.5/installing/index.html).
+[here](https://docs.python.org/3.6/installing/index.html).
 
 If you prefer to make your own LALSuite installation
 [from source](https://git.ligo.org/lscsoft/lalsuite/),
@@ -124,6 +122,10 @@ python setup.py install
 As a developer, alternatively
 ```
 python setup.py develop
+```
+or
+```
+pip install -e /path/to/PyFstat
 ```
 can be useful so you can directly see any changes you make in action.
 Alternatively, add the source directory directly to your python path.
@@ -170,8 +172,8 @@ Alternatively, you can place a file
 `~/.pyfstat.conf` into your home directory which looks like
 
 ```
-earth_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/earth00-19-DE421.dat.gz'
-sun_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/sun00-19-DE421.dat.gz'
+earth_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/earth00-19-DE405.dat.gz'
+sun_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/sun00-19-DE405.dat.gz'
 ```
 Paths set in this way will take precedence over the environment variable.
 
@@ -212,5 +214,5 @@ or use directly the following BibTeX entry:
   note         = {\url{https://doi.org/10.5281/zenodo.3620860}}
 }
 ```
-From [Zenodo](https://doi.org/10.5281/zenodo.1243930)
-you can also obtain DOIs for individual versioned releases.
+You can also obtain DOIs for individual versioned releases
+from [Zenodo](https://doi.org/10.5281/zenodo.1243930).

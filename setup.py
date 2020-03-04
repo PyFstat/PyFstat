@@ -46,7 +46,7 @@ def write_version_file(version):
 
 
 # check python version
-min_python_version = (3, 5, 0)  # (major,minor,micro)
+min_python_version = (3, 6, 0)  # (major,minor,micro)
 python_version = sys.version_info
 print("Running Python version %s.%s.%s" % python_version[:3])
 if python_version < min_python_version:
@@ -62,7 +62,7 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
-VERSION = "1.3"
+VERSION = "1.4dev"
 version_file = write_version_file(VERSION)
 
 setup(
