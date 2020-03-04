@@ -445,7 +445,7 @@ class ComputeFstat(BaseSearchClass):
             Either a dictionary of the values to inject, or a string pointing
             to the .cff file to inject
         injectSqrtSX :
-            Not yet implemented
+            Per-IFO single-sided PSD values for generating fake Gaussian noise on the fly
         assumeSqrtSX : float
             Don't estimate noise-floors but assume (stationary) per-IFO
             sqrt{SX} (if single value: use for all IFOs). If signal only,
