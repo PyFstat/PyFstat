@@ -247,11 +247,11 @@ class GridSearch(BaseSearchClass):
             self.data = data
 
     def get_header(self):
-        header = ";".join(
+        header = "\n".join(
             [
-                "date:{}".format(str(datetime.datetime.now())),
-                "user:{}".format(getpass.getuser()),
-                "hostname:{}".format(socket.gethostname()),
+                "date: {}".format(str(datetime.datetime.now())),
+                "user: {}".format(getpass.getuser()),
+                "hostname: {}".format(socket.gethostname()),
             ]
         )
         header += "\n" + " ".join(self.keys)
