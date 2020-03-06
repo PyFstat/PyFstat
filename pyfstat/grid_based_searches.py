@@ -255,6 +255,7 @@ class GridSearch(BaseSearchClass):
                 "PyFstat version: {}".format(
                     helper_functions.get_version_information()
                 ),
+                lal.VCSInfoString(lalpulsar.PulsarVCSInfoList, 0, "").rstrip("\n"),
             ]
         )
         header += "\n" + " ".join(self.keys)
