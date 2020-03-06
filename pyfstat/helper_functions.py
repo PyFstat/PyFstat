@@ -421,8 +421,8 @@ def get_version_information():
         if version_info_from_file is None:
             return git_status
         else:
-            vstring = "current git status " + git_status
-            vstring += "; installed from " + version_info_from_file
+            vstring = git_status
+            # vstring += "; installed from " + version_info_from_file
             return vstring
     elif version_info_from_file:
         return version_info_from_file

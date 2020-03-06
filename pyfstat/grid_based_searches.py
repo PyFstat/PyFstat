@@ -252,9 +252,7 @@ class GridSearch(BaseSearchClass):
                 "date: {}".format(str(datetime.datetime.now())),
                 "user: {}".format(getpass.getuser()),
                 "hostname: {}".format(socket.gethostname()),
-                "PyFstat version: {}".format(
-                    helper_functions.get_version_information()
-                ),
+                "PyFstat: {}".format(helper_functions.get_version_information()),
                 lal.VCSInfoString(lalpulsar.PulsarVCSInfoList, 0, "").rstrip("\n"),
             ]
         )
