@@ -5,9 +5,6 @@ import os
 import logging
 import itertools
 from collections import OrderedDict
-import datetime
-import getpass
-import socket
 
 import numpy as np
 import matplotlib
@@ -37,6 +34,8 @@ class GridSearch(BaseSearchClass):
         "F2": r"$\ddot{f}$",
         "Alpha": r"$\alpha$",
         "Delta": r"$\delta$",
+        "twoF": r"$\widetilde{2\mathcal{F}}$",
+        "BSGL": r"$\log_{10}{\mathcal{B}_{\mathrm{SGL}}$",
     }
     tex_labels0 = {
         "F0": r"$-f_0$",
@@ -45,15 +44,6 @@ class GridSearch(BaseSearchClass):
         "Alpha": r"$-\alpha_0$",
         "Delta": r"$-\delta_0$",
     }
-    search_labels = [
-        "minStartTime",
-        "maxStartTime",
-        "F0s",
-        "F1s",
-        "F2s",
-        "Alphas",
-        "Deltas",
-    ]
 
     @helper_functions.initializer
     def __init__(
@@ -89,7 +79,7 @@ class GridSearch(BaseSearchClass):
         sftfilepattern: str
             Pattern to match SFTs using wildcards (*?) and ranges [0-9];
             mutiple patterns can be given separated by colons.
-        F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
+        F0s, F1s, F2s, Alphas, Deltas: tuple
             Length 3 tuple describing the grid for each parameter, e.g
             [F0min, F0max, dF0], for a fixed value simply give [F0]. Unless
             input_arrays == True, then these are the values to search at.
@@ -108,10 +98,18 @@ class GridSearch(BaseSearchClass):
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.set_out_file()
-        self.keys = ["_", "_", "F0", "F1", "F2", "Alpha", "Delta"]
-        self.search_keys = [x + "s" for x in self.keys[2:]]
+        self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
+        self.input_keys = ["minStartTime", "maxStartTime"] + self.search_keys
+        self.keys = self.input_keys.copy()
+        if self.BSGL:
+            self.detstat = "BSGL"
+            self.keys += ["logBSGL"]
+        else:
+            self.detstat = "twoF"
+            self.keys += ["twoF"]
         for k in self.search_keys:
-            setattr(self, k, np.atleast_1d(getattr(self, k)))
+            setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
+        self.output_file_header = self.get_output_file_header()
 
     def inititate_search_object(self):
         logging.info("Setting up search object")
@@ -165,7 +163,7 @@ class GridSearch(BaseSearchClass):
     def get_input_data_array(self):
         logging.info("Generating input data array")
         coord_arrays = []
-        for sl in self.search_labels:
+        for sl in self.input_keys:
             coord_arrays.append(
                 self.get_array_from_tuple(np.atleast_1d(getattr(self, sl)))
             )
@@ -246,21 +244,63 @@ class GridSearch(BaseSearchClass):
             self.save_array_to_disk(data)
             self.data = data
 
-    def get_header(self):
-        header = ";".join(
-            [
-                "date:{}".format(str(datetime.datetime.now())),
-                "user:{}".format(getpass.getuser()),
-                "hostname:{}".format(socket.gethostname()),
-            ]
-        )
-        header += "\n" + " ".join(self.keys)
-        return header
+    def get_doppler_params_output_format(self):
+        # use same format for search parameters as write_FstatCandidate_to_fp()
+        # function of lalapps_CFSv2
+        fmt = []
+        CFSv2_fmt = "%.16g"
+        expected_keys = [
+            "F0",
+            "F1",
+            "F2",
+            "Alpha",
+            "Delta",
+        ]
+        for k in expected_keys:
+            if k in self.keys:
+                fmt += [CFSv2_fmt]
+            else:
+                raise ValueError(
+                    "Expected doppler parameter key"
+                    " '{:s}' not found. "
+                    " If your search class is not using this,"
+                    " consider overriding this method.".format(k)
+                )
+        return fmt
+
+    def get_savetxt_fmt(self):
+        fmt = []
+        if "minStartTime" in self.keys:
+            fmt += ["%d"]
+        if "maxStartTime" in self.keys:
+            fmt += ["%d"]
+        fmt += self.get_doppler_params_output_format()
+        fmt += ["%.9g"]  # for detection statistic
+        return fmt
 
     def save_array_to_disk(self, data):
         logging.info("Saving data to {}".format(self.out_file))
-        header = self.get_header()
-        np.savetxt(self.out_file, data, delimiter=" ", header=header)
+        header = "\n".join(self.output_file_header)
+        header += "\n" + " ".join(self.keys)
+        outfmt = self.get_savetxt_fmt()
+        Ncols = np.shape(data)[1]
+        if len(outfmt) != Ncols:
+            raise RuntimeError(
+                "Lengths of data rows ({:d})"
+                " and output format ({:d})"
+                " do not match."
+                " If your search class uses different"
+                " keys than the base GridSearch class,"
+                " override the get_savetxt_fmt"
+                " method.".format(Ncols, len(outfmt))
+            )
+        np.savetxt(
+            self.out_file,
+            np.nan_to_num(data),
+            delimiter=" ",
+            header=header,
+            fmt=outfmt,
+        )
 
     def convert_F0_to_mismatch(self, F0, F0hat, Tseg):
         DeltaF0 = F0[1] - F0[0]
@@ -296,29 +336,33 @@ class GridSearch(BaseSearchClass):
         xrescale=1,
         savefig=True,
         xlabel=None,
-        ylabel=r"$\widetilde{2\mathcal{F}}$",
+        ylabel=None,
     ):
         if ax is None:
             fig, ax = plt.subplots()
         xidx = self.keys.index(xkey)
-        x = np.unique(self.data[:, xidx])
+        # x = np.unique(self.data[:, xidx]) # this doesn't work for multi-dim searches!
+        x = self.data[:, xidx]
         if x0:
             x = x - x0
         x = x * xrescale
-        z = self.data[:, -1]
+        zidx = self.keys.index(self.detstat)
+        z = self.data[:, zidx]
         ax.plot(x, z)
-        if x0:
+        if xlabel:
+            ax.set_xlabel(xlabel)
+        elif x0:
             ax.set_xlabel(self.tex_labels[xkey] + self.tex_labels0[xkey])
         else:
             ax.set_xlabel(self.tex_labels[xkey])
-
-        if xlabel:
-            ax.set_xlabel(xlabel)
-
-        ax.set_ylabel(ylabel)
+        if ylabel:
+            ax.set_ylabel(ylabel)
+        else:
+            ax.set_ylabel(self.tex_labels[self.detstat])
         if savefig:
             fig.tight_layout()
-            fig.savefig(os.path.join(self.outdir, self.label + "_1D.png"))
+            fname = "{}_1D_{}_{}.png".format(self.label, xkey, self.detstat)
+            fig.savefig(os.path.join(self.outdir, fname))
         else:
             return ax
 
@@ -345,6 +389,9 @@ class GridSearch(BaseSearchClass):
         colorbar=False,
         xrescale=1,
         yrescale=1,
+        xlabel=None,
+        ylabel=None,
+        zlabel=None,
     ):
         """ Plots a 2D grid of 2F values
 
@@ -355,12 +402,14 @@ class GridSearch(BaseSearchClass):
             point xhat, yhat with duration Tseg
         flatten_method: np.max
             Function to use in flattening the flat_keys
+
+        FIXME: this will currently fail if the search went over >2 dimensions
         """
         if ax is None:
             fig, ax = plt.subplots()
-        xidx = self.keys.index(xkey)
-        yidx = self.keys.index(ykey)
-        flat_idxs = [self.keys.index(k) for k in flat_keys]
+        xidx = self.input_keys.index(xkey)
+        yidx = self.input_keys.index(ykey)
+        flat_idxs = [self.input_keys.index(k) for k in flat_keys]
 
         x = np.unique(self.data[:, xidx])
         if x0:
@@ -369,7 +418,9 @@ class GridSearch(BaseSearchClass):
         if y0:
             y = y - y0
         flat_vals = [np.unique(self.data[:, j]) for j in flat_idxs]
-        z = self.data[:, -1]
+
+        zidx = self.keys.index(self.detstat)
+        z = self.data[:, zidx]
 
         Y, X = np.meshgrid(y, x)
         shape = [len(x), len(y)] + [len(v) for v in flat_vals]
@@ -391,7 +442,10 @@ class GridSearch(BaseSearchClass):
         )
         if colorbar:
             cb = plt.colorbar(pax, ax=ax, **cbarkwargs)
-            cb.set_label(r"$2\mathcal{F}$")
+            if zlabel:
+                cb.set_label(zlabel)
+            else:
+                cb.set_label(self.tex_labels[self.detstat])
 
         if add_mismatch:
             self.add_mismatch_to_ax(ax, x, y, xkey, ykey, *add_mismatch)
@@ -400,11 +454,17 @@ class GridSearch(BaseSearchClass):
             ax.set_xlim(x[0] * xrescale, x[-1] * xrescale)
         if y[-1] > y[0]:
             ax.set_ylim(y[0] * yrescale, y[-1] * yrescale)
-        if x0:
+
+        if xlabel:
+            ax.set_xlabel(xlabel)
+        elif x0:
             ax.set_xlabel(self.tex_labels[xkey] + self.tex_labels0[xkey])
         else:
             ax.set_xlabel(self.tex_labels[xkey])
-        if y0:
+
+        if ylabel:
+            ax.set_ylabel(ylabel)
+        elif y0:
             ax.set_ylabel(self.tex_labels[ykey] + self.tex_labels0[ykey])
         else:
             ax.set_ylabel(self.tex_labels[ykey])
@@ -419,7 +479,8 @@ class GridSearch(BaseSearchClass):
 
         if save:
             fig.tight_layout()
-            fig.savefig(os.path.join(self.outdir, self.label + "_2D.png"))
+            fname = "{}_2D_{}_{}_{}.png".format(self.label, xkey, ykey, self.detstat)
+            fig.savefig(os.path.join(self.outdir, fname))
         else:
             return ax
 
@@ -520,7 +581,7 @@ class TransientGridSearch(GridSearch):
         sftfilepattern: str
             Pattern to match SFTs using wildcards (*?) and ranges [0-9];
             mutiple patterns can be given separated by colons.
-        F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
+        F0s, F1s, F2s, Alphas, Deltas: tuple
             Length 3 tuple describing the grid for each parameter, e.g
             [F0min, F0max, dF0], for a fixed value simply give [F0]. Unless
             input_arrays == True, then these are the values to search at.
@@ -559,10 +620,20 @@ class TransientGridSearch(GridSearch):
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.set_out_file()
-        self.keys = ["_", "_", "F0", "F1", "F2", "Alpha", "Delta"]
-        self.search_keys = [x + "s" for x in self.keys[2:]]
+        self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
+        self.input_keys = ["minStartTime", "maxStartTime"] + self.search_keys
+        self.keys = self.input_keys.copy()
+        if self.BSGL:
+            self.detstat = "BSGL"
+            self.keys += ["logBSGL"]
+        else:
+            self.detstat = "twoF"
+            self.keys += ["twoF"]
+        # for consistency below, t0/tau must come after detstat
+        self.keys += ["t0", "tau"]
         for k in self.search_keys:
-            setattr(self, k, np.atleast_1d(getattr(self, k)))
+            setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
+        self.output_file_header = self.get_output_file_header()
 
     def inititate_search_object(self):
         logging.info("Setting up search object")
@@ -633,6 +704,9 @@ class TransientGridSearch(GridSearch):
                     )
                     if self.tCWFstatMapVersion == "lal":
                         fo = lal.FileOpen(tCWfile, "w")
+                        for hline in self.output_file_header:
+                            lal.FilePuts("# {:s}\n".format(hline), fo)
+                        lal.FilePuts("# t0 [s]     tau [s]     2F\n", fo)
                         lalpulsar.write_transientFstatMap_to_fp(
                             fo, FstatMap, windowRange, None
                         )
@@ -663,8 +737,21 @@ class TransientGridSearch(GridSearch):
             self.save_array_to_disk(data)
             self.data = data
 
+    def get_savetxt_fmt(self):
+        fmt = []
+        if "minStartTime" in self.keys:
+            fmt += ["%d"]
+        if "maxStartTime" in self.keys:
+            fmt += ["%d"]
+        fmt += self.get_doppler_params_output_format()
+        fmt += ["%.9g"]  # for detection statistic
+        fmt += ["%d", "%d"]  # for t0, tau
+        return fmt
+
     def write_F_mn(self, tCWfile, F_mn, windowRange):
         with open(tCWfile, "w") as tfp:
+            for hline in self.output_file_header:
+                tpf.write("# {:s}\n".format(hline))
             tfp.write("# t0 [s]     tau [s]     2F\n")
             for m, F_m in enumerate(F_mn):
                 this_t0 = windowRange.t0 + m * windowRange.dt0
@@ -697,7 +784,6 @@ class SliceGridSearch(GridSearch):
         minStartTime=None,
         maxStartTime=None,
         nsegs=1,
-        BSGL=False,
         minCoverFreq=None,
         maxCoverFreq=None,
         detectors=None,
@@ -717,7 +803,7 @@ class SliceGridSearch(GridSearch):
         sftfilepattern: str
             Pattern to match SFTs using wildcards (*?) and ranges [0-9];
             mutiple patterns can be given separated by colons.
-        F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
+        F0s, F1s, F2s, Alphas, Deltas: tuple
             Length 3 tuple describing the grid for each parameter, e.g
             [F0min, F0max, dF0], for a fixed value simply give [F0]. Unless
             input_arrays == True, then these are the values to search at.
@@ -732,12 +818,13 @@ class SliceGridSearch(GridSearch):
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.set_out_file()
-        self.keys = ["_", "_", "F0", "F1", "F2", "Alpha", "Delta"]
+        self.search_keys = ["F0", "F1", "Alpha", "Delta"]
+        self.input_keys = ["minStartTime", "maxStartTime"] + self.search_keys
+        self.keys = self.input_keys.copy()
         self.ndim = 0
         self.thetas = [F0s, F1s, Alphas, Deltas]
         self.ndim = 4
 
-        self.search_keys = ["F0", "F1", "Alpha", "Delta"]
         if self.Lambda0 is None:
             raise ValueError("Lambda0 undefined")
         if len(self.Lambda0) != len(self.search_keys):
@@ -841,7 +928,7 @@ class SliceGridSearch(GridSearch):
             axes[-1, i].set_xlabel(self.tex_labels[ikey] + self.tex_labels0[ikey])
             if i > 0:
                 axes[i, 0].set_ylabel(self.tex_labels[ikey] + self.tex_labels0[ikey])
-            axes[i, i].set_ylabel(r"$2\mathcal{F}$")
+            axes[i, i].set_ylabel(self.tex_labels["twoF"])
 
         if save:
             fig.savefig(os.path.join(self.outdir, self.label + "_slice_projection.png"))
@@ -908,17 +995,6 @@ class GridUniformPriorSearch:
 class GridGlitchSearch(GridSearch):
     """ Grid search using the SemiCoherentGlitchSearch """
 
-    search_labels = [
-        "F0s",
-        "F1s",
-        "F2s",
-        "Alphas",
-        "Deltas",
-        "delta_F0s",
-        "delta_F1s",
-        "tglitchs",
-    ]
-
     @helper_functions.initializer
     def __init__(
         self,
@@ -967,6 +1043,22 @@ class GridGlitchSearch(GridSearch):
         if tglitchs is None:
             raise ValueError("You must specify `tglitchs`")
 
+        self.search_keys = [
+            "F0",
+            "F1",
+            "F2",
+            "Alpha",
+            "Delta",
+            "delta_F0",
+            "delta_F1",
+            "tglitch",
+        ]
+        self.input_keys = self.search_keys
+        self.keys = self.input_keys.copy()
+        self.keys += ["twoF"]
+        for k in self.search_keys:
+            setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
+
         self.search = SemiCoherentGlitchSearch(
             label=label,
             outdir=outdir,
@@ -985,16 +1077,18 @@ class GridGlitchSearch(GridSearch):
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.set_out_file()
-        self.keys = [
-            "F0",
-            "F1",
-            "F2",
-            "Alpha",
-            "Delta",
-            "delta_F0",
-            "delta_F1",
-            "tglitch",
-        ]
+        self.output_file_header = self.get_output_file_header()
+
+    def get_savetxt_fmt(self):
+        fmt = []
+        if "minStartTime" in self.keys:
+            fmt += ["%d"]
+        if "maxStartTime" in self.keys:
+            fmt += ["%d"]
+        fmt += self.get_doppler_params_output_format()
+        fmt += ["%.16g", "%.16g", "%d"]  # for delta_F0, delta_F1, tglitch
+        fmt += ["%.9g"]  # for detection statistic
+        return fmt
 
 
 class SlidingWindow(GridSearch):
@@ -1190,7 +1284,9 @@ class FrequencySlidingWindow(GridSearch):
         self.Alphas = [Alpha]
         self.Deltas = [Delta]
         self.input_arrays = False
-        self.keys = ["_", "_", "F0", "F1", "F2", "Alpha", "Delta"]
+        self.keys = ["minStartTime", "maxStartTime", "F0", "F1", "F2", "Alpha", "Delta"]
+        self.search_keys = [x + "s" for x in self.keys[2:]]
+        self.output_file_header = self.get_output_file_header()
 
     def inititate_search_object(self):
         logging.info("Setting up search object")

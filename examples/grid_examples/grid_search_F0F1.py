@@ -53,10 +53,9 @@ dF2 = 1e-17
 N = 100
 DeltaF0 = N * dF0
 DeltaF1 = N * dF1
-DeltaF2 = N * dF2
 F0s = [F0 - DeltaF0 / 2.0, F0 + DeltaF0 / 2.0, dF0]
 F1s = [F1 - DeltaF1 / 2.0, F1 + DeltaF1 / 2.0, dF1]
-F2s = [F2 - DeltaF2 / 2.0, F2 + DeltaF2 / 2.0, dF2]
+F2s = [F2]
 Alphas = [Alpha]
 Deltas = [Delta]
 search = pyfstat.GridSearch(
@@ -76,23 +75,15 @@ search.run()
 
 search.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\mathcal{F}$")
 search.plot_1D(xkey="F1")
-search.plot_1D(xkey="F2")
-search.plot_1D(xkey="Alpha")
-search.plot_1D(xkey="Delta")
-# 2D plots will currently not work for >2 non-trivial (gridded) search dimensions
-# search.plot_2D(xkey="F0",ykey="F1",colorbar=True)
-# search.plot_2D(xkey="F0",ykey="F2",colorbar=True)
-# search.plot_2D(xkey="F1",ykey="F2",colorbar=True)
+search.plot_2D(xkey="F0", ykey="F1", colorbar=True)
 
 F0_vals = np.unique(search.data[:, 2]) - F0
 F1_vals = np.unique(search.data[:, 3]) - F1
-F2_vals = np.unique(search.data[:, 4]) - F2
-twoF = search.data[:, -1].reshape((len(F0_vals), len(F1_vals), len(F2_vals)))
-xyz = [F0_vals, F1_vals, F2_vals]
+twoF = search.data[:, -1].reshape((len(F0_vals), len(F1_vals)))
+xyz = [F0_vals, F1_vals]
 labels = [
     "$f - f_0$",
     "$\dot{f} - \dot{f}_0$",
-    "$\ddot{f} - \ddot{f}_0$",
     "$\widetilde{2\mathcal{F}}$",
 ]
 fig, axes = gridcorner(

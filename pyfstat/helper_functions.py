@@ -393,11 +393,43 @@ def match_commandlines(cl1, cl2, be_strict_about_full_executable_path=False):
 
 
 def get_version_information():
+    try:
+        git_log = (
+            subprocess.check_output(["git", "log", "-1", "--pretty=%h %ai"])
+            .decode("utf-8")
+            .rstrip("\n")
+        )
+        git_diff = (
+            subprocess.check_output(["git", "diff", "."])
+            + subprocess.check_output(["git", "diff", "--cached", "."])
+        ).decode("utf-8")
+        if git_diff == "":
+            git_status = "CLEAN " + git_log
+        else:
+            git_status = "UNCLEAN " + git_log
+    except Exception as e:
+        git_status = None
     version_file = os.path.join(
         os.path.dirname(os.path.dirname(__file__)), "pyfstat/.version"
     )
     try:
         with open(version_file, "r") as f:
-            return f.readline().rstrip()
+            version_info_from_file = f.readline().rstrip()
     except EnvironmentError:
-        print("No version information file '.version' found")
+        version_info_from_file = None
+    if git_status:
+        if version_info_from_file is None:
+            return git_status
+        else:
+            vstring = git_status
+            # vstring += "; installed from " + version_info_from_file
+            return vstring
+    elif version_info_from_file:
+        return version_info_from_file
+    else:
+        raise RuntimeError(
+            "Unable to obtain version information"
+            " from either git (for developers)"
+            " or a version file"
+            " (which should come with each installed version.)"
+        )

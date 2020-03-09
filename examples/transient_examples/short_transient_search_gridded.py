@@ -27,7 +27,7 @@ F2s = [F2]
 Alphas = [Alpha]
 Deltas = [Delta]
 
-outdir = os.path.join("example_data", "long_transient")
+outdir = os.path.join("example_data", "short_transient")
 
 print("Standard CW search:")
 search1 = pyfstat.GridSearch(
@@ -46,6 +46,7 @@ search1 = pyfstat.GridSearch(
 )
 search1.run()
 search1.print_max_twoF()
+search1.save_array_to_disk(search1.data)
 
 search1.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\mathcal{F}$")
 
@@ -71,5 +72,6 @@ search2 = pyfstat.TransientGridSearch(
 )
 search2.run()
 search2.print_max_twoF()
+search2.save_array_to_disk(search2.data)
 
 search2.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\mathcal{F}$")
