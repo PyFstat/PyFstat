@@ -375,15 +375,14 @@ class BaseSearchClass(object):
             self.sun_ephem = sun_ephem
 
     def get_output_file_header(self):
-        header = "\n".join(
-            [
-                "date: {}".format(str(datetime.now())),
-                "user: {}".format(getpass.getuser()),
-                "hostname: {}".format(socket.gethostname()),
-                "PyFstat: {}".format(helper_functions.get_version_information()),
-                lal.VCSInfoString(lalpulsar.PulsarVCSInfoList, 0, "").rstrip("\n"),
-            ]
-        )
+        header = [
+            "date: {}".format(str(datetime.now())),
+            "user: {}".format(getpass.getuser()),
+            "hostname: {}".format(socket.gethostname()),
+            "PyFstat: {}".format(helper_functions.get_version_information()),
+        ]
+        lalVCSinfo = lal.VCSInfoString(lalpulsar.PulsarVCSInfoList, 0, "")
+        header += filter(None, lalVCSinfo.split("\n"))
         return header
 
 
@@ -488,6 +487,7 @@ class ComputeFstat(BaseSearchClass):
 
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.init_computefstatistic_single_point()
+        self.output_file_header = self.get_output_file_header()
 
     def _get_SFTCatalog(self):
         """ Load the SFTCatalog
@@ -1176,6 +1176,8 @@ class ComputeFstat(BaseSearchClass):
             # fnameAtoms = os.path.join(self.outdir,'Fstatatoms_%s.dat' % dopplerName)
             fnameAtoms = fnamebase + "_Fstatatoms_%s.dat" % dopplerName
             fo = lal.FileOpen(fnameAtoms, "w")
+            for hline in self.output_file_header:
+                lal.FilePuts("# {:s}\n".format(hline), fo)
             lalpulsar.write_MultiFstatAtoms_to_fp(fo, multiFatoms[0])
             del fo  # instead of lal.FileClose() which is not SWIG-exported
         else:

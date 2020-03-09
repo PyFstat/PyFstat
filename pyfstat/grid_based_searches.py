@@ -109,6 +109,7 @@ class GridSearch(BaseSearchClass):
             self.keys += ["twoF"]
         for k in self.search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
+        self.output_file_header = self.get_output_file_header()
 
     def inititate_search_object(self):
         logging.info("Setting up search object")
@@ -279,7 +280,7 @@ class GridSearch(BaseSearchClass):
 
     def save_array_to_disk(self, data):
         logging.info("Saving data to {}".format(self.out_file))
-        header = self.get_output_file_header()
+        header = "\n".join(self.output_file_header)
         header += "\n" + " ".join(self.keys)
         outfmt = self.get_savetxt_fmt()
         Ncols = np.shape(data)[1]
@@ -632,6 +633,7 @@ class TransientGridSearch(GridSearch):
         self.keys += ["t0", "tau"]
         for k in self.search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
+        self.output_file_header = self.get_output_file_header()
 
     def inititate_search_object(self):
         logging.info("Setting up search object")
@@ -702,6 +704,9 @@ class TransientGridSearch(GridSearch):
                     )
                     if self.tCWFstatMapVersion == "lal":
                         fo = lal.FileOpen(tCWfile, "w")
+                        for hline in self.output_file_header:
+                            lal.FilePuts("# {:s}\n".format(hline), fo)
+                        lal.FilePuts("# t0 [s]     tau [s]     2F\n", fo)
                         lalpulsar.write_transientFstatMap_to_fp(
                             fo, FstatMap, windowRange, None
                         )
@@ -745,6 +750,8 @@ class TransientGridSearch(GridSearch):
 
     def write_F_mn(self, tCWfile, F_mn, windowRange):
         with open(tCWfile, "w") as tfp:
+            for hline in self.output_file_header:
+                tpf.write("# {:s}\n".format(hline))
             tfp.write("# t0 [s]     tau [s]     2F\n")
             for m, F_m in enumerate(F_mn):
                 this_t0 = windowRange.t0 + m * windowRange.dt0
@@ -1070,6 +1077,7 @@ class GridGlitchSearch(GridSearch):
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.set_out_file()
+        self.output_file_header = self.get_output_file_header()
 
     def get_savetxt_fmt(self):
         fmt = []
@@ -1278,6 +1286,7 @@ class FrequencySlidingWindow(GridSearch):
         self.input_arrays = False
         self.keys = ["minStartTime", "maxStartTime", "F0", "F1", "F2", "Alpha", "Delta"]
         self.search_keys = [x + "s" for x in self.keys[2:]]
+        self.output_file_header = self.get_output_file_header()
 
     def inititate_search_object(self):
         logging.info("Setting up search object")
