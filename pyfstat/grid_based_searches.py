@@ -5,9 +5,6 @@ import os
 import logging
 import itertools
 from collections import OrderedDict
-import datetime
-import getpass
-import socket
 
 import numpy as np
 import matplotlib
@@ -246,19 +243,6 @@ class GridSearch(BaseSearchClass):
             self.save_array_to_disk(data)
             self.data = data
 
-    def get_header(self):
-        header = "\n".join(
-            [
-                "date: {}".format(str(datetime.datetime.now())),
-                "user: {}".format(getpass.getuser()),
-                "hostname: {}".format(socket.gethostname()),
-                "PyFstat: {}".format(helper_functions.get_version_information()),
-                lal.VCSInfoString(lalpulsar.PulsarVCSInfoList, 0, "").rstrip("\n"),
-            ]
-        )
-        header += "\n" + " ".join(self.keys)
-        return header
-
     def get_doppler_params_output_format(self):
         # use same format for search parameters as write_FstatCandidate_to_fp()
         # function of lalapps_CFSv2
@@ -295,7 +279,8 @@ class GridSearch(BaseSearchClass):
 
     def save_array_to_disk(self, data):
         logging.info("Saving data to {}".format(self.out_file))
-        header = self.get_header()
+        header = self.get_output_file_header()
+        header += "\n" + " ".join(self.keys)
         outfmt = self.get_savetxt_fmt()
         Ncols = np.shape(data)[1]
         if len(outfmt) != Ncols:

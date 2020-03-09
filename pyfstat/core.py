@@ -9,6 +9,9 @@ import glob
 import numpy as np
 import scipy.special
 import scipy.optimize
+from datetime import datetime
+import getpass
+import socket
 
 import lal
 import lalpulsar
@@ -370,6 +373,18 @@ class BaseSearchClass(object):
             self.sun_ephem = sun_ephem_default
         else:
             self.sun_ephem = sun_ephem
+
+    def get_output_file_header(self):
+        header = "\n".join(
+            [
+                "date: {}".format(str(datetime.now())),
+                "user: {}".format(getpass.getuser()),
+                "hostname: {}".format(socket.gethostname()),
+                "PyFstat: {}".format(helper_functions.get_version_information()),
+                lal.VCSInfoString(lalpulsar.PulsarVCSInfoList, 0, "").rstrip("\n"),
+            ]
+        )
+        return header
 
 
 class ComputeFstat(BaseSearchClass):
