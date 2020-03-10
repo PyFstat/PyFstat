@@ -1,7 +1,9 @@
 from pyfstat import Writer, GlitchWriter
 import numpy as np
+import os
 
-outdir = "data"
+outdir = os.path.join("example_data", "glitch_robust_search")
+
 # First, we generate data with a reasonably strong smooth signal
 
 # Define parameters of the Crab pulsar as an example

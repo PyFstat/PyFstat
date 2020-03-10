@@ -16,8 +16,9 @@ from make_simulated_data import (
     dtglitch,
     outdir,
 )
+import os
 
-plt.style.use("./paper.mplstyle")
+outdir = os.path.join("example_data", "glitch_robust_search")
 
 label = "semicoherent_glitch_robust_directed_MCMC_search_on_1_glitch"
 
@@ -47,7 +48,8 @@ nsteps = [250, 250]
 
 mcmc = pyfstat.MCMCGlitchSearch(
     label=label,
-    sftfilepattern="data/*1_glitch*sft",
+    outdir=outdir,
+    sftfilepattern=os.path.join(outdir, "*1_glitch*sft"),
     theta_prior=theta_prior,
     tref=tref,
     minStartTime=tstart,

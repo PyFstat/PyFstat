@@ -15,6 +15,7 @@ from make_simulated_data import (
     dtglitch,
 )
 import time
+import os
 
 try:
     from gridcorner import gridcorner
@@ -24,9 +25,8 @@ except ImportError:
         "https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner"
     )
 
+outdir = os.path.join("example_data", "glitch_robust_search")
 label = "semicoherent_glitch_robust_directed_grid_search_on_1_glitch"
-
-plt.style.use("./paper.mplstyle")
 
 Nstar = 1000
 F0_width = np.sqrt(Nstar) * np.sqrt(12) / (np.pi * duration)
@@ -48,7 +48,7 @@ t1 = time.time()
 search = pyfstat.GridGlitchSearch(
     label,
     outdir,
-    "data/*1_glitch*sft",
+    os.path.join(outdir, "*1_glitch*sft"),
     F0s=F0s,
     F1s=F1s,
     F2s=F2s,
