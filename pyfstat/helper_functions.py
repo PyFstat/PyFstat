@@ -394,15 +394,20 @@ def match_commandlines(cl1, cl2, be_strict_about_full_executable_path=False):
 
 def get_version_information():
     try:
-        git_log = (
-            subprocess.check_output(["git", "log", "-1", "--pretty=%h %ai"])
-            .decode("utf-8")
-            .rstrip("\n")
-        )
-        git_diff = (
-            subprocess.check_output(["git", "diff", "."])
-            + subprocess.check_output(["git", "diff", "--cached", "."])
-        ).decode("utf-8")
+        with open(os.devnull, "wb") as DEVNULL:
+            git_log = (
+                subprocess.check_output(
+                    ["git", "log", "-1", "--pretty=%h %ai"], stderr=DEVNULL
+                )
+                .decode("utf-8")
+                .rstrip("\n")
+            )
+            git_diff = (
+                subprocess.check_output(["git", "diff", "."])
+                + subprocess.check_output(
+                    ["git", "diff", "--cached", "."], stderr=DEVNULL
+                )
+            ).decode("utf-8")
         if git_diff == "":
             git_status = "CLEAN " + git_log
         else:
