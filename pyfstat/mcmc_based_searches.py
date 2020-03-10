@@ -1564,12 +1564,7 @@ class MCMCSearch(core.BaseSearchClass):
             return False
 
     def get_savetxt_fmt(self):
-        fmt = []
-        if "minStartTime" in self.theta_keys:
-            fmt += ["%d"]
-        if "maxStartTime" in self.theta_keys:
-            fmt += ["%d"]
-        fmt += helper_functions.get_doppler_params_output_format(self.theta_keys)
+        fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
         return fmt
 
     def export_samples_to_disk(self):
@@ -1577,7 +1572,6 @@ class MCMCSearch(core.BaseSearchClass):
         self.output_file_header = self.get_output_file_header()
         logging.info("Exporting samples to {}".format(self.samples_file))
         header = "\n".join(self.output_file_header)
-        print(self.theta_keys)
         header += "\n" + " ".join(self.theta_keys)
         outfmt = self.get_savetxt_fmt()
         Ncols = np.shape(self.samples)[1]
@@ -1587,7 +1581,7 @@ class MCMCSearch(core.BaseSearchClass):
                 " and output format ({:d})"
                 " do not match."
                 " If your search class uses different"
-                " keys than the base GridSearch class,"
+                " keys than the base MCMCSearch class,"
                 " override the get_savetxt_fmt"
                 " method.".format(Ncols, len(outfmt))
             )
@@ -3097,3 +3091,8 @@ class MCMCTransientSearch(MCMCSearch):
         self.theta_idxs = [self.theta_idxs[i] for i in idxs]
         self.theta_symbols = [self.theta_symbols[i] for i in idxs]
         self.theta_keys = [self.theta_keys[i] for i in idxs]
+
+    def get_savetxt_fmt(self):
+        fmt = ["%d", "%d"]  # for transient_tstart, transient_duration
+        fmt += helper_functions.get_doppler_params_output_format(self.theta_keys)
+        return fmt
