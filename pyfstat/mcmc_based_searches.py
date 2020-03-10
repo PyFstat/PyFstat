@@ -553,6 +553,7 @@ class MCMCSearch(core.BaseSearchClass):
         proposal_scale_factor=2,
         save_pickle=True,
         export_samples=True,
+        save_loudest=True,
         create_plots=True,
         window=50,
         **kwargs
@@ -570,6 +571,8 @@ class MCMCSearch(core.BaseSearchClass):
             If true, save a pickle file of the full sampler state.
         export_samples: bool
             If true, save ASCII samples file to disk.
+        save_loudest: bool
+            If true, save a CFSv2 .loudest file to disk.
         create_plots: bool
             If true, save trace plots of the walkers.
         window: int
@@ -660,6 +663,8 @@ class MCMCSearch(core.BaseSearchClass):
             )
         if export_samples:
             self.export_samples_to_disk()
+        if save_loudest:
+            self.generate_loudest()
 
         if create_plots:
             try:
@@ -1054,12 +1059,13 @@ class MCMCSearch(core.BaseSearchClass):
 
         See the pyfstat.core.plot_twoF_cumulative function for further details
         """
+        logging.info("Getting cumulative 2F")
         d, maxtwoF = self.get_max_twoF()
         for key, val in self.theta_prior.items():
             if key not in d:
                 d[key] = val
 
-        if "add_pfs" in kwargs:
+        if "add_pfs" in kwargs and not hasattr(self, "search"):
             self.generate_loudest()
 
         if hasattr(self, "search") is False:
@@ -1700,6 +1706,8 @@ class MCMCSearch(core.BaseSearchClass):
 
         logging.info("Writing par file with max twoF = {}".format(max_twoF))
         with open(filename, "w+") as f:
+            for hline in self.output_file_header:
+                f.write("# {:s}\n".format(hline))
             f.write("MaxtwoF = {}\n".format(max_twoF))
             f.write("tref = {}\n".format(self.tref))
             if hasattr(self, "theta0_index"):
@@ -1713,12 +1721,13 @@ class MCMCSearch(core.BaseSearchClass):
 
     def generate_loudest(self):
         """ Use lalapps_ComputeFstatistic_v2 to produce a .loudest file """
+        logging.info("Running CFSv2 to get .loudest file")
         self.write_par()
         params = read_par(label=self.label, outdir=self.outdir)
         for key in ["Alpha", "Delta", "F0", "F1"]:
             if key not in params:
                 params[key] = self.theta_prior[key]
-        filename = os.path.join(self.outdir, self.label + ".loudest")
+        self.loudest_file = os.path.join(self.outdir, self.label + ".loudest")
         cmd = (
             'lalapps_ComputeFstatistic_v2 -a {} -d {} -f {} -s {} -D "{}"'
             ' --refTime={} --outputLoudest="{}" '
@@ -1730,7 +1739,7 @@ class MCMCSearch(core.BaseSearchClass):
             params["F1"],
             self.sftfilepattern,
             params["tref"],
-            filename,
+            self.loudest_file,
             self.minStartTime,
             self.maxStartTime,
         )
@@ -2188,7 +2197,7 @@ class MCMCGlitchSearch(MCMCSearch):
         return p0
 
     def plot_cumulative_max(self):
-
+        logging.info("Getting cumulative 2F")
         fig, ax = plt.subplots()
         d, maxtwoF = self.get_max_twoF()
         for key, val in self.theta_prior.items():
@@ -2805,6 +2814,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         Nsegs0=None,
         save_pickle=True,
         export_samples=True,
+        save_loudest=True,
         create_plots=True,
         log_table=True,
         gen_tex_table=True,
@@ -2828,6 +2838,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             If true, save a pickle file of the full sampler state.
         export_samples: bool
             If true, save ASCII samples file to disk.
+        save_loudest: bool
+            If true, save a CFSv2 .loudest file to disk.
         create_plots: bool
             If true, save trace plots of the walkers.
         window: int
@@ -2951,6 +2963,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             )
         if export_samples:
             self.export_samples_to_disk()
+        if save_loudest:
+            self.generate_loudest()
 
         if create_plots:
             try:
