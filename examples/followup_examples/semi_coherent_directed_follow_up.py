@@ -76,7 +76,7 @@ mcmc = pyfstat.MCMCFollowUpSearch(
 NstarMax = 1000
 Nsegs0 = 100
 fig, axes = plt.subplots(nrows=2, figsize=(3.4, 3.5))
-fig, axes = mcmc.run(
+mcmc.run(
     NstarMax=NstarMax,
     Nsegs0=Nsegs0,
     labelpad=0.01,
@@ -92,3 +92,6 @@ for ax in axes:
 axes[-1].set_xlabel(r"$\textrm{Number of steps}$", labelpad=0.1)
 fig.tight_layout()
 fig.savefig(os.path.join(mcmc.outdir, mcmc.label + "_walkers.png"), dpi=400)
+
+mcmc.plot_corner(add_prior=True)
+mcmc.print_summary()
