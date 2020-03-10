@@ -438,3 +438,21 @@ def get_version_information():
             " or a version file"
             " (which should come with each installed version.)"
         )
+
+
+def get_doppler_params_output_format(keys):
+    # use same format for writing out search parameters
+    # as write_FstatCandidate_to_fp() function of lalapps_CFSv2
+    fmt = []
+    CFSv2_fmt = "%.16g"
+    doppler_keys = [
+        "F0",
+        "F1",
+        "F2",
+        "Alpha",
+        "Delta",
+    ]
+    for k in keys:
+        if k in doppler_keys:
+            fmt += [CFSv2_fmt]
+    return fmt

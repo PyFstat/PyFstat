@@ -244,37 +244,13 @@ class GridSearch(BaseSearchClass):
             self.save_array_to_disk(data)
             self.data = data
 
-    def get_doppler_params_output_format(self):
-        # use same format for search parameters as write_FstatCandidate_to_fp()
-        # function of lalapps_CFSv2
-        fmt = []
-        CFSv2_fmt = "%.16g"
-        expected_keys = [
-            "F0",
-            "F1",
-            "F2",
-            "Alpha",
-            "Delta",
-        ]
-        for k in expected_keys:
-            if k in self.keys:
-                fmt += [CFSv2_fmt]
-            else:
-                raise ValueError(
-                    "Expected doppler parameter key"
-                    " '{:s}' not found. "
-                    " If your search class is not using this,"
-                    " consider overriding this method.".format(k)
-                )
-        return fmt
-
     def get_savetxt_fmt(self):
         fmt = []
         if "minStartTime" in self.keys:
             fmt += ["%d"]
         if "maxStartTime" in self.keys:
             fmt += ["%d"]
-        fmt += self.get_doppler_params_output_format()
+        fmt += helper_functions.get_doppler_params_output_format(self.keys)
         fmt += ["%.9g"]  # for detection statistic
         return fmt
 
@@ -743,7 +719,7 @@ class TransientGridSearch(GridSearch):
             fmt += ["%d"]
         if "maxStartTime" in self.keys:
             fmt += ["%d"]
-        fmt += self.get_doppler_params_output_format()
+        fmt += helper_functions.get_doppler_params_output_format(self.keys)
         fmt += ["%.9g"]  # for detection statistic
         fmt += ["%d", "%d"]  # for t0, tau
         return fmt
@@ -1085,7 +1061,7 @@ class GridGlitchSearch(GridSearch):
             fmt += ["%d"]
         if "maxStartTime" in self.keys:
             fmt += ["%d"]
-        fmt += self.get_doppler_params_output_format()
+        fmt += helper_functions.get_doppler_params_output_format(self.keys)
         fmt += ["%.16g", "%.16g", "%d"]  # for delta_F0, delta_F1, tglitch
         fmt += ["%.9g"]  # for detection statistic
         return fmt
