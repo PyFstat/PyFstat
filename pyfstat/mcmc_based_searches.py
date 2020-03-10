@@ -2806,6 +2806,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         proposal_scale_factor=2,
         NstarMax=10,
         Nsegs0=None,
+        save_pickle=True,
+        export_samples=True,
         create_plots=True,
         log_table=True,
         gen_tex_table=True,
@@ -2825,8 +2827,12 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             (2010). If the acceptance fraction is too low, you can raise it by
             decreasing the a parameter; and if it is too high, you can reduce
             it by increasing the a parameter [Foreman-Mackay (2013)].
+        save_pickle: bool
+            If true, save a pickle file of the full sampler state.
+        export_samples: bool
+            If true, save ASCII samples file to disk.
         create_plots: bool
-            If true, save trace plots of the walkers
+            If true, save trace plots of the walkers.
         window: int
             The minimum number of autocorrelation times needed to trust the
             result when estimating the autocorrelation time (see
@@ -2942,9 +2948,12 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes
         self.all_lnlikelihood = all_lnlikelihood
-        self._pickle_data(
-            sampler, samples, lnprobs, lnlikes, all_lnlikelihood, sampler.chain
-        )
+        if save_pickle:
+            self._pickle_data(
+                sampler, samples, lnprobs, lnlikes, all_lnlikelihood, sampler.chain
+            )
+        if export_samples:
+            self.export_samples_to_disk()
 
         if create_plots:
             try:
