@@ -2620,7 +2620,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             return 0.5 * (prior[key]["upper"] + prior[key]["lower"])
 
     def read_setup_input_file(self, run_setup_input_file):
-        with open(run_setup_input_file, "r+") as f:
+        with open(run_setup_input_file, "rb+") as f:
             d = pickle.load(f)
         return d
 
