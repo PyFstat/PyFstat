@@ -632,14 +632,6 @@ class MCMCSearch(core.BaseSearchClass):
         logging.info("Running final burn and prod with {} steps".format(nburn + nprod))
         sampler = self._run_sampler(sampler, p0, nburn=nburn, nprod=nprod)
 
-        if create_plots:
-            try:
-                fig, axes = self._plot_walkers(sampler, nprod=nprod, **kwargs)
-                fig.tight_layout()
-                fig.savefig(os.path.join(self.outdir, self.label + "_walkers.png"))
-            except RuntimeError as e:
-                logging.warning("Failed to save walker plots due to Erro {}".format(e))
-
         samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
         lnprobs = sampler.logprobability[0, :, nburn:].reshape((-1))
         lnlikes = sampler.loglikelihood[0, :, nburn:].reshape((-1))
@@ -652,6 +644,15 @@ class MCMCSearch(core.BaseSearchClass):
         self._save_data(
             sampler, samples, lnprobs, lnlikes, all_lnlikelihood, sampler.chain
         )
+
+        if create_plots:
+            try:
+                fig, axes = self._plot_walkers(sampler, nprod=nprod, **kwargs)
+                fig.tight_layout()
+                fig.savefig(os.path.join(self.outdir, self.label + "_walkers.png"))
+            except RuntimeError as e:
+                logging.warning("Failed to save walker plots due to Error {}".format(e))
+
         return sampler
 
     def _get_rescale_multiplier_for_key(self, key):
