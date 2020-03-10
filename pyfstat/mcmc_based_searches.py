@@ -1493,7 +1493,7 @@ class MCMCSearch(core.BaseSearchClass):
 
     def get_saved_data_dictionary(self):
         """ Returns dictionary of the data saved in the pickle """
-        with open(self.pickle_path, "r") as File:
+        with open(self.pickle_path, "rb") as File:
             d = pickle.load(File)
         return d
 
@@ -2592,7 +2592,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             theta_prior=theta_prior,
             Nstar_vals=Nstar_vals,
         )
-        with open(run_setup_input_file, "w+") as f:
+        with open(run_setup_input_file, "wb+") as f:
             pickle.dump(d, f)
 
     def check_old_run_setup(self, old_setup, **kwargs):
