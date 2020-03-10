@@ -155,7 +155,7 @@ def _extract_data_from_prior(prior):
         basex = base.copy()
         basex[i] = lims[i, 1]
         p.append(basex)
-    spindowns = np.sum([np.sum(lims_keys == k) for k in spindown_keys])
+    spindowns = int(np.sum([np.sum(lims_keys == k) for k in spindown_keys]))
     sky = any([key in lims_keys for key in sky_keys])
     if type(prior["F0"]) == dict:
         fiducial_freq = prior["F0"]["upper"]
