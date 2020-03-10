@@ -641,9 +641,10 @@ class MCMCSearch(core.BaseSearchClass):
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes
         self.all_lnlikelihood = all_lnlikelihood
-        self._save_data(
+        self._pickle_data(
             sampler, samples, lnprobs, lnlikes, all_lnlikelihood, sampler.chain
         )
+        self.export_samples_to_disk()
 
         if create_plots:
             try:
@@ -1474,7 +1475,7 @@ class MCMCSearch(core.BaseSearchClass):
         )
         return d
 
-    def _save_data(self, sampler, samples, lnprobs, lnlikes, all_lnlikelihood, chain):
+    def _pickle_data(self, sampler, samples, lnprobs, lnlikes, all_lnlikelihood, chain):
         d = self._get_data_dictionary_to_save()
         d["samples"] = samples
         d["lnprobs"] = lnprobs
@@ -1547,6 +1548,38 @@ class MCMCSearch(core.BaseSearchClass):
                 else:
                     logging.info(key)
             return False
+
+    def get_savetxt_fmt(self):
+        fmt = []
+        if "minStartTime" in self.theta_keys:
+            fmt += ["%d"]
+        if "maxStartTime" in self.theta_keys:
+            fmt += ["%d"]
+        fmt += helper_functions.get_doppler_params_output_format(self.theta_keys)
+        return fmt
+
+    def export_samples_to_disk(self):
+        self.samples_file = os.path.join(self.outdir, self.label + "_samples.dat")
+        self.output_file_header = self.get_output_file_header()
+        logging.info("Exporting samples to {}".format(self.samples_file))
+        header = "\n".join(self.output_file_header)
+        print(self.theta_keys)
+        header += "\n" + " ".join(self.theta_keys)
+        outfmt = self.get_savetxt_fmt()
+        Ncols = np.shape(self.samples)[1]
+        if len(outfmt) != Ncols:
+            raise RuntimeError(
+                "Lengths of data rows ({:d})"
+                " and output format ({:d})"
+                " do not match."
+                " If your search class uses different"
+                " keys than the base GridSearch class,"
+                " override the get_savetxt_fmt"
+                " method.".format(Ncols, len(outfmt))
+            )
+        np.savetxt(
+            self.samples_file, self.samples, delimiter=" ", header=header, fmt=outfmt,
+        )
 
     def get_max_twoF(self, threshold=0.05):
         """ Returns the max likelihood sample and the corresponding 2F value
@@ -2895,7 +2928,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes
         self.all_lnlikelihood = all_lnlikelihood
-        self._save_data(
+        self._pickle_data(
             sampler, samples, lnprobs, lnlikes, all_lnlikelihood, sampler.chain
         )
 
