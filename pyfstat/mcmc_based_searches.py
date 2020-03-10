@@ -183,7 +183,8 @@ class MCMCSearch(core.BaseSearchClass):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
-        self._add_log_file()
+        self.output_file_header = self.get_output_file_header()
+        self._add_log_file(self.output_file_header)
         logging.info("Set-up MCMC search for model {}".format(self.label))
         if sftfilepattern:
             logging.info("Using data {}".format(self.sftfilepattern))
@@ -1569,7 +1570,6 @@ class MCMCSearch(core.BaseSearchClass):
 
     def export_samples_to_disk(self):
         self.samples_file = os.path.join(self.outdir, self.label + "_samples.dat")
-        self.output_file_header = self.get_output_file_header()
         logging.info("Exporting samples to {}".format(self.samples_file))
         header = "\n".join(self.output_file_header)
         header += "\n" + " ".join(self.theta_keys)
@@ -2011,7 +2011,8 @@ class MCMCGlitchSearch(MCMCSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
-        self._add_log_file()
+        self.output_file_header = self.get_output_file_header()
+        self._add_log_file(self.output_file_header)
         logging.info(
             (
                 "Set-up MCMC glitch search with {} glitches for model {}" " on data {}"
@@ -2360,7 +2361,8 @@ class MCMCSemiCoherentSearch(MCMCSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
-        self._add_log_file()
+        self.output_file_header = self.get_output_file_header()
+        self._add_log_file(self.output_file_header)
         logging.info(
             ("Set-up MCMC semi-coherent search for model {} on data" "{}").format(
                 self.label, self.sftfilepattern
@@ -2564,7 +2566,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
-        self._add_log_file()
+        self.output_file_header = self.get_output_file_header()
+        self._add_log_file(self.output_file_header)
         logging.info(
             ("Set-up MCMC semi-coherent search for model {} on data" "{}").format(
                 self.label, self.sftfilepattern

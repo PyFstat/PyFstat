@@ -224,9 +224,12 @@ def predict_fstat(
 class BaseSearchClass(object):
     """ The base search class providing parent methods to other searches """
 
-    def _add_log_file(self):
+    def _add_log_file(self, header=[]):
         """ Log output to a file, requires class to have outdir and label """
         logfilename = os.path.join(self.outdir, self.label + ".log")
+        with open(logfilename, "w") as fp:
+            for hline in header:
+                fp.write("# {:s}\n".format(hline))
         fh = logging.FileHandler(logfilename)
         fh.setLevel(logging.INFO)
         fh.setFormatter(
