@@ -2,8 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pyfstat
 from make_simulated_data import tstart, duration, tref, F0, F1, F2, Alpha, Delta, outdir
+import os
 
-plt.style.use("paper")
+outdir = os.path.join("example_data", "glitch_robust_search")
 
 label = "standard_directed_MCMC_search_on_1_glitch"
 
@@ -26,7 +27,8 @@ nsteps = [500, 2000]
 
 mcmc = pyfstat.MCMCSearch(
     label=label,
-    sftfilepattern="data/*1_glitch*sft",
+    outdir=outdir,
+    sftfilepattern=os.path.join(outdir, "*1_glitch*sft"),
     theta_prior=theta_prior,
     tref=tref,
     minStartTime=tstart,
