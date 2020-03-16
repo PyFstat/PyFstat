@@ -48,7 +48,7 @@ pip install git+https://github.com/PyFstat/PyFstat
 ```
 or, if you have an ssh key installed in github:
 ```
-pip install git+ssh://git@https://github.com/PyFstatn/PyFstat
+pip install git+ssh://git@https://github.com/PyFstat/PyFstat
 ```
 
 See further down for installing manually from a
