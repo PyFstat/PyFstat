@@ -452,7 +452,13 @@ def get_doppler_params_output_format(keys):
         "F2",
         "Alpha",
         "Delta",
+        "asini",
+        "period",
+        "ecc",
+        "tp",
+        "argp",
     ]
+
     for k in keys:
         if k in doppler_keys:
             fmt += [CFSv2_fmt]
