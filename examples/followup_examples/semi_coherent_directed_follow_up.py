@@ -89,7 +89,7 @@ for ax in axes:
     ax.grid()
     ax.set_xticks(np.arange(0, 600, 100))
     ax.set_xticklabels([str(s) for s in np.arange(0, 700, 100)])
-axes[-1].set_xlabel(r"$\textrm{Number of steps}$", labelpad=0.1)
+axes[-1].set_xlabel(r"Number of steps", labelpad=0.1)
 fig.tight_layout()
 fig.savefig(os.path.join(mcmc.outdir, mcmc.label + "_walkers.png"), dpi=400)
 

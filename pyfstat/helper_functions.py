@@ -9,6 +9,7 @@ import argparse
 import logging
 import inspect
 import peakutils
+import shutil
 from functools import wraps
 from scipy.stats.distributions import ncx2
 import numpy as np
@@ -42,7 +43,7 @@ def set_up_optional_tqdm():
 
 def set_up_matplotlib_defaults():
     plt.switch_backend("Agg")
-    plt.rcParams["text.usetex"] = True
+    plt.rcParams["text.usetex"] = shutil.which("latex") is not None
     plt.rcParams["axes.formatter.useoffset"] = False
 
 

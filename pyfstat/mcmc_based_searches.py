@@ -1255,7 +1255,6 @@ class MCMCSearch(core.BaseSearchClass):
         else:
             extra_subplots = 0
         with plt.style.context((context)):
-            plt.rcParams["text.usetex"] = True
             if fig is None and axes is None:
                 fig = plt.figure(figsize=(4, 3.0 * ndim))
                 ax = fig.add_subplot(ndim + extra_subplots, 1, 1)
@@ -1334,7 +1333,7 @@ class MCMCSearch(core.BaseSearchClass):
                 if symbols:
                     axes[0].set_ylabel(symbols[0], labelpad=labelpad)
 
-            axes[-1].set_xlabel(r"$\textrm{Number of steps}$", labelpad=0.2)
+            axes[-1].set_xlabel(r"Number of steps", labelpad=0.2)
 
             if plot_det_stat:
                 if len(axes) == ndim:
