@@ -74,11 +74,16 @@ search = pyfstat.GridSearch(
 )
 search.run()
 
-search.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\mathcal{F}$")
-search.plot_1D(xkey="F1")
-search.plot_1D(xkey="F2")
-search.plot_1D(xkey="Alpha")
-search.plot_1D(xkey="Delta")
+# FIXME: workaround for matplotlib "Exceeded cell block limit" errors
+agg_chunksize = 10000
+
+search.plot_1D(
+    xkey="F0", xlabel="freq [Hz]", ylabel="$2\mathcal{F}$", agg_chunksize=agg_chunksize
+)
+search.plot_1D(xkey="F1", agg_chunksize=agg_chunksize)
+search.plot_1D(xkey="F2", agg_chunksize=agg_chunksize)
+search.plot_1D(xkey="Alpha", agg_chunksize=agg_chunksize)
+search.plot_1D(xkey="Delta", agg_chunksize=agg_chunksize)
 # 2D plots will currently not work for >2 non-trivial (gridded) search dimensions
 # search.plot_2D(xkey="F0",ykey="F1",colorbar=True)
 # search.plot_2D(xkey="F0",ykey="F2",colorbar=True)

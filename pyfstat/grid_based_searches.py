@@ -313,7 +313,11 @@ class GridSearch(BaseSearchClass):
         savefig=True,
         xlabel=None,
         ylabel=None,
+        agg_chunksize=None,
     ):
+        if agg_chunksize:
+            # FIXME: workaround for matplotlib "Exceeded cell block limit" errors
+            plt.rcParams["agg.path.chunksize"] = agg_chunksize
         if ax is None:
             fig, ax = plt.subplots()
         xidx = self.keys.index(xkey)
@@ -339,6 +343,7 @@ class GridSearch(BaseSearchClass):
             fig.tight_layout()
             fname = "{}_1D_{}_{}.png".format(self.label, xkey, self.detstat)
             fig.savefig(os.path.join(self.outdir, fname))
+            plt.close(fig)
         else:
             return ax
 
