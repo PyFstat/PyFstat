@@ -3109,6 +3109,10 @@ class MCMCTransientSearch(MCMCSearch):
         self.theta_keys = [self.theta_keys[i] for i in idxs]
 
     def get_savetxt_fmt(self):
-        fmt = ["%d", "%d"]  # for transient_tstart, transient_duration
+        fmt = []
+        if "transient_tstart" in self.theta_keys:
+            fmt += ["%d"]
+        if "transient_duration" in self.theta_keys:
+            fmt += ["%d"]
         fmt += helper_functions.get_doppler_params_output_format(self.theta_keys)
         return fmt
