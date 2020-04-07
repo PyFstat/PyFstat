@@ -2255,8 +2255,9 @@ class MCMCGlitchSearch(MCMCSearch):
         fig.savefig(os.path.join(self.outdir, self.label + "_twoFcumulative.png"))
 
     def get_savetxt_fmt(self):
-        fmt = helper_functions.get_doppler_params_output_format([k.split("_")[1] for k in self.theta_keys
-                                                                   if k.startswith("delta_F")])
+        fmt = helper_functions.get_doppler_params_output_format(
+            [k.split("_")[1] for k in self.theta_keys if k.startswith("delta_F")]
+        )
         if "tglitch" in self.theta_keys:
             fmt += ["%d"]
         fmt += helper_functions.get_doppler_params_output_format(self.theta_keys)
