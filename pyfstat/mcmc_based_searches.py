@@ -183,7 +183,8 @@ class MCMCSearch(core.BaseSearchClass):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
-        self._add_log_file()
+        self.output_file_header = self.get_output_file_header()
+        self._add_log_file(self.output_file_header)
         logging.info("Set-up MCMC search for model {}".format(self.label))
         if sftfilepattern:
             logging.info("Using data {}".format(self.sftfilepattern))
@@ -547,7 +548,16 @@ class MCMCSearch(core.BaseSearchClass):
             )
         )
 
-    def run(self, proposal_scale_factor=2, create_plots=True, window=50, **kwargs):
+    def run(
+        self,
+        proposal_scale_factor=2,
+        save_pickle=True,
+        export_samples=True,
+        save_loudest=True,
+        create_plots=True,
+        window=50,
+        **kwargs
+    ):
         """ Run the MCMC simulatation
 
         Parameters
@@ -557,8 +567,14 @@ class MCMCSearch(core.BaseSearchClass):
             (2010). If the acceptance fraction is too low, you can raise it by
             decreasing the a parameter; and if it is too high, you can reduce
             it by increasing the a parameter [Foreman-Mackay (2013)].
+        save_pickle: bool
+            If true, save a pickle file of the full sampler state.
+        export_samples: bool
+            If true, save ASCII samples file to disk.
+        save_loudest: bool
+            If true, save a CFSv2 .loudest file to disk.
         create_plots: bool
-            If true, save trace plots of the walkers
+            If true, save trace plots of the walkers.
         window: int
             The minimum number of autocorrelation times needed to trust the
             result when estimating the autocorrelation time (see
@@ -632,14 +648,6 @@ class MCMCSearch(core.BaseSearchClass):
         logging.info("Running final burn and prod with {} steps".format(nburn + nprod))
         sampler = self._run_sampler(sampler, p0, nburn=nburn, nprod=nprod)
 
-        if create_plots:
-            try:
-                fig, axes = self._plot_walkers(sampler, nprod=nprod, **kwargs)
-                fig.tight_layout()
-                fig.savefig(os.path.join(self.outdir, self.label + "_walkers.png"))
-            except RuntimeError as e:
-                logging.warning("Failed to save walker plots due to Erro {}".format(e))
-
         samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
         lnprobs = sampler.logprobability[0, :, nburn:].reshape((-1))
         lnlikes = sampler.loglikelihood[0, :, nburn:].reshape((-1))
@@ -649,9 +657,23 @@ class MCMCSearch(core.BaseSearchClass):
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes
         self.all_lnlikelihood = all_lnlikelihood
-        self._save_data(
-            sampler, samples, lnprobs, lnlikes, all_lnlikelihood, sampler.chain
-        )
+        if save_pickle:
+            self._pickle_data(
+                sampler, samples, lnprobs, lnlikes, all_lnlikelihood, sampler.chain
+            )
+        if export_samples:
+            self.export_samples_to_disk()
+        if save_loudest:
+            self.generate_loudest()
+
+        if create_plots:
+            try:
+                fig, axes = self._plot_walkers(sampler, nprod=nprod, **kwargs)
+                fig.tight_layout()
+                fig.savefig(os.path.join(self.outdir, self.label + "_walkers.png"))
+            except RuntimeError as e:
+                logging.warning("Failed to save walker plots due to Error {}".format(e))
+
         return sampler
 
     def _get_rescale_multiplier_for_key(self, key):
@@ -1037,12 +1059,13 @@ class MCMCSearch(core.BaseSearchClass):
 
         See the pyfstat.core.plot_twoF_cumulative function for further details
         """
+        logging.info("Getting cumulative 2F")
         d, maxtwoF = self.get_max_twoF()
         for key, val in self.theta_prior.items():
             if key not in d:
                 d[key] = val
 
-        if "add_pfs" in kwargs:
+        if "add_pfs" in kwargs and not hasattr(self, "search"):
             self.generate_loudest()
 
         if hasattr(self, "search") is False:
@@ -1232,7 +1255,6 @@ class MCMCSearch(core.BaseSearchClass):
         else:
             extra_subplots = 0
         with plt.style.context((context)):
-            plt.rcParams["text.usetex"] = True
             if fig is None and axes is None:
                 fig = plt.figure(figsize=(4, 3.0 * ndim))
                 ax = fig.add_subplot(ndim + extra_subplots, 1, 1)
@@ -1311,7 +1333,7 @@ class MCMCSearch(core.BaseSearchClass):
                 if symbols:
                     axes[0].set_ylabel(symbols[0], labelpad=labelpad)
 
-            axes[-1].set_xlabel(r"$\textrm{Number of steps}$", labelpad=0.2)
+            axes[-1].set_xlabel(r"Number of steps", labelpad=0.2)
 
             if plot_det_stat:
                 if len(axes) == ndim:
@@ -1473,7 +1495,7 @@ class MCMCSearch(core.BaseSearchClass):
         )
         return d
 
-    def _save_data(self, sampler, samples, lnprobs, lnlikes, all_lnlikelihood, chain):
+    def _pickle_data(self, sampler, samples, lnprobs, lnlikes, all_lnlikelihood, chain):
         d = self._get_data_dictionary_to_save()
         d["samples"] = samples
         d["lnprobs"] = lnprobs
@@ -1546,6 +1568,31 @@ class MCMCSearch(core.BaseSearchClass):
                 else:
                     logging.info(key)
             return False
+
+    def get_savetxt_fmt(self):
+        fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
+        return fmt
+
+    def export_samples_to_disk(self):
+        self.samples_file = os.path.join(self.outdir, self.label + "_samples.dat")
+        logging.info("Exporting samples to {}".format(self.samples_file))
+        header = "\n".join(self.output_file_header)
+        header += "\n" + " ".join(self.theta_keys)
+        outfmt = self.get_savetxt_fmt()
+        Ncols = np.shape(self.samples)[1]
+        if len(outfmt) != Ncols:
+            raise RuntimeError(
+                "Lengths of data rows ({:d})"
+                " and output format ({:d})"
+                " do not match."
+                " If your search class uses different"
+                " keys than the base MCMCSearch class,"
+                " override the get_savetxt_fmt"
+                " method.".format(Ncols, len(outfmt))
+            )
+        np.savetxt(
+            self.samples_file, self.samples, delimiter=" ", header=header, fmt=outfmt,
+        )
 
     def get_max_twoF(self, threshold=0.05):
         """ Returns the max likelihood sample and the corresponding 2F value
@@ -1658,25 +1705,28 @@ class MCMCSearch(core.BaseSearchClass):
 
         logging.info("Writing par file with max twoF = {}".format(max_twoF))
         with open(filename, "w+") as f:
-            f.write(r"MaxtwoF = {}\n".format(max_twoF))
-            f.write(r"tref = {}\n".format(self.tref))
+            for hline in self.output_file_header:
+                f.write("# {:s}\n".format(hline))
+            f.write("MaxtwoF = {}\n".format(max_twoF))
+            f.write("tref = {}\n".format(self.tref))
             if hasattr(self, "theta0_index"):
-                f.write(r"theta0_index = {}\n".format(self.theta0_idx))
+                f.write("theta0_index = {}\n".format(self.theta0_idx))
             if method == "med":
                 for key, val in median_std_d.items():
-                    f.write(r"{} = {:1.16e}\n".format(key, val))
+                    f.write("{} = {:1.16e}\n".format(key, val))
             if method == "twoFmax":
                 for key, val in max_twoF_d.items():
-                    f.write(r"{} = {:1.16e}\n".format(key, val))
+                    f.write("{} = {:1.16e}\n".format(key, val))
 
     def generate_loudest(self):
         """ Use lalapps_ComputeFstatistic_v2 to produce a .loudest file """
+        logging.info("Running CFSv2 to get .loudest file")
         self.write_par()
         params = read_par(label=self.label, outdir=self.outdir)
         for key in ["Alpha", "Delta", "F0", "F1"]:
             if key not in params:
                 params[key] = self.theta_prior[key]
-        filename = os.path.join(self.outdir, self.label + ".loudest")
+        self.loudest_file = os.path.join(self.outdir, self.label + ".loudest")
         cmd = (
             'lalapps_ComputeFstatistic_v2 -a {} -d {} -f {} -s {} -D "{}"'
             ' --refTime={} --outputLoudest="{}" '
@@ -1688,7 +1738,7 @@ class MCMCSearch(core.BaseSearchClass):
             params["F1"],
             self.sftfilepattern,
             params["tref"],
-            filename,
+            self.loudest_file,
             self.minStartTime,
             self.maxStartTime,
         )
@@ -1724,11 +1774,11 @@ class MCMCSearch(core.BaseSearchClass):
 
                     u = self.unit_dictionary[key]
                     s = self.symbol_dictionary[key]
-                    f.write(r"\n")
+                    f.write("\n")
                     a = helper_functions.texify_float(a)
                     b = helper_functions.texify_float(b)
-                    f.write(r" " + line.format(s, a, b, u) + r" \\")
-            f.write(r"\n\end{tabular}\n")
+                    f.write(" " + line.format(s, a, b, u) + r" \\")
+            f.write("\n\end{tabular}\n")
 
     def print_summary(self):
         """ Prints a summary of the max twoF found to the terminal """
@@ -1884,7 +1934,7 @@ class MCMCSearch(core.BaseSearchClass):
     def write_evidence_file_from_dict(self, EvidenceDict, evidence_file_name):
         with open(evidence_file_name, "w+") as f:
             for key, val in EvidenceDict.items():
-                f.write(r"{} {} {}\n".format(key, val[0], val[1]))
+                f.write("{} {} {}\n".format(key, val[0], val[1]))
 
 
 class MCMCGlitchSearch(MCMCSearch):
@@ -1969,7 +2019,8 @@ class MCMCGlitchSearch(MCMCSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
-        self._add_log_file()
+        self.output_file_header = self.get_output_file_header()
+        self._add_log_file(self.output_file_header)
         logging.info(
             (
                 "Set-up MCMC glitch search with {} glitches for model {}" " on data {}"
@@ -2145,7 +2196,7 @@ class MCMCGlitchSearch(MCMCSearch):
         return p0
 
     def plot_cumulative_max(self):
-
+        logging.info("Getting cumulative 2F")
         fig, ax = plt.subplots()
         d, maxtwoF = self.get_max_twoF()
         for key, val in self.theta_prior.items():
@@ -2318,7 +2369,8 @@ class MCMCSemiCoherentSearch(MCMCSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
-        self._add_log_file()
+        self.output_file_header = self.get_output_file_header()
+        self._add_log_file(self.output_file_header)
         logging.info(
             ("Set-up MCMC semi-coherent search for model {} on data" "{}").format(
                 self.label, self.sftfilepattern
@@ -2522,7 +2574,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
-        self._add_log_file()
+        self.output_file_header = self.get_output_file_header()
+        self._add_log_file(self.output_file_header)
         logging.info(
             ("Set-up MCMC semi-coherent search for model {} on data" "{}").format(
                 self.label, self.sftfilepattern
@@ -2572,7 +2625,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             return 0.5 * (prior[key]["upper"] + prior[key]["lower"])
 
     def read_setup_input_file(self, run_setup_input_file):
-        with open(run_setup_input_file, "r+") as f:
+        with open(run_setup_input_file, "rb+") as f:
             d = pickle.load(f)
         return d
 
@@ -2728,7 +2781,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                     r"Stage & $N_\mathrm{seg}$ &"
                     r"$T_\mathrm{coh}^{\rm days}$ &"
                     r"$\mathcal{N}^*(\Nseg^{(\ell)}, \Delta\mathbf{\lambda}^{(0)})$ \\ \hline"
-                    r"\n"
+                    "\n"
                 )
                 for i, rs in enumerate(run_setup):
                     Tcoh = float(self.maxStartTime - self.minStartTime) / rs[1] / 86400
@@ -2758,6 +2811,9 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         proposal_scale_factor=2,
         NstarMax=10,
         Nsegs0=None,
+        save_pickle=True,
+        export_samples=True,
+        save_loudest=True,
         create_plots=True,
         log_table=True,
         gen_tex_table=True,
@@ -2777,8 +2833,14 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             (2010). If the acceptance fraction is too low, you can raise it by
             decreasing the a parameter; and if it is too high, you can reduce
             it by increasing the a parameter [Foreman-Mackay (2013)].
+        save_pickle: bool
+            If true, save a pickle file of the full sampler state.
+        export_samples: bool
+            If true, save ASCII samples file to disk.
+        save_loudest: bool
+            If true, save a CFSv2 .loudest file to disk.
         create_plots: bool
-            If true, save trace plots of the walkers
+            If true, save trace plots of the walkers.
         window: int
             The minimum number of autocorrelation times needed to trust the
             result when estimating the autocorrelation time (see
@@ -2894,9 +2956,14 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes
         self.all_lnlikelihood = all_lnlikelihood
-        self._save_data(
-            sampler, samples, lnprobs, lnlikes, all_lnlikelihood, sampler.chain
-        )
+        if save_pickle:
+            self._pickle_data(
+                sampler, samples, lnprobs, lnlikes, all_lnlikelihood, sampler.chain
+            )
+        if export_samples:
+            self.export_samples_to_disk()
+        if save_loudest:
+            self.generate_loudest()
 
         if create_plots:
             try:
@@ -3040,3 +3107,8 @@ class MCMCTransientSearch(MCMCSearch):
         self.theta_idxs = [self.theta_idxs[i] for i in idxs]
         self.theta_symbols = [self.theta_symbols[i] for i in idxs]
         self.theta_keys = [self.theta_keys[i] for i in idxs]
+
+    def get_savetxt_fmt(self):
+        fmt = ["%d", "%d"]  # for transient_tstart, transient_duration
+        fmt += helper_functions.get_doppler_params_output_format(self.theta_keys)
+        return fmt
