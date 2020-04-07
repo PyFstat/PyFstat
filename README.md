@@ -180,11 +180,17 @@ Paths set in this way will take precedence over the environment variable.
 Finally, you can manually specify ephemerides files when initialising
 each PyFstat search (as one of the arguments).
 
-### Contributors
+## Notes for developers
+
+* The github automated tests currently run on python [3.6,3.7,3.8] and new PRs need to pass all these.
+* The automated test also runs the [black](https://black.readthedocs.io) style checker. If possible, please run this locally before pushing changes / submitting PRs: `black --check --diff .` to show the required changes, or `black .` to automatically apply them.
+
+## Contributors
 
 * Greg Ashton
 * David Keitel
 * Reinhard Prix
+* Rodrigo Tenorio
 * Karl Wette
 * Sylvia Zhu
 
