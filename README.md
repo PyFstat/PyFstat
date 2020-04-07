@@ -62,7 +62,7 @@ PyFstat uses the following external python modules,
 which should all be pulled in automatically if you use pip:
 
 * [numpy](http://www.numpy.org/)
-* [matplotlib](http://matplotlib.org/) >= 1.4
+* [matplotlib](http://matplotlib.org/) >= 2.1
 * [scipy](https://www.scipy.org/)
 * [ptemcee](https://github.com/willvousden/ptemcee)
 * [corner](https://pypi.python.org/pypi/corner/)
