@@ -2254,6 +2254,14 @@ class MCMCGlitchSearch(MCMCSearch):
         ax.set_xlabel("GPS time")
         fig.savefig(os.path.join(self.outdir, self.label + "_twoFcumulative.png"))
 
+    def get_savetxt_fmt(self):
+        fmt = helper_functions.get_doppler_params_output_format([k.split("_")[1] for k in self.theta_keys
+                                                                   if k.startswith("delta_F")])
+        if "tglitch" in self.theta_keys:
+            fmt += ["%d"]
+        fmt += helper_functions.get_doppler_params_output_format(self.theta_keys)
+        return fmt
+
 
 class MCMCSemiCoherentSearch(MCMCSearch):
     """ MCMC search for a signal using the semi-coherent ComputeFstat
