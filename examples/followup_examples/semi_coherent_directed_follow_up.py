@@ -79,19 +79,24 @@ fig, axes = plt.subplots(nrows=2, figsize=(3.4, 3.5))
 mcmc.run(
     NstarMax=NstarMax,
     Nsegs0=Nsegs0,
-    labelpad=0.01,
-    plot_det_stat=False,
-    return_fig=True,
-    fig=fig,
-    axes=axes,
+    walker_plot_args={
+        "labelpad": 0.01,
+        "plot_det_stat": False,
+        "fig": fig,
+        "axes": axes,
+    },
 )
-for ax in axes:
-    ax.grid()
-    ax.set_xticks(np.arange(0, 600, 100))
-    ax.set_xticklabels([str(s) for s in np.arange(0, 700, 100)])
-axes[-1].set_xlabel(r"Number of steps", labelpad=0.1)
-fig.tight_layout()
-fig.savefig(os.path.join(mcmc.outdir, mcmc.label + "_walkers.png"), dpi=400)
 
-mcmc.plot_corner(add_prior=True)
-mcmc.print_summary()
+if hasattr(mcmc, "walkers_fig") and hasattr(mcmc, "walkers_axes"):
+    # walkers figure is only returned on first run, not when saved data is reused
+    for ax in mcmc.walkers_axes:
+        ax.grid()
+        ax.set_xticks(np.arange(0, 600, 100))
+        ax.set_xticklabels([str(s) for s in np.arange(0, 700, 100)])
+    mcmc.walkers_axes[-1].set_xlabel(r"Number of steps", labelpad=0.1)
+    mcmc.walkers_fig.tight_layout()
+    mcmc.walkers_fig.savefig(
+        os.path.join(mcmc.outdir, mcmc.label + "_walkers.png"), dpi=400
+    )
+    mcmc.plot_corner(add_prior=True)
+    mcmc.print_summary()
