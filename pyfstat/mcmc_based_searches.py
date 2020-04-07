@@ -866,8 +866,8 @@ class MCMCSearch(core.BaseSearchClass):
                 _range = None
 
             hist_kwargs = kwargs.pop("hist_kwargs", dict())
-            if "normed" not in hist_kwargs:
-                hist_kwargs["normed"] = True
+            if "density" not in hist_kwargs:
+                hist_kwargs["density"] = True
 
             fig_triangle = corner.corner(
                 samples_plt,
