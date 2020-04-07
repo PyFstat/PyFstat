@@ -561,7 +561,7 @@ class MCMCSearch(Test):
             ntemps=2,
             log10beta_min=-1,
         )
-        search.run(create_plots=False)
+        search.run(plot_walkers=False)
         _, FS = search.get_max_twoF()
 
         print(("Predicted twoF is {} while recovered is {}".format(predicted_FS, FS)))

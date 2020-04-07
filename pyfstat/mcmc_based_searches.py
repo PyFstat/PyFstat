@@ -554,7 +554,7 @@ class MCMCSearch(core.BaseSearchClass):
         save_pickle=True,
         export_samples=True,
         save_loudest=True,
-        create_plots=True,
+        plot_walkers=True,
         window=50,
         **kwargs
     ):
@@ -573,7 +573,7 @@ class MCMCSearch(core.BaseSearchClass):
             If true, save ASCII samples file to disk.
         save_loudest: bool
             If true, save a CFSv2 .loudest file to disk.
-        create_plots: bool
+        plot_walkers: bool
             If true, save trace plots of the walkers.
         window: int
             The minimum number of autocorrelation times needed to trust the
@@ -626,7 +626,7 @@ class MCMCSearch(core.BaseSearchClass):
                 "Running {}/{} initialisation with {} steps".format(j, ninit_steps, n)
             )
             sampler = self._run_sampler(sampler, p0, nburn=n, window=window)
-            if create_plots:
+            if plot_walkers:
                 fig, axes = self._plot_walkers(sampler, **kwargs)
                 fig.tight_layout()
                 fig.savefig(
@@ -666,7 +666,7 @@ class MCMCSearch(core.BaseSearchClass):
         if save_loudest:
             self.generate_loudest()
 
-        if create_plots:
+        if plot_walkers:
             try:
                 fig, axes = self._plot_walkers(sampler, nprod=nprod, **kwargs)
                 fig.tight_layout()
@@ -2814,7 +2814,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         save_pickle=True,
         export_samples=True,
         save_loudest=True,
-        create_plots=True,
+        plot_walkers=True,
         log_table=True,
         gen_tex_table=True,
         fig=None,
@@ -2839,7 +2839,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             If true, save ASCII samples file to disk.
         save_loudest: bool
             If true, save a CFSv2 .loudest file to disk.
-        create_plots: bool
+        plot_walkers: bool
             If true, save trace plots of the walkers.
         window: int
             The minimum number of autocorrelation times needed to trust the
@@ -2919,7 +2919,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 )
             )
 
-            if create_plots:
+            if plot_walkers:
                 fig, axes = self._plot_walkers(
                     sampler,
                     fig=fig,
@@ -2933,7 +2933,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
             nsteps_total += nburn + nprod
 
-        if create_plots:
+        if plot_walkers:
             nstep_list = np.array(
                 [el[0][0] for el in run_setup] + [run_setup[-1][0][1]]
             )
@@ -2965,7 +2965,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         if save_loudest:
             self.generate_loudest()
 
-        if create_plots:
+        if plot_walkers:
             try:
                 fig.tight_layout()
             except (ValueError, RuntimeError) as e:
