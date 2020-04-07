@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import pyfstat
 from make_simulated_data import tstart, duration, tref, F0, F1, F2, Alpha, Delta, outdir
 import os

@@ -1,6 +1,5 @@
 import pyfstat
 import numpy as np
-import matplotlib.pyplot as plt
 from make_simulated_data import (
     tstart,
     duration,

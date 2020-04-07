@@ -3,7 +3,6 @@
 import pyfstat
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 
 F0 = 30.0
 F1 = -1e-10
