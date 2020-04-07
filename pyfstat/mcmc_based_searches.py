@@ -1778,7 +1778,7 @@ class MCMCSearch(core.BaseSearchClass):
                     a = helper_functions.texify_float(a)
                     b = helper_functions.texify_float(b)
                     f.write(" " + line.format(s, a, b, u) + r" \\")
-            f.write("\n\end{tabular}\n")
+            f.write("\n\\end{tabular}\n")
 
     def print_summary(self):
         """ Prints a summary of the max twoF found to the terminal """
