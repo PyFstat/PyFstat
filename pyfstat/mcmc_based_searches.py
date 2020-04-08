@@ -555,7 +555,7 @@ class MCMCSearch(core.BaseSearchClass):
         export_samples=True,
         save_loudest=True,
         plot_walkers=True,
-        walker_plot_args={},
+        walker_plot_args=None,
         window=50,
     ):
         """ Run the MCMC simulatation
@@ -605,6 +605,8 @@ class MCMCSearch(core.BaseSearchClass):
 
         self._initiate_search_object()
         self._estimate_run_time()
+
+        walker_plot_args = walker_plot_args or {}
 
         sampler = PTSampler(
             ntemps=self.ntemps,
@@ -2844,7 +2846,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         export_samples=True,
         save_loudest=True,
         plot_walkers=True,
-        walker_plot_args={},
+        walker_plot_args=None,
         log_table=True,
         gen_tex_table=True,
         window=50,
@@ -2893,6 +2895,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         )
         self.run_setup = run_setup
         self._estimate_run_time()
+
+        walker_plot_args = walker_plot_args or {}
 
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
         if self.old_data_is_okay_to_use is True:
