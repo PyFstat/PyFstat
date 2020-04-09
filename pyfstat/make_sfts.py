@@ -432,6 +432,7 @@ class BinaryModulatedWriter(Writer):
         orbitArgp=0.0,
         orbitasini=0.0,
         orbitEcc=0.0,
+        orbitPeriod=0.0,
         h0=0.1,
         cosi=0.0,
         psi=0.0,
@@ -515,6 +516,7 @@ class BinaryModulatedWriter(Writer):
             "orbitArgp",
             "orbitasini",
             "orbitEcc",
+            "orbitPeriod",
             "transientWindowType",
         ]
 
