@@ -554,9 +554,9 @@ class MCMCSearch(core.BaseSearchClass):
         save_pickle=True,
         export_samples=True,
         save_loudest=True,
-        create_plots=True,
+        plot_walkers=True,
+        walker_plot_args=None,
         window=50,
-        **kwargs
     ):
         """ Run the MCMC simulatation
 
@@ -573,14 +573,17 @@ class MCMCSearch(core.BaseSearchClass):
             If true, save ASCII samples file to disk.
         save_loudest: bool
             If true, save a CFSv2 .loudest file to disk.
-        create_plots: bool
+        plot_walkers: bool
             If true, save trace plots of the walkers.
+        walker_plot_args:
+            Dictionary passed as kwargs to _plot_walkers to control the plotting.
+            Also, if both "fig" and "axes" entries are set,
+            the plot is not saved to disk directly,
+            but .walker_fig and .walker_axes properties are returned.
         window: int
             The minimum number of autocorrelation times needed to trust the
             result when estimating the autocorrelation time (see
             ptemcee.Sampler.get_autocorr_time for further details.
-        **kwargs:
-            Passed to _plot_walkers to control the figures
 
         Returns
         -------
@@ -602,6 +605,8 @@ class MCMCSearch(core.BaseSearchClass):
 
         self._initiate_search_object()
         self._estimate_run_time()
+
+        walker_plot_args = walker_plot_args or {}
 
         sampler = PTSampler(
             ntemps=self.ntemps,
@@ -626,14 +631,24 @@ class MCMCSearch(core.BaseSearchClass):
                 "Running {}/{} initialisation with {} steps".format(j, ninit_steps, n)
             )
             sampler = self._run_sampler(sampler, p0, nburn=n, window=window)
-            if create_plots:
-                fig, axes = self._plot_walkers(sampler, **kwargs)
-                fig.tight_layout()
-                fig.savefig(
-                    os.path.join(
-                        self.outdir, "{}_init_{}_walkers.png".format(self.label, j)
+            if plot_walkers:
+                try:
+                    walker_fig, walker_axes = self._plot_walkers(
+                        sampler, **walker_plot_args
                     )
-                )
+                    walker_fig.tight_layout()
+                    walker_fig.savefig(
+                        os.path.join(
+                            self.outdir, "{}_init_{}_walkers.png".format(self.label, j)
+                        )
+                    )
+                    plt.close(walker_fig)
+                except Exception as e:
+                    logging.warning(
+                        "Failed to plot initialisation walkers due to Error {}".format(
+                            e
+                        )
+                    )
 
             p0 = self._get_new_p0(sampler)
             p0 = self._apply_corrections_to_p0(p0)
@@ -666,13 +681,29 @@ class MCMCSearch(core.BaseSearchClass):
         if save_loudest:
             self.generate_loudest()
 
-        if create_plots:
+        if plot_walkers:
             try:
-                fig, axes = self._plot_walkers(sampler, nprod=nprod, **kwargs)
-                fig.tight_layout()
-                fig.savefig(os.path.join(self.outdir, self.label + "_walkers.png"))
-            except RuntimeError as e:
-                logging.warning("Failed to save walker plots due to Error {}".format(e))
+                walkers_fig, walkers_axes = self._plot_walkers(
+                    sampler, nprod=nprod, **walker_plot_args
+                )
+                walkers_fig.tight_layout()
+            except Exception as e:
+                logging.warning("Failed to plot walkers due to Error {}".format(e))
+            if (walker_plot_args.get("fig") is not None) and (
+                walker_plot_args.get("axes") is not None
+            ):
+                self.walker_fig = walkers_fig
+                self.walker_axes = walkers_axes
+            else:
+                try:
+                    walkers_fig.savefig(
+                        os.path.join(self.outdir, self.label + "_walkers.png")
+                    )
+                    plt.close(walkers_fig)
+                except Exception as e:
+                    logging.warning(
+                        "Failed to save walker plots due to Error {}".format(e)
+                    )
 
         return sampler
 
@@ -2823,14 +2854,11 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         save_pickle=True,
         export_samples=True,
         save_loudest=True,
-        create_plots=True,
+        plot_walkers=True,
+        walker_plot_args=None,
         log_table=True,
         gen_tex_table=True,
-        fig=None,
-        axes=None,
-        return_fig=False,
         window=50,
-        **kwargs
     ):
         """ Run the follow-up with the given run_setup
 
@@ -2848,8 +2876,13 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             If true, save ASCII samples file to disk.
         save_loudest: bool
             If true, save a CFSv2 .loudest file to disk.
-        create_plots: bool
+        plot_walkers: bool
             If true, save trace plots of the walkers.
+        walker_plot_args:
+            Dictionary passed as kwargs to _plot_walkers to control the plotting.
+            Also, if both "fig" and "axes" entries are set,
+            the plot is not saved to disk directly,
+            but .walker_fig and .walker_axes properties are returned.
         window: int
             The minimum number of autocorrelation times needed to trust the
             result when estimating the autocorrelation time (see
@@ -2871,6 +2904,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         )
         self.run_setup = run_setup
         self._estimate_run_time()
+
+        walker_plot_args = walker_plot_args or {}
 
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
         if self.old_data_is_okay_to_use is True:
@@ -2928,28 +2963,26 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 )
             )
 
-            if create_plots:
-                fig, axes = self._plot_walkers(
-                    sampler,
-                    fig=fig,
-                    axes=axes,
-                    nprod=nprod,
-                    xoffset=nsteps_total,
-                    **kwargs
-                )
-                for ax in axes[: self.ndim]:
-                    ax.axvline(nsteps_total, color="k", ls="--", lw=0.25)
+            if plot_walkers:
+                try:
+                    walkers_fig, walkers_axes = self._plot_walkers(
+                        sampler, nprod=nprod, xoffset=nsteps_total, **walker_plot_args
+                    )
+                    for ax in walkers_axes[: self.ndim]:
+                        ax.axvline(nsteps_total, color="k", ls="--", lw=0.25)
+                except Exception as e:
+                    logging.warning("Failed to plot walkers due to Error {}".format(e))
 
             nsteps_total += nburn + nprod
 
-        if create_plots:
+        if plot_walkers:
             nstep_list = np.array(
                 [el[0][0] for el in run_setup] + [run_setup[-1][0][1]]
             )
             mids = np.cumsum(nstep_list) - nstep_list / 2
             mid_labels = ["{:1.0f}".format(i) for i in np.arange(0, len(mids) - 1)]
             mid_labels += ["Production"]
-            for ax in axes[: self.ndim]:
+            for ax in walkers_axes[: self.ndim]:
                 axy = ax.twiny()
                 axy.tick_params(pad=-10, direction="in", axis="x", which="major")
                 axy.minorticks_off()
@@ -2974,15 +3007,30 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         if save_loudest:
             self.generate_loudest()
 
-        if create_plots:
+        if plot_walkers:
             try:
-                fig.tight_layout()
-            except (ValueError, RuntimeError) as e:
-                logging.warning("Tight layout encountered {}".format(e))
-            if return_fig:
-                return fig, axes
+                walkers_fig.tight_layout()
+            except Exception as e:
+                logging.warning(
+                    "Failed to set tight layout for walkers plot due to Error {}".format(
+                        e
+                    )
+                )
+            if (walker_plot_args.get("fig") is not None) and (
+                walker_plot_args.get("axes") is not None
+            ):
+                self.walkers_fig = walkers_fig
+                self.walkers_axes = walkers_axes
             else:
-                fig.savefig(os.path.join(self.outdir, self.label + "_walkers.png"))
+                try:
+                    walkers_fig.savefig(
+                        os.path.join(self.outdir, self.label + "_walkers.png")
+                    )
+                    plt.close(walkers_fig)
+                except Exception as e:
+                    logging.warning(
+                        "Failed to save walker plots due to Error {}".format(e)
+                    )
 
 
 class MCMCTransientSearch(MCMCSearch):
