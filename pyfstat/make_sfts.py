@@ -413,6 +413,159 @@ transientTau = {:10.0f}\n"""
         return twoF_expected
 
 
+class BinaryModulatedWriter(Writer):
+    """ Instance object for generating SFTs containing binary continuous signals """
+
+    @helper_functions.initializer
+    def __init__(
+        self,
+        label="Test",
+        tstart=700000000,
+        duration=100 * 86400,
+        tref=None,
+        F0=30,
+        F1=1e-10,
+        F2=0,
+        Alpha=5e-3,
+        Delta=6e-2,
+        orbitTp=0.0,
+        orbitArgp=0.0,
+        orbitasini=0.0,
+        orbitEcc=0.0,
+        h0=0.1,
+        cosi=0.0,
+        psi=0.0,
+        phi=0,
+        Tsft=1800,
+        outdir=".",
+        sqrtSX=1,
+        Band=4,
+        detectors="H1",
+        minStartTime=None,
+        maxStartTime=None,
+        add_noise=True,
+        transientWindowType="none",
+    ):
+        """
+        Parameters
+        ----------
+        label: string
+            a human-readable label to be used in naming the output files
+        tstart, duration : int
+            start and duration (in gps seconds) of the total observation span
+        tref: float or None
+            reference time (default is None, which sets the reference time to
+            tstart)
+        F0, F1, F2, Alpha, Delta, orbitTp, orbitArgp, orbitasini, orbitEcc, h0, cosi, psi, phi: float
+            frequency, sky-position, binary orbit and amplitude parameters
+        Tsft: float
+            the sft duration
+        minStartTime, maxStartTime: float
+            if not None, the total span of data, this can be used to generate
+            transient signals
+        see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
+        """
+        super.__init__(
+            label,
+            tstart,
+            duration,
+            tref,
+            F0,
+            F1,
+            F2,
+            Alpha,
+            Delta,
+            h0,
+            cosi,
+            psi,
+            phi,
+            Tsft,
+            outdir,
+            sqrtSx,
+            Band,
+            detectors,
+            minStartTime,
+            maxStartTime,
+            add_noise,
+            transientWindowType,
+        )
+
+        self.parse_args_consistent_with_mfd()
+
+    def basic_setup(self):
+        super().basic_setup()
+        ## rodrigo self.theta =
+
+    def parse_args_consistent_with_mfd(self):
+        """ This will allow us to get rid of the get_single_config_* family
+            Future rework may use a dictionary as the default input method,
+        """
+        signal_parameter_labels = [
+            "tref",
+            "F0",
+            "F1",
+            "F2",
+            "Alpha",
+            "Delta",
+            "h0",
+            "cosi",
+            "psi",
+            "phi",
+            "orbitTP",
+            "orbitArgp",
+            "orbitasini",
+            "orbitEcc",
+            "transientWindowType",
+        ]
+
+        signal_parameters = {
+            key: self.__dict__.get(key, default=None) for key in signal_parameter_labels
+        }
+        self.signal_parameters = {
+            key: value for key, value in signal_parameters.items() if value is not None
+        }
+
+        # Apparently notation is not entirely consistent with mfd:
+        map_keys = {"F0": "Freq", "F1": "f1dot", "F2": "f2dot", "tref": "refTime"}
+        for key in map_keys.keys():
+            self.signal_parameters[map_keys[key]] = self.signal_parameters.pop(key)
+
+        signal_parameter_formats = 13 * [":1.18e"] + [":s"]
+        signal_formats = dict(zip(signal_parameter_labels, signal_parameter_formats))
+        self.signal_formats = {
+            key: signal_formats[key] for key in self.signal_parameters.keys()
+        }
+
+        if self.signal_parameters["transientWindowType"] is not "none":
+            self.signal_parameters["transientStartTime"] = self.tstart
+            self.signal_formats["transientStartTime"] = ":10.0f"
+            self.signal_parameters["transientTau"] = self.duration_days * 86400.0
+            self.signal_formats["transientTau"] = ":10.0f"
+
+    def get_single_config_line(self, i):
+        config_line = "[TS{}]\n".format(i)
+        config_line += "\n".join(
+            [
+                "{key} = {{{fmt}}}".format(key, self.signal_formats[key]).format(
+                    self.signal_parameters[key]
+                )
+                for key in self.signal_parameters.keys()
+            ]
+        )
+
+    def make_cff(self):
+        """
+        Generates a .cff file
+
+        """
+        content = self.get_single_config_line(0)
+
+        if self.check_if_cff_file_needs_rewritting(content):
+            config_file = open(self.config_file_name, "w+")
+            config_file.write(content)
+            config_file.close()
+
+
 class GlitchWriter(Writer):
     """ Instance object for generating SFTs containing glitch signals """
 
