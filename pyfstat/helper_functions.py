@@ -337,7 +337,9 @@ def get_sft_array(sftfilepattern, data_duration, F0, dF0):
     return times, freqs, data
 
 
-def get_covering_band(tref, tstart, tend, F0, F1, F2):
+def get_covering_band(
+    tref, tstart, tend, F0, F1, F2, orbitasini=0.0, orbitPeriod=0.0, orbitEcc=0.0
+):
     """ Get the covering band using XLALCWSignalCoveringBand
 
     Parameters
@@ -367,7 +369,9 @@ def get_covering_band(tref, tstart, tend, F0, F1, F2):
     psr.fkdot[1] = F1
     psr.fkdot[2] = F2
     psr.refTime = tref
-    return lalpulsar.CWSignalCoveringBand(tstart, tend, psr, 0, 0, 0)
+    return lalpulsar.CWSignalCoveringBand(
+        tstart, tend, psr, orbitasini, orbitPeriod, orbitEcc
+    )
 
 
 def twoFDMoffThreshold(
