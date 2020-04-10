@@ -13,7 +13,7 @@ data_parameters = {
     "duration": 100 * 86400,
 }
 tend = data_parameters["tstart"] + data_parameters["duration"]
-mid_time = 0.5 * (data_parameters['tstart'] + tend)
+mid_time = 0.5 * (data_parameters["tstart"] + tend)
 
 # Properties of the signal
 depth = 0.1
@@ -42,9 +42,13 @@ VF0 = VF1 = 1e5
 DeltaF0 = np.sqrt(VF0) * np.sqrt(3) / (np.pi * data_parameters["duration"])
 DeltaF1 = np.sqrt(VF1) * np.sqrt(180) / (np.pi * data_parameters["duration"] ** 2)
 theta_prior = {
-    "F0": {"type": "unif", "lower": signal_parameters['F0'] - DeltaF0 / 2.0, "upper": signal_parameters['F0'] + DeltaF0 / 2},
-    "F1": signal_parameters['F1'],
-    "F2": signal_parameters['F2'],
+    "F0": {
+        "type": "unif",
+        "lower": signal_parameters["F0"] - DeltaF0 / 2.0,
+        "upper": signal_parameters["F0"] + DeltaF0 / 2,
+    },
+    "F1": signal_parameters["F1"],
+    "F2": signal_parameters["F2"],
     "Alpha": {"type": "unif", "lower": 0.1, "upper": 0.2},
     "Delta": {"type": "unif", "lower": 0.1, "upper": 0.2},
     "asini": {"type": "unif", "lower": 5, "upper": 15},
