@@ -778,7 +778,7 @@ class MCMCSearch(core.BaseSearchClass):
         for key in self.theta_keys:
             label = None
             s = self.symbol_dictionary[key]
-            s.replace("_{glitch}", r"_\textrm{glitch}")
+            s.replace("_{glitch}", r"_\mathrm{glitch}")
             u = self.unit_dictionary[key]
             if key in self.transform_dictionary:
                 if "symbol" in self.transform_dictionary[key]:
@@ -883,7 +883,7 @@ class MCMCSearch(core.BaseSearchClass):
                         samples_plt[:, j] = (s - self.minStartTime) / (
                             self.maxStartTime - self.minStartTime
                         )
-                        labels[j] = r"$R_{\textrm{glitch}}$"
+                        labels[j] = r"$R_{\mathrm{glitch}}$"
 
             if type(nstds) is int and "range" not in kwargs:
                 _range = []
@@ -1400,7 +1400,7 @@ class MCMCSearch(core.BaseSearchClass):
                     axes[-1].set_xlabel(r"$\mathcal{B}_\mathrm{S/GL}$")
                 else:
                     axes[-1].set_xlabel(r"$\widetilde{2\mathcal{F}}$")
-                axes[-1].set_ylabel(r"$\textrm{Counts}$")
+                axes[-1].set_ylabel(r"$\mathrm{Counts}$")
                 combined_vals = np.append(twoF_burnin, twoF)
                 if len(combined_vals) > 0:
                     minv = np.min(combined_vals)
@@ -1942,11 +1942,11 @@ class MCMCSearch(core.BaseSearchClass):
 
             ax2.semilogx(min_betas, evidence, "-o")
             ax2.set_ylabel(
-                r"$\int_{\beta_{\textrm{Min}}}^{\beta=1}"
+                r"$\int_{\beta_{\mathrm{Min}}}^{\beta=1}"
                 + r"\langle \log(\mathcal{L})\rangle d\beta$",
                 size=16,
             )
-            ax2.set_xlabel(r"$\beta_{\textrm{min}}$")
+            ax2.set_xlabel(r"$\beta_{\mathrm{min}}$")
             plt.tight_layout()
             fig.savefig(os.path.join(self.outdir, self.label + "_beta_lnl.png"))
 
