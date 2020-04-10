@@ -83,11 +83,6 @@ class Writer(BaseSearchClass):
         self.tbounds = [self.tstart, self.tend]
         logging.info("Using segment boundaries {}".format(self.tbounds))
 
-        if self.sqrtSX and self.noiseSFTs:
-            logging.warning(
-                "sqrtSX and noiseSFTs are both given as input parametetrs. Ignoring sqrtSX..."
-            )
-
     def basic_setup(self):
         self.tstart = int(self.tstart)
         self.duration = int(self.duration)
@@ -378,11 +373,15 @@ transientTau = {:10.0f}\n"""
         cl_mfd.append('--outLabel="{}"'.format(self.label))
         cl_mfd.append("--IFOs={}".format(self.IFOs))
         if self.add_noise:
-            cl_mfd.append(
-                '--noiseSFTs="{}"'.format(self.noiseSFTs)
-                if self.noiseSFTs is not None
-                else '--sqrtSX="{}"'.format(self.sqrtSX)
-            )
+            if self.noiseSFTs is not None:
+                logging.warning(
+                    "noiseSFTs option takes preference over sqrtSX (i.e. sqrtSX option is *ignored*)."
+                )
+                noise_option = '--noiseSFTs="{}"'.format(self.noiseSFTs)
+            else:
+                noise_option = '--sqrtSX="{}"'.format(self.sqrtSX)
+            cl_mfd.append(noise_option)
+
         if self.minStartTime is None:
             cl_mfd.append("--startTime={:0.0f}".format(float(self.tstart)))
         else:
@@ -490,7 +489,7 @@ class BinaryModulatedWriter(Writer):
         super().__init__(
             label=label,
             tstart=tstart,
-            duration=tref,
+            duration=duration,
             tref=tref,
             F0=F0,
             F1=F1,
@@ -617,6 +616,7 @@ class GlitchWriter(Writer):
         Tsft=1800,
         outdir=".",
         sqrtSX=1,
+        noiseSFTs=None,
         Band=4,
         detectors="H1",
         minStartTime=None,
