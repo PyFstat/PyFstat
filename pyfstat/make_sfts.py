@@ -517,17 +517,25 @@ class BinaryModulatedWriter(Writer):
         ]
 
         signal_parameters = {
-                key: self.__dict__.get(key, None) for key in signal_parameter_labels
+            key: self.__dict__.get(key, None) for key in signal_parameter_labels
         }
         self.signal_parameters = {
             key: value for key, value in signal_parameters.items() if value is not None
         }
 
-        signal_parameter_formats = (len(signal_parameter_labels) - 1) * [":1.18e"] + [":s"]
+        signal_parameter_formats = (len(signal_parameter_labels) - 1) * [":1.18e"] + [
+            ":s"
+        ]
         signal_formats = dict(zip(signal_parameter_labels, signal_parameter_formats))
-        
+
         # Apparently notation is not entirely consistent with mfd:
-        map_keys = {"F0": "Freq", "F1": "f1dot", "F2": "f2dot", "phi": "phi0", "tref": "refTime"}
+        map_keys = {
+            "F0": "Freq",
+            "F1": "f1dot",
+            "F2": "f2dot",
+            "phi": "phi0",
+            "tref": "refTime",
+        }
         for key in map_keys.keys():
             self.signal_parameters[map_keys[key]] = self.signal_parameters.pop(key)
             signal_formats[map_keys[key]] = signal_formats.pop(key)
