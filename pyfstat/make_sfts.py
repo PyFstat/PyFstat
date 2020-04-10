@@ -46,6 +46,7 @@ class Writer(BaseSearchClass):
         Tsft=1800,
         outdir=".",
         sqrtSX=1,
+        noiseSFTs=None,
         Band=4,
         detectors="H1",
         minStartTime=None,
@@ -81,6 +82,11 @@ class Writer(BaseSearchClass):
 
         self.tbounds = [self.tstart, self.tend]
         logging.info("Using segment boundaries {}".format(self.tbounds))
+
+        if self.sqrtSX and self.noiseSFTs:
+            logging.warning(
+                "sqrtSX and noiseSFTs are both given as input parametetrs. Ignoring sqrtSX..."
+            )
 
     def basic_setup(self):
         self.tstart = int(self.tstart)
@@ -372,7 +378,11 @@ transientTau = {:10.0f}\n"""
         cl_mfd.append('--outLabel="{}"'.format(self.label))
         cl_mfd.append("--IFOs={}".format(self.IFOs))
         if self.add_noise:
-            cl_mfd.append('--sqrtSX="{}"'.format(self.sqrtSX))
+            cl_mfd.append(
+                '--noiseSFTs="{}"'.format(self.noiseSFTs)
+                if self.noiseSFTs is not None
+                else '--sqrtSX="{}"'.format(self.sqrtSX)
+            )
         if self.minStartTime is None:
             cl_mfd.append("--startTime={:0.0f}".format(float(self.tstart)))
         else:
@@ -449,6 +459,7 @@ class BinaryModulatedWriter(Writer):
         Tsft=1800,
         outdir=".",
         sqrtSX=1,
+        noiseSFTs=None,
         Band=4,
         detectors="H1",
         minStartTime=None,
@@ -477,28 +488,29 @@ class BinaryModulatedWriter(Writer):
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
         super().__init__(
-            label,
-            tstart,
-            duration,
-            tref,
-            F0,
-            F1,
-            F2,
-            Alpha,
-            Delta,
-            h0,
-            cosi,
-            psi,
-            phi,
-            Tsft,
-            outdir,
-            sqrtSX,
-            Band,
-            detectors,
-            minStartTime,
-            maxStartTime,
-            add_noise,
-            transientWindowType,
+            label=label,
+            tstart=tstart,
+            duration=tref,
+            tref=tref,
+            F0=F0,
+            F1=F1,
+            F2=F2,
+            Alpha=Alpha,
+            Delta=Delta,
+            h0=h0,
+            cosi=cosi,
+            psi=psi,
+            phi=phi,
+            Tsft=Tsft,
+            outdir=outdir,
+            sqrtSX=sqrtSX,
+            noiseSFTs=noiseSFTs,
+            Band=Band,
+            detectors=detectors,
+            minStartTime=minStartTime,
+            maxStartTime=maxStartTime,
+            add_noise=add_noise,
+            transientWindowType=transientWindowType,
         )
 
         self.parse_args_consistent_with_mfd()
