@@ -466,7 +466,7 @@ class BinaryModulatedWriter(Writer):
             transient signals
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
-        super.__init__(
+        super().__init__(
             label,
             tstart,
             duration,
@@ -482,7 +482,7 @@ class BinaryModulatedWriter(Writer):
             phi,
             Tsft,
             outdir,
-            sqrtSx,
+            sqrtSX,
             Band,
             detectors,
             minStartTime,
@@ -492,10 +492,6 @@ class BinaryModulatedWriter(Writer):
         )
 
         self.parse_args_consistent_with_mfd()
-
-    def basic_setup(self):
-        super().basic_setup()
-        ## rodrigo self.theta =
 
     def parse_args_consistent_with_mfd(self):
         """ This will allow us to get rid of the get_single_config_* family
@@ -512,7 +508,7 @@ class BinaryModulatedWriter(Writer):
             "cosi",
             "psi",
             "phi",
-            "orbitTP",
+            "orbitTp",
             "orbitArgp",
             "orbitasini",
             "orbitEcc",
@@ -521,19 +517,21 @@ class BinaryModulatedWriter(Writer):
         ]
 
         signal_parameters = {
-            key: self.__dict__.get(key, default=None) for key in signal_parameter_labels
+                key: self.__dict__.get(key, None) for key in signal_parameter_labels
         }
         self.signal_parameters = {
             key: value for key, value in signal_parameters.items() if value is not None
         }
 
+        signal_parameter_formats = (len(signal_parameter_labels) - 1) * [":1.18e"] + [":s"]
+        signal_formats = dict(zip(signal_parameter_labels, signal_parameter_formats))
+        
         # Apparently notation is not entirely consistent with mfd:
-        map_keys = {"F0": "Freq", "F1": "f1dot", "F2": "f2dot", "tref": "refTime"}
+        map_keys = {"F0": "Freq", "F1": "f1dot", "F2": "f2dot", "phi": "phi0", "tref": "refTime"}
         for key in map_keys.keys():
             self.signal_parameters[map_keys[key]] = self.signal_parameters.pop(key)
+            signal_formats[map_keys[key]] = signal_formats.pop(key)
 
-        signal_parameter_formats = 13 * [":1.18e"] + [":s"]
-        signal_formats = dict(zip(signal_parameter_labels, signal_parameter_formats))
         self.signal_formats = {
             key: signal_formats[key] for key in self.signal_parameters.keys()
         }
@@ -548,12 +546,15 @@ class BinaryModulatedWriter(Writer):
         config_line = "[TS{}]\n".format(i)
         config_line += "\n".join(
             [
-                "{key} = {{{fmt}}}".format(key, self.signal_formats[key]).format(
+                "{} = {{{}}}".format(key, self.signal_formats[key]).format(
                     self.signal_parameters[key]
                 )
                 for key in self.signal_parameters.keys()
             ]
         )
+        config_line += "\n"
+
+        return config_line
 
     def make_cff(self):
         """

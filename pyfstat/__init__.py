@@ -6,6 +6,7 @@ from .core import (
 )
 from .make_sfts import (
     Writer,
+    BinaryModulatedWriter,
     GlitchWriter,
     FrequencyModulatedArtifactWriter,
     FrequencyAmplitudeModulatedArtifactWriter,
