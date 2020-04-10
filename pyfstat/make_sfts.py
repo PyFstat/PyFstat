@@ -371,7 +371,8 @@ transientTau = {:10.0f}\n"""
         cl_mfd.append("--outSingleSFT=TRUE")
         cl_mfd.append('--outSFTdir="{}"'.format(self.outdir))
         cl_mfd.append('--outLabel="{}"'.format(self.label))
-        cl_mfd.append("--IFOs={}".format(self.IFOs))
+        if self.noiseSFTs is None:
+            cl_mfd.append("--IFOs={}".format(self.IFOs))
         if self.add_noise:
             if self.noiseSFTs is not None:
                 logging.warning(
