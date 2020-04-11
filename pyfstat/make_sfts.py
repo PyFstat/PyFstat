@@ -47,6 +47,8 @@ class Writer(BaseSearchClass):
         outdir=".",
         sqrtSX=1,
         noiseSFTs=None,
+        SFTWindowType="tukey",
+        SFTWindowBeta=0.01,
         Band=4,
         detectors="H1",
         minStartTime=None,
@@ -371,17 +373,19 @@ transientTau = {:10.0f}\n"""
         cl_mfd.append("--outSingleSFT=TRUE")
         cl_mfd.append('--outSFTdir="{}"'.format(self.outdir))
         cl_mfd.append('--outLabel="{}"'.format(self.label))
-        if self.noiseSFTs is None:
-            cl_mfd.append("--IFOs={}".format(self.IFOs))
         if self.add_noise:
             if self.noiseSFTs is not None:
                 logging.warning(
                     "noiseSFTs option takes preference over sqrtSX (i.e. sqrtSX option is *ignored*)."
                 )
-                noise_option = '--noiseSFTs="{}"'.format(self.noiseSFTs)
+                cl_mfd.append('--noiseSFTs="{}"'.format(self.noiseSFTs))
             else:
-                noise_option = '--sqrtSX="{}"'.format(self.sqrtSX)
-            cl_mfd.append(noise_option)
+                cl_mfd.append("--IFOs={}".format(self.IFOs))
+                cl_mfd.append('--sqrtSX="{}"'.format(self.sqrtSX))
+            cl_mfd.append('--SFTWindowType="{}"'.format(self.SFTWindowType))
+            cl_mfd.append("--SFTWindowBeta={}".format(self.SFTWindowBeta))
+        else:
+            cl_mfd.append("--IFOs={}".format(self.IFOs))
 
         if self.minStartTime is None:
             cl_mfd.append("--startTime={:0.0f}".format(float(self.tstart)))
@@ -460,6 +464,8 @@ class BinaryModulatedWriter(Writer):
         outdir=".",
         sqrtSX=1,
         noiseSFTs=None,
+        SFTWindowType="tukey",
+        SFTWindowBeta=0.01,
         Band=4,
         detectors="H1",
         minStartTime=None,
@@ -504,6 +510,8 @@ class BinaryModulatedWriter(Writer):
             Tsft=Tsft,
             outdir=outdir,
             sqrtSX=sqrtSX,
+            SFTWindowType=SFTWindowType,
+            SFTWindowBeta=SFTWindowBeta,
             noiseSFTs=noiseSFTs,
             Band=Band,
             detectors=detectors,
@@ -618,6 +626,8 @@ class GlitchWriter(Writer):
         outdir=".",
         sqrtSX=1,
         noiseSFTs=None,
+        SFTWindowType="tukey",
+        SFTWindowBeta=0.01,
         Band=4,
         detectors="H1",
         minStartTime=None,
