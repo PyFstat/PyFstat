@@ -217,9 +217,9 @@ or use directly the following BibTeX entry:
   month        = jan,
   year         = 2020,
   publisher    = {Zenodo},
-  doi          = {10.5281/zenodo.3620860},
-  url          = {https://doi.org/10.5281/zenodo.3620860}
-  note         = {\url{https://doi.org/10.5281/zenodo.3620860}}
+  doi          = {10.5281/zenodo.1243930},
+  url          = {https://doi.org/10.5281/zenodo.1243930}
+  note         = {\url{https://doi.org/10.5281/zenodo.1243930}}
 }
 ```
 You can also obtain DOIs for individual versioned releases
