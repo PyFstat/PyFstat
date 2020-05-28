@@ -535,11 +535,8 @@ class BinaryModulatedWriter(Writer):
         signal_formats = dict(zip(signal_parameter_labels, signal_parameter_formats))
 
         # Apparently notation is not entirely consistent with mfd:
-        for key in translate_keys_to_lal.keys():
-            self.signal_parameters[
-                translate_keys_to_lal[key]
-            ] = self.signal_parameters.pop(key)
-            signal_formats[translate_keys_to_lal[key]] = signal_formats.pop(key)
+        self.signal_parameters = translate_keys_to_lal(self.signal_parameters)
+        signal_formats = translate_keys_to_lal(signal_formats)
 
         self.signal_formats = {
             key: signal_formats[key] for key in self.signal_parameters.keys()
