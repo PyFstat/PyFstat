@@ -1754,9 +1754,12 @@ class MCMCSearch(core.BaseSearchClass):
         logging.info("Running CFSv2 to get .loudest file")
         self.write_par()
         params = read_par(label=self.label, outdir=self.outdir)
-        for key in ["Alpha", "Delta", "F0", "F1"]:
+        for key in self.theta_prior:
             if key not in params:
                 params[key] = self.theta_prior[key]
+        
+        
+
         self.loudest_file = os.path.join(self.outdir, self.label + ".loudest")
         cmd = (
             'lalapps_ComputeFstatistic_v2 -a {} -d {} -f {} -s {} -D "{}"'
