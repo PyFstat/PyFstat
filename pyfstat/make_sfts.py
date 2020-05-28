@@ -10,7 +10,13 @@ import pkgutil
 import lal
 import lalpulsar
 
-from pyfstat.core import BaseSearchClass, tqdm, args, predict_fstat
+from pyfstat.core import (
+    BaseSearchClass,
+    tqdm,
+    args,
+    predict_fstat,
+    translate_keys_to_lal,
+)
 import pyfstat.helper_functions as helper_functions
 
 
@@ -529,16 +535,11 @@ class BinaryModulatedWriter(Writer):
         signal_formats = dict(zip(signal_parameter_labels, signal_parameter_formats))
 
         # Apparently notation is not entirely consistent with mfd:
-        map_keys = {
-            "F0": "Freq",
-            "F1": "f1dot",
-            "F2": "f2dot",
-            "phi": "phi0",
-            "tref": "refTime",
-        }
-        for key in map_keys.keys():
-            self.signal_parameters[map_keys[key]] = self.signal_parameters.pop(key)
-            signal_formats[map_keys[key]] = signal_formats.pop(key)
+        for key in translate_keys_to_lal.keys():
+            self.signal_parameters[
+                translate_keys_to_lal[key]
+            ] = self.signal_parameters.pop(key)
+            signal_formats[translate_keys_to_lal[key]] = signal_formats.pop(key)
 
         self.signal_formats = {
             key: signal_formats[key] for key in self.signal_parameters.keys()

@@ -36,6 +36,15 @@ args, tqdm = helper_functions.set_up_command_line_arguments()
 detector_colors = {"h1": "C0", "l1": "C1"}
 
 
+translate_keys_to_lal = {
+    "F0": "Freq",
+    "F1": "f1dot",
+    "F2": "f2dot",
+    "phi": "phi0",
+    "tref": "refTime",
+}
+
+
 class Bunch(object):
     """ Turns dictionary into object with attribute-style access
 
