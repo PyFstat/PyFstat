@@ -16,7 +16,7 @@ import corner
 import dill as pickle
 
 import pyfstat.core as core
-from pyfstat.core import tqdm, args, read_par
+from pyfstat.core import tqdm, args, read_par, translate_keys_to_lal
 import pyfstat.optimal_setup_functions as optimal_setup_functions
 import pyfstat.helper_functions as helper_functions
 
@@ -1757,25 +1757,23 @@ class MCMCSearch(core.BaseSearchClass):
         for key in self.theta_prior:
             if key not in params:
                 params[key] = self.theta_prior[key]
-        
-        
+        params = translate_keys_to_lal(params)
+        signal_parameter_keys = translate_keys_to_lal(self.theta_prior).keys()
 
         self.loudest_file = os.path.join(self.outdir, self.label + ".loudest")
-        cmd = (
-            'lalapps_ComputeFstatistic_v2 -a {} -d {} -f {} -s {} -D "{}"'
-            ' --refTime={} --outputLoudest="{}" '
-            "--minStartTime={} --maxStartTime={}"
+        cmd = "lalapps_ComputeFstatistic_v2 "
+        cmd += (
+            '-D "{}" --outputLoudest="{}" --minStartTime={} --maxStartTime={} '
         ).format(
-            params["Alpha"],
-            params["Delta"],
-            params["F0"],
-            params["F1"],
             self.sftfilepattern,
-            params["tref"],
             self.loudest_file,
             self.minStartTime,
             self.maxStartTime,
         )
+        cmd += " ".join(
+            ["--{0} {1}".format(key, params[key]) for key in signal_parameter_keys]
+        )
+
         if self.earth_ephem is not None:
             cmd += " --ephemEarth='{}'".format(self.earth_ephem)
         if self.sun_ephem is not None:
