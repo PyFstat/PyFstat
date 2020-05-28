@@ -36,7 +36,7 @@ args, tqdm = helper_functions.set_up_command_line_arguments()
 detector_colors = {"h1": "C0", "l1": "C1"}
 
 
-def translate_keys_to_lal(dictionary)
+def translate_keys_to_lal(dictionary):
     """Convert input keys into lal input keys
 
     Input keys are F0, F1, F2, ..., while LAL functions
@@ -64,11 +64,18 @@ def translate_keys_to_lal(dictionary)
         "F2": "f2dot",
         "phi": "phi0",
         "tref": "refTime",
+        "asini": "orbitasini",
+        "period": "orbitPeriod",
+        "tp": "orbitTp",
+        "argp": "orbitArgp",
+        "ecc": "orbitEcc",
     }
 
+    keys_to_translate = [key for key in dictionary.keys() if key in translation]
+
     translated_dict = dictionary.copy()
-    for key in translation:
-        dictionary[translation[key]] = translated_dict.pop(key, "none")
+    for key in keys_to_translate:
+        translated_dict[translation[key]] = translated_dict.pop(key)
     return translated_dict
 
 

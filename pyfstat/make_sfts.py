@@ -434,11 +434,11 @@ class BinaryModulatedWriter(Writer):
         F2=0,
         Alpha=5e-3,
         Delta=6e-2,
-        orbitTp=0.0,
-        orbitArgp=0.0,
-        orbitasini=0.0,
-        orbitEcc=0.0,
-        orbitPeriod=0.0,
+        tp=0.0,
+        argp=0.0,
+        asini=0.0,
+        ecc=0.0,
+        period=0.0,
         h0=0.1,
         cosi=0.0,
         psi=0.0,
@@ -514,11 +514,11 @@ class BinaryModulatedWriter(Writer):
             "cosi",
             "psi",
             "phi",
-            "orbitTp",
-            "orbitArgp",
-            "orbitasini",
-            "orbitEcc",
-            "orbitPeriod",
+            "tp",
+            "argp",
+            "asini",
+            "ecc",
+            "period",
             "transientWindowType",
         ]
 
@@ -534,7 +534,6 @@ class BinaryModulatedWriter(Writer):
         ]
         signal_formats = dict(zip(signal_parameter_labels, signal_parameter_formats))
 
-        # Apparently notation is not entirely consistent with mfd:
         self.signal_parameters = translate_keys_to_lal(self.signal_parameters)
         signal_formats = translate_keys_to_lal(signal_formats)
 
