@@ -420,7 +420,7 @@ transientTau = {:10.0f}\n"""
 
 
 class BinaryModulatedWriter(Writer):
-    """ Instance object for generating SFTs containing binary continuous signals """
+    """ Instance object for generating SFTs containing a continuous wave signal for a source in a binary system """
 
     @helper_functions.initializer
     def __init__(
