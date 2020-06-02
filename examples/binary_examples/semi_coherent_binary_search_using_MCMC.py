@@ -25,7 +25,7 @@ signal_parameters = {
     "tp": mid_time,
     "argp": 0.0,
     "asini": 10.0,
-    "ecc": 1e-3,
+    "ecc": 0,
     "period": 45 * 24 * 3600.0,
     "tref": mid_time,
     "h0": data_parameters["sqrtSX"] / depth,
@@ -43,26 +43,22 @@ VF1 = (np.pi * data_parameters["duration"] ** 2 * DeltaF1) ** 2 * 4 / 45.0
 print("\nV={:1.2e}, VF0={:1.2e}, VF1={:1.2e}\n".format(VF0 * VF1, VF0, VF1))
 
 theta_prior = {
-    "F0": {
-        "type": "unif",
-        "lower": signal_parameters["F0"] - DeltaF0 / 2.0,
-        "upper": signal_parameters["F0"] + DeltaF0 / 2,
-    },
+    "F0": signal_parameters["F0"],
     "F1": signal_parameters["F1"],
     "F2": signal_parameters["F2"],
-    "Alpha": {"type": "unif", "lower": 0.1, "upper": 0.2},
-    "Delta": {"type": "unif", "lower": 0.1, "upper": 0.2},
-    "asini": {"type": "unif", "lower": 5, "upper": 15},
-    "period": {"type": "unif", "lower": 40 * 24 * 3600.0, "upper": 50 * 24 * 3600.0},
-    "ecc": {"type": "unif", "lower": 0.0, "upper": 1e-2},
-    "tp": {"type": "unif", "lower": 0.9 * mid_time, "upper": 1.1 * mid_time,},
-    "argp": {"type": "unif", "lower": 0.0, "upper": 2 * np.pi},
+    "Alpha": signal_parameters["Alpha"],
+    "Delta": signal_parameters["Delta"],
+    "asini": {"type": "unif", "lower": 9.9, "upper": 10.1},
+    "period": {"type": "unif", "lower": 44.99 * 24 * 3600.0, "upper": 45.01 * 24 * 3600.0},
+    "ecc": signal_parameters["ecc"],
+    "tp": {"type": "unif", "lower": 0.999 * mid_time, "upper": 1.001 * mid_time,},
+    "argp": signal_parameters["argp"]
 }
 
-ntemps = 1
+ntemps = 3
 log10beta_min = -1
-nwalkers = 100
-nsteps = [300, 300]
+nwalkers = 150
+nsteps = [300]
 
 mcmc = pyfstat.MCMCSemiCoherentSearch(
     label=label,
