@@ -49,10 +49,14 @@ theta_prior = {
     "Alpha": signal_parameters["Alpha"],
     "Delta": signal_parameters["Delta"],
     "asini": {"type": "unif", "lower": 9.9, "upper": 10.1},
-    "period": {"type": "unif", "lower": 44.99 * 24 * 3600.0, "upper": 45.01 * 24 * 3600.0},
+    "period": {
+        "type": "unif",
+        "lower": 44.99 * 24 * 3600.0,
+        "upper": 45.01 * 24 * 3600.0,
+    },
     "ecc": signal_parameters["ecc"],
     "tp": {"type": "unif", "lower": 0.999 * mid_time, "upper": 1.001 * mid_time,},
-    "argp": signal_parameters["argp"]
+    "argp": signal_parameters["argp"],
 }
 
 ntemps = 3
