@@ -1769,12 +1769,13 @@ class MCMCSearch(core.BaseSearchClass):
         self.loudest_file = os.path.join(self.outdir, self.label + ".loudest")
         cmd = "lalapps_ComputeFstatistic_v2 "
         cmd += (
-            '-D "{}" --outputLoudest="{}" --minStartTime={} --maxStartTime={} '
+            '-D "{}" --outputLoudest="{}" --minStartTime={} --maxStartTime={} --refTime={} '
         ).format(
             self.sftfilepattern,
             self.loudest_file,
             self.minStartTime,
             self.maxStartTime,
+            self.tref,
         )
         cmd += " ".join(
             ["--{0} {1}".format(key, params[key]) for key in signal_parameter_keys]
