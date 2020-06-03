@@ -421,12 +421,18 @@ class BaseSearchClass(object):
         else:
             self.sun_ephem = sun_ephem
 
+    def _set_init_params_dict(self, argsdict):
+        argsdict.pop("self")
+        self.init_params_dict = argsdict
+
     def get_output_file_header(self):
         header = [
             "date: {}".format(str(datetime.now())),
             "user: {}".format(getpass.getuser()),
             "hostname: {}".format(socket.gethostname()),
             "PyFstat: {}".format(helper_functions.get_version_string()),
+            "search: {}".format(type(self).__name__),
+            "parameters: {}".format(self.init_params_dict),
         ]
         lalVCSinfo = lal.VCSInfoString(lalpulsar.PulsarVCSInfoList, 0, "")
         header += filter(None, lalVCSinfo.split("\n"))
@@ -532,6 +538,7 @@ class ComputeFstat(BaseSearchClass):
 
         """
 
+        self._set_init_params_dict(locals())
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.init_computefstatistic_single_point()
         self.output_file_header = self.get_output_file_header()

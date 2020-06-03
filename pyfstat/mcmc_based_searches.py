@@ -156,6 +156,7 @@ class MCMCSearch(core.BaseSearchClass):
         sun_ephem=None,
     ):
 
+        self._set_init_params_dict(locals())
         self.theta_prior = theta_prior
         self.tref = tref
         self.label = label
@@ -2056,6 +2057,7 @@ class MCMCGlitchSearch(MCMCSearch):
         sun_ephem=None,
     ):
 
+        self._set_init_params_dict(locals())
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.output_file_header = self.get_output_file_header()
@@ -2391,6 +2393,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         sun_ephem=None,
     ):
 
+        self._set_init_params_dict(locals())
         self.theta_prior = theta_prior
         self.tref = tref
         self.label = label
@@ -2596,6 +2599,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         sun_ephem=None,
     ):
 
+        self._set_init_params_dict(locals())
         self.theta_prior = theta_prior
         self.tref = tref
         self.label = label

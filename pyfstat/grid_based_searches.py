@@ -95,6 +95,7 @@ class GridSearch(BaseSearchClass):
         with the `clean` option which uses a generator instead.
         """
 
+        self._set_init_params_dict(locals())
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.set_out_file()
@@ -796,6 +797,7 @@ class SliceGridSearch(GridSearch):
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
 
+        self._set_init_params_dict(locals())
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.set_out_file()
@@ -1019,6 +1021,7 @@ class GridGlitchSearch(GridSearch):
         For all other parameters, see pyfstat.ComputeFStat.
         """
 
+        self._set_init_params_dict(locals())
         self.BSGL = False
         self.input_arrays = False
         if tglitchs is None:
@@ -1114,6 +1117,7 @@ class SlidingWindow(GridSearch):
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
 
+        self._set_init_params_dict(locals())
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
         self.set_out_file()
@@ -1251,6 +1255,7 @@ class FrequencySlidingWindow(GridSearch):
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
 
+        self._set_init_params_dict(locals())
         self.transientWindowType = "rect"
         self.nsegs = 1
         self.t0Band = None
@@ -1408,6 +1413,7 @@ class EarthTest(GridSearch):
 
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
+        self._set_init_params_dict(locals())
         self.transientWindowType = None
         self.t0Band = None
         self.tauBand = None
@@ -1636,6 +1642,7 @@ class DMoff_NO_SPIN(GridSearch):
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
 
+        self._set_init_params_dict(locals())
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
 
