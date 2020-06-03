@@ -437,11 +437,14 @@ class BaseSearchClass(object):
             "user: {}".format(getpass.getuser()),
             "hostname: {}".format(socket.gethostname()),
             "PyFstat: {}".format(helper_functions.get_version_string()),
-            "search: {}".format(type(self).__name__),
-            "parameters: ",
-        ] + pretty_init_parameters
+        ]
         lalVCSinfo = lal.VCSInfoString(lalpulsar.PulsarVCSInfoList, 0, "")
         header += filter(None, lalVCSinfo.split("\n"))
+        header += [
+            "search: {}".format(type(self).__name__),
+            "parameters: ",
+        ]
+        header += pretty_init_parameters
         return header
 
 
