@@ -236,6 +236,7 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
     # if there isn't one, this yields HEX[-dirty] (no NUM)
     describe_out, rc = run_command(GITS, ["describe", "--tags", "--dirty",
                                           "--always", "--long",
+                                          "--abbrev=8",
                                           "--match", "%s*" % tag_prefix],
                                    cwd=root)
     # --long was added in git-1.5.5
@@ -249,7 +250,7 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
 
     pieces = {}
     pieces["long"] = full_out
-    pieces["short"] = full_out[:7]  # maybe improved later
+    pieces["short"] = full_out[:8]  # maybe improved later
     pieces["error"] = None
 
     # parse describe_out. It will be like TAG-NUM-gHEX[-dirty] or HEX[-dirty]
@@ -325,15 +326,19 @@ def render_pep440(pieces):
         rendered = pieces["closest-tag"]
         if pieces["distance"] or pieces["dirty"]:
             rendered += plus_or_dot(pieces)
-            rendered += "%d.g%s" % (pieces["distance"], pieces["short"])
+            rendered += "%d.%s" % (pieces["distance"], pieces["short"])
             if pieces["dirty"]:
                 rendered += ".dirty"
+            else:
+                rendered += ".clean"
     else:
         # exception #1
-        rendered = "0+untagged.%d.g%s" % (pieces["distance"],
-                                          pieces["short"])
+        rendered = "0+untagged.%d.%s" % (pieces["distance"],
+                                         pieces["short"])
         if pieces["dirty"]:
             rendered += ".dirty"
+        else:
+            rendered += ".clean"
     return rendered
 
 
@@ -419,6 +424,8 @@ def render_git_describe(pieces):
         rendered = pieces["short"]
     if pieces["dirty"]:
         rendered += "-dirty"
+    else:
+        rendered += "-clean"
     return rendered
 
 
@@ -439,6 +446,8 @@ def render_git_describe_long(pieces):
         rendered = pieces["short"]
     if pieces["dirty"]:
         rendered += "-dirty"
+    else:
+        rendered += "-clean"
     return rendered
 
 
