@@ -1728,32 +1728,38 @@ class MCMCSearch(core.BaseSearchClass):
 
     def write_par(self, method="med"):
         """ Writes a .par of the best-fit params with an estimated std """
-        filename = os.path.join(self.outdir, self.label + ".par")
-        logging.info("Writing {} using the {} method".format(filename, method))
 
-        median_std_d = self.get_median_stds()
-        max_twoF_d, max_twoF = self.get_max_twoF()
+        if method == "med":
+            median_std_d = self.get_median_stds()
+            filename = os.path.join(self.outdir, self.label + "_median.par")
+            logging.info("Writing {} using median parameters.".format(filename))
+        elif method == "twoFmax":
+            max_twoF_d, max_twoF = self.get_max_twoF()
+            filename = os.path.join(self.outdir, self.label + "_max2F.par")
+            logging.info("Writing {} at max twoF = {}.".format(filename, max_twoF))
+        else:
+            raise ValueError("Method '{}' not supported.".format(method))
 
-        logging.info("Writing par file with max twoF = {}".format(max_twoF))
         with open(filename, "w+") as f:
             for hline in self.output_file_header:
                 f.write("# {:s}\n".format(hline))
-            f.write("MaxtwoF = {}\n".format(max_twoF))
+            if method == "twoFmax":
+                f.write("MaxtwoF = {}\n".format(max_twoF))
             f.write("tref = {}\n".format(self.tref))
             if hasattr(self, "theta0_index"):
                 f.write("theta0_index = {}\n".format(self.theta0_idx))
             if method == "med":
                 for key, val in median_std_d.items():
                     f.write("{} = {:1.16e}\n".format(key, val))
-            if method == "twoFmax":
+            elif method == "twoFmax":
                 for key, val in max_twoF_d.items():
                     f.write("{} = {:1.16e}\n".format(key, val))
 
     def generate_loudest(self):
         """ Use lalapps_ComputeFstatistic_v2 to produce a .loudest file """
         logging.info("Running CFSv2 to get .loudest file")
-        self.write_par()
-        params = read_par(label=self.label, outdir=self.outdir)
+        self.write_par(method="twoFmax")
+        params = read_par(label=self.label + "_max2F", outdir=self.outdir)
         for key in self.theta_prior:
             if key not in params:
                 params[key] = self.theta_prior[key]
