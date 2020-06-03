@@ -541,7 +541,7 @@ class BinaryModulatedWriter(Writer):
             key: signal_formats[key] for key in self.signal_parameters.keys()
         }
 
-        if self.signal_parameters["transientWindowType"] is not "none":
+        if self.signal_parameters["transientWindowType"] != "none":
             self.signal_parameters["transientStartTime"] = self.tstart
             self.signal_formats["transientStartTime"] = ":10.0f"
             self.signal_parameters["transientTau"] = self.duration_days * 86400.0
