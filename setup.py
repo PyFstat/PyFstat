@@ -4,50 +4,7 @@ from setuptools import setup, find_packages
 from os import path
 import sys
 import subprocess
-
-
-def write_version_file(version):
-    """ Writes a file with version information to be used at run time
-
-    Parameters
-    ----------
-    version: str
-        A string containing the current version information
-
-    Returns
-    -------
-    version_file: str
-        A path to the version file
-
-    """
-    vstring = version
-    try:
-        git_log = (
-            subprocess.check_output(["git", "log", "-1", "--pretty=%h %ai"])
-            .decode("utf-8")
-            .rstrip("\n")
-        )
-        git_diff = (
-            subprocess.check_output(["git", "diff", "."])
-            + subprocess.check_output(["git", "diff", "--cached", "."])
-        ).decode("utf-8")
-        if git_diff == "":
-            git_status = "CLEAN " + git_log
-        else:
-            git_status = "UNCLEAN " + git_log
-        vstring += " ({})".format(git_status)
-    except Exception as e:
-        print("Unable to obtain git version information, exception: {}".format(e))
-        git_status = ""
-
-    version_file = ".version"
-    if path.isfile(version_file) is False:
-        with open(path.join("pyfstat", version_file), "w+") as f:
-            f.write(vstring + "\n")
-        print("Done", version_file, version, git_status)
-
-    return version_file
-
+import versioneer
 
 # check python version
 min_python_version = (3, 6, 0)  # (major,minor,micro)
@@ -66,12 +23,10 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
-VERSION = "1.4dev"
-version_file = write_version_file(VERSION)
-
 setup(
     name="PyFstat",
-    version=VERSION,
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     author="Gregory Ashton, David Keitel, Reinhard Prix",
     author_email="gregory.ashton@ligo.org",
     license="MIT",
@@ -84,7 +39,6 @@ setup(
         "pyfstat": [
             "pyCUDAkernels/cudaTransientFstatExpWindow.cu",
             "pyCUDAkernels/cudaTransientFstatRectWindow.cu",
-            version_file,
         ]
     },
     python_requires=">=%s.%s.%s" % min_python_version[:3],
@@ -99,5 +53,6 @@ setup(
         "peakutils",
         "pathos",
         "lalsuite",
+        "versioneer",
     ],
 )

@@ -426,7 +426,7 @@ class BaseSearchClass(object):
             "date: {}".format(str(datetime.now())),
             "user: {}".format(getpass.getuser()),
             "hostname: {}".format(socket.gethostname()),
-            "PyFstat: {}".format(helper_functions.get_version_information()),
+            "PyFstat: {}".format(helper_functions.get_version_string()),
         ]
         lalVCSinfo = lal.VCSInfoString(lalpulsar.PulsarVCSInfoList, 0, "")
         header += filter(None, lalVCSinfo.split("\n"))
