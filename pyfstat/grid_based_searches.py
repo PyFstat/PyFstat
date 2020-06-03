@@ -97,6 +97,7 @@ class GridSearch(BaseSearchClass):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
+        self._dump_init_params(locals(), outdir)
         self.set_out_file()
         self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         self.input_keys = ["minStartTime", "maxStartTime"] + self.search_keys
@@ -798,6 +799,7 @@ class SliceGridSearch(GridSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
+        self._dump_init_params(locals(), outdir)
         self.set_out_file()
         self.search_keys = ["F0", "F1", "Alpha", "Delta"]
         self.input_keys = ["minStartTime", "maxStartTime"] + self.search_keys
@@ -1116,6 +1118,7 @@ class SlidingWindow(GridSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
+        self._dump_init_params(locals(), outdir)
         self.set_out_file()
         self.nsegs = 1
 
@@ -1259,6 +1262,7 @@ class FrequencySlidingWindow(GridSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
+        self._dump_init_params(locals(), outdir)
         self.set_out_file()
         self.F1s = [F1]
         self.F2s = [F2]
@@ -1415,6 +1419,7 @@ class EarthTest(GridSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
+        self._dump_init_params(locals(), outdir)
         self.nsegs = 1
         self.F0s = [F0]
         self.F1s = [F1]
@@ -1638,6 +1643,7 @@ class DMoff_NO_SPIN(GridSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
+        self._dump_init_params(locals(), outdir)
 
         if type(par) == dict:
             self.par = par

@@ -283,6 +283,26 @@ class BaseSearchClass(object):
         )
         logging.getLogger().addHandler(fh)
 
+    def _dump_init_params(self, args, outdir="."):
+        """ Dump the class name and __init__() arguments to a text file
+
+        Parameters
+        ----------
+        args : dict
+            Dictionary of key-val pairs.
+        outdir : str
+            Output directory.
+
+        """
+        classname = type(self).__name__
+        dumpfile = os.path.join(outdir,"init_dump.txt")
+        logging.info("Dumping {}.__init__() arguments to file {}".format(classname,dumpfile))
+        with open(dumpfile, "w+") as f:
+            f.write("{}\n".format(classname))
+            for key, val in args.items():
+                if not key=='self':
+                    f.write("{} = {}\n".format(key, val))
+
     def _shift_matrix(self, n, dT):
         """ Generate the shift matrix
 

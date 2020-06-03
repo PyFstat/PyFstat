@@ -183,6 +183,7 @@ class MCMCSearch(core.BaseSearchClass):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
+        self._dump_init_params(locals(), outdir)
         self.output_file_header = self.get_output_file_header()
         self._add_log_file(self.output_file_header)
         logging.info("Set-up MCMC search for model {}".format(self.label))
@@ -2058,6 +2059,7 @@ class MCMCGlitchSearch(MCMCSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
+        self._dump_init_params(locals(), outdir)
         self.output_file_header = self.get_output_file_header()
         self._add_log_file(self.output_file_header)
         logging.info(
@@ -2417,6 +2419,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
+        self._dump_init_params(locals(), outdir)
         self.output_file_header = self.get_output_file_header()
         self._add_log_file(self.output_file_header)
         logging.info(
@@ -2622,6 +2625,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
+        self._dump_init_params(locals(), outdir)
         self.output_file_header = self.get_output_file_header()
         self._add_log_file(self.output_file_header)
         logging.info(
