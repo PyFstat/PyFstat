@@ -4,6 +4,7 @@
 import os
 import logging
 import copy
+from pprint import pformat
 
 import glob
 import numpy as np
@@ -426,14 +427,19 @@ class BaseSearchClass(object):
         self.init_params_dict = argsdict
 
     def get_output_file_header(self):
+
+        pretty_init_parameters = pformat(
+            self.init_params_dict, indent=2, sort_dicts=True, width=74
+        ).split("\n")
+
         header = [
             "date: {}".format(str(datetime.now())),
             "user: {}".format(getpass.getuser()),
             "hostname: {}".format(socket.gethostname()),
             "PyFstat: {}".format(helper_functions.get_version_string()),
             "search: {}".format(type(self).__name__),
-            "parameters: {}".format(self.init_params_dict),
-        ]
+            "parameters: ",
+        ] + pretty_init_parameters
         lalVCSinfo = lal.VCSInfoString(lalpulsar.PulsarVCSInfoList, 0, "")
         header += filter(None, lalVCSinfo.split("\n"))
         return header
