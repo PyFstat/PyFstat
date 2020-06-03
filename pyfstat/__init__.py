@@ -28,7 +28,6 @@ from .grid_based_searches import (
     TransientGridSearch,
 )
 
-
-from .helper_functions import get_version_information
-
-__version__ = get_version_information()
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
