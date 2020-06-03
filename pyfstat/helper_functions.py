@@ -15,6 +15,7 @@ from scipy.stats.distributions import ncx2
 import numpy as np
 import lal
 import lalpulsar
+from ._version import get_versions
 
 # workaround for matplotlib on X-less remote logins
 if "DISPLAY" in os.environ:
@@ -395,6 +396,10 @@ def match_commandlines(cl1, cl2, be_strict_about_full_executable_path=False):
         cl2s[0] = os.path.basename(cl2s[0])
     unmatched = np.setxor1d(cl1s, cl2s)
     return len(unmatched) == 0
+
+
+def get_version_string():
+    return get_versions()["version"]
 
 
 def get_doppler_params_output_format(keys):
