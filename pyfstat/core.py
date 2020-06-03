@@ -36,6 +36,49 @@ args, tqdm = helper_functions.set_up_command_line_arguments()
 detector_colors = {"h1": "C0", "l1": "C1"}
 
 
+def translate_keys_to_lal(dictionary):
+    """Convert input keys into lal input keys
+
+    Input keys are F0, F1, F2, ..., while LAL functions
+    prefer to use Freq, f1dot, f2dot, ....
+
+    Since lal keys are only used to call for lal routines,
+    it makes sense to have this function defined this way
+    so it can be called on the fly.
+
+    Parameters
+    ----------
+    dictionary: dict
+        Dictionary to translate. A copy will be made (an returned)
+        before translation takes place.
+
+    Returns
+    -------
+    translated_dict: dict
+        Copy of `dictìonary` with new keys according to lal.
+    """
+
+    translation = {
+        "F0": "Freq",
+        "F1": "f1dot",
+        "F2": "f2dot",
+        "phi": "phi0",
+        "tref": "refTime",
+        "asini": "orbitasini",
+        "period": "orbitPeriod",
+        "tp": "orbitTp",
+        "argp": "orbitArgp",
+        "ecc": "orbitEcc",
+    }
+
+    keys_to_translate = [key for key in dictionary.keys() if key in translation]
+
+    translated_dict = dictionary.copy()
+    for key in keys_to_translate:
+        translated_dict[translation[key]] = translated_dict.pop(key)
+    return translated_dict
+
+
 class Bunch(object):
     """ Turns dictionary into object with attribute-style access
 

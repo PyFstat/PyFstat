@@ -60,28 +60,31 @@ class Test(unittest.TestCase):
 
 class Writer(Test):
     label = "TestWriter"
+    tested_class = pyfstat.Writer
 
     def test_make_cff(self):
-        Writer = pyfstat.Writer(self.label, outdir=self.outdir)
+        Writer = self.tested_class(self.label, outdir=self.outdir)
         Writer.make_cff()
         self.assertTrue(
             os.path.isfile(os.path.join(".", self.outdir, self.label + ".cff"))
         )
 
     def test_run_makefakedata(self):
-        Writer = pyfstat.Writer(self.label, outdir=self.outdir, duration=3600)
+        Writer = self.tested_class(self.label, outdir=self.outdir, duration=3600)
         Writer.make_cff()
         Writer.run_makefakedata()
         self.assertTrue(
             os.path.isfile(
                 os.path.join(
-                    ".", self.outdir, "H-2_H1_1800SFT_TestWriter-700000000-3600.sft"
+                    ".",
+                    self.outdir,
+                    "H-2_H1_1800SFT_{}-700000000-3600.sft".format(self.label),
                 )
             )
         )
 
     def test_makefakedata_usecached(self):
-        Writer = pyfstat.Writer(self.label, outdir=self.outdir, duration=3600)
+        Writer = self.tested_class(self.label, outdir=self.outdir, duration=3600)
         if os.path.isfile(Writer.sftfilepath):
             os.remove(Writer.sftfilepath)
         # first run: make everything from scratch
@@ -99,6 +102,11 @@ class Writer(Test):
         Writer.run_makefakedata()
         time_third = os.path.getmtime(Writer.sftfilepath)
         self.assertFalse(time_first == time_third)
+
+
+class BinaryModulatedWriter(Writer):
+    label = "TestBinaryModulatedWriter"
+    tested_class = pyfstat.BinaryModulatedWriter
 
 
 class Bunch(Test):
