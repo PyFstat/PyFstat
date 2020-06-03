@@ -429,7 +429,7 @@ class BaseSearchClass(object):
     def get_output_file_header(self):
 
         pretty_init_parameters = pformat(
-            self.init_params_dict, indent=2, sort_dicts=True, width=74
+            self.init_params_dict, indent=2, width=74
         ).split("\n")
 
         header = [
