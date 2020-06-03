@@ -201,11 +201,11 @@ Here's what you need to know:
 
 ## Citing this work
 
-If you use `PyFstat` in a publication we would appreciate if you cite the
-original paper introducing the code
-([ADS page can be found here](http://adsabs.harvard.edu/abs/2018arXiv180205450A))
-and a DOI for the software itself.
-If you'd like to cite the package in general,
+If you use `PyFstat` in a publication we would appreciate if you cite both a DOI for the software itself (see below)
+and the original paper introducing the code: Ashton&Prix 2018 [[inspire](https://inspirehep.net/literature/1655200)] [[ADS](https://ui.adsabs.harvard.edu/abs/2018PhRvD..97j3020A/)].
+If you use the transient module, please also cite: Keitel&Ashton 2018 [[inspire](https://inspirehep.net/literature/1673205)] [[ADS](https://ui.adsabs.harvard.edu/abs/2018CQGra..35t5003K/)].
+
+If you'd like to cite the `PyFstat` package in general,
 please refer to the [version-independent Zenodo listing](https://doi.org/10.5281/zenodo.1243930)
 or use directly the following BibTeX entry:
 ```
@@ -223,4 +223,4 @@ or use directly the following BibTeX entry:
 }
 ```
 You can also obtain DOIs for individual versioned releases
-from [Zenodo](https://doi.org/10.5281/zenodo.1243930).
+from the right sidebar at [Zenodo](https://doi.org/10.5281/zenodo.1243930).
