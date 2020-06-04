@@ -70,17 +70,21 @@ class Writer(Test):
         )
 
     def test_run_makefakedata(self):
-        Writer = self.tested_class(self.label, outdir=self.outdir, duration=3600)
+        duration = 3600
+        Writer = self.tested_class(self.label, outdir=self.outdir, duration=duration)
         Writer.make_cff()
         Writer.run_makefakedata()
-        self.assertTrue(
-            os.path.isfile(
-                os.path.join(
-                    ".",
-                    self.outdir,
-                    "H-2_H1_1800SFT_{}-700000000-3600.sft".format(self.label),
-                )
-            )
+        expected_outfile = os.path.join(
+            ".",
+            self.outdir,
+            "H-2_H1_1800SFT_{}-{}-{}.sft".format(
+                self.label, self.minStartTime, duration
+            ),
+        )
+        self.assertTrue(os.path.isfile(expected_outfile))
+        cl_validate = "lalapps_SFTvalidate " + expected_outfile
+        pyfstat.helper_functions.run_commandline(
+            cl_validate, raise_error=True, return_output=False
         )
 
     def test_makefakedata_usecached(self):
