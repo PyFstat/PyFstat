@@ -426,3 +426,15 @@ def get_doppler_params_output_format(keys):
         if k in doppler_keys:
             fmt += [CFSv2_fmt]
     return fmt
+
+
+def read_txt_file_with_header(f, comments="#"):
+    # wrapper to np.genfromtxt with smarter header handling
+    Nhead = 0
+    for line in open(f, "r"):
+        if not line.startswith(comments):
+            break
+        Nhead += 1
+    data = np.genfromtxt(f, skip_header=Nhead - 1, names=True, comments=comments)
+
+    return data
