@@ -288,31 +288,33 @@ def run_commandline(cl, log_level=20, raise_error=True, return_output=True):
     cl: str
         Command to run
     log_level: int
-        See https://docs.python.org/2/library/logging.html#logging-levels,
+        See https://docs.python.org/library/logging.html#logging-levels
         default is '20' (INFO)
 
     """
 
     logging.log(log_level, "Now executing: " + cl)
-    if return_output:
-        try:
+    try:
+        if return_output:
             out = subprocess.check_output(
                 cl,  # what to run
                 stderr=subprocess.STDOUT,  # catch errors
                 shell=True,  # proper environment etc
                 universal_newlines=True,  # properly display linebreaks in error/output printing
             )
-        except subprocess.CalledProcessError as e:
-            logging.log(log_level, "Execution failed: {}".format(e.output))
-            if raise_error:
-                raise
-            else:
-                out = 0
-        os.system("\n")
+        else:
+            process = subprocess.check_call(cl, shell=True)
+    except subprocess.CalledProcessError as e:
+        logging.log(40, "Execution failed: {}".format(e))
+        if e.output:
+            logging.log(40, e.output)
+        if raise_error:
+            raise
+        elif return_output:
+            out = 0
+    os.system("\n")
+    if return_output:
         return out
-    else:
-        process = subprocess.Popen(cl, shell=True)
-        process.communicate()
 
 
 def convert_array_to_gsl_matrix(array):
