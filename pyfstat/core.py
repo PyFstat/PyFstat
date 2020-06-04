@@ -431,6 +431,13 @@ class BaseSearchClass(object):
         pretty_init_parameters = pformat(
             self.init_params_dict, indent=2, width=74
         ).split("\n")
+        pretty_init_parameters = (
+            ["{"]
+            + [pretty_init_parameters[0].replace("{", " ")]
+            + pretty_init_parameters[1:-2]
+            + [pretty_init_parameters[-1].rstrip("}")]
+            + ["}"]
+        )
 
         header = [
             "date: {}".format(str(datetime.now())),
