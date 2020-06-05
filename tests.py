@@ -45,6 +45,7 @@ class Test(unittest.TestCase):
             duration=self.duration,
             Band=4,
             detectors=self.detectors,
+            randSeed=None,
         )
         Writer.make_data()
         self.sftfilepath = Writer.sftfilepath

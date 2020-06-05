@@ -52,6 +52,7 @@ class Writer(BaseSearchClass):
         maxStartTime=None,
         add_noise=True,
         transientWindowType="none",
+        randSeed=None,
     ):
         """
         Parameters
@@ -392,6 +393,8 @@ transientTau = {:10.0f}\n"""
             cl_mfd.append('--ephemEarth="{}"'.format(earth_ephem))
         if sun_ephem is not None:
             cl_mfd.append('--ephemSun="{}"'.format(sun_ephem))
+        if self.randSeed:
+            cl_mfd.append("--randSeed={}".format(self.randSeed))
 
         cl_mfd = " ".join(cl_mfd)
         check_ok = self.check_cached_data_okay_to_use(cl_mfd)
@@ -452,6 +455,7 @@ class BinaryModulatedWriter(Writer):
         maxStartTime=None,
         add_noise=True,
         transientWindowType="none",
+        randSeed=None,
     ):
         """
         Parameters
@@ -607,6 +611,7 @@ class GlitchWriter(Writer):
         maxStartTime=None,
         add_noise=True,
         transientWindowType="rect",
+        randSeed=None,
     ):
         """
         Parameters
@@ -729,6 +734,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         minStartTime=None,
         maxStartTime=None,
         detectors="H1",
+        randSeed=None,
     ):
         """
         Parameters
@@ -957,6 +963,8 @@ class FrequencyModulatedArtifactWriter(Writer):
             cl_mfd.append('--ephemEarth="{}"'.format(earth_ephem))
         if sun_ephem is not None:
             cl_mfd.append('--ephemSun="{}"'.format(sun_ephem))
+        if self.randSeed:
+            cl_mfd.append("--randSeed={}".format(self.randSeed))
         cl_mfd = " ".join(cl_mfd)
         helper_functions.run_commandline(cl_mfd, log_level=10)
 
