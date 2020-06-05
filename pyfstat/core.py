@@ -480,6 +480,7 @@ class ComputeFstat(BaseSearchClass):
         injectSqrtSX=None,
         assumeSqrtSX=None,
         SSBprec=None,
+        RngMedWindow=None,
         tCWFstatMapVersion="lal",
         cudaDeviceName=None,
         computeAtoms=False,
@@ -536,6 +537,8 @@ class ComputeFstat(BaseSearchClass):
         SSBprec : int
             Flag to set the SSB calculation: 0=Newtonian, 1=relativistic,
             2=relativisitic optimised, 3=DMoff, 4=NO_SPIN
+        RngMedWindow : int
+           Running-Median window size (number of bins)
         tCWFstatMapVersion: str
             Choose between standard 'lal' implementation,
             'pycuda' for gpu, and some others for devel/debug.
@@ -666,7 +669,7 @@ class ComputeFstat(BaseSearchClass):
         logging.info("Initialising ephems")
         ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
 
-        logging.info("Initialising FstatInput")
+        logging.info("Initialising Fstat arguments")
         dFreq = 0
         self.whatToCompute = lalpulsar.FSTATQ_2F
         if self.transientWindowType or self.computeAtoms:
@@ -680,9 +683,12 @@ class ComputeFstat(BaseSearchClass):
         else:
             FstatOAs.SSBprec = lalpulsar.FstatOptionalArgsDefaults.SSBprec
         FstatOAs.Dterms = lalpulsar.FstatOptionalArgsDefaults.Dterms
-        FstatOAs.runningMedianWindow = (
-            lalpulsar.FstatOptionalArgsDefaults.runningMedianWindow
-        )
+        if self.RngMedWindow:
+            FstatOAs.runningMedianWindow = self.RngMedWindow
+        else:
+            FstatOAs.runningMedianWindow = (
+                lalpulsar.FstatOptionalArgsDefaults.runningMedianWindow
+            )
         FstatOAs.FstatMethod = lalpulsar.FstatOptionalArgsDefaults.FstatMethod
         if self.assumeSqrtSX is None:
             FstatOAs.assumeSqrtSX = lalpulsar.FstatOptionalArgsDefaults.assumeSqrtSX
@@ -764,6 +770,7 @@ class ComputeFstat(BaseSearchClass):
                 "{} and {}, est. from SFTs".format(self.minCoverFreq, self.maxCoverFreq)
             )
 
+        logging.info("Initialising FstatInput")
         self.FstatInput = lalpulsar.CreateFstatInput(
             SFTCatalog, self.minCoverFreq, self.maxCoverFreq, dFreq, ephems, FstatOAs
         )
@@ -1285,6 +1292,7 @@ class SemiCoherentSearch(ComputeFstat):
         injectSources=None,
         assumeSqrtSX=None,
         SSBprec=None,
+        RngMedWindow=None,
         earth_ephem=None,
         sun_ephem=None,
     ):
@@ -1458,6 +1466,7 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         assumeSqrtSX=None,
         detectors=None,
         SSBprec=None,
+        RngMedWindow=None,
         injectSources=None,
         earth_ephem=None,
         sun_ephem=None,
