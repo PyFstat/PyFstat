@@ -486,6 +486,12 @@ class ComputeFstat(BaseSearchClass):
         computeAtoms=False,
         earth_ephem=None,
         sun_ephem=None,
+        estimate_covering_band=False,
+        F0s=None,
+        F1s=None,
+        F2s=None,
+        Alphas=None,
+        Deltas=None,
     ):
         """
         Parameters
@@ -554,12 +560,16 @@ class ComputeFstat(BaseSearchClass):
             Sun ephemeris file path
             if None, will check standard sources as per
             helper_functions.get_ephemeris_files()
-
+        estimate_covering_band : bool
+            whether to estimate covering band from search range
+        F0s, F1s, F2s, Alphas, Deltas: list
+            currently only used in initialisation for estimate_covering_band case;
+            for actual search, they are passed separately later
         """
 
         self._set_init_params_dict(locals())
         self.set_ephemeris_files(earth_ephem, sun_ephem)
-        self.init_computefstatistic_single_point()
+        self.init_computefstatistic()
         self.output_file_header = self.get_output_file_header()
 
     def _get_SFTCatalog(self):
@@ -661,8 +671,8 @@ class ComputeFstat(BaseSearchClass):
 
         return SFTCatalog
 
-    def init_computefstatistic_single_point(self):
-        """ Initilisation step of run_computefstatistic for a single point """
+    def init_computefstatistic(self):
+        """ Initialisation step of run_computefstatistic for a single point or search range """
 
         SFTCatalog = self._get_SFTCatalog()
 
@@ -753,7 +763,19 @@ class ComputeFstat(BaseSearchClass):
             ] = self.injectSqrtSX
         else:
             FstatOAs.injectSqrtSX = lalpulsar.FstatOptionalArgsDefaults.injectSqrtSX
-        if self.minCoverFreq is None or self.maxCoverFreq is None:
+        if self.estimate_covering_band:
+            self.estimate_min_max_CoverFreq(SFTCatalog, ephems)
+            logging.info(
+                "Min/max cover freqs not provided, using "
+                "{} and {} as estimated from search range.".format(
+                    self.minCoverFreq, self.maxCoverFreq
+                )
+            )
+        elif (self.minCoverFreq is None) != (self.maxCoverFreq is None):
+            raise ValueError(
+                "Please use either both or none of [minCoverFreq,maxCoverFreq]."
+            )
+        elif self.minCoverFreq is None or self.maxCoverFreq is None:
             if self.sftfilepattern is None:
                 raise ValueError(
                     "If sftfilepattern==None, you must set minCoverFreq and"
@@ -887,6 +909,63 @@ class ComputeFstat(BaseSearchClass):
             ) = tcw.init_transient_fstat_map_features(
                 self.tCWFstatMapVersion == "pycuda", self.cudaDeviceName
             )
+
+    def estimate_min_max_CoverFreq(self, catalog, ephems):
+        # extract spanned spin-range at reference-time from the template-bank
+        Tsft = 1.0 / catalog.data[0].header.deltaF
+        startTime = catalog.data[0].header.epoch
+        endTime = catalog.data[-1].header.epoch + Tsft
+        searchRegion = lalpulsar.DopplerRegion()
+        searchRegion.skyRegionString = lalpulsar.SkySquare2String(
+            self.Alphas[0],
+            self.Deltas[0],
+            self.Alphas[1] - self.Alphas[0] if len(self.Alphas) == 3 else 0.0,
+            self.Deltas[1] - self.Deltas[0] if len(self.Deltas) == 3 else 0.0,
+        )
+        searchRegion.refTime = self.tref
+        searchRegion.fkdot[0] = self.F0s[0]
+        searchRegion.fkdot[1] = self.F1s[0]
+        searchRegion.fkdot[2] = self.F2s[0]
+        searchRegion.fkdot[3] = 0
+        searchRegion.fkdotBand[0] = (
+            self.F0s[1] - self.F0s[0] if len(self.F0s) == 3 else 0.0
+        )
+        searchRegion.fkdotBand[1] = (
+            self.F1s[1] - self.F1s[0] if len(self.F1s) == 3 else 0.0
+        )
+        searchRegion.fkdotBand[2] = (
+            self.F2s[1] - self.F2s[0] if len(self.F2s) == 3 else 0.0
+        )
+        searchRegion.fkdotBand[3] = 0
+        scanInit = lalpulsar.DopplerFullScanInit()
+        scanInit.searchRegion = searchRegion
+        scanInit.stepSizes = lalpulsar.PulsarDopplerParams()
+        scanInit.stepSizes.refTime = self.tref
+        scanInit.stepSizes.Alpha = self.Alphas[-1] if len(self.Alphas) == 3 else 0.001
+        scanInit.stepSizes.Delta = self.Deltas[-1] if len(self.Deltas) == 3 else 0.001
+        scanInit.stepSizes.fkdot = np.array([0, 0, 0, 0, 0, 0, 0])
+        scanInit.stepSizes.fkdot[0] = self.F0s[-1] if len(self.F0s) == 3 else 0.0
+        scanInit.stepSizes.fkdot[1] = self.F1s[-1] if len(self.F1s) == 3 else 0.0
+        scanInit.stepSizes.fkdot[2] = self.F2s[-1] if len(self.F2s) == 3 else 0.0
+        scanInit.startTime = startTime
+        scanInit.Tspan = float(endTime - startTime)
+        scanState = lalpulsar.InitDopplerFullScan(scanInit)
+        spinRangeRef = lalpulsar.PulsarSpinRange()
+        lalpulsar.GetDopplerSpinRange(spinRangeRef, scanState)
+        self.minCoverFreq, self.maxCoverFreq = helper_functions.get_covering_band(
+            tref=self.tref,
+            tstart=startTime,
+            tend=endTime,
+            F0=spinRangeRef.fkdot[0],
+            F1=spinRangeRef.fkdot[1],
+            F2=spinRangeRef.fkdot[2],
+            F0band=spinRangeRef.fkdotBand[0],
+            F1band=spinRangeRef.fkdotBand[1],
+            F2band=spinRangeRef.fkdotBand[2],
+            orbitasini=0.0,
+            orbitPeriod=0.0,
+            orbitEcc=0.0,
+        )
 
     def get_fullycoherent_twoF(
         self,
@@ -1027,7 +1106,7 @@ class ComputeFstat(BaseSearchClass):
         if not self.transientWindowType:
             # still call the transient-Fstat-map function, but using the full range
             self.transientWindowType = "none"
-            self.init_computefstatistic_single_point()
+            self.init_computefstatistic()
         for tau in taus:
             detstat = self.get_fullycoherent_twoF(
                 tstart=tstart,
@@ -1155,7 +1234,7 @@ class ComputeFstat(BaseSearchClass):
             detectors = self.detectors
             for d in self.detector_names:
                 self.detectors = d
-                self.init_computefstatistic_single_point()
+                self.init_computefstatistic()
                 taus, twoFs = self.calculate_twoF_cumulative(**kwargs)
                 ax.plot(
                     taus / 86400.0,
@@ -1295,6 +1374,12 @@ class SemiCoherentSearch(ComputeFstat):
         RngMedWindow=None,
         earth_ephem=None,
         sun_ephem=None,
+        estimate_covering_band=None,
+        F0s=None,
+        F1s=None,
+        F2s=None,
+        Alphas=None,
+        Deltas=None,
     ):
         """
         Parameters
@@ -1319,7 +1404,7 @@ class SemiCoherentSearch(ComputeFstat):
         self.tauBand = None
         self.tCWFstatMapVersion = "lal"
         self.cudaDeviceName = None
-        self.init_computefstatistic_single_point()
+        self.init_computefstatistic()
         self.init_semicoherent_parameters()
 
     def init_semicoherent_parameters(self):
@@ -1470,6 +1555,12 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         injectSources=None,
         earth_ephem=None,
         sun_ephem=None,
+        estimate_covering_band=None,
+        F0s=None,
+        F1s=None,
+        F2s=None,
+        Alphas=None,
+        Deltas=None,
     ):
         """
         Parameters
@@ -1500,7 +1591,7 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         self.tCWFstatMapVersion = "lal"
         self.cudaDeviceName = None
         self.binary = False
-        self.init_computefstatistic_single_point()
+        self.init_computefstatistic()
 
     def get_semicoherent_nglitch_twoF(self, F0, F1, F2, Alpha, Delta, *args):
         """ Returns the semi-coherent glitch summed twoF """
