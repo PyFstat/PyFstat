@@ -603,6 +603,61 @@ class GridSearch(Test):
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
 
+    def test_grid_search_against_CFSv2(self):
+        search = pyfstat.GridSearch(
+            "grid_search",
+            self.outdir,
+            self.sftfilepath,
+            F0s=self.F0s,
+            F1s=[0],
+            F2s=[0],
+            Alphas=[0],
+            Deltas=[0],
+            tref=self.tref,
+            estimate_covering_band=True,
+        )
+        search.run()
+        self.assertTrue(os.path.isfile(search.out_file))
+        pyfstat_out = pyfstat.helper_functions.read_txt_file_with_header(
+            search.out_file, comments="#"
+        )
+        CFSv2_out_file = os.path.join(self.outdir, "CFSv2_Fstat_out.txt")
+        CFSv2_loudest_file = os.path.join(self.outdir, "CFSv2_Fstat_loudest.txt")
+        cl_CFSv2 = []
+        cl_CFSv2.append("lalapps_ComputeFstatistic_v2")
+        cl_CFSv2.append("--Alpha 0 --Delta 0")
+        cl_CFSv2.append("--AlphaBand 0 --DeltaBand 0")
+        cl_CFSv2.append("--Freq {}".format(self.F0s[0]))
+        cl_CFSv2.append("--f1dot 0 --f1dotBand 0 --df1dot 0")
+        cl_CFSv2.append("--FreqBand {}".format(self.F0s[1] - self.F0s[0]))
+        cl_CFSv2.append("--dFreq {}".format(self.F0s[2]))
+        cl_CFSv2.append("--DataFiles " + self.sftfilepath)
+        cl_CFSv2.append("--refTime {}".format(self.tref))
+        earth_ephem, sun_ephem = pyfstat.helper_functions.get_ephemeris_files()
+        if earth_ephem is not None:
+            cl_CFSv2.append('--ephemEarth="{}"'.format(earth_ephem))
+        if sun_ephem is not None:
+            cl_CFSv2.append('--ephemSun="{}"'.format(sun_ephem))
+        cl_CFSv2.append("--outputFstat " + CFSv2_out_file)
+        cl_CFSv2.append("--outputLoudest " + CFSv2_loudest_file)
+        # to match ComputeFstat default (and hence PyFstat) defaults on older
+        # lalapps_CFSv2 versions, set the RngMedWindow manually:
+        cl_CFSv2.append("--RngMedWindow=101")
+        cl_CFSv2 = " ".join(cl_CFSv2)
+        pyfstat.helper_functions.run_commandline(cl_CFSv2)
+        self.assertTrue(os.path.isfile(CFSv2_out_file))
+        self.assertTrue(os.path.isfile(CFSv2_loudest_file))
+        CFSv2_out = pyfstat.helper_functions.read_txt_file_with_header(
+            CFSv2_out_file, comments="%"
+        )
+        self.assertTrue(
+            len(np.atleast_1d(CFSv2_out["2F"]))
+            == len(np.atleast_1d(pyfstat_out["twoF"]))
+        )
+        self.assertTrue(np.max(np.abs(CFSv2_out["freq"] - pyfstat_out["F0"]) < 1e-16))
+        self.assertTrue(np.max(np.abs(CFSv2_out["2F"] - pyfstat_out["twoF"]) < 1))
+        self.assertTrue(np.max(CFSv2_out["2F"]) == np.max(pyfstat_out["twoF"]))
+
     def test_semicoherent_grid_search(self):
         search = pyfstat.GridSearch(
             "sc_grid_search",
