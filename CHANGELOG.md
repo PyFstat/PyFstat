@@ -12,6 +12,11 @@
 - use versioneer for versioning
 - various minor bug fixes and code cleanup
 - now fully python3.8 compatible
+- new options estimate_covering_band and RngMedWindow for search classes
+- new option randSeed for Writer class
+- extended get_covering_band() to deal with fkdot bands
+- added 1to1 test against CFSv2
+- improved error handling for lal programs
 
 ## 1.3 [21/01/2020]
 
