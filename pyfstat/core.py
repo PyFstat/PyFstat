@@ -4,6 +4,7 @@
 import os
 import logging
 import copy
+from pprint import pformat
 
 import glob
 import numpy as np
@@ -421,7 +422,23 @@ class BaseSearchClass(object):
         else:
             self.sun_ephem = sun_ephem
 
+    def _set_init_params_dict(self, argsdict):
+        argsdict.pop("self")
+        self.init_params_dict = argsdict
+
     def get_output_file_header(self):
+
+        pretty_init_parameters = pformat(
+            self.init_params_dict, indent=2, width=74
+        ).split("\n")
+        pretty_init_parameters = (
+            ["{"]
+            + [pretty_init_parameters[0].replace("{", " ")]
+            + pretty_init_parameters[1:-2]
+            + [pretty_init_parameters[-1].rstrip("}")]
+            + ["}"]
+        )
+
         header = [
             "date: {}".format(str(datetime.now())),
             "user: {}".format(getpass.getuser()),
@@ -430,6 +447,11 @@ class BaseSearchClass(object):
         ]
         lalVCSinfo = lal.VCSInfoString(lalpulsar.PulsarVCSInfoList, 0, "")
         header += filter(None, lalVCSinfo.split("\n"))
+        header += [
+            "search: {}".format(type(self).__name__),
+            "parameters: ",
+        ]
+        header += pretty_init_parameters
         return header
 
 
@@ -532,6 +554,7 @@ class ComputeFstat(BaseSearchClass):
 
         """
 
+        self._set_init_params_dict(locals())
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.init_computefstatistic_single_point()
         self.output_file_header = self.get_output_file_header()
