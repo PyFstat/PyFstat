@@ -68,6 +68,8 @@ class MCMCSearch(core.BaseSearchClass):
         If true, use the BSGL statistic
     SSBPrec: int, optional
         SSBPrec (SSB precision) to use when calling ComputeFstat
+    RngMedWindow: int, optional
+        Running-Median window size (number of bins) for ComputeFstat
     minCoverFreq, maxCoverFreq: float, optional
         Minimum and maximum instantaneous frequency which will be covered
         over the SFT time span as passed to CreateFstatInput
@@ -146,6 +148,7 @@ class MCMCSearch(core.BaseSearchClass):
         binary=False,
         BSGL=False,
         SSBprec=None,
+        RngMedWindow=None,
         minCoverFreq=None,
         maxCoverFreq=None,
         injectSources=None,
@@ -174,6 +177,7 @@ class MCMCSearch(core.BaseSearchClass):
         self.binary = binary
         self.BSGL = BSGL
         self.SSBprec = SSBprec
+        self.RngMedWindow = RngMedWindow
         self.minCoverFreq = minCoverFreq
         self.maxCoverFreq = maxCoverFreq
         self.injectSources = injectSources
@@ -233,6 +237,7 @@ class MCMCSearch(core.BaseSearchClass):
             injectSources=self.injectSources,
             assumeSqrtSX=self.assumeSqrtSX,
             SSBprec=self.SSBprec,
+            RngMedWindow=self.RngMedWindow,
             tCWFstatMapVersion=self.tCWFstatMapVersion,
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
@@ -2046,6 +2051,7 @@ class MCMCGlitchSearch(MCMCSearch):
         binary=False,
         BSGL=False,
         SSBprec=None,
+        RngMedWindow=None,
         minCoverFreq=None,
         maxCoverFreq=None,
         injectSources=None,
@@ -2352,6 +2358,8 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         If true, use the BSGL statistic
     SSBPrec: int, optional
         SSBPrec (SSB precision) to use when calling ComputeFstat
+    RngMedWindow: int, optional
+        Running-Median window size (number of bins) for ComputeFstat
     minCoverFreq, maxCoverFreq: float, optional
         Minimum and maximum instantaneous frequency which will be covered
         over the SFT time span as passed to CreateFstatInput
@@ -2384,6 +2392,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         binary=False,
         BSGL=False,
         SSBprec=None,
+        RngMedWindow=None,
         minCoverFreq=None,
         maxCoverFreq=None,
         injectSources=None,
@@ -2411,6 +2420,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         self.binary = binary
         self.BSGL = BSGL
         self.SSBprec = SSBprec
+        self.RngMedWindow = RngMedWindow
         self.minCoverFreq = minCoverFreq
         self.maxCoverFreq = maxCoverFreq
         self.injectSources = injectSources
@@ -2548,6 +2558,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         If true, use the BSGL statistic
     SSBPrec: int, optional
         SSBPrec (SSB precision) to use when calling ComputeFstat
+    RngMedWindow: int, optional
+        Running-Median window size (number of bins) for ComputeFstat
     minCoverFreq, maxCoverFreq: float, optional
         Minimum and maximum instantaneous frequency which will be covered
         over the SFT time span as passed to CreateFstatInput
@@ -2591,6 +2603,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         binary=False,
         BSGL=False,
         SSBprec=None,
+        RngMedWindow=None,
         minCoverFreq=None,
         maxCoverFreq=None,
         injectSources=None,
@@ -2617,6 +2630,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         self.binary = binary
         self.BSGL = BSGL
         self.SSBprec = SSBprec
+        self.RngMedWindow = RngMedWindow
         self.minCoverFreq = minCoverFreq
         self.maxCoverFreq = maxCoverFreq
         self.injectSources = injectSources
