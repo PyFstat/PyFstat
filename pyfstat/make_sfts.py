@@ -45,10 +45,10 @@ class Writer(BaseSearchClass):
         phi=0,
         Tsft=1800,
         outdir=".",
-        sqrtSX=1,
+        sqrtSX=1.,
         noiseSFTs=None,
-        SFTWindowType="tukey",
-        SFTWindowBeta=0.01,
+        SFTWindowType="rectangular",
+        SFTWindowBeta=0.0,
         Band=4,
         detectors="H1",
         minStartTime=None,
@@ -374,14 +374,13 @@ transientTau = {:10.0f}\n"""
         cl_mfd.append('--outSFTdir="{}"'.format(self.outdir))
         cl_mfd.append('--outLabel="{}"'.format(self.label))
         if self.add_noise:
-            if self.noiseSFTs is not None:
-                logging.warning(
-                    "noiseSFTs option takes preference over sqrtSX (i.e. sqrtSX option is *ignored*)."
-                )
-                cl_mfd.append('--noiseSFTs="{}"'.format(self.noiseSFTs))
-            else:
+            cl_mfd.append('--noiseSFTs="{}"'.format(self.noiseSFTs))
+
+            if self.noiseSFTs is None:
                 cl_mfd.append("--IFOs={}".format(self.IFOs))
+            if self.sqrtSX is not None:
                 cl_mfd.append('--sqrtSX="{}"'.format(self.sqrtSX))
+
             cl_mfd.append('--SFTWindowType="{}"'.format(self.SFTWindowType))
             cl_mfd.append("--SFTWindowBeta={}".format(self.SFTWindowBeta))
         else:
@@ -462,10 +461,10 @@ class BinaryModulatedWriter(Writer):
         phi=0,
         Tsft=1800,
         outdir=".",
-        sqrtSX=1,
+        sqrtSX=1.,
         noiseSFTs=None,
-        SFTWindowType="tukey",
-        SFTWindowBeta=0.01,
+        SFTWindowType="rectangular",
+        SFTWindowBeta=0.0,
         Band=4,
         detectors="H1",
         minStartTime=None,
@@ -624,10 +623,10 @@ class GlitchWriter(Writer):
         phi=0,
         Tsft=1800,
         outdir=".",
-        sqrtSX=1,
+        sqrtSX=1.,
         noiseSFTs=None,
-        SFTWindowType="tukey",
-        SFTWindowBeta=0.01,
+        SFTWindowType="rectangular",
+        SFTWindowBeta=0.0,
         Band=4,
         detectors="H1",
         minStartTime=None,
