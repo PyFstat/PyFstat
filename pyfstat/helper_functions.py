@@ -444,11 +444,12 @@ def get_doppler_params_output_format(keys):
 
 def read_txt_file_with_header(f, comments="#"):
     # wrapper to np.genfromtxt with smarter header handling
-    Nhead = 0
-    for line in open(f, "r"):
-        if not line.startswith(comments):
-            break
-        Nhead += 1
+    with open(f, "r") as f_opened:
+        Nhead = 0
+        for line in f_opened:
+            if not line.startswith(comments):
+                break
+            Nhead += 1
     data = np.genfromtxt(f, skip_header=Nhead - 1, names=True, comments=comments)
 
     return data
