@@ -30,6 +30,8 @@ class Test(unittest.TestCase):
         self.Delta = 1.2
         self.tref = self.minStartTime
         self.detectors = "H1"
+        self.SFTWindowType = "tukey"
+        self.SFTWindowBeta = 1.0
         Writer = pyfstat.Writer(
             F0=self.F0,
             F1=self.F1,
@@ -45,6 +47,8 @@ class Test(unittest.TestCase):
             duration=self.duration,
             Band=4,
             detectors=self.detectors,
+            SFTWindowType=self.SFTWindowType,
+            SFTWindowBeta=self.SFTWindowBeta,
             randSeed=None,
         )
         Writer.make_data()
