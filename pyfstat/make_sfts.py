@@ -45,7 +45,7 @@ class Writer(BaseSearchClass):
         phi=0,
         Tsft=1800,
         outdir=".",
-        sqrtSX=0.0,
+        sqrtSX=1,
         noiseSFTs=None,
         SFTWindowType=None,
         SFTWindowBeta=0.0,
@@ -382,12 +382,12 @@ transientTau = {:10.0f}\n"""
                 cl_mfd.append("--IFOs={}".format(self.IFOs))
 
             cl_mfd.append('--sqrtSX="{}"'.format(self.sqrtSX))
-            if self.SFTWindowType is not None:
-                cl_mfd.append('--SFTWindowType="{}"'.format(self.SFTWindowType))
-                cl_mfd.append("--SFTWindowBeta={}".format(self.SFTWindowBeta))
         else:
             cl_mfd.append("--IFOs={}".format(self.IFOs))
 
+        if self.SFTWindowType is not None:
+            cl_mfd.append('--SFTWindowType="{}"'.format(self.SFTWindowType))
+            cl_mfd.append("--SFTWindowBeta={}".format(self.SFTWindowBeta))
         if self.minStartTime is None:
             cl_mfd.append("--startTime={:0.0f}".format(float(self.tstart)))
         else:
@@ -463,7 +463,7 @@ class BinaryModulatedWriter(Writer):
         phi=0,
         Tsft=1800,
         outdir=".",
-        sqrtSX=0.0,
+        sqrtSX=1,
         noiseSFTs=None,
         SFTWindowType=None,
         SFTWindowBeta=0.0,
@@ -625,7 +625,7 @@ class GlitchWriter(Writer):
         phi=0,
         Tsft=1800,
         outdir=".",
-        sqrtSX=0.0,
+        sqrtSX=1,
         noiseSFTs=None,
         SFTWindowType=None,
         SFTWindowBeta=0.0,
