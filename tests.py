@@ -113,11 +113,18 @@ class Writer(Test):
         self.assertFalse(time_first == time_third)
 
     def test_noise_sfts(self):
-        duration = 100 * 1800
+        duration_Tsft = 100
+        Tsft = 1800
         Writer = self.tested_class(
-            self.label, outdir=self.outdir, h0=100, duration=duration
+            self.label,
+            outdir=self.outdir,
+            h0=1000,
+            duration=duration_Tsft * Tsft,
+            Tsft=Tsft,
         )
-        sftfilepattern = os.path.join(Writer.outdir, "*{}*sft".format(Writer.label))
+        sftfilepattern = os.path.join(
+            Writer.outdir, "*{}*{}*sft".format(duration_Tsft, Writer.label)
+        )
 
         # create sfts with a strong signal in them
         Writer.make_data()
@@ -137,11 +144,17 @@ class Writer(Test):
 
         # create noise sfts and then inject a strong signal
         noise_label = "NoiseWriter"
-        NoiseWriter = self.tested_class(noise_label, outdir=self.outdir, h0=0)
+        NoiseWriter = self.tested_class(
+            noise_label,
+            outdir=self.outdir,
+            h0=0,
+            duration=duration_Tsft * Tsft,
+            Tsft=Tsft,
+        )
         NoiseWriter.make_data()
 
         Writer.noiseSFTs = os.path.join(
-            NoiseWriter.outdir, "*{}*sft".format(NoiseWriter.label)
+            NoiseWriter.outdir, "*{}*{}*sft".format(duration_Tsft, NoiseWriter.label)
         )
         Writer.make_data()
 
