@@ -112,6 +112,54 @@ class Writer(Test):
         time_third = os.path.getmtime(Writer.sftfilepath)
         self.assertFalse(time_first == time_third)
 
+    def test_noise_sfts(self):
+        duration = 100 * 1800
+        Writer = self.tested_class(
+            self.label, outdir=self.outdir, h0=100, duration=duration
+        )
+        sftfilepattern = os.path.join(Writer.outdir, "*{}*sft".format(Writer.label))
+
+        # create sfts with a strong signal in them
+        Writer.make_data()
+
+        coherent_search = pyfstat.ComputeFstat(
+            tref=Writer.tref, sftfilepattern=sftfilepattern
+        )
+        FS_1 = coherent_search.get_fullycoherent_twoF(
+            Writer.tstart,
+            Writer.tend,
+            Writer.F0,
+            Writer.F1,
+            Writer.F2,
+            Writer.Alpha,
+            Writer.Delta,
+        )
+
+        # create noise sfts and then inject a strong signal
+        noise_label = "NoiseWriter"
+        NoiseWriter = self.tested_class(noise_label, outdir=self.outdir, h0=0)
+        NoiseWriter.make_data()
+
+        Writer.noiseSFTs = os.path.join(
+            NoiseWriter.outdir, "*{}*sft".format(NoiseWriter.label)
+        )
+        Writer.make_data()
+
+        coherent_search = pyfstat.ComputeFstat(
+            tref=Writer.tref, sftfilepattern=sftfilepattern
+        )
+        FS_2 = coherent_search.get_fullycoherent_twoF(
+            Writer.tstart,
+            Writer.tend,
+            Writer.F0,
+            Writer.F1,
+            Writer.F2,
+            Writer.Alpha,
+            Writer.Delta,
+        )
+
+        self.assertTrue(np.abs(FS_1 - FS_2) / FS_1 < 0.3)
+
 
 class BinaryModulatedWriter(Writer):
     label = "TestBinaryModulatedWriter"
