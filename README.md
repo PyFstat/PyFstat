@@ -186,7 +186,7 @@ Maintainers:
 * Greg Ashton
 * David Keitel
 
-Other past contributors:
+Other contributors:
 * Reinhard Prix
 * Rodrigo Tenorio
 * Karl Wette
