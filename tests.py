@@ -115,63 +115,91 @@ class Writer(Test):
     def test_noise_sfts(self):
         duration_Tsft = 100
         Tsft = 1800
-        Writer = self.tested_class(
-            self.label,
-            outdir=self.outdir,
-            h0=1000,
-            duration=duration_Tsft * Tsft,
-            Tsft=Tsft,
-        )
-        sftfilepattern = os.path.join(
-            Writer.outdir, "*{}*{}*sft".format(duration_Tsft, Writer.label)
-        )
+        h0 = 1000
+        randSeed = 69420
+        window = "tukey"
+        window_beta = 0.01
 
         # create sfts with a strong signal in them
-        Writer.make_data()
+        noise_and_signal_writer = self.tested_class(
+            "test_noiseSFTs_noise_and_signal",
+            outdir=self.outdir,
+            h0=h0,
+            duration=duration_Tsft * Tsft,
+            Tsft=Tsft,
+            randSeed=randSeed,
+            SFTWindowType=window,
+            SFTWindowBeta=window_beta,
+        )
+        sftfilepattern = os.path.join(
+            noise_and_signal_writer.outdir,
+            "*{}*{}*sft".format(duration_Tsft, noise_and_signal_writer.label),
+        )
 
+        noise_and_signal_writer.make_data()
+
+        # compute Fstat
         coherent_search = pyfstat.ComputeFstat(
-            tref=Writer.tref, sftfilepattern=sftfilepattern
+            tref=noise_and_signal_writer.tref, sftfilepattern=sftfilepattern
         )
         FS_1 = coherent_search.get_fullycoherent_twoF(
-            Writer.tstart,
-            Writer.tend,
-            Writer.F0,
-            Writer.F1,
-            Writer.F2,
-            Writer.Alpha,
-            Writer.Delta,
+            noise_and_signal_writer.tstart,
+            noise_and_signal_writer.tend,
+            noise_and_signal_writer.F0,
+            noise_and_signal_writer.F1,
+            noise_and_signal_writer.F2,
+            noise_and_signal_writer.Alpha,
+            noise_and_signal_writer.Delta,
         )
 
         # create noise sfts and then inject a strong signal
-        noise_label = "NoiseWriter"
-        NoiseWriter = self.tested_class(
-            noise_label,
+        noise_writer = self.tested_class(
+            "test_noiseSFTs_only_noise",
             outdir=self.outdir,
             h0=0,
             duration=duration_Tsft * Tsft,
             Tsft=Tsft,
+            randSeed=randSeed,
+            SFTWindowType=window,
+            SFTWindowBeta=window_beta,
         )
-        NoiseWriter.make_data()
+        noise_writer.make_data()
 
-        Writer.noiseSFTs = os.path.join(
-            NoiseWriter.outdir, "*{}*{}*sft".format(duration_Tsft, NoiseWriter.label)
+        add_signal_writer = self.tested_class(
+            "test_noiseSFTs_add_signal",
+            outdir=self.outdir,
+            h0=h0,
+            duration=duration_Tsft * Tsft,
+            Tsft=Tsft,
+            sqrtSX=0,
+            SFTWindowType=window,
+            SFTWindowBeta=window_beta,
+            noiseSFTs=os.path.join(
+                noise_writer.outdir,
+                "*{}*{}*sft".format(duration_Tsft, noise_writer.label),
+            ),
         )
-        Writer.make_data()
+        sftfilepattern = os.path.join(
+            add_signal_writer.outdir,
+            "*{}*{}*sft".format(duration_Tsft, add_signal_writer.label),
+        )
+        add_signal_writer.make_data()
 
+        # compute Fstat
         coherent_search = pyfstat.ComputeFstat(
-            tref=Writer.tref, sftfilepattern=sftfilepattern
+            tref=add_signal_writer.tref, sftfilepattern=sftfilepattern
         )
         FS_2 = coherent_search.get_fullycoherent_twoF(
-            Writer.tstart,
-            Writer.tend,
-            Writer.F0,
-            Writer.F1,
-            Writer.F2,
-            Writer.Alpha,
-            Writer.Delta,
+            add_signal_writer.tstart,
+            add_signal_writer.tend,
+            add_signal_writer.F0,
+            add_signal_writer.F1,
+            add_signal_writer.F2,
+            add_signal_writer.Alpha,
+            add_signal_writer.Delta,
         )
 
-        self.assertTrue(np.abs(FS_1 - FS_2) / FS_1 < 0.3)
+        self.assertTrue(np.abs(FS_1 - FS_2) / FS_1 < 0.01)
 
 
 class BinaryModulatedWriter(Writer):

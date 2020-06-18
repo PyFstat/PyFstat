@@ -375,12 +375,23 @@ transientTau = {:10.0f}\n"""
         cl_mfd.append('--outLabel="{}"'.format(self.label))
 
         if self.add_noise:
-
-            if self.noiseSFTs is not None:
+            if self.noiseSFTs is not None and self.SFTWindowType is None:
+                raise ValueError(
+                    "SFTWindowType is required when using noiseSFTs. "
+                    "Please, make sure you understand the window function used "
+                    "to produce noiseSFTs."
+                )
+            elif self.noiseSFTs is not None:
                 cl_mfd.append('--noiseSFTs="{}"'.format(self.noiseSFTs))
             else:
                 cl_mfd.append("--IFOs={}".format(self.IFOs))
 
+            logging.warning(
+                "Gaussian noise *is added* by default due to "
+                "consistency issues. Please, make sure sqrtSX value is "
+                "consistent with what you intend to do (0=No Gaussian noise). "
+                "Currently, sqrtSX={}".format(self.sqrtSX)
+            )
             cl_mfd.append('--sqrtSX="{}"'.format(self.sqrtSX))
         else:
             cl_mfd.append("--IFOs={}".format(self.IFOs))
