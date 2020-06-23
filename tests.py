@@ -68,7 +68,7 @@ class Writer(Test):
     tested_class = pyfstat.Writer
 
     def test_make_cff(self):
-        Writer = self.tested_class(self.label, outdir=self.outdir)
+        Writer = self.tested_class(label=self.label, outdir=self.outdir)
         Writer.make_cff()
         self.assertTrue(
             os.path.isfile(os.path.join(".", self.outdir, self.label + ".cff"))
@@ -76,7 +76,9 @@ class Writer(Test):
 
     def test_run_makefakedata(self):
         duration = 3600
-        Writer = self.tested_class(self.label, outdir=self.outdir, duration=duration)
+        Writer = self.tested_class(
+            label=self.label, outdir=self.outdir, duration=duration
+        )
         Writer.make_cff()
         Writer.run_makefakedata()
         expected_outfile = os.path.join(
@@ -93,7 +95,7 @@ class Writer(Test):
         )
 
     def test_makefakedata_usecached(self):
-        Writer = self.tested_class(self.label, outdir=self.outdir, duration=3600)
+        Writer = self.tested_class(label=self.label, outdir=self.outdir, duration=3600)
         if os.path.isfile(Writer.sftfilepath):
             os.remove(Writer.sftfilepath)
         # first run: make everything from scratch
@@ -122,7 +124,7 @@ class Writer(Test):
 
         # create sfts with a strong signal in them
         noise_and_signal_writer = self.tested_class(
-            "test_noiseSFTs_noise_and_signal",
+            label="test_noiseSFTs_noise_and_signal",
             outdir=self.outdir,
             h0=h0,
             duration=duration_Tsft * Tsft,
@@ -133,7 +135,7 @@ class Writer(Test):
         )
         sftfilepattern = os.path.join(
             noise_and_signal_writer.outdir,
-            "*{}*{}*sft".format(duration_Tsft, noise_and_signal_writer.label),
+            "*{}*{}-*sft".format(duration_Tsft, noise_and_signal_writer.label),
         )
 
         noise_and_signal_writer.make_data()
@@ -154,7 +156,7 @@ class Writer(Test):
 
         # create noise sfts and then inject a strong signal
         noise_writer = self.tested_class(
-            "test_noiseSFTs_only_noise",
+            label="test_noiseSFTs_only_noise",
             outdir=self.outdir,
             h0=0,
             duration=duration_Tsft * Tsft,
@@ -166,7 +168,7 @@ class Writer(Test):
         noise_writer.make_data()
 
         add_signal_writer = self.tested_class(
-            "test_noiseSFTs_add_signal",
+            label="test_noiseSFTs_add_signal",
             outdir=self.outdir,
             h0=h0,
             duration=duration_Tsft * Tsft,
@@ -176,12 +178,12 @@ class Writer(Test):
             SFTWindowBeta=window_beta,
             noiseSFTs=os.path.join(
                 noise_writer.outdir,
-                "*{}*{}*sft".format(duration_Tsft, noise_writer.label),
+                "*{}*{}-*sft".format(duration_Tsft, noise_writer.label),
             ),
         )
         sftfilepattern = os.path.join(
             add_signal_writer.outdir,
-            "*{}*{}*sft".format(duration_Tsft, add_signal_writer.label),
+            "*{}*{}-*sft".format(duration_Tsft, add_signal_writer.label),
         )
         add_signal_writer.make_data()
 
@@ -281,8 +283,6 @@ class BaseSearchClass(Test):
 
 
 class ComputeFstat(Test):
-    label = "TestComputeFstat"
-
     def test_run_computefstatistic_single_point_injectSqrtSX(self):
 
         search_H1L1 = pyfstat.ComputeFstat(
@@ -307,7 +307,7 @@ class ComputeFstat(Test):
 
     def test_run_computefstatistic_single_point_with_SFTs(self):
         Writer = pyfstat.Writer(
-            self.label,
+            label="TestComputeFstatSinglePoint",
             outdir=self.outdir,
             duration=86400,
             h0=1,
@@ -317,7 +317,7 @@ class ComputeFstat(Test):
         Writer.make_data()
         predicted_FS = Writer.predict_fstat()
 
-        sftfilepattern = os.path.join(Writer.outdir, "*{}*sft".format(Writer.label))
+        sftfilepattern = os.path.join(Writer.outdir, "*{}-*sft".format(Writer.label))
 
         search_H1L1 = pyfstat.ComputeFstat(
             tref=Writer.tref, sftfilepattern=sftfilepattern,
@@ -352,75 +352,10 @@ class ComputeFstat(Test):
         )
         self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
 
-    def test_run_computefstatistic_single_point_no_noise(self):
-        Writer = pyfstat.Writer(
-            self.label,
-            outdir=self.outdir,
-            add_noise=False,
-            duration=86400,
-            h0=1,
-            sqrtSX=1,
-        )
-        Writer.make_data()
-        predicted_FS = Writer.predict_fstat()
-
-        search = pyfstat.ComputeFstat(
-            tref=Writer.tref,
-            assumeSqrtSX=1,
-            sftfilepattern=os.path.join(Writer.outdir, "*{}*sft".format(Writer.label)),
-        )
-        FS = search.get_fullycoherent_twoF(
-            Writer.tstart,
-            Writer.tend,
-            Writer.F0,
-            Writer.F1,
-            Writer.F2,
-            Writer.Alpha,
-            Writer.Delta,
-        )
-        self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
-
-    def test_run_computefstatistic_single_point_no_noise_manual_ephem(self):
-        Writer = pyfstat.Writer(
-            self.label,
-            outdir=self.outdir,
-            add_noise=False,
-            duration=86400,
-            h0=1,
-            sqrtSX=1,
-        )
-        Writer.make_data()
-        predicted_FS = Writer.predict_fstat()
-
-        # let's get the default ephemeris files (to be sure their paths exist)
-        # and then pretend we pass them manually, to test those class options
-        (
-            earth_ephem_default,
-            sun_ephem_default,
-        ) = pyfstat.helper_functions.get_ephemeris_files()
-
-        search = pyfstat.ComputeFstat(
-            tref=Writer.tref,
-            assumeSqrtSX=1,
-            sftfilepattern=os.path.join(Writer.outdir, "*" + Writer.label + "*sft"),
-            earth_ephem=earth_ephem_default,
-            sun_ephem=sun_ephem_default,
-        )
-        FS = search.get_fullycoherent_twoF(
-            Writer.tstart,
-            Writer.tend,
-            Writer.F0,
-            Writer.F1,
-            Writer.F2,
-            Writer.Alpha,
-            Writer.Delta,
-        )
-        self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
-
-    def test_injectSources(self):
+    def test_run_computefstatistic_single_point_injectSources(self):
         # This seems to be writing with a signal...
         Writer = pyfstat.Writer(
-            self.label,
+            label="TestComputeFstatSinglePointInjectSources",
             outdir=self.outdir,
             add_noise=False,
             duration=86400,
@@ -479,74 +414,144 @@ class ComputeFstat(Test):
         self.assertTrue(FS_from_dict == FS_from_file)
 
 
+class ComputeFstatNoNoise(Test):
+    label = "TestComputeFstatSinglePointNoNoise"
+
+    def setup_method(self, method):
+        self.Writer = pyfstat.Writer(
+            label=self.label,
+            outdir=self.outdir,
+            add_noise=False,
+            duration=86400,
+            h0=1,
+            sqrtSX=0,
+        )
+        self.Writer.make_data()
+        self.predicted_FS = self.Writer.predict_fstat(assumeSqrtSX=1)
+
+    def test_run_computefstatistic_single_point_no_noise(self):
+
+        search = pyfstat.ComputeFstat(
+            tref=self.Writer.tref,
+            assumeSqrtSX=1,
+            sftfilepattern=os.path.join(
+                self.Writer.outdir, "*{}-*sft".format(self.Writer.label)
+            ),
+        )
+        FS = search.get_fullycoherent_twoF(
+            self.Writer.tstart,
+            self.Writer.tend,
+            self.Writer.F0,
+            self.Writer.F1,
+            self.Writer.F2,
+            self.Writer.Alpha,
+            self.Writer.Delta,
+        )
+        self.assertTrue(np.abs(self.predicted_FS - FS) / FS < 0.3)
+
+    def test_run_computefstatistic_single_point_no_noise_manual_ephem(self):
+
+        # let's get the default ephemeris files (to be sure their paths exist)
+        # and then pretend we pass them manually, to test those class options
+        (
+            earth_ephem_default,
+            sun_ephem_default,
+        ) = pyfstat.helper_functions.get_ephemeris_files()
+
+        search = pyfstat.ComputeFstat(
+            tref=self.Writer.tref,
+            assumeSqrtSX=1,
+            sftfilepattern=os.path.join(
+                self.Writer.outdir, "*{}-*.sft".format(self.Writer.label)
+            ),
+            earth_ephem=earth_ephem_default,
+            sun_ephem=sun_ephem_default,
+        )
+        FS = search.get_fullycoherent_twoF(
+            self.Writer.tstart,
+            self.Writer.tend,
+            self.Writer.F0,
+            self.Writer.F1,
+            self.Writer.F2,
+            self.Writer.Alpha,
+            self.Writer.Delta,
+        )
+        self.assertTrue(np.abs(self.predicted_FS - FS) / FS < 0.3)
+
+
 class SemiCoherentSearch(Test):
     label = "TestSemiCoherentSearch"
 
-    def test_get_semicoherent_twoF(self):
-        duration = 10 * 86400
-        Writer = pyfstat.Writer(
-            self.label, outdir=self.outdir, duration=duration, h0=1, sqrtSX=1
+    def setup_method(self, method):
+        self.Writer = pyfstat.Writer(
+            label=self.label,
+            outdir=self.outdir,
+            duration=10 * 86400,
+            h0=1,
+            sqrtSX=1,
+            detectors="H1,L1",
         )
-        Writer.make_data()
+        self.Writer.make_data()
+
+    def test_get_semicoherent_twoF(self):
 
         search = pyfstat.SemiCoherentSearch(
             label=self.label,
             outdir=self.outdir,
             nsegs=2,
-            sftfilepattern=os.path.join(Writer.outdir, "*{}*sft".format(Writer.label)),
-            tref=Writer.tref,
-            minStartTime=Writer.tstart,
-            maxStartTime=Writer.tend,
+            sftfilepattern=os.path.join(
+                self.Writer.outdir, "*{}-*sft".format(self.Writer.label)
+            ),
+            tref=self.Writer.tref,
+            minStartTime=self.Writer.tstart,
+            maxStartTime=self.Writer.tend,
         )
 
         search.get_semicoherent_twoF(
-            Writer.F0,
-            Writer.F1,
-            Writer.F2,
-            Writer.Alpha,
-            Writer.Delta,
+            self.Writer.F0,
+            self.Writer.F1,
+            self.Writer.F2,
+            self.Writer.Alpha,
+            self.Writer.Delta,
             record_segments=True,
         )
 
         # Compute the predicted semi-coherent Fstat
-        minStartTime = Writer.tstart
-        maxStartTime = Writer.tend
+        minStartTime = self.Writer.tstart
+        maxStartTime = self.Writer.tend
 
-        Writer.maxStartTime = minStartTime + duration / 2.0
-        FSA = Writer.predict_fstat()
+        self.Writer.maxStartTime = minStartTime + self.Writer.duration / 2.0
+        FSA = self.Writer.predict_fstat()
 
-        Writer.tstart = minStartTime + duration / 2.0
-        Writer.tend = maxStartTime
-        FSB = Writer.predict_fstat()
+        self.Writer.tstart = minStartTime + self.Writer.duration / 2.0
+        self.Writer.tend = maxStartTime
+        FSB = self.Writer.predict_fstat()
 
         FSs = np.array([FSA, FSB])
         diffs = (np.array(search.detStat_per_segment) - FSs) / FSs
         self.assertTrue(np.all(diffs < 0.3))
 
     def test_get_semicoherent_BSGL(self):
-        duration = 10 * 86400
-        Writer = pyfstat.Writer(
-            self.label, outdir=self.outdir, duration=duration, detectors="H1,L1"
-        )
-        Writer.make_data()
 
         search = pyfstat.SemiCoherentSearch(
             label=self.label,
             outdir=self.outdir,
             nsegs=2,
-            sftfilepattern=os.path.join(Writer.outdir, "*{}*sft".format(Writer.label)),
-            tref=Writer.tref,
-            minStartTime=Writer.tstart,
-            maxStartTime=Writer.tend,
+            sftfilepattern=os.path.join(
+                self.Writer.outdir, "*{}-*sft".format(self.Writer.label)
+            ),
+            tref=self.Writer.tref,
+            minStartTime=self.Writer.tstart,
+            maxStartTime=self.Writer.tend,
             BSGL=True,
         )
 
         BSGL = search.get_semicoherent_twoF(
-            Writer.F0,
-            Writer.F1,
-            Writer.F2,
-            Writer.Alpha,
-            Writer.Delta,
+            self.Writer.F0,
+            self.Writer.F1,
+            self.Writer.F2,
+            self.Writer.Alpha,
+            self.Writer.Delta,
             record_segments=True,
         )
         self.assertTrue(BSGL > 0)
@@ -576,7 +581,7 @@ class SemiCoherentGlitchSearch(Test):
         search = pyfstat.SemiCoherentGlitchSearch(
             label=self.label,
             outdir=self.outdir,
-            sftfilepattern=os.path.join(Writer.outdir, "*{}*sft".format(Writer.label)),
+            sftfilepattern=os.path.join(Writer.outdir, "*{}-*sft".format(Writer.label)),
             tref=Writer.tref,
             minStartTime=Writer.tstart,
             maxStartTime=Writer.tend,
@@ -605,10 +610,8 @@ class SemiCoherentGlitchSearch(Test):
         Writer.tend = maxStartTime
         FSB = Writer.predict_fstat()
 
-        print(FSA, FSB)
         predicted_FS = FSA + FSB
 
-        print((predicted_FS, FS))
         self.assertTrue(np.abs((FS - predicted_FS)) / predicted_FS < 0.3)
 
 
@@ -659,7 +662,7 @@ class MCMCSearch(Test):
             outdir=self.outdir,
             theta_prior=theta,
             tref=tref,
-            sftfilepattern=os.path.join(Writer.outdir, "*{}*sft".format(Writer.label)),
+            sftfilepattern=os.path.join(Writer.outdir, "*{}-*sft".format(Writer.label)),
             minStartTime=minStartTime,
             maxStartTime=maxStartTime,
             nsteps=[100, 100],
