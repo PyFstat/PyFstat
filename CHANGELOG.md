@@ -1,22 +1,22 @@
 ## target version: 1.4
 
+- now fully python3.8 compatible
+- now using versioneer for versioning
 - additional file outputs for MCMC search classes
   (including full posterior samples)
 - improved binary support in Writer and search classes
 - improved output file headers with version and options strings
 - improved MCMC walker plotting
-- implement CFS feature injectSqrtSX
+- implemented CFS feature injectSqrtSX
 - manual ephemerides options for search classes
-- reorganised and improved examples
 - fixed placement of temporary output files
-- use versioneer for versioning
-- various minor bug fixes and code cleanup
-- now fully python3.8 compatible
 - new options estimate_covering_band and RngMedWindow for search classes
-- new option randSeed for Writer class
+- new options randSeed, noiseSFTs and windowing for Writer class
 - extended get_covering_band() to deal with fkdot bands
-- added 1to1 test against CFSv2
 - improved error handling for lal programs
+- added 1to1 test against CFSv2
+- reorganised and improved examples
+- various minor bug fixes and code cleanup
 
 ## 1.3 [21/01/2020]
 
