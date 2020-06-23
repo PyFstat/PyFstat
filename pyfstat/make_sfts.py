@@ -428,20 +428,24 @@ transientTau = {:10.0f}\n"""
         if check_ok is False:
             helper_functions.run_commandline(cl_mfd)
 
-    def predict_fstat(self):
+    def predict_fstat(self, assumeSqrtSX=None):
         """ Wrapper to lalapps_PredictFstat """
+        if assumeSqrtSX:
+            sqrtSX = assumeSqrtSX
+        else:
+            sqrtSX = self.sqrtSX
         twoF_expected, twoF_sigma = predict_fstat(
-            self.h0,
-            self.cosi,
-            self.psi,
-            self.Alpha,
-            self.Delta,
-            self.F0,
-            self.sftfilepath,
-            self.minStartTime,
-            self.maxStartTime,
-            self.detectors,
-            self.sqrtSX,
+            h0=self.h0,
+            cosi=self.cosi,
+            psi=self.psi,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+            Freq=self.F0,
+            sftfilepattern=self.sftfilepath,
+            minStartTime=self.minStartTime,
+            maxStartTime=self.maxStartTime,
+            IFOs=self.detectors,
+            assumeSqrtSX=sqrtSX,
             tempory_filename=os.path.join(self.outdir, self.label + ".tmp"),
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
