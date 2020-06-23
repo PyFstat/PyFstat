@@ -45,7 +45,7 @@ class Writer(BaseSearchClass):
         phi=0,
         Tsft=1800,
         outdir=".",
-        sqrtSX=1,
+        sqrtSX=0.0,
         noiseSFTs=None,
         SFTWindowType=None,
         SFTWindowBeta=0.0,
@@ -382,16 +382,17 @@ transientTau = {:10.0f}\n"""
                     "to produce noiseSFTs."
                 )
             elif self.noiseSFTs is not None:
+                if self.sqrtSX is not None:
+                    logging.warning(
+                        "In addition to using noiseSFTs, you are adding "
+                        "Gaussian noise with sqrtSX={} "
+                        "Please, make sure this is what you intend to do.".format(
+                            self.sqrtSX
+                        )
+                    )
                 cl_mfd.append('--noiseSFTs="{}"'.format(self.noiseSFTs))
             else:
                 cl_mfd.append("--IFOs={}".format(self.IFOs))
-
-            logging.warning(
-                "Gaussian noise *is added* by default due to "
-                "consistency issues. Please, make sure sqrtSX value is "
-                "consistent with what you intend to do (0=No Gaussian noise). "
-                "Currently, sqrtSX={}".format(self.sqrtSX)
-            )
             cl_mfd.append('--sqrtSX="{}"'.format(self.sqrtSX))
         else:
             cl_mfd.append("--IFOs={}".format(self.IFOs))
@@ -474,7 +475,7 @@ class BinaryModulatedWriter(Writer):
         phi=0,
         Tsft=1800,
         outdir=".",
-        sqrtSX=1,
+        sqrtSX=0.0,
         noiseSFTs=None,
         SFTWindowType=None,
         SFTWindowBeta=0.0,
@@ -636,7 +637,7 @@ class GlitchWriter(Writer):
         phi=0,
         Tsft=1800,
         outdir=".",
-        sqrtSX=1,
+        sqrtSX=0.0,
         noiseSFTs=None,
         SFTWindowType=None,
         SFTWindowBeta=0.0,
@@ -758,7 +759,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         tref=None,
         h0=10,
         Tsft=1800,
-        sqrtSX=1,
+        sqrtSX=0.0,
         Band=4,
         Pmod=lal.DAYSID_SI,
         Pmod_phi=0,
