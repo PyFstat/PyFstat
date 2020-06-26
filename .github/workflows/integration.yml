@@ -32,7 +32,7 @@ jobs:
     - name: Test with pytest
       run: |
         pip install py==1.8.2
-        pip install pytest==1.9.0
+        pip install pytest==5.4.3
         # make sure to test *installed* version of pyFstat
         pip install -e $GITHUB_WORKSPACE
         (cd .. && pytest $GITHUB_WORKSPACE/tests.py --log-file=$GITHUB_WORKSPACE/tests.log)
