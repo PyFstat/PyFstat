@@ -309,7 +309,7 @@ transientTau = {:10.0f}\n"""
                 )
 
         logging.info("Checking new commandline against existing SFT header...")
-        cl_dump = "lalapps_SFTdumpheader {} | head -n 20".format(self.sftfilepath)
+        cl_dump = "lalapps_dumpSFT --headerOnly --SFTfiles {}".format(self.sftfilepath)
         output = helper_functions.run_commandline(cl_dump)
         header_lines_lalapps = [
             line for line in output.split("\n") if "lalapps" in line
