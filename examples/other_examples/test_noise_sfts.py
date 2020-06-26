@@ -19,8 +19,8 @@ noise_and_signal_writer = pyfstat.Writer(
     duration=duration_Tsft * Tsft,
     Tsft=Tsft,
     randSeed=randSeed,
-    SFTWindowType = "tukey",
-    SFTWindowBeta = 0.001,
+    SFTWindowType="tukey",
+    SFTWindowBeta=0.001,
 )
 sftfilepattern = os.path.join(
     noise_and_signal_writer.outdir,
@@ -52,8 +52,8 @@ noise_writer = pyfstat.Writer(
     duration=duration_Tsft * Tsft,
     Tsft=Tsft,
     randSeed=randSeed,
-    SFTWindowType = "tukey",
-    SFTWindowBeta = 0.001,
+    SFTWindowType="tukey",
+    SFTWindowBeta=0.001,
 )
 noise_writer.make_data()
 
@@ -69,8 +69,8 @@ add_signal_writer = pyfstat.Writer(
     noiseSFTs=os.path.join(
         noise_writer.outdir, "*{}*{}*sft".format(duration_Tsft, noise_writer.label)
     ),
-    SFTWindowType = "tukey",
-    SFTWindowBeta = 0.001,
+    SFTWindowType="tukey",
+    SFTWindowBeta=0.001,
 )
 sftfilepattern = os.path.join(
     add_signal_writer.outdir,
