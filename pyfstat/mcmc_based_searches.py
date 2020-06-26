@@ -1769,7 +1769,19 @@ class MCMCSearch(core.BaseSearchClass):
         for key in self.theta_prior:
             if key not in params:
                 params[key] = self.theta_prior[key]
-        params = translate_keys_to_lal(params)
+        params_sanitised = translate_keys_to_lal(params)
+        for key in ["transient-t0Epoch", "transient-t0Offset", "transient-tau"]:
+            if (
+                key in params_sanitised
+                and not int(params_sanitised[key]) == params_sanitised[key]
+            ):
+                rounded = int(round(params_sanitised[key]))
+                logging.warning(
+                    "Rounding {:s}={:f} to {:d} for CFSv2 call.".format(
+                        key, params_sanitised[key], rounded
+                    )
+                )
+                params_sanitised[key] = rounded
         signal_parameter_keys = translate_keys_to_lal(self.theta_prior).keys()
 
         self.loudest_file = os.path.join(self.outdir, self.label + ".loudest")
@@ -1784,14 +1796,19 @@ class MCMCSearch(core.BaseSearchClass):
             self.tref,
         )
         cmd += " ".join(
-            ["--{0} {1}".format(key, params[key]) for key in signal_parameter_keys]
+            [
+                "--{0} {1}".format(key, params_sanitised[key])
+                for key in signal_parameter_keys
+            ]
         )
-
+        if self.transientWindowType is not None:
+            cmd += " --transient-WindowType='{}'".format(self.transientWindowType)
         if self.earth_ephem is not None:
             cmd += " --ephemEarth='{}'".format(self.earth_ephem)
         if self.sun_ephem is not None:
             cmd += " --ephemSun='{}'".format(self.sun_ephem)
-        subprocess.call([cmd], shell=True)
+        logging.info("Executing: {}".format(cmd))
+        subprocess.check_call([cmd], shell=True)
 
     def write_prior_table(self):
         """ Generate a .tex file of the prior """

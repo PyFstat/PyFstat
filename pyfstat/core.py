@@ -70,6 +70,8 @@ def translate_keys_to_lal(dictionary):
         "tp": "orbitTp",
         "argp": "orbitArgp",
         "ecc": "orbitEcc",
+        "transient_tstart": "transient-t0Epoch",
+        "transient_duration": "transient-tau",
     }
 
     keys_to_translate = [key for key in dictionary.keys() if key in translation]

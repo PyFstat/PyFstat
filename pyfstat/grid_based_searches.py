@@ -615,6 +615,7 @@ class TransientGridSearch(GridSearch):
         For all other parameters, see `pyfstat.ComputeFStat` for details
         """
 
+        self._set_init_params_dict(locals())
         self.nsegs = 1
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
