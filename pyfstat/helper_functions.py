@@ -294,6 +294,10 @@ def run_commandline(cl, log_level=20, raise_error=True, return_output=True):
     """
 
     logging.log(log_level, "Now executing: " + cl)
+    if "|" in cl:
+        logging.warning(
+            "Pipe ('|') found in commandline, errors may not be" " properly caught!"
+        )
     try:
         if return_output:
             out = subprocess.check_output(
