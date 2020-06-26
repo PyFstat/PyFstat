@@ -1791,7 +1791,8 @@ class MCMCSearch(core.BaseSearchClass):
             cmd += " --ephemEarth='{}'".format(self.earth_ephem)
         if self.sun_ephem is not None:
             cmd += " --ephemSun='{}'".format(self.sun_ephem)
-        subprocess.call([cmd], shell=True)
+        logging.info("Executing: {}".format(cmd))
+        subprocess.check_call([cmd], shell=True)
 
     def write_prior_table(self):
         """ Generate a .tex file of the prior """
