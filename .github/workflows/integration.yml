@@ -32,6 +32,7 @@ jobs:
     - name: Test with pytest
       run: |
         pip install py==1.8.2
+        pip install wcwidth==0.2.4
         pip install pytest==5.4.3
         # make sure to test *installed* version of pyFstat
         pip install -e $GITHUB_WORKSPACE
