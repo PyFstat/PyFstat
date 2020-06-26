@@ -11,6 +11,7 @@ h0 = 1000
 randSeed = 69420
 
 # create sfts with a strong signal in them
+# window options are optional here
 noise_and_signal_writer = pyfstat.Writer(
     "test_noiseSFTs_noise_and_signal",
     outdir=out_dir,
@@ -18,6 +19,8 @@ noise_and_signal_writer = pyfstat.Writer(
     duration=duration_Tsft * Tsft,
     Tsft=Tsft,
     randSeed=randSeed,
+    SFTWindowType = "tukey",
+    SFTWindowBeta = 0.001,
 )
 sftfilepattern = os.path.join(
     noise_and_signal_writer.outdir,
@@ -40,7 +43,8 @@ FS_1 = coherent_search.get_fullycoherent_twoF(
     noise_and_signal_writer.Delta,
 )
 
-# create noise sfts and then inject a strong signal
+# create noise sfts
+# window options are again optional for this step
 noise_writer = pyfstat.Writer(
     "test_noiseSFTs_only_noise",
     outdir=out_dir,
@@ -48,9 +52,13 @@ noise_writer = pyfstat.Writer(
     duration=duration_Tsft * Tsft,
     Tsft=Tsft,
     randSeed=randSeed,
+    SFTWindowType = "tukey",
+    SFTWindowBeta = 0.001,
 )
 noise_writer.make_data()
 
+# then inject a strong signal
+# window options *must* match those previously used for the noiseSFTs
 add_signal_writer = pyfstat.Writer(
     "test_noiseSFTs_add_signal",
     outdir=out_dir,
@@ -61,6 +69,8 @@ add_signal_writer = pyfstat.Writer(
     noiseSFTs=os.path.join(
         noise_writer.outdir, "*{}*{}*sft".format(duration_Tsft, noise_writer.label)
     ),
+    SFTWindowType = "tukey",
+    SFTWindowBeta = 0.001,
 )
 sftfilepattern = os.path.join(
     add_signal_writer.outdir,
@@ -84,4 +94,4 @@ FS_2 = coherent_search.get_fullycoherent_twoF(
 
 print("Base case Fstat: {}".format(FS_1))
 print("Noise + Signal Fstat: {}".format(FS_2))
-print("Relative Difference: {}".format((FS_2 - FS_1) / FS_1))
+print("Relative Difference: {}".format(np.abs(FS_2 - FS_1) / FS_1))
