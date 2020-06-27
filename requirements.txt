@@ -9,3 +9,4 @@ bashplotlib
 peakutils
 pathos
 lalsuite
+versioneer
