@@ -43,7 +43,8 @@ setup(
     },
     python_requires=">=%s.%s.%s" % min_python_version[:3],
     install_requires=[
-        "matplotlib",
+        "numpy",
+        "matplotlib>=2.1",
         "scipy",
         "ptemcee",
         "corner",
