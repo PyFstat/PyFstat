@@ -2,17 +2,22 @@
 
 - now fully python3.8 compatible
 - now using versioneer for versioning
-- additional file outputs for MCMC search classes
-  (including full posterior samples)
-- improved binary support in Writer and search classes
-- improved output file headers with version and options strings
-- improved MCMC walker plotting
-- implemented CFS feature injectSqrtSX
-- manual ephemerides options for search classes
+- require lalsuite>=6.72
+- Writer class:
+  - new options randSeed, noiseSFTs and windowing
+  - change default sqrtSX from 1 to 0
+  - improved support for sources in binaries
+- search classes:
+  - improved support for sources in binaries
+  - additional file outputs for MCMC
+    (including full posterior samples)
+  - improved output file headers with version and options strings
+  - improved MCMC walker plotting
+  - implemented CFS feature injectSqrtSX
+  - manual ephemerides option
+  - new options estimate_covering_band and RngMedWindow
+  - extended get_covering_band() to deal with fkdot bands
 - fixed placement of temporary output files
-- new options estimate_covering_band and RngMedWindow for search classes
-- new options randSeed, noiseSFTs and windowing for Writer class
-- extended get_covering_band() to deal with fkdot bands
 - improved error handling for lal programs
 - added 1to1 test against CFSv2
 - reorganised and improved examples
