@@ -1801,11 +1801,11 @@ class MCMCSearch(core.BaseSearchClass):
                 for key in signal_parameter_keys
             ]
         )
-        if self.transientWindowType is not None:
+        if getattr(self, "transientWindowType", None) is not None:
             cmd += " --transient-WindowType='{}'".format(self.transientWindowType)
-        if self.earth_ephem is not None:
+        if getattr(self, "earth_ephem", None) is not None:
             cmd += " --ephemEarth='{}'".format(self.earth_ephem)
-        if self.sun_ephem is not None:
+        if getattr(self, "sun_ephem", None) is not None:
             cmd += " --ephemSun='{}'".format(self.sun_ephem)
         logging.info("Executing: {}".format(cmd))
         subprocess.check_call([cmd], shell=True)
@@ -2697,7 +2697,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
     def update_search_object(self):
         logging.info("Update search object")
-        self.search.init_computefstatistic_single_point()
+        self.search.init_computefstatistic()
 
     def get_width_from_prior(self, prior, key):
         if prior[key]["type"] == "unif":
