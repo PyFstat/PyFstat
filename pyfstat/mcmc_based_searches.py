@@ -1766,6 +1766,10 @@ class MCMCSearch(core.BaseSearchClass):
         logging.info("Running CFSv2 to get .loudest file")
         self.write_par(method="twoFmax")
         params = read_par(label=self.label + "_max2F", outdir=self.outdir)
+        if np.any([key in params for key in ["delta_F0", "delta_F1", "tglitch"]]):
+            raise RuntimeError(
+                "CFSv2 --outputLoudest cannot deal with glitch parameters."
+            )
         for key in self.theta_prior:
             if key not in params:
                 params[key] = self.theta_prior[key]
