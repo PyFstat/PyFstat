@@ -2697,7 +2697,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
     def update_search_object(self):
         logging.info("Update search object")
-        self.search.init_computefstatistic_single_point()
+        self.search.init_computefstatistic()
 
     def get_width_from_prior(self, prior, key):
         if prior[key]["type"] == "unif":
