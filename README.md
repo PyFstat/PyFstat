@@ -39,7 +39,18 @@ This can be installed with
 conda install pip
 ```
 
-### install PyFstat the easy way
+Note also that the PyFstat installation will fail at the LALSuite dependency stage
+if your `pip` is too old (e.g. 18.1) -- to be on the safe side, before starting do:
+```
+pip install --upgrade pip
+```
+(adding `--user` depending on your setup).
+
+### install latest PyFstat directly from PyPi
+
+There is no PyPi release yet, sorry.
+
+### install latest PyFstat directly from github
 
 Currently, the easiest way to install PyFstat is to point pip to this git repository,
 which will give you the latest master version:
@@ -67,11 +78,12 @@ which should all be pulled in automatically if you use pip:
 * [ptemcee](https://github.com/willvousden/ptemcee)
 * [corner](https://pypi.python.org/pypi/corner/)
 * [dill](https://pypi.python.org/pypi/dill)
-* [peakutils](https://pypi.python.org/pypi/PeakUtils)
-* [pathos](https://pypi.python.org/pypi/pathos)
 * [tqdm](https://pypi.python.org/pypi/tqdm)
 * [bashplotlib](https://github.com/glamp/bashplotlib)
-* [lalsuite](https://pypi.org/project/lalsuite/)
+* [peakutils](https://pypi.python.org/pypi/PeakUtils)
+* [pathos](https://pypi.python.org/pypi/pathos)
+* [lalsuite](https://pypi.org/project/lalsuite/) >= 6.72
+* [versioneer]
 
 *Optional*
 * [pycuda](https://pypi.org/project/pycuda/), required for the tCWFstatMapVersion=pycuda
@@ -105,9 +117,11 @@ A minimal confuration line to use would be e.g.:
 ```
 
 
-### PyFstat installation from source
+### install PyFstat from source (Zenodo or git clone)
 
-In a terminal, clone this repository:
+You can download a source release tarball from [Zenodo](https://doi.org/10.5281/zenodo.1243930)
+and extract to an arbitrary temporary directory.
+Alternatively, clone this repository:
 
 ```
 git clone https://github.com/PyFstat/PyFstat.git
@@ -115,7 +129,7 @@ git clone https://github.com/PyFstat/PyFstat.git
 
 The module and associated scripts can be installed system wide
 (or to the currently active venv),
-assuming you are in the source directory, via
+assuming you are in the (extracted or cloned) source directory, via
 ```
 python setup.py install
 ```
