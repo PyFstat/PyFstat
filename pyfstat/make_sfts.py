@@ -382,7 +382,7 @@ transientTau = {:10.0f}\n"""
                     "to produce noiseSFTs."
                 )
             elif self.noiseSFTs is not None:
-                if self.sqrtSX is not None:
+                if self.sqrtSX > 0.0:
                     logging.warning(
                         "In addition to using noiseSFTs, you are adding "
                         "Gaussian noise with sqrtSX={} "
