@@ -77,7 +77,7 @@ mcmc.transform_dictionary["tglitch"][
 ] = "$t^\mathrm{g}-t^\mathrm{g}_\mathrm{s}$\n[d]"
 
 t1 = time.time()
-mcmc.run()
+mcmc.run(save_loudest=False)  # uses CFSv2 which doesn't support glitch parameters
 dT = time.time() - t1
 fig_and_axes = gridcorner._get_fig_and_axes(4, 2, 0.05)
 mcmc.plot_corner(
