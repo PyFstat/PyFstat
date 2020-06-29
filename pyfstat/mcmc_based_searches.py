@@ -1801,11 +1801,11 @@ class MCMCSearch(core.BaseSearchClass):
                 for key in signal_parameter_keys
             ]
         )
-        if self.transientWindowType is not None:
+        if getattr(self, "transientWindowType", None) is not None:
             cmd += " --transient-WindowType='{}'".format(self.transientWindowType)
-        if self.earth_ephem is not None:
+        if getattr(self, "earth_ephem", None) is not None:
             cmd += " --ephemEarth='{}'".format(self.earth_ephem)
-        if self.sun_ephem is not None:
+        if getattr(self, "sun_ephem", None) is not None:
             cmd += " --ephemSun='{}'".format(self.sun_ephem)
         logging.info("Executing: {}".format(cmd))
         subprocess.check_call([cmd], shell=True)
