@@ -12,6 +12,7 @@ Getting started:
 demonstrating different use cases.
 
 ![Integration Tests](https://github.com/PyFstat/PyFstat/workflows/Integration%20Tests/badge.svg)
+![Docker](https://github.com/PyFstat/PyFstat/workflows/Docker/badge.svg)
 
 ## Installation
 
