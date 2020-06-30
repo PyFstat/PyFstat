@@ -309,18 +309,16 @@ transientTau = {:10.0f}\n"""
                 )
 
         logging.info("Checking new commandline against existing SFT header...")
-        cl_dump = "lalapps_dumpSFT --headerOnly --SFTfiles {}".format(self.sftfilepath)
-        output = helper_functions.run_commandline(cl_dump)
-        header_lines_lalapps = [
-            line for line in output.split("\n") if "lalapps" in line
-        ]
-        if len(header_lines_lalapps) == 0:
+        catalog = lalpulsar.SFTdataFind(self.sftfilepath, None)
+        cl_old = helper_functions.get_lalapps_commandline_from_SFTDescriptor(
+            catalog.data[0]
+        )
+        if len(cl_old) == 0:
             logging.info(
                 "Could not obtain comparison commandline from old SFT header. "
                 + need_new
             )
             return False
-        cl_old = header_lines_lalapps[0]
         if not helper_functions.match_commandlines(cl_old, cl_mfd):
             logging.info("Commandlines unmatched. " + need_new)
             return False

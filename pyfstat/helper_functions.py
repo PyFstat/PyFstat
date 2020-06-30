@@ -457,3 +457,25 @@ def read_txt_file_with_header(f, comments="#"):
     data = np.genfromtxt(f, skip_header=Nhead - 1, names=True, comments=comments)
 
     return data
+
+
+def get_lalapps_commandline_from_SFTDescriptor(descriptor):
+    """ get a lalapps commandline from SFT descriptor "comment" entry
+
+    Parameters
+    ----------
+    descriptor: SFTDescriptor
+        element of a lalpulsar SFTCatalog
+
+    Returns
+    -------
+    cmd: str
+        a lalapps commandline, or empty string if "lalapps" not found in comment
+    """
+    comment = getattr(descriptor, "comment", None)
+    if comment is None:
+        return ""
+    comment_lines = comment.split("\n")
+    # get the first line with the right substring
+    # (iterate until it's found)
+    return next((line for line in comment_lines if "lalapps" in line), "")
