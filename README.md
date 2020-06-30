@@ -15,6 +15,12 @@ demonstrating different use cases.
 
 ## Installation
 
+### Docker container
+Ready-to-use PyFstat containers are available at the [Packages](https://github.com/PyFstat/PyFstat/packages)
+page. A git-hub account together with a personal access token is required. See the available 
+[documentation](https://github.com/PyFstat/PyFstat/wiki/Containers) to learn how to pull them from the git-hub
+registry using Docker or Singularity.
+
 ### python installation
 This package requires `python3.6+`.
 While many systems come with a system wide python
