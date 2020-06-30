@@ -3,6 +3,7 @@
 - now fully python3.8 compatible
 - now using versioneer for versioning
 - require lalsuite>=6.72
+- added docker images, provided through github packages
 - Writer class:
   - new options randSeed, noiseSFTs and windowing
   - change default sqrtSX from 1 to 0
