@@ -233,7 +233,8 @@ or use directly the following BibTeX entry:
 @misc{pyfstat,
   author       = {Ashton, Gregory and
                   Keitel, David and
-                  Prix, Reinhard},
+                  Prix, Reinhard,
+                  and Tenorio, Rodrigo},
   title        = {PyFstat},
   month        = jan,
   year         = 2020,

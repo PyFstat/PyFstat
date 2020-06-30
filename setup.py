@@ -27,7 +27,7 @@ setup(
     name="PyFstat",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    author="Gregory Ashton, David Keitel, Reinhard Prix",
+    author="Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio",
     author_email="gregory.ashton@ligo.org",
     license="MIT",
     description="python wrappers for lalpulsar F-statistic code",
