@@ -6,7 +6,6 @@ import os
 import copy
 import logging
 from collections import OrderedDict
-import subprocess
 
 import numpy as np
 import matplotlib
@@ -1811,8 +1810,7 @@ class MCMCSearch(core.BaseSearchClass):
             cmd += " --ephemEarth='{}'".format(self.earth_ephem)
         if getattr(self, "sun_ephem", None) is not None:
             cmd += " --ephemSun='{}'".format(self.sun_ephem)
-        logging.info("Executing: {}".format(cmd))
-        subprocess.check_call([cmd], shell=True)
+        helper_functions.run_commandline(cmd, return_output=False)
 
     def write_prior_table(self):
         """ Generate a .tex file of the prior """
