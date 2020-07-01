@@ -428,8 +428,16 @@ class BaseSearchClass(object):
         argsdict.pop("self")
         self.init_params_dict = argsdict
 
-    def get_output_file_header(self):
+    def pprint_init_params_dict(self):
+        """
+        Pretty-print a parameters dictionary for output file headers.
 
+        Returns a list of lines to be printed,
+        including opening/closing "{" and "}",
+        consistent indentation,
+        as well as end-of-line commas,
+        but no comment markers at start of lines.
+        """
         pretty_init_parameters = pformat(
             self.init_params_dict, indent=2, width=74
         ).split("\n")
@@ -440,7 +448,9 @@ class BaseSearchClass(object):
             + [pretty_init_parameters[-1].rstrip("}")]
             + ["}"]
         )
+        return pretty_init_parameters
 
+    def get_output_file_header(self):
         header = [
             "date: {}".format(str(datetime.now())),
             "user: {}".format(getpass.getuser()),
@@ -453,7 +463,7 @@ class BaseSearchClass(object):
             "search: {}".format(type(self).__name__),
             "parameters: ",
         ]
-        header += pretty_init_parameters
+        header += self.pprint_init_params_dict()
         return header
 
 

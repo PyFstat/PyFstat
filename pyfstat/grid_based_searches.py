@@ -198,7 +198,7 @@ class GridSearch(BaseSearchClass):
             return False
         if os.path.isfile(self.out_file) is False:
             logging.info(
-                "No old data found in '{:s}', continuing with grid search".format(
+                "No old output file '{:s}' found, continuing with grid search.".format(
                     self.out_file
                 )
             )
@@ -210,34 +210,49 @@ class GridSearch(BaseSearchClass):
             if os.path.getmtime(self.out_file) < oldest_sft:
                 logging.info(
                     "Search output data outdates sft files,"
-                    + " continuing with grid search"
+                    + " continuing with grid search."
                 )
                 return False
 
-        logging.info(
-            "Loading old data from in '{:s}'".format(self.out_file)
+        logging.info("Checking header of '{:s}'".format(self.out_file))
+        old_params_dict_str_list = helper_functions.read_parameters_dict_lines_from_file_header(
+            self.out_file
         )
+        new_params_dict_str_list = [
+            l.strip(" ") for l in self.pprint_init_params_dict()[1:-1]
+        ]
+        unmatched = np.setxor1d(old_params_dict_str_list, new_params_dict_str_list)
+        if len(unmatched) > 0:
+            logging.info(
+                "Parameters string in file header does not match"
+                + " current search setup, continuing with grid search."
+            )
+            return False
+        else:
+            logging.info(
+                "Parameters string in file header matches current search setup."
+            )
+
+        logging.info("Loading old data from '{:s}'.".format(self.out_file))
         old_data = np.atleast_2d(np.genfromtxt(self.out_file, delimiter=" "))
         # need to convert any "None" entries in input_data array safely to 0s
         # to make np.allclose() work reliably
         new_data = np.nan_to_num(self.input_data.astype(np.float64))
         rtol, atol = self._get_tolerance_from_savetxt_fmt()
         column_matches = [
-            np.allclose(
-                old_data[:, n], new_data[:, n], rtol=rtol[n], atol=atol[n],
-            )
+            np.allclose(old_data[:, n], new_data[:, n], rtol=rtol[n], atol=atol[n],)
             for n in range(len(self.coord_arrays))
         ]
         if np.all(column_matches):
             logging.info(
-                "Old data found in '{:s}' with matching input, no search "
-                "performed".format(self.out_file)
+                "Old data found in '{:s}' with matching input parameters grid,"
+                " no search performed.".format(self.out_file)
             )
             return old_data
         else:
             logging.info(
-                "Old data found in '{:s}', input differs, continuing with "
-                "grid search".format(self.out_file)
+                "Old data found in '{:s}', input parameters grid differs,h"
+                "  continuing with grid search.".format(self.out_file)
             )
             return False
         return False
