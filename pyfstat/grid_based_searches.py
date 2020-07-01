@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from scipy.special import logsumexp
+import re
 
 import pyfstat.helper_functions as helper_functions
 from pyfstat.core import (
@@ -197,7 +198,7 @@ class GridSearch(BaseSearchClass):
             return False
         if os.path.isfile(self.out_file) is False:
             logging.info(
-                'No old data found in "{:s}", continuing with grid search'.format(
+                "No old data found in '{:s}', continuing with grid search".format(
                     self.out_file
                 )
             )
@@ -213,19 +214,23 @@ class GridSearch(BaseSearchClass):
                 )
                 return False
 
-        data = np.atleast_2d(np.genfromtxt(self.out_file, delimiter=" "))
-        if np.all(
-            data[:, 0 : len(self.coord_arrays)]
-            == self.input_data[:, 0 : len(self.coord_arrays)]
-        ):
+        old_data = np.atleast_2d(np.genfromtxt(self.out_file, delimiter=" "))
+        rtol, atol = self._get_tolerance_from_savetxt_fmt()
+        column_matches = [
+            np.allclose(
+                old_data[:, n], self.input_data[:, n], rtol=rtol[n], atol=atol[n],
+            )
+            for n in range(len(self.coord_arrays))
+        ]
+        if np.all(column_matches):
             logging.info(
-                'Old data found in "{:s}" with matching input, no search '
+                "Old data found in '{:s}' with matching input, no search "
                 "performed".format(self.out_file)
             )
-            return data
+            return old_data
         else:
             logging.info(
-                'Old data found in "{:s}", input differs, continuing with '
+                "Old data found in '{:s}', input differs, continuing with "
                 "grid search".format(self.out_file)
             )
             return False
@@ -269,6 +274,31 @@ class GridSearch(BaseSearchClass):
         fmt += helper_functions.get_doppler_params_output_format(self.keys)
         fmt += ["%.9g"]  # for detection statistic
         return fmt
+
+    def _get_tolerance_from_savetxt_fmt(self):
+        """ decide appropriate input grid comparison tolerance from fprintf formats """
+        fmt = self.get_savetxt_fmt()
+        rtol = np.zeros(len(fmt))
+        atol = np.zeros(len(fmt))
+        for n, f in enumerate(fmt):
+            if f.endswith("d"):
+                rtol[n] = 0
+                atol[n] = 0
+            elif f.endswith("g"):
+                precision = int(re.findall("\d+", f)[-1])
+                rtol[n] = 10 ** (1 - precision)
+                atol[n] = 0
+            elif f.endswith("f"):
+                decimals = int(re.findall("\d+", f)[-1])
+                rtol[n] = 0
+                atol[n] = 10 ** -decimals
+            else:
+                raise ValueError(
+                    "Cannot parse fprintf format '{:s}' to obtain recommended tolerance.".format(
+                        f
+                    )
+                )
+        return rtol, atol
 
     def save_array_to_disk(self, data):
         logging.info("Saving data to {}".format(self.out_file))
