@@ -56,7 +56,7 @@ def translate_keys_to_lal(dictionary):
     Returns
     -------
     translated_dict: dict
-        Copy of `dictìonary` with new keys according to lal.
+        Copy of "dictionary" with new keys according to lal.
     """
 
     translation = {
