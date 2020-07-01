@@ -214,11 +214,17 @@ class GridSearch(BaseSearchClass):
                 )
                 return False
 
+        logging.info(
+            "Loading old data from in '{:s}'".format(self.out_file)
+        )
         old_data = np.atleast_2d(np.genfromtxt(self.out_file, delimiter=" "))
+        # need to convert any "None" entries in input_data array safely to 0s
+        # to make np.allclose() work reliably
+        new_data = np.nan_to_num(self.input_data.astype(np.float64))
         rtol, atol = self._get_tolerance_from_savetxt_fmt()
         column_matches = [
             np.allclose(
-                old_data[:, n], self.input_data[:, n], rtol=rtol[n], atol=atol[n],
+                old_data[:, n], new_data[:, n], rtol=rtol[n], atol=atol[n],
             )
             for n in range(len(self.coord_arrays))
         ]
