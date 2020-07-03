@@ -1,10 +1,10 @@
 FROM python:3.8-buster
 
-WORKDIR /pyfstat
+WORKDIR /pyfstat-repo
 
 # Ephemerides arguments
 ## Put ephemerides in this folder
-ARG EPHEMERIDES_FOLDER=ephemerides/
+ARG EPHEMERIDES_FOLDER=/ephemerides/
 ## URL to wget ephemerides from
 ARG EPHEMERIDES_URL=https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/
 ## Earth epehemerides file name
