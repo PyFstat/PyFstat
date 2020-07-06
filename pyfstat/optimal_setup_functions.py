@@ -18,17 +18,28 @@ def get_optimal_setup(
 ):
     """ Using an optimisation step, calculate the optimal setup ladder
 
+    The details of the methods are described in Sec Va of arXiv:1802.05450.
+    Here we provide implementation details. All equation numbers refer to
+    arXiv:1802.05450.
+
     Parameters
     ----------
     NstarMax : float
+        The ratio of the size at the old coherence time to the new coherence
+        time for each step, see Eq. (31). Larger values allow a more rapid
+        "zoom" of the search space at the cost of convergence. Smaller values
+        are more conservative at the cost of additional computing time. The
+        exact choice should be optimized for the problem in hand, but values
+        of 100-1000 are typically okay.
     Nsegs0 : int
         The number of segments for the initial step of the ladder
-    minStartTime, maxStartTime : int
-        GPS times of the start and end time of the search
+    tref, minStartTime, maxStartTime : int
+        GPS times of the reference, start, and end time.
     prior : dict
         Prior dictionary, each item must either be a fixed scalar value, or
         a uniform prior.
-    detector_names : list of str
+    detector_names : list or str
+        Names of the detectors to use
 
     Returns
     -------
@@ -66,7 +77,29 @@ def get_optimal_setup(
 def _get_nsegs_ip1(
     nsegs_i, NstarMax, tref, minStartTime, maxStartTime, prior, detector_names
 ):
-    """ Calculate Nsegs_{i+1} given Nsegs_{i} """
+    """ Calculate Nsegs_{i+1} given Nsegs_{i}
+
+    Perform the optimization step to calculate nsegs and i+1 given the setup
+    and i. The "Powell" minimiization method from scipy is used. Below, we give
+    help for parameters unique to _get_nsegs_ip1, for help with other
+    parameters see get_optimal_setup
+
+    Parameters
+    ----------
+    nsegs_i: int
+        The number of segments at step i
+
+    Returns
+    -------
+    nsegs_ip1: int
+        The number of segments at i + 1
+
+    Raises
+    ------
+    ValueError: Optimisation unsuccesful
+        A value error is raised if the optimization step fails
+
+    """
 
     log10NstarMax = np.log10(NstarMax)
     log10Nstari = np.log10(
