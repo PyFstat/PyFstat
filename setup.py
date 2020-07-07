@@ -29,10 +29,13 @@ setup(
     cmdclass=versioneer.get_cmdclass(),
     author="Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio",
     author_email="gregory.ashton@ligo.org",
+    maintainer="David Keitel",
+    maintainer_email="david.keitel@ligo.org",
     license="MIT",
-    description="python wrappers for lalpulsar F-statistic code",
+    description="a python package for gravitational wave analysis with the F-statistic",
     long_description=long_description,
     long_description_content_type="text/markdown",
+    url="https://github.com/PyFstat/PyFstat",
     packages=find_packages(),
     include_package_data=True,
     package_data={
@@ -41,6 +44,16 @@ setup(
             "pyCUDAkernels/cudaTransientFstatRectWindow.cu",
         ]
     },
+    platforms="POSIX",
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: POSIX",
+        "Natural Language :: English",
+        "Intended Audience :: Science/Research",
+        "Topic :: Scientific/Engineering :: Astronomy",
+        "Topic :: Scientific/Engineering :: Physics",
+    ],
     python_requires=">=%s.%s.%s" % min_python_version[:3],
     install_requires=[
         "numpy",
