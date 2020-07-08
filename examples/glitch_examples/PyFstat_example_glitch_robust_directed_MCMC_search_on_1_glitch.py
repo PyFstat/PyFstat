@@ -2,7 +2,7 @@ import numpy as np
 import pyfstat
 import gridcorner
 import time
-from make_simulated_data import (
+from PyFstat_example_make_data_for_search_on_1_glitch import (
     tstart,
     duration,
     tref,

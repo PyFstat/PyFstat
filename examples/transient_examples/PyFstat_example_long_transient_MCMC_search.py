@@ -2,6 +2,7 @@
 
 import pyfstat
 import os
+import numpy as np
 
 F0 = 30.0
 F1 = -1e-10
@@ -37,6 +38,12 @@ nwalkers = 100
 nsteps = [100, 100]
 
 outdir = os.path.join("example_data", "long_transient")
+if not os.path.isdir(outdir) or not np.any(
+    [f.endswith(".sft") for f in os.listdir(outdir)]
+):
+    raise RuntimeError(
+        "Please first run PyFstat_example_make_data_for_long_transient_search.py !"
+    )
 
 mcmc = pyfstat.MCMCTransientSearch(
     label="transient_search",

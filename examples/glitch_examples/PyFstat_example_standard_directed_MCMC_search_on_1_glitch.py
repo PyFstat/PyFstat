@@ -1,6 +1,16 @@
 import numpy as np
 import pyfstat
-from make_simulated_data import tstart, duration, tref, F0, F1, F2, Alpha, Delta, outdir
+from PyFstat_example_make_data_for_search_on_1_glitch import (
+    tstart,
+    duration,
+    tref,
+    F0,
+    F1,
+    F2,
+    Alpha,
+    Delta,
+    outdir,
+)
 import os
 
 outdir = os.path.join("example_data", "glitch_robust_search")
