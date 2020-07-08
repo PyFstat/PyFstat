@@ -42,6 +42,7 @@ setup(
             "pyCUDAkernels/cudaTransientFstatExpWindow.cu",
             "pyCUDAkernels/cudaTransientFstatRectWindow.cu",
             "../versioneer.py",
+            "../CHANGELOG.md",
         ]
     },
     scripts=glob("examples/*/*.py"),
