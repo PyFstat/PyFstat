@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 from os import path
 import sys
-import subprocess
+from glob import glob
 import versioneer
 
 # check python version
@@ -37,13 +37,14 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/PyFstat/PyFstat",
     packages=find_packages(),
-    include_package_data=True,
     package_data={
         "pyfstat": [
             "pyCUDAkernels/cudaTransientFstatExpWindow.cu",
             "pyCUDAkernels/cudaTransientFstatRectWindow.cu",
+            "../versioneer.py",
         ]
     },
+    data_files=[("examples", glob("examples/*/*.py"))],
     platforms="POSIX",
     classifiers=[
         "Programming Language :: Python :: 3",
