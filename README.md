@@ -8,7 +8,7 @@ Getting started:
 * Additional usage documentation will be added to the
 [project wiki](https://github.com/PyFstat/PyFstat/wiki) (work in progress).
 * We also have a number of
-[examples](./examples),
+[examples](https://github.com/PyFstat/PyFstat/tree/master/examples),
 demonstrating different use cases.
 
 ![Integration Tests](https://github.com/PyFstat/PyFstat/workflows/Integration%20Tests/badge.svg)
