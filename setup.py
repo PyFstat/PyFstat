@@ -44,7 +44,7 @@ setup(
             "../versioneer.py",
         ]
     },
-    data_files=[("examples", glob("examples/*/*.py"))],
+    scripts=glob("examples/*/*.py"),
     platforms="POSIX",
     classifiers=[
         "Programming Language :: Python :: 3",
