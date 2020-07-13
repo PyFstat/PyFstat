@@ -1,3 +1,7 @@
+## 1.4.1 [13/07/2020]
+
+ - Writer: fix SFT counting for non-contiguous or overlapping SFTs
+
 ## 1.4.0 [13/07/2020]
 
 - now fully python3.8 compatible
