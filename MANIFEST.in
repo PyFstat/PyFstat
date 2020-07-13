@@ -1,0 +1,4 @@
+include versioneer.py
+include pyfstat/_version.py
+include CHANGELOG.md
+recursive-include examples/ *.py

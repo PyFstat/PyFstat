@@ -3,7 +3,6 @@
 from setuptools import setup, find_packages
 from os import path
 import sys
-from glob import glob
 import versioneer
 
 # check python version
@@ -23,9 +22,6 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
-# get all example scripts for sdist
-examples = glob("examples/*/*.py")
-
 setup(
     name="PyFstat",
     version=versioneer.get_version(),
@@ -44,10 +40,7 @@ setup(
         "pyfstat": [
             "pyCUDAkernels/cudaTransientFstatExpWindow.cu",
             "pyCUDAkernels/cudaTransientFstatRectWindow.cu",
-            "../versioneer.py",
-            "../CHANGELOG.md",
         ]
-        + ["../" + f for f in examples],  # need relative path from module sub-dir here
     },
     platforms="POSIX",
     classifiers=[
