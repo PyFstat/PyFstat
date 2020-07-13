@@ -2,6 +2,7 @@
 
 import pyfstat
 import os
+import numpy as np
 
 F0 = 30.0
 F1 = -1e-10
@@ -10,12 +11,14 @@ Alpha = 0.5
 Delta = 1
 
 minStartTime = 1000000000
-maxStartTime = minStartTime + 200 * 86400
+maxStartTime = minStartTime + 2 * 86400
 Tspan = maxStartTime - minStartTime
 tref = minStartTime
 
-DeltaF0 = 6e-7
-DeltaF1 = 1e-13
+Tsft = 1800
+
+DeltaF0 = 1e-2
+DeltaF1 = 1e-9
 
 theta_prior = {
     "F0": {"type": "unif", "lower": F0 - DeltaF0 / 2.0, "upper": F0 + DeltaF0 / 2.0},
@@ -23,11 +26,15 @@ theta_prior = {
     "F2": F2,
     "Alpha": Alpha,
     "Delta": Delta,
-    "transient_tstart": minStartTime,
+    "transient_tstart": {
+        "type": "unif",
+        "lower": minStartTime,
+        "upper": maxStartTime - 2 * Tsft,
+    },
     "transient_duration": {
-        "type": "halfnorm",
-        "loc": 0.001 * Tspan,
-        "scale": 0.5 * Tspan,
+        "type": "unif",
+        "lower": 2 * Tsft,
+        "upper": Tspan - 2 * Tsft,
     },
 }
 
@@ -36,7 +43,13 @@ log10beta_min = -1
 nwalkers = 100
 nsteps = [100, 100]
 
-outdir = os.path.join("example_data", "long_transient")
+outdir = os.path.join("example_data", "short_transient")
+if not os.path.isdir(outdir) or not np.any(
+    [f.endswith(".sft") for f in os.listdir(outdir)]
+):
+    raise RuntimeError(
+        "Please first run PyFstat_example_make_data_for_short_transient_search.py !"
+    )
 
 mcmc = pyfstat.MCMCTransientSearch(
     label="transient_search",

@@ -18,6 +18,8 @@
   - manual ephemerides option
   - new options estimate_covering_band and RngMedWindow
   - extended get_covering_band() to deal with fkdot bands
+  - improved GridSearch logic to reuse (or not) old results
+- removed injection_helper_functions module
 - fixed placement of temporary output files
 - improved error handling for lal programs
 - added 1to1 test against CFSv2
