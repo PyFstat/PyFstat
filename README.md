@@ -41,8 +41,7 @@ and [citing this work](#citing-this-work).
 
 ### Docker container
 Ready-to-use PyFstat containers are available at the [Packages](https://github.com/PyFstat/PyFstat/packages)
-page. A git-hub account together with a personal access token is required. See the available 
-[documentation](https://github.com/PyFstat/PyFstat/wiki/Containers) to learn how to pull them from the git-hub
+page. A git-hub account together with a personal access token is required. [Go to the wiki page](https://github.com/PyFstat/PyFstat/wiki/Containers) to learn how to pull them from the git-hub
 registry using Docker or Singularity.
 
 ### pip install from PyPi
@@ -51,7 +50,7 @@ PyPi releases are available from https://pypi.org/project/PyFstat/.
 
 Note that the PyFstat installation will fail at the
 [LALSuite](https://pypi.org/project/lalsuite/) dependency stage
-if your `pip` is too old (e.g. 18.1) -- to be on the safe side, before starting do:
+if your `pip` is too old (e.g. 18.1); to be on the safe side, before starting do
 ```
 pip install --upgrade pip
 ```
@@ -70,9 +69,9 @@ on many systems you may need to use the `--user` flag.
 PyFstat requires `python3.6+`.
 While many systems come with a system-wide python installation,
 it may not be sufficiently recent for this package;
-and anyway it can often be easier to manage a user-specific python installation -
-this way one does not require root access to install or remove modules.
-One method to do this, is to use the `conda` system, either through
+anyway, it can often be easier to manage a user-specific python installation
+(this way one does not require root access to install or remove modules).
+One method to do this is to use the `conda` system, either through
 the stripped down [miniconda](https://conda.pydata.org/miniconda.html)
 installation, or the full-featured
 [anaconda](https://www.anaconda.com/products/individual#Downloads)
