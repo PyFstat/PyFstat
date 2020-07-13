@@ -15,6 +15,7 @@ and [citing](#citing-this-work) PyFstat.
 demonstrating different use cases.
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1243930.svg)](https://doi.org/10.5281/zenodo.1243930)
+[![PyPI version](https://badge.fury.io/py/PyFstat.svg)](https://badge.fury.io/py/PyFstat)
 ![Integration Tests](https://github.com/PyFstat/PyFstat/workflows/Integration%20Tests/badge.svg)
 ![Docker](https://github.com/PyFstat/PyFstat/workflows/Docker/badge.svg)
 
