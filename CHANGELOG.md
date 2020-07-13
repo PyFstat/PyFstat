@@ -1,4 +1,4 @@
-## target version: 1.4
+## 1.4.0 [13/07/2020]
 
 - now fully python3.8 compatible
 - now using versioneer for versioning
