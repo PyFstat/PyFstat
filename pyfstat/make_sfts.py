@@ -98,7 +98,19 @@ class Writer(BaseSearchClass):
         self.duration_days = (self.tend - self.tstart) / 86400
 
         self.data_duration = self.maxStartTime - self.minStartTime
-        numSFTs = int(float(self.data_duration) / self.Tsft)
+
+        IFOs = self.detectors.split(",")
+        if self.noiseSFTs:
+            numSFTs = []
+            for ifo in IFOs:
+                constraint = lalpulsar.SFTConstraints()
+                constraint.detector = ifo
+                constraint.minStartTime = lal.LIGOTimeGPS(self.minStartTime)
+                constraint.maxStartTime = lal.LIGOTimeGPS(self.maxStartTime)
+                catalog = lalpulsar.SFTdataFind(self.noiseSFTs, constraint)
+                numSFTs.append(catalog.length)
+        else:
+            numSFTs = len(IFOs) * [int(float(self.data_duration) / self.Tsft)]
 
         self.theta = np.array([self.phi, self.F0, self.F1, self.F2])
 
@@ -111,18 +123,18 @@ class Writer(BaseSearchClass):
             lalpulsar.OfficialSFTFilename(
                 dets[0],
                 dets[1],
-                numSFTs,
+                numSFTs[ind],
                 self.Tsft,
                 self.minStartTime,
                 self.data_duration,
                 self.label,
             )
-            for dets in self.detectors.split(",")
+            for ind, dets in enumerate(IFOs)
         ]
         self.sftfilepath = ";".join(
             [os.path.join(self.outdir, fn) for fn in self.sftfilenames]
         )
-        self.IFOs = ",".join(['"{}"'.format(d) for d in self.detectors.split(",")])
+        self.IFOs = ",".join(['"{}"'.format(d) for d in IFOs])
 
     def make_data(self):
         """ A convienience wrapper to generate a cff file then sfts """
