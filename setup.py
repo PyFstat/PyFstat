@@ -23,6 +23,9 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
+# get all example scripts for sdist
+examples = glob("examples/*/*.py")
+
 setup(
     name="PyFstat",
     version=versioneer.get_version(),
@@ -44,8 +47,8 @@ setup(
             "../versioneer.py",
             "../CHANGELOG.md",
         ]
+        + ["../" + f for f in examples],  # need relative path from module sub-dir here
     },
-    scripts=glob("examples/*/*.py"),
     platforms="POSIX",
     classifiers=[
         "Programming Language :: Python :: 3",
