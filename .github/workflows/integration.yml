@@ -29,13 +29,25 @@ jobs:
         wget $EPHEM_SRC/sun00-40-DE405.dat.gz -P $LALPULSAR_DATADIR
         echo "Successfully downloaded ephemerides:"
         ls -l $LALPULSAR_DATADIR
+    - name: Style check with black
+      run: |
+        pip install black
+        black --check --diff .
     - name: Test with pytest
       run: |
         pip install pytest
         # make sure to test *installed* version of pyFstat
         pip install -e $GITHUB_WORKSPACE
         (cd .. && pytest $GITHUB_WORKSPACE/tests.py --log-file=$GITHUB_WORKSPACE/tests.log)
-    - name: Style check with black
+    - name: Build package
       run: |
-        pip install black
-        black --check --diff .
+        pip install wheel check-wheel-contents
+        python setup.py sdist bdist_wheel
+        check-wheel-contents dist/*.whl
+    - name: Publish package to TestPyPI
+      if: matrix.python-version == 3.8 && github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: __token__
+        password: ${{ secrets.test_pypi_password }}
+        repository_url: https://test.pypi.org/legacy/
