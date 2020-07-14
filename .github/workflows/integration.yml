@@ -45,6 +45,7 @@ jobs:
         python setup.py sdist bdist_wheel
         check-wheel-contents dist/*.whl
     - name: Publish package to TestPyPI
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@master
       with:
         user: __token__
