@@ -721,10 +721,10 @@ class TransientGridSearch(GridSearch):
 
         data = []
         if self.outputTransientFstatMap:
-            tCWfilebase = os.path.splitext(self.out_file)[0] + "_tCW_"
+            self.tCWfilebase = os.path.splitext(self.out_file)[0] + "_tCW_"
             logging.info(
                 "Will save per-Doppler Fstatmap"
-                " results to {}*.dat".format(tCWfilebase)
+                " results to {}*.dat".format(self.tCWfilebase)
             )
         self.timingFstatMap = 0.0
         for vals in tqdm(self.input_data):
@@ -741,12 +741,15 @@ class TransientGridSearch(GridSearch):
                 if self.outputTransientFstatMap:
                     # per-Doppler filename convention:
                     # freq alpha delta f1dot f2dot
-                    tCWfile = tCWfilebase + "%.16f_%.16f_%.16f_%.16g_%.16g.dat" % (
-                        vals[2],
-                        vals[5],
-                        vals[6],
-                        vals[3],
-                        vals[4],
+                    tCWfile = (
+                        self.tCWfilebase
+                        + "{:.16f}_{:.16f}_{:.16f}_{:.16g}_{:.16g}.dat".format(
+                            vals[self.keys.index("F0")],
+                            vals[self.keys.index("Alpha")],
+                            vals[self.keys.index("Delta")],
+                            vals[self.keys.index("F1")],
+                            vals[self.keys.index("F2")],
+                        )
                     )
                     if self.tCWFstatMapVersion == "lal":
                         fo = lal.FileOpen(tCWfile, "w")
