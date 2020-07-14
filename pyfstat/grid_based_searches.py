@@ -306,11 +306,11 @@ class GridSearch(BaseSearchClass):
                 rtol[n] = 0
                 atol[n] = 0
             elif f.endswith("g"):
-                precision = int(re.findall("\d+", f)[-1])
+                precision = int(re.findall(r"\d+", f)[-1])
                 rtol[n] = 10 ** (1 - precision)
                 atol[n] = 0
             elif f.endswith("f"):
-                decimals = int(re.findall("\d+", f)[-1])
+                decimals = int(re.findall(r"\d+", f)[-1])
                 rtol[n] = 0
                 atol[n] = 10 ** -decimals
             else:
