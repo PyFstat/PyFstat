@@ -39,3 +39,7 @@ jobs:
         # make sure to test *installed* version of pyFstat
         pip install -e $GITHUB_WORKSPACE
         (cd .. && pytest $GITHUB_WORKSPACE/tests.py --log-file=$GITHUB_WORKSPACE/tests.log)
+    - name: Install dependencies
+      run: pip install wheel
+    - name: Build package
+      run: python setup.py sdist bdist_wheel
