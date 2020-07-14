@@ -854,6 +854,25 @@ class TransientGridSearch(Test):
         self.assertTrue(
             np.all(max2F_point["twoF"] >= search.data[:, search.keys.index("twoF")])
         )
+        tCWfile = (
+            search.tCWfilebase
+            + "{:.16f}_{:.16f}_{:.16f}_{:.16g}_{:.16g}.dat".format(
+                max2F_point["F0"],
+                max2F_point["Alpha"],
+                max2F_point["Delta"],
+                max2F_point["F1"],
+                max2F_point["F2"],
+            )
+        )
+        tCW_out = pyfstat.helper_functions.read_txt_file_with_header(
+            tCWfile, comments="#"
+        )
+        max2Fidx = np.argmax(tCW_out["2F"])
+        self.assertTrue(
+            np.isclose(max2F_point["twoF"], tCW_out["2F"][max2Fidx], rtol=1e-6, atol=0)
+        )
+        self.assertTrue(max2F_point["t0"] == tCW_out["t0s"][max2Fidx])
+        self.assertTrue(max2F_point["tau"] == tCW_out["taus"][max2Fidx])
 
 
 if __name__ == "__main__":
