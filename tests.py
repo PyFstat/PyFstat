@@ -698,6 +698,10 @@ class GridSearch(Test):
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
+        max2F_point = search.get_max_twoF()
+        self.assertTrue(
+            np.all(max2F_point["twoF"] >= search.data[:, search.keys.index("twoF")])
+        )
 
     def test_grid_search_against_CFSv2(self):
         search = pyfstat.GridSearch(
@@ -818,6 +822,38 @@ class GridSearch(Test):
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
+
+
+class TransientGridSearch(Test):
+    F0s = [29, 31, 0.1]
+    F1s = [-1e-10, 0, 1e-11]
+    tref = 700000000
+
+    def test_transient_grid_search(self):
+        search = pyfstat.TransientGridSearch(
+            "grid_search",
+            self.outdir,
+            self.sftfilepath,
+            F0s=self.F0s,
+            F1s=[0],
+            F2s=[0],
+            Alphas=[0],
+            Deltas=[0],
+            tref=self.tref,
+            minStartTime=self.minStartTime,
+            maxStartTime=self.maxStartTime,
+            transientWindowType="rect",
+            t0Band=self.duration - 3600,
+            tauBand=self.duration,
+            outputTransientFstatMap=True,
+            tCWFstatMapVersion="lal",
+        )
+        search.run()
+        self.assertTrue(os.path.isfile(search.out_file))
+        max2F_point = search.get_max_twoF()
+        self.assertTrue(
+            np.all(max2F_point["twoF"] >= search.data[:, search.keys.index("twoF")])
+        )
 
 
 if __name__ == "__main__":
