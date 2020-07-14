@@ -1,3 +1,11 @@
+## 1.4.2 [14/07/2020]
+
+ - small fixes to search classes:
+   - get_max_twoF() fixed for TransientGridSearch
+   - fix column header format for per-Doppler-point transient Fmn output files
+   - fixed regexp deprecation warning
+   - throw warning if using MCMCSearch.generate_loudest() called for transients
+
 ## 1.4.1 [13/07/2020]
 
  - Writer: fix SFT counting for non-contiguous or overlapping SFTs
