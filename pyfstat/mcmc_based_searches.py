@@ -1769,6 +1769,11 @@ class MCMCSearch(core.BaseSearchClass):
             raise RuntimeError(
                 "CFSv2 --outputLoudest cannot deal with glitch parameters."
             )
+        if getattr(self, "transientWindowType", None) is not None:
+            logging.warning(
+                "CFSv2 --outputLoudest always reports the maximum of the"
+                " standard CW 2F-statistic, not the transient max2F."
+            )
         for key in self.theta_prior:
             if key not in params:
                 params[key] = self.theta_prior[key]
