@@ -755,7 +755,7 @@ class TransientGridSearch(GridSearch):
                         fo = lal.FileOpen(tCWfile, "w")
                         for hline in self.output_file_header:
                             lal.FilePuts("# {:s}\n".format(hline), fo)
-                        lal.FilePuts("# t0 [s]     tau [s]     2F\n", fo)
+                        lal.FilePuts("# t0[s]      tau[s]      2F\n", fo)
                         lalpulsar.write_transientFstatMap_to_fp(
                             fo, FstatMap, windowRange, None
                         )
