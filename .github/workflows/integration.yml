@@ -29,13 +29,13 @@ jobs:
         wget $EPHEM_SRC/sun00-40-DE405.dat.gz -P $LALPULSAR_DATADIR
         echo "Successfully downloaded ephemerides:"
         ls -l $LALPULSAR_DATADIR
+    - name: Style check with black
+      run: |
+        pip install black
+        black --check --diff .
     - name: Test with pytest
       run: |
         pip install pytest
         # make sure to test *installed* version of pyFstat
         pip install -e $GITHUB_WORKSPACE
         (cd .. && pytest $GITHUB_WORKSPACE/tests.py --log-file=$GITHUB_WORKSPACE/tests.log)
-    - name: Style check with black
-      run: |
-        pip install black
-        black --check --diff .
