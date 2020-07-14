@@ -698,6 +698,10 @@ class GridSearch(Test):
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
+        max2F_point = search.get_max_twoF()
+        self.assertTrue(
+            np.all(max2F_point["twoF"] >= search.data[:, search.keys.index("twoF")])
+        )
 
     def test_grid_search_against_CFSv2(self):
         search = pyfstat.GridSearch(
@@ -818,6 +822,57 @@ class GridSearch(Test):
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
+
+
+class TransientGridSearch(Test):
+    F0s = [29, 31, 0.1]
+    F1s = [-1e-10, 0, 1e-11]
+    tref = 700000000
+
+    def test_transient_grid_search(self):
+        search = pyfstat.TransientGridSearch(
+            "grid_search",
+            self.outdir,
+            self.sftfilepath,
+            F0s=self.F0s,
+            F1s=[0],
+            F2s=[0],
+            Alphas=[0],
+            Deltas=[0],
+            tref=self.tref,
+            minStartTime=self.minStartTime,
+            maxStartTime=self.maxStartTime,
+            transientWindowType="rect",
+            t0Band=self.duration - 3600,
+            tauBand=self.duration,
+            outputTransientFstatMap=True,
+            tCWFstatMapVersion="lal",
+        )
+        search.run()
+        self.assertTrue(os.path.isfile(search.out_file))
+        max2F_point = search.get_max_twoF()
+        self.assertTrue(
+            np.all(max2F_point["twoF"] >= search.data[:, search.keys.index("twoF")])
+        )
+        tCWfile = (
+            search.tCWfilebase
+            + "{:.16f}_{:.16f}_{:.16f}_{:.16g}_{:.16g}.dat".format(
+                max2F_point["F0"],
+                max2F_point["Alpha"],
+                max2F_point["Delta"],
+                max2F_point["F1"],
+                max2F_point["F2"],
+            )
+        )
+        tCW_out = pyfstat.helper_functions.read_txt_file_with_header(
+            tCWfile, comments="#"
+        )
+        max2Fidx = np.argmax(tCW_out["2F"])
+        self.assertTrue(
+            np.isclose(max2F_point["twoF"], tCW_out["2F"][max2Fidx], rtol=1e-6, atol=0)
+        )
+        self.assertTrue(max2F_point["t0"] == tCW_out["t0s"][max2Fidx])
+        self.assertTrue(max2F_point["tau"] == tCW_out["taus"][max2Fidx])
 
 
 if __name__ == "__main__":

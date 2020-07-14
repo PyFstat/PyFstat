@@ -306,11 +306,11 @@ class GridSearch(BaseSearchClass):
                 rtol[n] = 0
                 atol[n] = 0
             elif f.endswith("g"):
-                precision = int(re.findall("\d+", f)[-1])
+                precision = int(re.findall(r"\d+", f)[-1])
                 rtol[n] = 10 ** (1 - precision)
                 atol[n] = 0
             elif f.endswith("f"):
-                decimals = int(re.findall("\d+", f)[-1])
+                decimals = int(re.findall(r"\d+", f)[-1])
                 rtol[n] = 0
                 atol[n] = 10 ** -decimals
             else:
@@ -542,25 +542,13 @@ class GridSearch(BaseSearchClass):
             'F2', 'Alpha', 'Delta' and 'twoF' of maximum
 
         """
-
-        twoF = self.data[:, -1]
-        idx = np.argmax(twoF)
-        v = self.data[idx, :]
-        d = OrderedDict(
-            minStartTime=v[0],
-            maxStartTime=v[1],
-            F0=v[2],
-            F1=v[3],
-            F2=v[4],
-            Alpha=v[5],
-            Delta=v[6],
-            twoF=v[7],
-        )
+        idx = np.argmax(self.data[:, self.keys.index("twoF")])
+        d = OrderedDict([(key, self.data[idx, k]) for k, key in enumerate(self.keys)])
         return d
 
     def print_max_twoF(self):
         d = self.get_max_twoF()
-        print("Max twoF values for {}:".format(self.label))
+        print("Grid point with max(twoF) for {}:".format(self.label))
         for k, v in d.items():
             print("  {}={}".format(k, v))
 
@@ -733,10 +721,10 @@ class TransientGridSearch(GridSearch):
 
         data = []
         if self.outputTransientFstatMap:
-            tCWfilebase = os.path.splitext(self.out_file)[0] + "_tCW_"
+            self.tCWfilebase = os.path.splitext(self.out_file)[0] + "_tCW_"
             logging.info(
                 "Will save per-Doppler Fstatmap"
-                " results to {}*.dat".format(tCWfilebase)
+                " results to {}*.dat".format(self.tCWfilebase)
             )
         self.timingFstatMap = 0.0
         for vals in tqdm(self.input_data):
@@ -753,18 +741,21 @@ class TransientGridSearch(GridSearch):
                 if self.outputTransientFstatMap:
                     # per-Doppler filename convention:
                     # freq alpha delta f1dot f2dot
-                    tCWfile = tCWfilebase + "%.16f_%.16f_%.16f_%.16g_%.16g.dat" % (
-                        vals[2],
-                        vals[5],
-                        vals[6],
-                        vals[3],
-                        vals[4],
+                    tCWfile = (
+                        self.tCWfilebase
+                        + "{:.16f}_{:.16f}_{:.16f}_{:.16g}_{:.16g}.dat".format(
+                            vals[self.keys.index("F0")],
+                            vals[self.keys.index("Alpha")],
+                            vals[self.keys.index("Delta")],
+                            vals[self.keys.index("F1")],
+                            vals[self.keys.index("F2")],
+                        )
                     )
                     if self.tCWFstatMapVersion == "lal":
                         fo = lal.FileOpen(tCWfile, "w")
                         for hline in self.output_file_header:
                             lal.FilePuts("# {:s}\n".format(hline), fo)
-                        lal.FilePuts("# t0 [s]     tau [s]     2F\n", fo)
+                        lal.FilePuts("# t0[s]      tau[s]      2F\n", fo)
                         lalpulsar.write_transientFstatMap_to_fp(
                             fo, FstatMap, windowRange, None
                         )
