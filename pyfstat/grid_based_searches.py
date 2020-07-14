@@ -542,25 +542,13 @@ class GridSearch(BaseSearchClass):
             'F2', 'Alpha', 'Delta' and 'twoF' of maximum
 
         """
-
-        twoF = self.data[:, -1]
-        idx = np.argmax(twoF)
-        v = self.data[idx, :]
-        d = OrderedDict(
-            minStartTime=v[0],
-            maxStartTime=v[1],
-            F0=v[2],
-            F1=v[3],
-            F2=v[4],
-            Alpha=v[5],
-            Delta=v[6],
-            twoF=v[7],
-        )
+        idx = np.argmax(self.data[:, self.keys.index("twoF")])
+        d = OrderedDict([(key, self.data[idx, k]) for k, key in enumerate(self.keys)])
         return d
 
     def print_max_twoF(self):
         d = self.get_max_twoF()
-        print("Max twoF values for {}:".format(self.label))
+        print("Grid point with max(twoF) for {}:".format(self.label))
         for k, v in d.items():
             print("  {}={}".format(k, v))
 
