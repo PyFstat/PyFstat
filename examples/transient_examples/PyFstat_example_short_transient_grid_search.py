@@ -4,6 +4,14 @@ import pyfstat
 import os
 import numpy as np
 
+outdir = os.path.join("PyFstat_example_data", "PyFstat_example_short_transient_search")
+if not os.path.isdir(outdir) or not np.any(
+    [f.endswith(".sft") for f in os.listdir(outdir)]
+):
+    raise RuntimeError(
+        "Please first run PyFstat_example_make_data_for_short_transient_search.py !"
+    )
+
 F0 = 30.0
 F1 = -1e-10
 F2 = 0
@@ -25,14 +33,6 @@ F1s = [F1]
 F2s = [F2]
 Alphas = [Alpha]
 Deltas = [Delta]
-
-outdir = os.path.join("example_data", "short_transient")
-if not os.path.isdir(outdir) or not np.any(
-    [f.endswith(".sft") for f in os.listdir(outdir)]
-):
-    raise RuntimeError(
-        "Please first run PyFstat_example_make_data_for_short_transient_search.py !"
-    )
 
 print("Standard CW search:")
 search1 = pyfstat.GridSearch(

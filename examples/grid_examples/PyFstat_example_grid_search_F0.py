@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+label = os.path.splitext(os.path.basename(__file__))[0]
+outdir = os.path.join("PyFstat_example_data", label)
+
 F0 = 30.0
 F1 = 0
 F2 = 0
@@ -22,11 +25,9 @@ tend = tstart + duration
 tref = 0.5 * (tstart + tend)
 
 example_name = os.path.splitext(os.path.basename(__file__))[0]
-data_label = "{:s}_depth_{:1.0f}".format(example_name, depth)
-outdir = os.path.join("example_data", example_name)
 
 data = pyfstat.Writer(
-    label=data_label,
+    label=label,
     outdir=outdir,
     tref=tref,
     tstart=tstart,
@@ -53,7 +54,7 @@ Deltas = [Delta]
 search = pyfstat.GridSearch(
     example_name,
     outdir,
-    os.path.join(outdir, "*" + data_label + "*sft"),
+    os.path.join(outdir, "*" + label + "*sft"),
     F0s,
     F1s,
     F2s,
@@ -86,4 +87,4 @@ ax.set_xticks(xticks)
 xticklabels = ["$f_0 {-} 10\Delta f$", "$f_0$", "$f_0 {+} 10\Delta f$"]
 ax.set_xticklabels(xticklabels)
 plt.tight_layout()
-fig.savefig(os.path.join(search.outdir, search.label + "_1D.png"), dpi=300)
+fig.savefig(os.path.join(outdir, label + "_1D.png"), dpi=300)

@@ -2,6 +2,9 @@ import pyfstat
 import numpy as np
 import os
 
+label = os.path.splitext(os.path.basename(__file__))[0]
+outdir = os.path.join("PyFstat_example_data", label)
+
 # Properties of the GW data
 sqrtSX = 1e-23
 tstart = 1000000000
@@ -18,11 +21,9 @@ tref = 0.5 * (tstart + tend)
 
 depth = 60
 h0 = sqrtSX / depth
-data_label = os.path.splitext(os.path.basename(__file__))[0]
-outdir = os.path.join("example_data", data_label)
 
 data = pyfstat.Writer(
-    label=data_label,
+    label=label,
     outdir=outdir,
     tref=tref,
     tstart=tstart,
@@ -39,9 +40,9 @@ data.make_data()
 
 DeltaF0 = 1e-5
 search = pyfstat.FrequencySlidingWindow(
-    label=data_label,
+    label=label,
     outdir=outdir,
-    sftfilepattern=os.path.join(outdir, "*{}*sft".format(data_label)),
+    sftfilepattern=os.path.join(outdir, "*{}*sft".format(label)),
     F0s=[F0 - DeltaF0, F0 + DeltaF0, DeltaF0 / 100.0],
     F1=F1,
     F2=0,

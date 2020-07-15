@@ -11,6 +11,9 @@ except ImportError:
         "https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner"
     )
 
+label = os.path.splitext(os.path.basename(__file__))[0]
+outdir = os.path.join("PyFstat_example_data", label)
+
 F0 = 30.0
 F1 = 1e-10
 F2 = 0
@@ -25,8 +28,6 @@ tend = tstart + duration
 tref = 0.5 * (tstart + tend)
 
 depth = 20
-label = os.path.splitext(os.path.basename(__file__))[0]
-outdir = os.path.join("example_data", label)
 
 h0 = sqrtSX / depth
 

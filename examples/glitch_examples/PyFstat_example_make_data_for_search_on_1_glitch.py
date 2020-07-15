@@ -2,7 +2,7 @@ from pyfstat import Writer, GlitchWriter
 import numpy as np
 import os
 
-outdir = os.path.join("example_data", "glitch_robust_search")
+outdir = os.path.join("PyFstat_example_data", "PyFstat_example_glitch_robust_search")
 
 # First, we generate data with a reasonably strong smooth signal
 

@@ -4,7 +4,9 @@ import numpy as np
 import lalpulsar
 import pyfstat
 
-outdir = os.path.join("example_data", "injecting_into_noise_sfts")
+label = os.path.splitext(os.path.basename(__file__))[0]
+outdir = os.path.join("PyFstat_example_data", label)
+
 duration_Tsft = 100
 Tsft = 1800
 h0 = 1000
@@ -13,7 +15,7 @@ randSeed = 69420
 # create sfts with a strong signal in them
 # window options are optional here
 noise_and_signal_writer = pyfstat.Writer(
-    "test_noiseSFTs_noise_and_signal",
+    label="test_noiseSFTs_noise_and_signal",
     outdir=outdir,
     h0=h0,
     duration=duration_Tsft * Tsft,
@@ -46,7 +48,7 @@ FS_1 = coherent_search.get_fullycoherent_twoF(
 # create noise sfts
 # window options are again optional for this step
 noise_writer = pyfstat.Writer(
-    "test_noiseSFTs_only_noise",
+    label="test_noiseSFTs_only_noise",
     outdir=outdir,
     h0=0,
     duration=duration_Tsft * Tsft,
@@ -60,7 +62,7 @@ noise_writer.make_data()
 # then inject a strong signal
 # window options *must* match those previously used for the noiseSFTs
 add_signal_writer = pyfstat.Writer(
-    "test_noiseSFTs_add_signal",
+    label="test_noiseSFTs_add_signal",
     outdir=outdir,
     h0=h0,
     duration=duration_Tsft * Tsft,

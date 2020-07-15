@@ -3,6 +3,8 @@
 import pyfstat
 import os
 
+outdir = os.path.join("PyFstat_example_data", "PyFstat_example_long_transient_search")
+
 F0 = 30.0
 F1 = -1e-10
 F2 = 0
@@ -18,8 +20,6 @@ tref = minStartTime
 
 h0 = 1e-23
 sqrtSX = 1e-22
-
-outdir = os.path.join("example_data", "long_transient")
 
 transient = pyfstat.Writer(
     label="simulated_transient_signal",
