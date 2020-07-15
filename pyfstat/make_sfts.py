@@ -95,7 +95,6 @@ class Writer(BaseSearchClass):
             self.maxStartTime = self.tend
         self.minStartTime = int(self.minStartTime)
         self.maxStartTime = int(self.maxStartTime)
-        self.duration_days = (self.tend - self.tstart) / 86400
 
         self.data_duration = self.maxStartTime - self.minStartTime
 
@@ -180,7 +179,7 @@ refTime = {:10.6f}"""
         tref,
         window,
         tstart,
-        duration_days,
+        duration,
     ):
         template = (
             self.get_base_template(
@@ -205,7 +204,7 @@ transientTau = {:10.0f}\n"""
             tref,
             window,
             tstart,
-            duration_days * 86400,
+            duration,
         )
 
     def get_single_config_line(
@@ -223,7 +222,7 @@ transientTau = {:10.0f}\n"""
         tref,
         window,
         tstart,
-        duration_days,
+        duration,
     ):
         if window == "none":
             return self.get_single_config_line_cw(
@@ -244,7 +243,7 @@ transientTau = {:10.0f}\n"""
                 tref,
                 window,
                 tstart,
-                duration_days,
+                duration,
             )
 
     def make_cff(self):
@@ -267,7 +266,7 @@ transientTau = {:10.0f}\n"""
             self.tref,
             self.transientWindowType,
             self.tstart,
-            self.duration_days,
+            self.duration,
         )
 
         if self.check_if_cff_file_needs_rewritting(content):
@@ -591,7 +590,7 @@ class BinaryModulatedWriter(Writer):
         if self.signal_parameters["transientWindowType"] != "none":
             self.signal_parameters["transientStartTime"] = self.tstart
             self.signal_formats["transientStartTime"] = ":10.0f"
-            self.signal_parameters["transientTau"] = self.duration_days * 86400.0
+            self.signal_parameters["transientTau"] = self.duration
             self.signal_formats["transientTau"] = ":10.0f"
 
     def get_single_config_line(self, i):
@@ -711,7 +710,7 @@ class GlitchWriter(Writer):
         logging.info("Using segment boundaries {}".format(self.tbounds))
 
         tbs = np.array(self.tbounds)
-        self.durations_days = (tbs[1:] - tbs[:-1]) / 86400
+        self.durations = tbs[1:] - tbs[:-1]
 
         self.delta_thetas = np.atleast_2d(
             np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T
@@ -726,9 +725,7 @@ class GlitchWriter(Writer):
         thetas = self._calculate_thetas(self.theta, self.delta_thetas, self.tbounds)
 
         content = ""
-        for i, (t, d, ts) in enumerate(
-            zip(thetas, self.durations_days, self.tbounds[:-1])
-        ):
+        for i, (t, d, ts) in enumerate(zip(thetas, self.durations, self.tbounds[:-1])):
             line = self.get_single_config_line(
                 i,
                 self.Alpha,
@@ -813,7 +810,6 @@ class FrequencyModulatedArtifactWriter(Writer):
             raise ValueError("Input `tref` not specified")
 
         self.nsfts = int(np.ceil(self.duration / self.Tsft))
-        self.duration = self.duration / 86400.0
         self.calculate_fmin_Band()
 
         self.cosi = 0
