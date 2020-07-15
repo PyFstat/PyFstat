@@ -9,12 +9,12 @@ F2 = 0
 Alpha = 0.5
 Delta = 1
 
-minStartTime = 1000000000
-maxStartTime = minStartTime + 200 * 86400
+tstart = 1000000000
+duration = 200 * 86400
 
-transient_tstart = minStartTime + 50 * 86400
-transient_duration = 100 * 86400
-tref = minStartTime
+transient_tstart = tstart + 0.25 * duration
+transient_duration = 0.5 * duration
+tref = tstart
 
 h0 = 1e-23
 sqrtSX = 1e-22
@@ -25,17 +25,17 @@ transient = pyfstat.Writer(
     label="simulated_transient_signal",
     outdir=outdir,
     tref=tref,
-    tstart=transient_tstart,
+    tstart=tstart,
+    duration=duration,
     F0=F0,
     F1=F1,
     F2=F2,
-    duration=transient_duration,
     Alpha=Alpha,
     Delta=Delta,
     h0=h0,
     sqrtSX=sqrtSX,
-    minStartTime=minStartTime,
-    maxStartTime=maxStartTime,
+    transientStartTime=transient_tstart,
+    transientTau=transient_duration,
     transientWindowType="rect",
 )
 transient.make_data()

@@ -11,20 +11,23 @@ Alpha = 0.5
 Delta = 1
 
 minStartTime = 1000000000
-maxStartTime = minStartTime + 200 * 86400
+duration = 200 * 86400
+maxStartTime = minStartTime + duration
 Tspan = maxStartTime - minStartTime
 tref = minStartTime
 
 DeltaF0 = 6e-7
 DeltaF1 = 1e-13
 
+# to make the search cheaper, we exactly target the transientStartTime
+# to the injected value and only search over TransientTau
 theta_prior = {
     "F0": {"type": "unif", "lower": F0 - DeltaF0 / 2.0, "upper": F0 + DeltaF0 / 2.0},
     "F1": {"type": "unif", "lower": F1 - DeltaF1 / 2.0, "upper": F1 + DeltaF1 / 2.0},
     "F2": F2,
     "Alpha": Alpha,
     "Delta": Delta,
-    "transient_tstart": minStartTime,
+    "transient_tstart": minStartTime + 0.25 * duration,
     "transient_duration": {
         "type": "halfnorm",
         "loc": 0.001 * Tspan,

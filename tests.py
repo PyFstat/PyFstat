@@ -83,9 +83,9 @@ class Writer(Test):
         Writer.run_makefakedata()
         expected_outfile = os.path.join(
             ".",
-            self.outdir,
+            Writer.outdir,
             "H-2_H1_1800SFT_{}-{}-{}.sft".format(
-                self.label, self.minStartTime, duration
+                Writer.label, Writer.tstart, Writer.duration
             ),
         )
         self.assertTrue(os.path.isfile(expected_outfile))
@@ -516,15 +516,14 @@ class SemiCoherentSearch(Test):
             record_segments=True,
         )
 
-        # Compute the predicted semi-coherent Fstat
-        minStartTime = self.Writer.tstart
-        maxStartTime = self.Writer.tend
-
-        self.Writer.maxStartTime = minStartTime + self.Writer.duration / 2.0
+        # Compute the predicted semi-coherent Fstat for the first segment
+        self.Writer.duration /= 2.0
+        self.Writer.tend = self.Writer.tstart + self.Writer.duration
         FSA = self.Writer.predict_fstat()
 
-        self.Writer.tstart = minStartTime + self.Writer.duration / 2.0
-        self.Writer.tend = maxStartTime
+        # same for second segment
+        self.Writer.tstart += self.Writer.duration
+        self.Writer.tend += self.Writer.duration
         FSB = self.Writer.predict_fstat()
 
         FSs = np.array([FSA, FSB])
@@ -599,17 +598,13 @@ class SemiCoherentGlitchSearch(Test):
             search.minStartTime + dtglitch,
         )
 
-        # Compute the predicted semi-coherent glitch Fstat
-        minStartTime = Writer.tstart
-        maxStartTime = Writer.tend
-
-        Writer.maxStartTime = minStartTime + dtglitch
+        # Compute the predicted semi-coherent glitch Fstat for the first half
+        Writer.transientStartTime = Writer.tstart
+        Writer.transientTau = dtglitch
         FSA = Writer.predict_fstat()
-
-        Writer.tstart = minStartTime + dtglitch
-        Writer.tend = maxStartTime
+        # same for the second half (tau stays the same)
+        Writer.transientStartTime += dtglitch
         FSB = Writer.predict_fstat()
-
         predicted_FS = FSA + FSB
 
         self.assertTrue(np.abs((FS - predicted_FS)) / predicted_FS < 0.3)
