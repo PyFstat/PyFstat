@@ -2,6 +2,9 @@ import pyfstat
 import numpy as np
 import os
 
+label = os.path.splitext(os.path.basename(__file__))[0]
+outdir = os.path.join("PyFstat_example_data", label)
+
 # Properties of the GW data
 sqrtSX = 1e-23
 tstart = 1000000000
@@ -18,8 +21,6 @@ tref = 0.5 * (tstart + tend)
 
 depth = 10
 h0 = sqrtSX / depth
-label = os.path.splitext(os.path.basename(__file__))[0]
-outdir = os.path.join("example_data", label)
 
 data = pyfstat.Writer(
     label=label,

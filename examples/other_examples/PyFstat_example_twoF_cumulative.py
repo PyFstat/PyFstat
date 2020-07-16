@@ -2,6 +2,9 @@ import pyfstat
 import numpy as np
 import os
 
+label = os.path.splitext(os.path.basename(__file__))[0]
+outdir = os.path.join("PyFstat_example_data", label)
+
 # Properties of the GW data
 sqrtSX = 1e-23
 tstart = 1000000000
@@ -18,11 +21,9 @@ tref = 0.5 * (tstart + tend)
 
 depth = 100
 h0 = sqrtSX / depth
-data_label = os.path.splitext(os.path.basename(__file__))[0]
-outdir = os.path.join("example_data", data_label)
 
 data = pyfstat.Writer(
-    label=data_label,
+    label=label,
     outdir=outdir,
     tref=tref,
     tstart=tstart,
@@ -62,9 +63,9 @@ nwalkers = 100
 nsteps = [50, 50]
 
 mcmc = pyfstat.MCMCSearch(
-    label=data_label,
+    label=label,
     outdir=outdir,
-    sftfilepattern=os.path.join(outdir, "*" + data_label + "*sft"),
+    sftfilepattern=os.path.join(outdir, "*" + label + "*sft"),
     theta_prior=theta_prior,
     tref=tref,
     minStartTime=tstart,

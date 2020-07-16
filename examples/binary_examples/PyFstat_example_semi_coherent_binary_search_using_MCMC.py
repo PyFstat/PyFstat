@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 label = os.path.splitext(os.path.basename(__file__))[0]
-outdir = os.path.join("example_data", label)
+outdir = os.path.join("PyFstat_example_data", label)
 
 # Properties of the GW data
 data_parameters = {
