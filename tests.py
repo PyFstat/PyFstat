@@ -142,7 +142,10 @@ class Writer(Test):
 
         # compute Fstat
         coherent_search = pyfstat.ComputeFstat(
-            tref=noise_and_signal_writer.tref, sftfilepattern=sftfilepattern
+            tref=noise_and_signal_writer.tref,
+            sftfilepattern=sftfilepattern,
+            minCoverFreq=-0.5,
+            maxCoverFreq=-0.5,
         )
         FS_1 = coherent_search.get_fullycoherent_twoF(
             noise_and_signal_writer.tstart,
@@ -189,7 +192,10 @@ class Writer(Test):
 
         # compute Fstat
         coherent_search = pyfstat.ComputeFstat(
-            tref=add_signal_writer.tref, sftfilepattern=sftfilepattern
+            tref=add_signal_writer.tref,
+            sftfilepattern=sftfilepattern,
+            minCoverFreq=-0.5,
+            maxCoverFreq=-0.5,
         )
         FS_2 = coherent_search.get_fullycoherent_twoF(
             add_signal_writer.tstart,
@@ -320,7 +326,10 @@ class ComputeFstat(Test):
         sftfilepattern = os.path.join(Writer.outdir, "*{}-*sft".format(Writer.label))
 
         search_H1L1 = pyfstat.ComputeFstat(
-            tref=Writer.tref, sftfilepattern=sftfilepattern,
+            tref=Writer.tref,
+            sftfilepattern=sftfilepattern,
+            minCoverFreq=-0.5,
+            maxCoverFreq=-0.5,
         )
         FS = search_H1L1.get_fullycoherent_twoF(
             Writer.tstart,
@@ -340,6 +349,8 @@ class ComputeFstat(Test):
             detectors="H1",
             sftfilepattern=sftfilepattern,
             SSBprec=lalpulsar.SSBPREC_RELATIVISTIC,
+            minCoverFreq=-0.5,
+            maxCoverFreq=-0.5,
         )
         FS = search_H1.get_fullycoherent_twoF(
             Writer.tstart,
@@ -437,6 +448,8 @@ class ComputeFstatNoNoise(Test):
             sftfilepattern=os.path.join(
                 self.Writer.outdir, "*{}-*sft".format(self.Writer.label)
             ),
+            minCoverFreq=-0.5,
+            maxCoverFreq=-0.5,
         )
         FS = search.get_fullycoherent_twoF(
             self.Writer.tstart,
@@ -466,6 +479,8 @@ class ComputeFstatNoNoise(Test):
             ),
             earth_ephem=earth_ephem_default,
             sun_ephem=sun_ephem_default,
+            minCoverFreq=-0.5,
+            maxCoverFreq=-0.5,
         )
         FS = search.get_fullycoherent_twoF(
             self.Writer.tstart,
@@ -505,6 +520,8 @@ class SemiCoherentSearch(Test):
             tref=self.Writer.tref,
             minStartTime=self.Writer.tstart,
             maxStartTime=self.Writer.tend,
+            minCoverFreq=-0.5,
+            maxCoverFreq=-0.5,
         )
 
         search.get_semicoherent_twoF(
@@ -542,6 +559,8 @@ class SemiCoherentSearch(Test):
             tref=self.Writer.tref,
             minStartTime=self.Writer.tstart,
             maxStartTime=self.Writer.tend,
+            minCoverFreq=-0.5,
+            maxCoverFreq=-0.5,
             BSGL=True,
         )
 
@@ -577,6 +596,14 @@ class SemiCoherentGlitchSearch(Test):
 
         Writer.make_data()
 
+        keys = ["F0", "F1", "F2", "Alpha", "Delta"]
+        search_ranges = {
+            key: [
+                getattr(Writer, key),
+                getattr(Writer, key) + getattr(Writer, "delta_" + key, 0.0),
+            ]
+            for key in keys
+        }
         search = pyfstat.SemiCoherentGlitchSearch(
             label=self.label,
             outdir=self.outdir,
@@ -585,6 +612,7 @@ class SemiCoherentGlitchSearch(Test):
             minStartTime=Writer.tstart,
             maxStartTime=Writer.tend,
             nglitch=1,
+            search_ranges=search_ranges,
         )
 
         FS = search.get_semicoherent_nglitch_twoF(
@@ -709,7 +737,6 @@ class GridSearch(Test):
             Alphas=[0],
             Deltas=[0],
             tref=self.tref,
-            estimate_covering_band=True,
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
@@ -776,11 +803,11 @@ class GridSearch(Test):
             self.sftfilepath,
             F0s=self.F0s,
             F1s=self.F1s,
-            F2s=[0],
-            Alphas=[0],
-            Deltas=[0],
+            F2s=[0.0],
+            Alphas=[0.0],
+            Deltas=[0.0],
             tref=self.tref,
-            Lambda0=[30, 0, 0, 0],
+            Lambda0=[30.0, 0.0, 0.0, 0.0],
         )
         fig, axes = search.run(save=False)
         self.assertTrue(fig is not None)
