@@ -81,4 +81,5 @@ mcmc = pyfstat.MCMCSemiCoherentSearch(
 )
 mcmc.run()
 mcmc.plot_corner(add_prior=True)
+mcmc.plot_prior_posterior()
 mcmc.print_summary()

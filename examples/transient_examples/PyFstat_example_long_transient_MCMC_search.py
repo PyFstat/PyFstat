@@ -60,5 +60,6 @@ mcmc = pyfstat.MCMCTransientSearch(
     transientWindowType="rect",
 )
 mcmc.run()
-mcmc.plot_corner(label_offset=0.7)
+mcmc.plot_corner(add_prior=True)
+mcmc.plot_prior_posterior()
 mcmc.print_summary()

@@ -77,4 +77,5 @@ mcmc = pyfstat.MCMCSearch(
 mcmc.setup_initialisation(100, scatter_val=1e-10)
 mcmc.run()
 mcmc.plot_corner(add_prior=True)
+mcmc.plot_prior_posterior()
 mcmc.print_summary()
