@@ -99,4 +99,5 @@ if hasattr(mcmc, "walkers_fig") and hasattr(mcmc, "walkers_axes"):
         os.path.join(mcmc.outdir, mcmc.label + "_walkers.png"), dpi=400
     )
     mcmc.plot_corner(add_prior=True)
+    mcmc.plot_prior_posterior()
     mcmc.print_summary()
