@@ -354,9 +354,9 @@ def get_covering_band(
     F0band=0.0,
     F1band=0.0,
     F2band=0.0,
-    orbitasini=0.0,
-    orbitPeriod=0.0,
-    orbitEcc=0.0,
+    maxOrbitAsini=0.0,
+    minOrbitPeriod=0.0,
+    maxOrbitEcc=0.0,
 ):
     """ Get the covering band using XLALCWSignalCoveringBand
 
@@ -364,8 +364,16 @@ def get_covering_band(
     ----------
     tref, tstart, tend: int
         The reference, start, and end times of interest
-    F0, F1, F1:
-        Frequency and spin-down of the signal
+    F0, F1, F1: float
+        Minimum frequency and spin-down of signals to be covered
+    F0band, F1band, F1band: float
+        Ranges of frequency and spin-down of signals to be covered
+    maxOrbitAsini: float
+        Largest orbital projected semi-major axis to be covered
+    minOrbitPeriod: float
+        Shortest orbital period to be covered
+    maxOrbitEcc: float
+        Highest orbital eccentricity to be covered
 
     Note: this is similar to the function
     `injection_helper_functions.get_frequency_range_of_signal`, however this
@@ -391,7 +399,7 @@ def get_covering_band(
     psr.fkdotBand[2] = F2band
     psr.refTime = tref
     return lalpulsar.CWSignalCoveringBand(
-        tstart, tend, psr, orbitasini, orbitPeriod, orbitEcc
+        tstart, tend, psr, maxOrbitAsini, minOrbitPeriod, maxOrbitEcc
     )
 
 

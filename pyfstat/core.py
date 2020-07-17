@@ -999,6 +999,9 @@ class ComputeFstat(BaseSearchClass):
         Tsft = 1.0 / catalog.data[0].header.deltaF
         startTime = catalog.data[0].header.epoch
         endTime = catalog.data[-1].header.epoch + Tsft
+        # start by constructing a DopplerRegion structure
+        # which will be needed to conservatively account for sky-position dependent
+        # Doppler shifts of the frequency range to be covered
         searchRegion = lalpulsar.DopplerRegion()
         # sky region
         Alpha = self.search_ranges["Alpha"][0]
@@ -1029,6 +1032,7 @@ class ComputeFstat(BaseSearchClass):
                     if len(self.search_ranges[Fk]) >= 2
                     else 0.0
                 )
+        # now construct DopplerFullScan from searchRegion
         scanInit = lalpulsar.DopplerFullScanInit()
         scanInit.searchRegion = searchRegion
         scanInit.stepSizes = lalpulsar.PulsarDopplerParams()
@@ -1055,8 +1059,30 @@ class ComputeFstat(BaseSearchClass):
         scanInit.startTime = startTime
         scanInit.Tspan = float(endTime - startTime)
         scanState = lalpulsar.InitDopplerFullScan(scanInit)
+        # now obtain the PulsarSpinRange extended over all relevant Doppler shifts
         spinRangeRef = lalpulsar.PulsarSpinRange()
         lalpulsar.GetDopplerSpinRange(spinRangeRef, scanState)
+        # optional: binary parameters
+        if "asini" in range_keys:
+            if len(self.search_ranges["asini"]) >= 2:
+                maxOrbitAsini = self.search_ranges["asini"][1]
+            else:
+                maxOrbitAsini = self.search_ranges["asini"][0]
+        else:
+            maxOrbitAsini = 0.0
+        if "period" in range_keys:
+            minOrbitPeriod = self.search_ranges["period"][0]
+        else:
+            minOrbitPeriod = 0.0
+        if "ecc" in range_keys:
+            if len(self.search_ranges["ecc"]) >= 2:
+                maxOrbitEcc = self.search_ranges["ecc"][1]
+            else:
+                maxOrbitEcc = self.search_ranges["ecc"][0]
+        else:
+            maxOrbitEcc = 0.0
+        # finally call the wrapped lalpulsar estimation function with the
+        # extended PulsarSpinRange and optional binary parameters
         self.minCoverFreq, self.maxCoverFreq = helper_functions.get_covering_band(
             tref=self.tref,
             tstart=startTime,
@@ -1067,9 +1093,9 @@ class ComputeFstat(BaseSearchClass):
             F0band=spinRangeRef.fkdotBand[0],
             F1band=spinRangeRef.fkdotBand[1],
             F2band=spinRangeRef.fkdotBand[2],
-            orbitasini=0.0,  # FIXME
-            orbitPeriod=0.0,  # FIXME
-            orbitEcc=0.0,  # FIXME
+            maxOrbitAsini=maxOrbitAsini,
+            minOrbitPeriod=minOrbitPeriod,
+            maxOrbitEcc=maxOrbitEcc,
         )
 
     def get_fullycoherent_twoF(
