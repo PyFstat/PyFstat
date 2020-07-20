@@ -1567,18 +1567,23 @@ class SemiCoherentSearch(ComputeFstat):
 
     def _init_semicoherent_window_trick(self):
         """
-        Use this window to compute semicoherent Fstatistic using transient Fstat.
-        This basically intends to decouple this clever shenanigan from the actual
+        Use this window to compute the semicoherent Fstat using TransientFstatMaps.
+        This way we are able to decouple this clever shenanigan from the actual
         usage of a transient window.
         """
         self._semicoherent_window_trick = lalpulsar.transientWindowRange_t()
         self._semicoherent_window_trick.type = lalpulsar.TRANSIENT_RECTANGULAR
-        self._semicoherent_window_trick.t0 = None
-        self._semicoherent_window_trick.t0Band = None
-        self._semicoherent_window_trick.dt0 = None
-        self._semicoherent_window_trick.tau = None
-        self._semicoherent_window_trick.tauBand = None
-        self._semicoherent_window_trick.dtau = None
+
+        # Range [t0, t0+t0Band] step dt0 
+        self._semicoherent_window_trick.t0 = int(self.tboundaries[0])
+        self._semicoherent_window_trick.t0Band = int(self.tboundaries[-1] - self.tboundaries[0] - 2 * self.Tcoh)
+        self._semicoherent_window_trick.dt0 = int(self.Tcoh)
+        
+        # Range [tau, tau + tauBand] step dtau
+        # Watch out: dtau must be !=0, but tauBand==0 is allowed
+        self._semicoherent_window_trick.tau = int(self.Tcoh)
+        self._semicoherent_window_trick.tauBand = int(0)
+        self._semicoherent_window_trick.dtau = int(1) # Irrelevant
 
 
     def init_semicoherent_parameters(self):
@@ -1607,6 +1612,7 @@ class SemiCoherentSearch(ComputeFstat):
                         self.tboundaries[-1], self.SFT_timestamps[-1]
                     )
                 )
+        self._init_semicoherent_window_trick()
 
     def get_semicoherent_twoF(
         self,
@@ -1652,28 +1658,21 @@ class SemiCoherentSearch(ComputeFstat):
         #                                       self.BSGLSetup)
         #    return log10_BSGL/np.log10(np.exp(1))
 
-        detStat = 0
-        if record_segments:
-            self.detStat_per_segment = []
 
-        self.windowRange.tau = int(self.Tcoh)  # TYPE UINT4
-        for tstart in self.tboundaries[:-1]:
-            d_detStat = self._get_per_segment_det_stat(tstart)
-            detStat += d_detStat
-            if record_segments:
-                self.detStat_per_segment.append(d_detStat)
+        det_stat_per_segment = self._get_per_segment_det_stat()
+        detStat = det_stat_per_segment.sum()
+        if record_segments:
+            self.detStat_per_segment = det_stat_per_segment
 
         return detStat
 
-    def _get_per_segment_det_stat(self, tstart):
-        self.windowRange.t0 = int(tstart)  # TYPE UINT4
-
+    def _get_per_segment_det_stat(self):
         FS = lalpulsar.ComputeTransientFstatMap(
-            self.FstatResults.multiFatoms[0], self.windowRange, False
+            self.FstatResults.multiFatoms[0], self._semicoherent_window_trick, False
         )
 
         if self.BSGL is False:
-            d_detStat = 2 * FS.F_mn.data[0][0]
+            d_detStat = 2 * FS.F_mn.data[:, 0]
         else:
             FstatResults_single = copy.copy(self.FstatResults)
             FstatResults_single.lenth = 1
@@ -1692,9 +1691,9 @@ class SemiCoherentSearch(ComputeFstat):
                 2 * FS.F_mn.data[0][0], self.twoFX, self.BSGLSetup
             )
             d_detStat = log10_BSGL / np.log10(np.exp(1))
-        if np.isnan(d_detStat):
+        if np.isnan(np.sum(d_detStat)):
             logging.debug("NaNs in semi-coherent twoF treated as zero")
-            d_detStat = 0
+            d_detStat = np.nan_to_num(d_detStat, nan=0.0)
 
         return d_detStat
 
