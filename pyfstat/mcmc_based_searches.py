@@ -223,7 +223,16 @@ class MCMCSearch(core.BaseSearchClass):
     def _get_search_ranges(self):
         """ take prior widths as proxy "search ranges" to allow covering band estimate """
         if (self.minCoverFreq is None) or (self.maxCoverFreq is None):
-            prior_bounds = self._get_prior_bounds()
+            normal_stds = 3  # this might not always be enough
+            prior_bounds, norm_trunc_warn = self._get_prior_bounds(normal_stds)
+            if norm_trunc_warn:
+                logging.warning(
+                    "Gaussian priors (normal / half-normal) have been truncated"
+                    " at {:f} standard deviations for estimating the coverage"
+                    " frequency band. If sampling fails at any point, please"
+                    " consider manually setting [minCoverFreq,maxCoverFreq] to"
+                    " more generous values.".format(normal_stds)
+                )
             # first start with parameters that have non-delta prior ranges
             search_ranges = {
                 key: [prior_bounds[key]["lower"], prior_bounds[key]["upper"], 0]
@@ -1053,11 +1062,30 @@ class MCMCSearch(core.BaseSearchClass):
                 axes[i][k].set_ylim(xlim[0], xlim[1])
 
     def _get_prior_bounds(self, normal_stds=2):
-        """ Get the lower/upper bounds of all priors """
+        """ Get the lower/upper bounds of all priors
+
+        Parameters
+        ----------
+        normal_stds: float
+            Number of standard deviations to cut normal (Gaussian) or half-norm
+            distributions at.
+
+        Returns
+        -------
+        prior_bounds: dict
+            Dictionary of ["lower","upper"] pairs for each parameter
+        norm_warning: bool
+            A flag that is true if any parameter has a norm or half-norm prior.
+            Caller functions may wish to warn the user that the prior has
+            been truncated at normal_stds.
+        """
         prior_bounds = {}
+        norm_trunc_warn = False
         for key in self.theta_keys:
             prior_bounds[key] = {}
             prior_dict = self.theta_prior[key]
+            if "norm" in prior_dict["type"]:
+                norm_warning = True
             if prior_dict["type"] == "unif":
                 prior_bounds[key]["lower"] = prior_dict["lower"]
                 prior_bounds[key]["upper"] = prior_dict["upper"]
@@ -1085,7 +1113,7 @@ class MCMCSearch(core.BaseSearchClass):
                 raise ValueError(
                     "Not implemented for prior type {}".format(prior_dict["type"])
                 )
-        return prior_bounds
+        return prior_bounds, norm_warning
 
     def plot_prior_posterior(self, normal_stds=2):
         """ Plot the posterior in the context of the prior """
@@ -1093,7 +1121,7 @@ class MCMCSearch(core.BaseSearchClass):
         N = 1000
         from scipy.stats import gaussian_kde
 
-        prior_bounds = self._get_prior_bounds(normal_stds)
+        prior_bounds, _ = self._get_prior_bounds(normal_stds)
         for i, (ax, key) in enumerate(zip(axes, self.theta_keys)):
             prior_dict = self.theta_prior[key]
             prior_func = self._generic_lnprior(**prior_dict)
