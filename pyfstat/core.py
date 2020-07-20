@@ -1565,6 +1565,22 @@ class SemiCoherentSearch(ComputeFstat):
         self.init_computefstatistic()
         self.init_semicoherent_parameters()
 
+    def _init_semicoherent_window_trick(self):
+        """
+        Use this window to compute semicoherent Fstatistic using transient Fstat.
+        This basically intends to decouple this clever shenanigan from the actual
+        usage of a transient window.
+        """
+        self._semicoherent_window_trick = lalpulsar.transientWindowRange_t()
+        self._semicoherent_window_trick.type = lalpulsar.TRANSIENT_RECTANGULAR
+        self._semicoherent_window_trick.t0 = None
+        self._semicoherent_window_trick.t0Band = None
+        self._semicoherent_window_trick.dt0 = None
+        self._semicoherent_window_trick.tau = None
+        self._semicoherent_window_trick.tauBand = None
+        self._semicoherent_window_trick.dtau = None
+
+
     def init_semicoherent_parameters(self):
         logging.info(
             (
