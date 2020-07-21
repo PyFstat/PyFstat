@@ -923,6 +923,8 @@ class ComputeFstat(BaseSearchClass):
     def _set_min_max_cover_freqs(self):
         # decide on which minCoverFreq and maxCoverFreq to use:
         # either from direct user input, estimate_min_max_CoverFreq(), or SFTs
+        if self.sftfilepattern is not None:
+            minFreq_SFTs, maxFreq_SFTs = self._get_min_max_freq_from_SFTCatalog()
         if (self.minCoverFreq is None) != (self.maxCoverFreq is None):
             raise ValueError(
                 "Please use either both or none of [minCoverFreq,maxCoverFreq]."
@@ -951,24 +953,45 @@ class ComputeFstat(BaseSearchClass):
                     " or set both to None (automated estimation)."
                 )
             if self.minCoverFreq < 0.0:
-                logging.info("minCoverFreq not provided, estimating from SFTs.")
-                fAs = [d.header.f0 for d in self.SFTCatalog.data]
+                logging.info(
+                    "minCoverFreq={:f} provided, using as offset from min(SFTs).".format(
+                        self.minCoverFreq
+                    )
+                )
                 # to set *above* min, since minCoverFreq is negative: subtract it
-                self.minCoverFreq = np.min(fAs) - self.minCoverFreq
+                self.minCoverFreq = minFreq_SFTs - self.minCoverFreq
             if self.maxCoverFreq < 0.0:
-                logging.info("maxCoverFreq not provided, estimating from SFTs.")
-                fBs = [
-                    d.header.f0 + (d.numBins - 1) * d.header.deltaF
-                    for d in self.SFTCatalog.data
-                ]
+                logging.info(
+                    "maxCoverFreq={:f} provided, using as offset from max(SFTs).".format(
+                        self.maxCoverFreq
+                    )
+                )
                 # to set *below* max, since minCoverFreq is negative: add it
-                self.maxCoverFreq = np.max(fBs) + self.maxCoverFreq
-        # else use user-provided values as they are
+                self.maxCoverFreq = maxFreq_SFTs + self.maxCoverFreq
+        if (self.sftfilepattern is not None) and (
+            (self.minCoverFreq < minFreq_SFTs) or (self.maxCoverFreq > maxFreq_SFTs)
+        ):
+            raise ValueError(
+                "[minCoverFreq,maxCoverFreq]=[{:f},{:f}] Hz incompatible with"
+                " SFT files content [{:f},{:f}] Hz".format(
+                    self.minCoverFreq, self.maxCoverFreq, minFreq_SFTs, maxFreq_SFTs
+                )
+            )
         logging.info(
             "Using minCoverFreq={} and maxCoverFreq={}.".format(
                 self.minCoverFreq, self.maxCoverFreq
             )
         )
+
+    def _get_min_max_freq_from_SFTCatalog(self):
+        fAs = [d.header.f0 for d in self.SFTCatalog.data]
+        minFreq_SFTs = np.min(fAs)
+        fBs = [
+            d.header.f0 + (d.numBins - 1) * d.header.deltaF
+            for d in self.SFTCatalog.data
+        ]
+        maxFreq_SFTs = np.max(fBs)
+        return minFreq_SFTs, maxFreq_SFTs
 
     def estimate_min_max_CoverFreq(self, catalog):
         # extract spanned spin-range at reference-time from the template-bank
