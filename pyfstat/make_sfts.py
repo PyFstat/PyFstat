@@ -55,6 +55,8 @@ class Writer(BaseSearchClass):
         maxStartTime=None,
         add_noise=True,
         transientWindowType="none",
+        transientStartTime=None,
+        transientTau=None,
         randSeed=None,
     ):
         """
@@ -72,11 +74,16 @@ class Writer(BaseSearchClass):
         Tsft: float
             the sft duration
         minStartTime, maxStartTime: float
-            if not None, the total span of data, this can be used to generate
-            transient signals
+            DEPRECATED, use [tstart,duration] and/or
+            [transientWindowType,transientStartTime,transientTau] instead!
 
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
+
+        if minStartTime is not None or maxStartTime is not None:
+            raise ValueError(
+                "Options 'minStartTime' and 'maxStartTime' are no longer supported!"
+            )
 
         self.set_ephemeris_files()
         self.basic_setup()
@@ -89,15 +96,6 @@ class Writer(BaseSearchClass):
         self.tstart = int(self.tstart)
         self.duration = int(self.duration)
         self.tend = self.tstart + self.duration
-        if self.minStartTime is None:
-            self.minStartTime = self.tstart
-        if self.maxStartTime is None:
-            self.maxStartTime = self.tend
-        self.minStartTime = int(self.minStartTime)
-        self.maxStartTime = int(self.maxStartTime)
-        self.duration_days = (self.tend - self.tstart) / 86400
-
-        self.data_duration = self.maxStartTime - self.minStartTime
 
         IFOs = self.detectors.split(",")
         if self.noiseSFTs:
@@ -105,12 +103,12 @@ class Writer(BaseSearchClass):
             for ifo in IFOs:
                 constraint = lalpulsar.SFTConstraints()
                 constraint.detector = ifo
-                constraint.minStartTime = lal.LIGOTimeGPS(self.minStartTime)
-                constraint.maxStartTime = lal.LIGOTimeGPS(self.maxStartTime)
+                constraint.minStartTime = lal.LIGOTimeGPS(self.tstart)
+                constraint.maxStartTime = lal.LIGOTimeGPS(self.tend)
                 catalog = lalpulsar.SFTdataFind(self.noiseSFTs, constraint)
                 numSFTs.append(catalog.length)
         else:
-            numSFTs = len(IFOs) * [int(float(self.data_duration) / self.Tsft)]
+            numSFTs = len(IFOs) * [int(float(self.duration) / self.Tsft)]
 
         self.theta = np.array([self.phi, self.F0, self.F1, self.F2])
 
@@ -125,8 +123,8 @@ class Writer(BaseSearchClass):
                 dets[1],
                 numSFTs[ind],
                 self.Tsft,
-                self.minStartTime,
-                self.data_duration,
+                self.tstart,
+                self.duration,
                 self.label,
             )
             for ind, dets in enumerate(IFOs)
@@ -179,8 +177,8 @@ refTime = {:10.6f}"""
         F2,
         tref,
         window,
-        tstart,
-        duration_days,
+        transientStartTime,
+        transientTau,
     ):
         template = (
             self.get_base_template(
@@ -204,8 +202,8 @@ transientTau = {:10.0f}\n"""
             F2,
             tref,
             window,
-            tstart,
-            duration_days * 86400,
+            transientStartTime,
+            transientTau,
         )
 
     def get_single_config_line(
@@ -222,8 +220,8 @@ transientTau = {:10.0f}\n"""
         F2,
         tref,
         window,
-        tstart,
-        duration_days,
+        transientStartTime,
+        transientTau,
     ):
         if window == "none":
             return self.get_single_config_line_cw(
@@ -243,8 +241,8 @@ transientTau = {:10.0f}\n"""
                 F2,
                 tref,
                 window,
-                tstart,
-                duration_days,
+                transientStartTime,
+                transientTau,
             )
 
     def make_cff(self):
@@ -266,8 +264,8 @@ transientTau = {:10.0f}\n"""
             self.F2,
             self.tref,
             self.transientWindowType,
-            self.tstart,
-            self.duration_days,
+            self.transientStartTime,
+            self.transientTau,
         )
 
         if self.check_if_cff_file_needs_rewritting(content):
@@ -410,15 +408,8 @@ transientTau = {:10.0f}\n"""
         if self.SFTWindowType is not None:
             cl_mfd.append('--SFTWindowType="{}"'.format(self.SFTWindowType))
             cl_mfd.append("--SFTWindowBeta={}".format(self.SFTWindowBeta))
-        if self.minStartTime is None:
-            cl_mfd.append("--startTime={:0.0f}".format(float(self.tstart)))
-        else:
-            cl_mfd.append("--startTime={:0.0f}".format(float(self.minStartTime)))
-        if self.maxStartTime is None:
-            cl_mfd.append("--duration={}".format(int(self.duration)))
-        else:
-            data_duration = self.maxStartTime - self.minStartTime
-            cl_mfd.append("--duration={}".format(int(data_duration)))
+        cl_mfd.append("--startTime={}".format(self.tstart))
+        cl_mfd.append("--duration={}".format(self.duration))
         cl_mfd.append("--fmin={:.16g}".format(self.fmin))
         cl_mfd.append("--Band={:.16g}".format(self.Band))
         cl_mfd.append("--Tsft={}".format(self.Tsft))
@@ -448,13 +439,16 @@ transientTau = {:10.0f}\n"""
             Delta=self.Delta,
             Freq=self.F0,
             sftfilepattern=self.sftfilepath,
-            minStartTime=self.minStartTime,
-            maxStartTime=self.maxStartTime,
+            minStartTime=self.tstart,
+            maxStartTime=self.tend,
             IFOs=self.detectors,
             assumeSqrtSX=(assumeSqrtSX or self.sqrtSX),
             tempory_filename=os.path.join(self.outdir, self.label + ".tmp"),
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
+            transientWindowType=self.transientWindowType,
+            transientStartTime=self.transientStartTime,
+            transientTau=self.transientTau,
         )  # detectors OR IFO?
         return twoF_expected
 
@@ -495,6 +489,8 @@ class BinaryModulatedWriter(Writer):
         maxStartTime=None,
         add_noise=True,
         transientWindowType="none",
+        transientStartTime=None,
+        transientTau=None,
         randSeed=None,
     ):
         """
@@ -512,8 +508,8 @@ class BinaryModulatedWriter(Writer):
         Tsft: float
             the sft duration
         minStartTime, maxStartTime: float
-            if not None, the total span of data, this can be used to generate
-            transient signals
+            DEPRECATED, use [tstart,duration] and/or
+            [transientWindowType,transientStartTime,transientTau] instead!
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
         super().__init__(
@@ -538,10 +534,10 @@ class BinaryModulatedWriter(Writer):
             noiseSFTs=noiseSFTs,
             Band=Band,
             detectors=detectors,
-            minStartTime=minStartTime,
-            maxStartTime=maxStartTime,
             add_noise=add_noise,
             transientWindowType=transientWindowType,
+            transientStartTime=transientStartTime,
+            transientTau=transientTau,
         )
 
         self.parse_args_consistent_with_mfd()
@@ -589,9 +585,9 @@ class BinaryModulatedWriter(Writer):
         }
 
         if self.signal_parameters["transientWindowType"] != "none":
-            self.signal_parameters["transientStartTime"] = self.tstart
+            self.signal_parameters["transientStartTime"] = self.transientStartTime
             self.signal_formats["transientStartTime"] = ":10.0f"
-            self.signal_parameters["transientTau"] = self.duration_days * 86400.0
+            self.signal_parameters["transientTau"] = self.transientTau
             self.signal_formats["transientTau"] = ":10.0f"
 
     def get_single_config_line(self, i):
@@ -679,11 +675,15 @@ class GlitchWriter(Writer):
         Tsft: float
             the sft duration
         minStartTime, maxStartTime: float
-            if not None, the total span of data, this can be used to generate
-            transient signals
+            DEPRECATED, use [tstart,duration] instead!
 
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
+
+        if minStartTime is not None or maxStartTime is not None:
+            raise ValueError(
+                "Options 'minStartTime' and 'maxStartTime' are no longer supported!"
+            )
 
         self.set_ephemeris_files()
         self.basic_setup()
@@ -711,7 +711,7 @@ class GlitchWriter(Writer):
         logging.info("Using segment boundaries {}".format(self.tbounds))
 
         tbs = np.array(self.tbounds)
-        self.durations_days = (tbs[1:] - tbs[:-1]) / 86400
+        self.durations = tbs[1:] - tbs[:-1]
 
         self.delta_thetas = np.atleast_2d(
             np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T
@@ -726,9 +726,7 @@ class GlitchWriter(Writer):
         thetas = self._calculate_thetas(self.theta, self.delta_thetas, self.tbounds)
 
         content = ""
-        for i, (t, d, ts) in enumerate(
-            zip(thetas, self.durations_days, self.tbounds[:-1])
-        ):
+        for i, (t, d, ts) in enumerate(zip(thetas, self.durations, self.tbounds[:-1])):
             line = self.get_single_config_line(
                 i,
                 self.Alpha,
@@ -796,9 +794,17 @@ class FrequencyModulatedArtifactWriter(Writer):
             the sft duration
         sqrtSX: float
             Background IFO noise
+        minStartTime, maxStartTime: float
+            DEPRECATED, use [tstart,duration] instead!
 
         see `lalapps_Makefakedata_v4 --help` for help with the other paramaters
         """
+
+        if minStartTime is not None or maxStartTime is not None:
+            raise ValueError(
+                "Options 'minStartTime' and 'maxStartTime' are no longer supported!"
+            )
+
         self.phi = 0
         self.F2 = 0
 
@@ -813,7 +819,6 @@ class FrequencyModulatedArtifactWriter(Writer):
             raise ValueError("Input `tref` not specified")
 
         self.nsfts = int(np.ceil(self.duration / self.Tsft))
-        self.duration = self.duration / 86400.0
         self.calculate_fmin_Band()
 
         self.cosi = 0
@@ -943,7 +948,6 @@ class FrequencyModulatedArtifactWriter(Writer):
             raise KeyboardInterruptError()
 
     def make_data(self):
-        self.maxStartTime = None
         self.duration = self.Tsft
 
         self.tmp_outdir = os.path.join(self.outdir, self.label + "_tmp")
@@ -994,7 +998,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         cl_mfd.append('--noiseSqrtSh="{}"'.format(self.sqrtSX))
         cl_mfd.append("--startTime={:0.0f}".format(mid_time - self.Tsft / 2.0))
         cl_mfd.append("--refTime={:0.0f}".format(mid_time))
-        cl_mfd.append("--duration={}".format(int(self.duration)))
+        cl_mfd.append("--duration={}".format(self.duration))
         cl_mfd.append("--fmin={:.16g}".format(self.fmin))
         cl_mfd.append("--Band={:.16g}".format(self.Band))
         cl_mfd.append("--Tsft={}".format(self.Tsft))

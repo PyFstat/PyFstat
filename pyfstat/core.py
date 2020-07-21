@@ -210,6 +210,9 @@ def predict_fstat(
     tempory_filename="fs.tmp",
     earth_ephem=None,
     sun_ephem=None,
+    transientWindowType="none",
+    transientStartTime=None,
+    transientTau=None,
     **kwargs
 ):
     """ Wrapper to lalapps_PredictFstat
@@ -259,6 +262,11 @@ def predict_fstat(
         sun_ephem = sun_ephem_default
     cl_pfs.append("--ephemEarth='{}'".format(earth_ephem))
     cl_pfs.append("--ephemSun='{}'".format(sun_ephem))
+
+    if transientWindowType != "none":
+        cl_pfs.append("--transientWindowType='{}'".format(transientWindowType))
+        cl_pfs.append("--transientStartTime='{}'".format(transientStartTime))
+        cl_pfs.append("--transientTau='{}'".format(transientTau))
 
     cl_pfs = " ".join(cl_pfs)
     helper_functions.run_commandline(cl_pfs)
