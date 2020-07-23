@@ -496,6 +496,7 @@ class ComputeFstat(BaseSearchClass):
         detectors=None,
         minCoverFreq=None,
         maxCoverFreq=None,
+        search_ranges=None,
         injectSources=None,
         injectSqrtSX=None,
         assumeSqrtSX=None,
@@ -506,12 +507,7 @@ class ComputeFstat(BaseSearchClass):
         computeAtoms=False,
         earth_ephem=None,
         sun_ephem=None,
-        estimate_covering_band=False,
-        F0s=None,
-        F1s=None,
-        F2s=None,
-        Alphas=None,
-        Deltas=None,
+        estimate_covering_band=None,
     ):
         """
         Parameters
@@ -548,9 +544,22 @@ class ComputeFstat(BaseSearchClass):
             Two character reference to the data to use, specify None for no
             contraint. If multiple-separate by comma.
         minCoverFreq, maxCoverFreq : float
-            The min and max cover frequency passed to CreateFstatInput, if
-            either is None the range of frequencies in the SFT less 1Hz is
-            used.
+            The min and max cover frequency passed to CreateFstatInput.
+            For negative values, these will be used as offsets from the min/max
+            frequency contained in the sftfilepattern.
+            If either is None, search_ranges is used to estimate them.
+            If the automatic estimation fails and you do not have a good idea
+            what to set these two options to, setting both to -0.5 will
+            reproduce the default behaviour of PyFstat <=1.4 and may be a
+            reasonably safe fallback in many cases.
+        search_ranges: dict
+            Dictionary of ranges in all search parameters,
+            only used to estimate frequency band passed to CreateFstatInput,
+            if minCoverFreq, maxCoverFreq are not specified (=='None').
+            For actually running searches,
+            grids/points will have to be passed separately to the .run() method.
+            The entry for each parameter must be a list of length 1, 2 or 3:
+            [single_value], [min,max] or [min,max,step].
         injectSources : dict or str
             Either a dictionary of the values to inject, or a string pointing
             to the .cff file to inject
@@ -581,11 +590,17 @@ class ComputeFstat(BaseSearchClass):
             if None, will check standard sources as per
             helper_functions.get_ephemeris_files()
         estimate_covering_band : bool
-            whether to estimate covering band from search range
-        F0s, F1s, F2s, Alphas, Deltas: list
-            currently only used in initialisation for estimate_covering_band case;
-            for actual search, they are passed separately later
+            DEPRECATED: default behaviour is now equivalent to old
+            estimate_covering_band=True.
         """
+
+        if estimate_covering_band is not None:
+            raise ValueError(
+                "Option 'estimate_covering_band' is no longer supported!"
+                " Default behaviour is now equivalent to old"
+                " estimate_covering_band=True,"
+                " unless [minCoverFreq,maxCoverFreq] are given."
+            )
 
         self._set_init_params_dict(locals())
         self.set_ephemeris_files(earth_ephem, sun_ephem)
@@ -597,10 +612,6 @@ class ComputeFstat(BaseSearchClass):
 
         If sftfilepattern is specified, load the data. If not, attempt to
         create data on the fly.
-
-        Returns
-        -------
-        SFTCatalog: lalpulsar.SFTCatalog
 
         """
         if hasattr(self, "SFTCatalog"):
@@ -630,7 +641,8 @@ class ComputeFstat(BaseSearchClass):
             SFTCatalog = lalpulsar.MultiAddToFakeSFTCatalog(
                 SFTCatalog, detNames, multiTimestamps
             )
-            return SFTCatalog
+            self.SFTCatalog = SFTCatalog
+            return
 
         logging.info("Initialising SFTCatalog")
         constraints = lalpulsar.SFTConstraints()
@@ -689,12 +701,12 @@ class ComputeFstat(BaseSearchClass):
             )
         )
 
-        return SFTCatalog
+        self.SFTCatalog = SFTCatalog
 
     def init_computefstatistic(self):
         """ Initialisation step of run_computefstatistic for a single point or search range """
 
-        SFTCatalog = self._get_SFTCatalog()
+        self._get_SFTCatalog()
 
         logging.info("Initialising ephems")
         ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
@@ -783,38 +795,16 @@ class ComputeFstat(BaseSearchClass):
             ] = self.injectSqrtSX
         else:
             FstatOAs.injectSqrtSX = lalpulsar.FstatOptionalArgsDefaults.injectSqrtSX
-        if self.estimate_covering_band:
-            self.estimate_min_max_CoverFreq(SFTCatalog, ephems)
-            logging.info(
-                "Min/max cover freqs not provided, using "
-                "{} and {} as estimated from search range.".format(
-                    self.minCoverFreq, self.maxCoverFreq
-                )
-            )
-        elif (self.minCoverFreq is None) != (self.maxCoverFreq is None):
-            raise ValueError(
-                "Please use either both or none of [minCoverFreq,maxCoverFreq]."
-            )
-        elif self.minCoverFreq is None or self.maxCoverFreq is None:
-            if self.sftfilepattern is None:
-                raise ValueError(
-                    "If sftfilepattern==None, you must set minCoverFreq and"
-                    " maxCoverFreq manually."
-                )
-            fAs = [d.header.f0 for d in SFTCatalog.data]
-            fBs = [
-                d.header.f0 + (d.numBins - 1) * d.header.deltaF for d in SFTCatalog.data
-            ]
-            self.minCoverFreq = np.min(fAs) + 0.5
-            self.maxCoverFreq = np.max(fBs) - 0.5
-            logging.info(
-                "Min/max cover freqs not provided, using "
-                "{} and {}, est. from SFTs".format(self.minCoverFreq, self.maxCoverFreq)
-            )
+        self._set_min_max_cover_freqs()
 
         logging.info("Initialising FstatInput")
         self.FstatInput = lalpulsar.CreateFstatInput(
-            SFTCatalog, self.minCoverFreq, self.maxCoverFreq, dFreq, ephems, FstatOAs
+            self.SFTCatalog,
+            self.minCoverFreq,
+            self.maxCoverFreq,
+            dFreq,
+            ephems,
+            FstatOAs,
         )
 
         logging.info("Initialising PulsarDoplerParams")
@@ -872,7 +862,7 @@ class ComputeFstat(BaseSearchClass):
                 )
 
             # default spacing
-            self.Tsft = int(1.0 / SFTCatalog.data[0].header.deltaF)
+            self.Tsft = int(1.0 / self.SFTCatalog.data[0].header.deltaF)
             self.windowRange.dt0 = self.Tsft
             self.windowRange.dtau = self.Tsft
 
@@ -930,48 +920,192 @@ class ComputeFstat(BaseSearchClass):
                 self.tCWFstatMapVersion == "pycuda", self.cudaDeviceName
             )
 
-    def estimate_min_max_CoverFreq(self, catalog, ephems):
+    def _set_min_max_cover_freqs(self):
+        # decide on which minCoverFreq and maxCoverFreq to use:
+        # either from direct user input, estimate_min_max_CoverFreq(), or SFTs
+        if self.sftfilepattern is not None:
+            minFreq_SFTs, maxFreq_SFTs = self._get_min_max_freq_from_SFTCatalog()
+        if (self.minCoverFreq is None) != (self.maxCoverFreq is None):
+            raise ValueError(
+                "Please use either both or none of [minCoverFreq,maxCoverFreq]."
+            )
+        elif (
+            self.minCoverFreq is None
+            and self.maxCoverFreq is None
+            and self.search_ranges is None
+        ):
+            raise ValueError(
+                "Please use either search_ranges or both of [minCoverFreq,maxCoverFreq]."
+            )
+        elif self.minCoverFreq is None or self.maxCoverFreq is None:
+            logging.info(
+                "[minCoverFreq,maxCoverFreq] not provided, trying to estimate"
+                " from search ranges."
+            )
+            self.estimate_min_max_CoverFreq(self.SFTCatalog)
+        elif (self.minCoverFreq < 0.0) or (self.maxCoverFreq < 0.0):
+            if self.sftfilepattern is None:
+                raise ValueError(
+                    "If sftfilepattern==None, cannot use negative values for"
+                    " minCoverFreq or maxCoverFreq (interpreted as offsets from"
+                    " min/max SFT frequency)."
+                    " Please use actual frequency values for both,"
+                    " or set both to None (automated estimation)."
+                )
+            if self.minCoverFreq < 0.0:
+                logging.info(
+                    "minCoverFreq={:f} provided, using as offset from min(SFTs).".format(
+                        self.minCoverFreq
+                    )
+                )
+                # to set *above* min, since minCoverFreq is negative: subtract it
+                self.minCoverFreq = minFreq_SFTs - self.minCoverFreq
+            if self.maxCoverFreq < 0.0:
+                logging.info(
+                    "maxCoverFreq={:f} provided, using as offset from max(SFTs).".format(
+                        self.maxCoverFreq
+                    )
+                )
+                # to set *below* max, since minCoverFreq is negative: add it
+                self.maxCoverFreq = maxFreq_SFTs + self.maxCoverFreq
+        if (self.sftfilepattern is not None) and (
+            (self.minCoverFreq < minFreq_SFTs) or (self.maxCoverFreq > maxFreq_SFTs)
+        ):
+            raise ValueError(
+                "[minCoverFreq,maxCoverFreq]=[{:f},{:f}] Hz incompatible with"
+                " SFT files content [{:f},{:f}] Hz".format(
+                    self.minCoverFreq, self.maxCoverFreq, minFreq_SFTs, maxFreq_SFTs
+                )
+            )
+        logging.info(
+            "Using minCoverFreq={} and maxCoverFreq={}.".format(
+                self.minCoverFreq, self.maxCoverFreq
+            )
+        )
+
+    def _get_min_max_freq_from_SFTCatalog(self):
+        fAs = [d.header.f0 for d in self.SFTCatalog.data]
+        minFreq_SFTs = np.min(fAs)
+        fBs = [
+            d.header.f0 + (d.numBins - 1) * d.header.deltaF
+            for d in self.SFTCatalog.data
+        ]
+        maxFreq_SFTs = np.max(fBs)
+        return minFreq_SFTs, maxFreq_SFTs
+
+    def estimate_min_max_CoverFreq(self, catalog):
         # extract spanned spin-range at reference-time from the template-bank
+        # input self.search_ranges must be a dictionary of lists per search parameter
+        # which can be either [single_value], [min,max] or [min,max,step].
+        if type(self.search_ranges) is not dict:
+            raise ValueError("Need a dictionary for search_ranges!")
+        range_keys = list(self.search_ranges.keys())
+        required_keys = ["Alpha", "Delta", "F0"]
+        if len(np.setdiff1d(required_keys, range_keys)) > 0:
+            raise ValueError(
+                "Required keys not found in search_ranges: {}".format(
+                    np.setdiff1d(required_keys, range_keys)
+                )
+            )
+        for key in range_keys:
+            if (
+                type(self.search_ranges[key]) is not list
+                or len(self.search_ranges[key]) == 0
+                or len(self.search_ranges[key]) > 3
+            ):
+                raise ValueError(
+                    "search_ranges entry for {:s}"
+                    " is not a list of a known format"
+                    " (either [single_value], [min,max]"
+                    " or [min,max,step]): {}".format(key, self.search_ranges[key])
+                )
         Tsft = 1.0 / catalog.data[0].header.deltaF
         startTime = catalog.data[0].header.epoch
         endTime = catalog.data[-1].header.epoch + Tsft
+        # start by constructing a DopplerRegion structure
+        # which will be needed to conservatively account for sky-position dependent
+        # Doppler shifts of the frequency range to be covered
         searchRegion = lalpulsar.DopplerRegion()
+        # sky region
+        Alpha = self.search_ranges["Alpha"][0]
+        AlphaBand = (
+            self.search_ranges["Alpha"][1] - Alpha
+            if len(self.search_ranges["Alpha"]) >= 2
+            else 0.0
+        )
+        Delta = self.search_ranges["Delta"][0]
+        DeltaBand = (
+            self.search_ranges["Delta"][1] - Delta
+            if len(self.search_ranges["Delta"]) >= 2
+            else 0.0
+        )
         searchRegion.skyRegionString = lalpulsar.SkySquare2String(
-            self.Alphas[0],
-            self.Deltas[0],
-            self.Alphas[1] - self.Alphas[0] if len(self.Alphas) == 3 else 0.0,
-            self.Deltas[1] - self.Deltas[0] if len(self.Deltas) == 3 else 0.0,
+            Alpha, Delta, AlphaBand, DeltaBand,
         )
         searchRegion.refTime = self.tref
-        searchRegion.fkdot[0] = self.F0s[0]
-        searchRegion.fkdot[1] = self.F1s[0]
-        searchRegion.fkdot[2] = self.F2s[0]
-        searchRegion.fkdot[3] = 0
-        searchRegion.fkdotBand[0] = (
-            self.F0s[1] - self.F0s[0] if len(self.F0s) == 3 else 0.0
-        )
-        searchRegion.fkdotBand[1] = (
-            self.F1s[1] - self.F1s[0] if len(self.F1s) == 3 else 0.0
-        )
-        searchRegion.fkdotBand[2] = (
-            self.F2s[1] - self.F2s[0] if len(self.F2s) == 3 else 0.0
-        )
-        searchRegion.fkdotBand[3] = 0
+        # frequency and spindowns
+        searchRegion.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
+        searchRegion.fkdotBand = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
+        for k in range(3):
+            Fk = "F{:d}".format(k)
+            if Fk in range_keys:
+                searchRegion.fkdot[k] = self.search_ranges[Fk][0]
+                searchRegion.fkdotBand[k] = (
+                    self.search_ranges[Fk][1] - self.search_ranges[Fk][0]
+                    if len(self.search_ranges[Fk]) >= 2
+                    else 0.0
+                )
+        # now construct DopplerFullScan from searchRegion
         scanInit = lalpulsar.DopplerFullScanInit()
         scanInit.searchRegion = searchRegion
         scanInit.stepSizes = lalpulsar.PulsarDopplerParams()
         scanInit.stepSizes.refTime = self.tref
-        scanInit.stepSizes.Alpha = self.Alphas[-1] if len(self.Alphas) == 3 else 0.001
-        scanInit.stepSizes.Delta = self.Deltas[-1] if len(self.Deltas) == 3 else 0.001
-        scanInit.stepSizes.fkdot = np.array([0, 0, 0, 0, 0, 0, 0])
-        scanInit.stepSizes.fkdot[0] = self.F0s[-1] if len(self.F0s) == 3 else 0.0
-        scanInit.stepSizes.fkdot[1] = self.F1s[-1] if len(self.F1s) == 3 else 0.0
-        scanInit.stepSizes.fkdot[2] = self.F2s[-1] if len(self.F2s) == 3 else 0.0
+        scanInit.stepSizes.Alpha = (
+            self.search_ranges["Alpha"][-1]
+            if len(self.search_ranges["Alpha"]) == 3
+            else 0.001
+        )
+        scanInit.stepSizes.Delta = (
+            self.search_ranges["Delta"][-1]
+            if len(self.search_ranges["Delta"]) == 3
+            else 0.001
+        )
+        scanInit.stepSizes.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
+        for k in range(3):
+            if Fk in range_keys:
+                Fk = "F{:d}".format(k)
+                scanInit.stepSizes.fkdot[k] = (
+                    self.search_ranges[Fk][-1]
+                    if len(self.search_ranges[Fk]) == 3
+                    else 0.0
+                )
         scanInit.startTime = startTime
         scanInit.Tspan = float(endTime - startTime)
         scanState = lalpulsar.InitDopplerFullScan(scanInit)
+        # now obtain the PulsarSpinRange extended over all relevant Doppler shifts
         spinRangeRef = lalpulsar.PulsarSpinRange()
         lalpulsar.GetDopplerSpinRange(spinRangeRef, scanState)
+        # optional: binary parameters
+        if "asini" in range_keys:
+            if len(self.search_ranges["asini"]) >= 2:
+                maxOrbitAsini = self.search_ranges["asini"][1]
+            else:
+                maxOrbitAsini = self.search_ranges["asini"][0]
+        else:
+            maxOrbitAsini = 0.0
+        if "period" in range_keys:
+            minOrbitPeriod = self.search_ranges["period"][0]
+        else:
+            minOrbitPeriod = 0.0
+        if "ecc" in range_keys:
+            if len(self.search_ranges["ecc"]) >= 2:
+                maxOrbitEcc = self.search_ranges["ecc"][1]
+            else:
+                maxOrbitEcc = self.search_ranges["ecc"][0]
+        else:
+            maxOrbitEcc = 0.0
+        # finally call the wrapped lalpulsar estimation function with the
+        # extended PulsarSpinRange and optional binary parameters
         self.minCoverFreq, self.maxCoverFreq = helper_functions.get_covering_band(
             tref=self.tref,
             tstart=startTime,
@@ -982,9 +1116,9 @@ class ComputeFstat(BaseSearchClass):
             F0band=spinRangeRef.fkdotBand[0],
             F1band=spinRangeRef.fkdotBand[1],
             F2band=spinRangeRef.fkdotBand[2],
-            orbitasini=0.0,
-            orbitPeriod=0.0,
-            orbitEcc=0.0,
+            maxOrbitAsini=maxOrbitAsini,
+            minOrbitPeriod=minOrbitPeriod,
+            maxOrbitEcc=maxOrbitEcc,
         )
 
     def get_fullycoherent_twoF(
@@ -1387,6 +1521,7 @@ class SemiCoherentSearch(ComputeFstat):
         maxStartTime=None,
         minCoverFreq=None,
         maxCoverFreq=None,
+        search_ranges=None,
         detectors=None,
         injectSources=None,
         assumeSqrtSX=None,
@@ -1395,11 +1530,6 @@ class SemiCoherentSearch(ComputeFstat):
         earth_ephem=None,
         sun_ephem=None,
         estimate_covering_band=None,
-        F0s=None,
-        F1s=None,
-        F2s=None,
-        Alphas=None,
-        Deltas=None,
     ):
         """
         Parameters
@@ -1416,6 +1546,14 @@ class SemiCoherentSearch(ComputeFstat):
 
         For all other parameters, see pyfstat.ComputeFStat.
         """
+
+        if estimate_covering_band is not None:
+            raise ValueError(
+                "Option 'estimate_covering_band' is no longer supported!"
+                " Default behaviour is now equivalent to old"
+                " estimate_covering_band=True,"
+                " unless [minCoverFreq,maxCoverFreq] are given."
+            )
 
         self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
         self.set_ephemeris_files(earth_ephem, sun_ephem)
@@ -1568,6 +1706,7 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         BSGL=False,
         minCoverFreq=None,
         maxCoverFreq=None,
+        search_ranges=None,
         assumeSqrtSX=None,
         detectors=None,
         SSBprec=None,
@@ -1576,11 +1715,6 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         earth_ephem=None,
         sun_ephem=None,
         estimate_covering_band=None,
-        F0s=None,
-        F1s=None,
-        F2s=None,
-        Alphas=None,
-        Deltas=None,
     ):
         """
         Parameters
@@ -1602,6 +1736,14 @@ class SemiCoherentGlitchSearch(ComputeFstat):
 
         For all other parameters, see pyfstat.ComputeFStat.
         """
+
+        if estimate_covering_band is not None:
+            raise ValueError(
+                "Option 'estimate_covering_band' is no longer supported!"
+                " Default behaviour is now equivalent to old"
+                " estimate_covering_band=True,"
+                " unless [minCoverFreq,maxCoverFreq] are given."
+            )
 
         self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
         self.set_ephemeris_files(earth_ephem, sun_ephem)

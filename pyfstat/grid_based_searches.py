@@ -72,7 +72,7 @@ class GridSearch(BaseSearchClass):
         assumeSqrtSX=None,
         earth_ephem=None,
         sun_ephem=None,
-        estimate_covering_band=False,
+        estimate_covering_band=None,
     ):
         """
         Parameters
@@ -115,14 +115,22 @@ class GridSearch(BaseSearchClass):
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
         self.output_file_header = self.get_output_file_header()
 
+    def _get_search_ranges(self):
+        if (self.minCoverFreq is None) or (self.maxCoverFreq is None):
+            return {key: getattr(self, key + "s") for key in self.search_keys}
+        else:
+            return None
+
     def inititate_search_object(self):
         logging.info("Setting up search object")
+        search_ranges = self._get_search_ranges()
         if self.nsegs == 1:
             self.search = ComputeFstat(
                 tref=self.tref,
                 sftfilepattern=self.sftfilepattern,
                 minCoverFreq=self.minCoverFreq,
                 maxCoverFreq=self.maxCoverFreq,
+                search_ranges=search_ranges,
                 detectors=self.detectors,
                 minStartTime=self.minStartTime,
                 maxStartTime=self.maxStartTime,
@@ -134,11 +142,6 @@ class GridSearch(BaseSearchClass):
                 earth_ephem=self.earth_ephem,
                 sun_ephem=self.sun_ephem,
                 estimate_covering_band=self.estimate_covering_band,
-                F0s=self.F0s,
-                F1s=self.F1s,
-                F2s=self.F2s,
-                Alphas=self.Alphas,
-                Deltas=self.Deltas,
             )
             self.search.get_det_stat = self.search.get_fullycoherent_twoF
         else:
@@ -153,14 +156,10 @@ class GridSearch(BaseSearchClass):
                 maxStartTime=self.maxStartTime,
                 minCoverFreq=self.minCoverFreq,
                 maxCoverFreq=self.maxCoverFreq,
+                search_ranges=search_ranges,
                 detectors=self.detectors,
                 injectSources=self.injectSources,
                 estimate_covering_band=self.estimate_covering_band,
-                F0s=self.F0s,
-                F1s=self.F1s,
-                F2s=self.F2s,
-                Alphas=self.Alphas,
-                Deltas=self.Deltas,
             )
 
             def cut_out_tstart_tend(*vals):
@@ -609,7 +608,7 @@ class TransientGridSearch(GridSearch):
         cudaDeviceName=None,
         earth_ephem=None,
         sun_ephem=None,
-        estimate_covering_band=False,
+        estimate_covering_band=None,
     ):
         """
         Parameters
@@ -676,11 +675,13 @@ class TransientGridSearch(GridSearch):
 
     def inititate_search_object(self):
         logging.info("Setting up search object")
+        search_ranges = self._get_search_ranges()
         self.search = ComputeFstat(
             tref=self.tref,
             sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq,
+            search_ranges=search_ranges,
             detectors=self.detectors,
             transientWindowType=self.transientWindowType,
             t0Band=self.t0Band,
@@ -701,11 +702,6 @@ class TransientGridSearch(GridSearch):
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
             estimate_covering_band=self.estimate_covering_band,
-            F0s=self.F0s,
-            F1s=self.F1s,
-            F2s=self.F2s,
-            Alphas=self.Alphas,
-            Deltas=self.Deltas,
         )
         self.search.get_det_stat = self.search.get_fullycoherent_twoF
 
@@ -844,7 +840,7 @@ class SliceGridSearch(GridSearch):
         Lambda0=None,
         earth_ephem=None,
         sun_ephem=None,
-        estimate_covering_band=False,
+        estimate_covering_band=None,
     ):
         """
         Parameters
@@ -904,11 +900,11 @@ class SliceGridSearch(GridSearch):
             self.label,
             self.outdir,
             self.sftfilepattern,
-            F0s=self.Lambda0[0],
-            F1s=self.Lambda0[1],
-            F2s=self.F2s[0],
-            Alphas=self.Lambda0[2],
-            Deltas=self.Lambda0[3],
+            F0s=[self.Lambda0[0]],
+            F1s=[self.Lambda0[1]],
+            F2s=[self.F2s[0]],
+            Alphas=[self.Lambda0[2]],
+            Deltas=[self.Lambda0[3]],
             tref=self.tref,
             minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime,
@@ -1012,7 +1008,7 @@ class GridUniformPriorSearch:
         injectSources=None,
         earth_ephem=None,
         sun_ephem=None,
-        estimate_covering_band=False,
+        estimate_covering_band=None,
     ):
         dF0 = (theta_prior["F0"]["upper"] - theta_prior["F0"]["lower"]) / NF0
         dF1 = (theta_prior["F1"]["upper"] - theta_prior["F1"]["lower"]) / NF1
@@ -1074,7 +1070,7 @@ class GridGlitchSearch(GridSearch):
         detectors=None,
         earth_ephem=None,
         sun_ephem=None,
-        estimate_covering_band=False,
+        estimate_covering_band=None,
     ):
         """
         Run a single-glitch grid search
@@ -1117,6 +1113,7 @@ class GridGlitchSearch(GridSearch):
         self.keys += ["twoF"]
         for k in self.search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
+        search_ranges = self._get_search_ranges()
 
         self.search = SemiCoherentGlitchSearch(
             label=label,
@@ -1127,15 +1124,11 @@ class GridGlitchSearch(GridSearch):
             maxStartTime=maxStartTime,
             minCoverFreq=minCoverFreq,
             maxCoverFreq=maxCoverFreq,
+            search_ranges=search_ranges,
             BSGL=self.BSGL,
             earth_ephem=earth_ephem,
             sun_ephem=sun_ephem,
             estimate_covering_band=self.estimate_covering_band,
-            F0s=self.F0s,
-            F1s=self.F1s,
-            F2s=self.F2s,
-            Alphas=self.Alphas,
-            Deltas=self.Deltas,
         )
         self.search.get_det_stat = self.search.get_semicoherent_nglitch_twoF
 
@@ -1182,7 +1175,7 @@ class SlidingWindow(GridSearch):
         injectSources=None,
         earth_ephem=None,
         sun_ephem=None,
-        estimate_covering_band=False,
+        estimate_covering_band=None,
     ):
         """
         Parameters
@@ -1213,11 +1206,13 @@ class SlidingWindow(GridSearch):
 
     def inititate_search_object(self):
         logging.info("Setting up search object")
+        search_ranges = self._get_search_ranges()
         self.search = ComputeFstat(
             tref=self.tref,
             sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq,
+            search_ranges=search_ranges,
             detectors=self.detectors,
             transient=True,
             minStartTime=self.minStartTime,
@@ -1229,11 +1224,6 @@ class SlidingWindow(GridSearch):
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
             estimate_covering_band=self.estimate_covering_band,
-            F0s=self.F0s,
-            F1s=self.F1s,
-            F2s=self.F2s,
-            Alphas=self.Alphas,
-            Deltas=self.Deltas,
         )
 
     def check_old_data_is_okay_to_use(self, out_file):
@@ -1327,7 +1317,7 @@ class FrequencySlidingWindow(GridSearch):
         injectSources=None,
         earth_ephem=None,
         sun_ephem=None,
-        estimate_covering_band=False,
+        estimate_covering_band=None,
     ):
         """
         Parameters
@@ -1363,16 +1353,19 @@ class FrequencySlidingWindow(GridSearch):
         self.Deltas = [Delta]
         self.input_arrays = False
         self.keys = ["minStartTime", "maxStartTime", "F0", "F1", "F2", "Alpha", "Delta"]
-        self.search_keys = [x + "s" for x in self.keys[2:]]
+        # self.search_keys = [x + "s" for x in self.keys[2:]] # this was different from other classes
+        self.search_keys = self.keys[2:]
         self.output_file_header = self.get_output_file_header()
 
     def inititate_search_object(self):
         logging.info("Setting up search object")
+        search_ranges = self._get_search_ranges()
         self.search = ComputeFstat(
             tref=self.tref,
             sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq,
+            search_ranges=search_ranges,
             detectors=self.detectors,
             transientWindowType=self.transientWindowType,
             minStartTime=self.minStartTime,
@@ -1384,11 +1377,6 @@ class FrequencySlidingWindow(GridSearch):
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
             estimate_covering_band=self.estimate_covering_band,
-            F0s=self.F0s,
-            F1s=self.F1s,
-            F2s=self.F2s,
-            Alphas=self.Alphas,
-            Deltas=self.Deltas,
         )
         self.search.get_det_stat = self.search.get_fullycoherent_twoF
 

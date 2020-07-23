@@ -220,13 +220,41 @@ class MCMCSearch(core.BaseSearchClass):
         logging.info("ntemps = {}".format(self.ntemps))
         logging.info("log10beta_min = {}".format(self.log10beta_min))
 
+    def _get_search_ranges(self):
+        """ take prior widths as proxy "search ranges" to allow covering band estimate """
+        if (self.minCoverFreq is None) or (self.maxCoverFreq is None):
+            normal_stds = 3  # this might not always be enough
+            prior_bounds, norm_trunc_warn = self._get_prior_bounds(normal_stds)
+            if norm_trunc_warn:
+                logging.warning(
+                    "Gaussian priors (normal / half-normal) have been truncated"
+                    " at {:f} standard deviations for estimating the coverage"
+                    " frequency band. If sampling fails at any point, please"
+                    " consider manually setting [minCoverFreq,maxCoverFreq] to"
+                    " more generous values.".format(normal_stds)
+                )
+            # first start with parameters that have non-delta prior ranges
+            search_ranges = {
+                key: [prior_bounds[key]["lower"], prior_bounds[key]["upper"], 0]
+                for key in prior_bounds.keys()
+            }
+            # then add fixed-point (delta prior) parameters
+            for key in self.theta_prior:
+                if key not in self.theta_keys:
+                    search_ranges[key] = [self.theta_prior[key]]
+            return search_ranges
+        else:
+            return None
+
     def _initiate_search_object(self):
         logging.info("Setting up search object")
+        search_ranges = self._get_search_ranges()
         self.search = core.ComputeFstat(
             tref=self.tref,
             sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq,
+            search_ranges=search_ranges,
             detectors=self.detectors,
             BSGL=self.BSGL,
             transientWindowType=self.transientWindowType,
@@ -1033,44 +1061,76 @@ class MCMCSearch(core.BaseSearchClass):
             for k in range(0, i):
                 axes[i][k].set_ylim(xlim[0], xlim[1])
 
+    def _get_prior_bounds(self, normal_stds=2):
+        """ Get the lower/upper bounds of all priors
+
+        Parameters
+        ----------
+        normal_stds: float
+            Number of standard deviations to cut normal (Gaussian) or half-norm
+            distributions at.
+
+        Returns
+        -------
+        prior_bounds: dict
+            Dictionary of ["lower","upper"] pairs for each parameter
+        norm_warning: bool
+            A flag that is true if any parameter has a norm or half-norm prior.
+            Caller functions may wish to warn the user that the prior has
+            been truncated at normal_stds.
+        """
+        prior_bounds = {}
+        norm_trunc_warn = False
+        for key in self.theta_keys:
+            prior_bounds[key] = {}
+            prior_dict = self.theta_prior[key]
+            if "norm" in prior_dict["type"]:
+                norm_warning = True
+            if prior_dict["type"] == "unif":
+                prior_bounds[key]["lower"] = prior_dict["lower"]
+                prior_bounds[key]["upper"] = prior_dict["upper"]
+            elif prior_dict["type"] == "log10unif":
+                prior_bounds[key]["lower"] = prior_dict["log10lower"]
+                prior_bounds[key]["upper"] = prior_dict["log10upper"]
+            elif prior_dict["type"] == "norm":
+                prior_bounds[key]["lower"] = (
+                    prior_dict["loc"] - normal_stds * prior_dict["scale"]
+                )
+                prior_bounds[key]["upper"] = (
+                    prior_dict["loc"] + normal_stds * prior_dict["scale"]
+                )
+            elif prior_dict["type"] == "halfnorm":
+                prior_bounds[key]["lower"] = prior_dict["loc"]
+                prior_bounds[key]["upper"] = (
+                    prior_dict["loc"] + normal_stds * prior_dict["scale"]
+                )
+            elif prior_dict["type"] == "neghalfnorm":
+                prior_bounds[key]["upper"] = prior_dict["loc"]
+                prior_bounds[key]["lower"] = (
+                    prior_dict["loc"] - normal_stds * prior_dict["scale"]
+                )
+            else:
+                raise ValueError(
+                    "Not implemented for prior type {}".format(prior_dict["type"])
+                )
+        return prior_bounds, norm_warning
+
     def plot_prior_posterior(self, normal_stds=2):
         """ Plot the posterior in the context of the prior """
         fig, axes = plt.subplots(nrows=self.ndim, figsize=(8, 4 * self.ndim))
         N = 1000
         from scipy.stats import gaussian_kde
 
+        prior_bounds, _ = self._get_prior_bounds(normal_stds)
         for i, (ax, key) in enumerate(zip(axes, self.theta_keys)):
             prior_dict = self.theta_prior[key]
             prior_func = self._generic_lnprior(**prior_dict)
+            x = np.linspace(prior_bounds[key]["lower"], prior_bounds[key]["upper"], N)
+            prior = [prior_func(xi) for xi in x]  # may not be vectorized
             if prior_dict["type"] == "unif":
-                x = np.linspace(prior_dict["lower"], prior_dict["upper"], N)
-                prior = prior_func(x)
                 prior[0] = 0
                 prior[-1] = 0
-            elif prior_dict["type"] == "log10unif":
-                upper = prior_dict["log10upper"]
-                lower = prior_dict["log10lower"]
-                x = np.linspace(lower, upper, N)
-                prior = [prior_func(xi) for xi in x]
-            elif prior_dict["type"] == "norm":
-                lower = prior_dict["loc"] - normal_stds * prior_dict["scale"]
-                upper = prior_dict["loc"] + normal_stds * prior_dict["scale"]
-                x = np.linspace(lower, upper, N)
-                prior = prior_func(x)
-            elif prior_dict["type"] == "halfnorm":
-                lower = prior_dict["loc"]
-                upper = prior_dict["loc"] + normal_stds * prior_dict["scale"]
-                x = np.linspace(lower, upper, N)
-                prior = [prior_func(xi) for xi in x]
-            elif prior_dict["type"] == "neghalfnorm":
-                upper = prior_dict["loc"]
-                lower = prior_dict["loc"] - normal_stds * prior_dict["scale"]
-                x = np.linspace(lower, upper, N)
-                prior = [prior_func(xi) for xi in x]
-            else:
-                raise ValueError(
-                    "Not implemented for prior type {}".format(prior_dict["type"])
-                )
+
             priorln = ax.plot(x, prior, "C3", label="prior")
             ax.set_xlabel(self.theta_symbols[i])
 
@@ -2117,6 +2177,7 @@ class MCMCGlitchSearch(MCMCSearch):
 
     def _initiate_search_object(self):
         logging.info("Setting up search object")
+        search_ranges = self._get_search_ranges()
         self.search = core.SemiCoherentGlitchSearch(
             label=self.label,
             outdir=self.outdir,
@@ -2126,6 +2187,7 @@ class MCMCGlitchSearch(MCMCSearch):
             maxStartTime=self.maxStartTime,
             minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq,
+            search_ranges=search_ranges,
             detectors=self.detectors,
             BSGL=self.BSGL,
             nglitch=self.nglitch,
@@ -2498,6 +2560,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
 
     def _initiate_search_object(self):
         logging.info("Setting up search object")
+        search_ranges = self._get_search_ranges()
         self.search = core.SemiCoherentSearch(
             label=self.label,
             outdir=self.outdir,
@@ -2510,6 +2573,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             maxStartTime=self.maxStartTime,
             minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq,
+            search_ranges=search_ranges,
             detectors=self.detectors,
             injectSources=self.injectSources,
             assumeSqrtSX=self.assumeSqrtSX,
@@ -3128,11 +3192,13 @@ class MCMCTransientSearch(MCMCSearch):
         logging.info("Setting up search object")
         if not self.transientWindowType:
             self.transientWindowType = "rect"
+        search_ranges = self._get_search_ranges()
         self.search = core.ComputeFstat(
             tref=self.tref,
             sftfilepattern=self.sftfilepattern,
             minCoverFreq=self.minCoverFreq,
             maxCoverFreq=self.maxCoverFreq,
+            search_ranges=search_ranges,
             detectors=self.detectors,
             transientWindowType=self.transientWindowType,
             minStartTime=self.minStartTime,
