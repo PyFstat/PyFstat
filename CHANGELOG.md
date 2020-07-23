@@ -1,3 +1,18 @@
+## target version: 1.5 [??/??/2020]
+
+ - search classes:
+   - new default behaviour to estimate coverage band
+     from search ranges (GridSearch) or prior (MCMCSearch)
+     unless minCoverFreq, maxCoverFreq set
+   - negative values can be used to reproduce old default
+     of setting from SFT width
+   - explicit option estimate_covering_band deprecated
+ - Writer:
+   - options minStartTime, maxStartTime deprecated
+   - always use tstart, duration for actual data range
+   - and use transientStartTime, transientTau for transients
+ - all examples now write to a directory "PyFstat_example_data"
+
 ## 1.4.2 [14/07/2020]
 
  - small fixes to search classes:
