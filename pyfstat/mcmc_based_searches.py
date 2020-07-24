@@ -1080,12 +1080,12 @@ class MCMCSearch(core.BaseSearchClass):
             been truncated at normal_stds.
         """
         prior_bounds = {}
-        norm_trunc_warn = False
+        norm_trunc_warning = False
         for key in self.theta_keys:
             prior_bounds[key] = {}
             prior_dict = self.theta_prior[key]
-            if "norm" in prior_dict["type"]:
-                norm_warning = True
+            norm_trunc_warning = "norm" in prior_dict["type"] or norm_trunc_warning
+
             if prior_dict["type"] == "unif":
                 prior_bounds[key]["lower"] = prior_dict["lower"]
                 prior_bounds[key]["upper"] = prior_dict["upper"]
@@ -1113,7 +1113,7 @@ class MCMCSearch(core.BaseSearchClass):
                 raise ValueError(
                     "Not implemented for prior type {}".format(prior_dict["type"])
                 )
-        return prior_bounds, norm_warning
+        return prior_bounds, norm_trunc_warning
 
     def plot_prior_posterior(self, normal_stds=2):
         """ Plot the posterior in the context of the prior """
