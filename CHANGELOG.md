@@ -1,16 +1,21 @@
 ## target version: 1.5 [??/??/2020]
 
- - search classes:
-   - new default behaviour to estimate coverage band
-     from search ranges (GridSearch) or prior (MCMCSearch)
+ - new default coverage band behaviour for all search classes:
+   - estimate from search ranges (GridSearch) or prior (MCMCSearch)
      unless minCoverFreq, maxCoverFreq set
    - negative values can be used to reproduce old default
      of setting from SFT width
    - explicit option estimate_covering_band deprecated
+- semicoherent searches:
+   - sped up by only calling ComputeTransientFstatMap once per point
+   - BSGL now computed from summed F-stats, not for each segment
+   - per-segment results now stored in attribute twoF_per_segment
+     instead of det_stat_per_segment
  - Writer:
    - options minStartTime, maxStartTime deprecated
    - always use tstart, duration for actual data range
    - and use transientStartTime, transientTau for transients
+ - transient-on-GPU output file writing fix
  - all examples now write to a directory "PyFstat_example_data"
 
 ## 1.4.2 [14/07/2020]
