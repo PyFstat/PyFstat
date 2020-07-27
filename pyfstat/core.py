@@ -1661,6 +1661,12 @@ class SemiCoherentSearch(ComputeFstat):
 
         det_stat_per_segment = self._get_per_segment_det_stat()
         detStat = det_stat_per_segment.sum()
+
+        if np.isnan(detStat):
+            logging.debug("NaNs in semi-coherent detection statistic treated as zero")
+            det_stat_per_segment = np.nan_to_num(det_stat_per_segment, nan=0.0)
+            detStat = det_stat_per_segment.sum()
+
         if record_segments:
             self.detStat_per_segment = det_stat_per_segment
 
@@ -1679,15 +1685,11 @@ class SemiCoherentSearch(ComputeFstat):
             FstatResults_single.lenth = 1
             FstatResults_single.data = self.FstatResults.multiFatoms[0].data[0]
             FS0 = lalpulsar.ComputeTransientFstatMap(
-                FstatResults_single.multiFatoms[0],
-                self.semicoherentWindowRange,
-                False,
+                FstatResults_single.multiFatoms[0], self.semicoherentWindowRange, False,
             )
             FstatResults_single.data = self.FstatResults.multiFatoms[0].data[1]
             FS1 = lalpulsar.ComputeTransientFstatMap(
-                FstatResults_single.multiFatoms[0],
-                self.semicoherentWindowRange,
-                False,
+                FstatResults_single.multiFatoms[0], self.semicoherentWindowRange, False,
             )
 
             self.twoFX[0] = 2 * FS0.F_mn.data[0][0]
@@ -1696,9 +1698,6 @@ class SemiCoherentSearch(ComputeFstat):
                 2 * FS.F_mn.data[0][0], self.twoFX, self.BSGLSetup
             )
             d_detStat = log10_BSGL / np.log10(np.exp(1))
-        if np.isnan(np.sum(d_detStat)):
-            logging.debug("NaNs in semi-coherent detection statistic treated as zero")
-            d_detStat = np.nan_to_num(d_detStat, nan=0.0)
 
         return d_detStat
 
