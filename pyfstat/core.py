@@ -1574,17 +1574,18 @@ class SemiCoherentSearch(ComputeFstat):
         self._semicoherent_window_trick = lalpulsar.transientWindowRange_t()
         self._semicoherent_window_trick.type = lalpulsar.TRANSIENT_RECTANGULAR
 
-        # Range [t0, t0+t0Band] step dt0 
+        # Range [t0, t0+t0Band] step dt0
         self._semicoherent_window_trick.t0 = int(self.tboundaries[0])
-        self._semicoherent_window_trick.t0Band = int(self.tboundaries[-1] - self.tboundaries[0] - 2 * self.Tcoh)
+        self._semicoherent_window_trick.t0Band = int(
+            self.tboundaries[-1] - self.tboundaries[0] - 2 * self.Tcoh
+        )
         self._semicoherent_window_trick.dt0 = int(self.Tcoh)
-        
+
         # Range [tau, tau + tauBand] step dtau
         # Watch out: dtau must be !=0, but tauBand==0 is allowed
         self._semicoherent_window_trick.tau = int(self.Tcoh)
         self._semicoherent_window_trick.tauBand = int(0)
-        self._semicoherent_window_trick.dtau = int(1) # Irrelevant
-
+        self._semicoherent_window_trick.dtau = int(1)  # Irrelevant
 
     def init_semicoherent_parameters(self):
         logging.info(
@@ -1658,7 +1659,6 @@ class SemiCoherentSearch(ComputeFstat):
         #                                       self.BSGLSetup)
         #    return log10_BSGL/np.log10(np.exp(1))
 
-
         det_stat_per_segment = self._get_per_segment_det_stat()
         detStat = det_stat_per_segment.sum()
         if record_segments:
@@ -1678,11 +1678,15 @@ class SemiCoherentSearch(ComputeFstat):
             FstatResults_single.lenth = 1
             FstatResults_single.data = self.FstatResults.multiFatoms[0].data[0]
             FS0 = lalpulsar.ComputeTransientFstatMap(
-                FstatResults_single.multiFatoms[0], self.windowRange, False
+                FstatResults_single.multiFatoms[0],
+                self._semicoherent_window_trick,
+                False,
             )
             FstatResults_single.data = self.FstatResults.multiFatoms[0].data[1]
             FS1 = lalpulsar.ComputeTransientFstatMap(
-                FstatResults_single.multiFatoms[0], self.windowRange, False
+                FstatResults_single.multiFatoms[0],
+                self._semicoherent_window_trick,
+                False,
             )
 
             self.twoFX[0] = 2 * FS0.F_mn.data[0][0]
