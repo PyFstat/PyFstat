@@ -1565,27 +1565,27 @@ class SemiCoherentSearch(ComputeFstat):
         self.init_computefstatistic()
         self.init_semicoherent_parameters()
 
-    def _init_semicoherent_window_trick(self):
+    def _init_semicoherent_window_range(self):
         """
         Use this window to compute the semicoherent Fstat using TransientFstatMaps.
         This way we are able to decouple the semicoherent computation from the 
         actual usage of a transient window.
         """
-        self._semicoherent_window_trick = lalpulsar.transientWindowRange_t()
-        self._semicoherent_window_trick.type = lalpulsar.TRANSIENT_RECTANGULAR
+        self.semicoherentWindowRange = lalpulsar.transientWindowRange_t()
+        self.semicoherentWindowRange.type = lalpulsar.TRANSIENT_RECTANGULAR
 
         # Range [t0, t0+t0Band] step dt0
-        self._semicoherent_window_trick.t0 = int(self.tboundaries[0])
-        self._semicoherent_window_trick.t0Band = int(
+        self.semicoherentWindowRange.t0 = int(self.tboundaries[0])
+        self.semicoherentWindowRange.t0Band = int(
             self.tboundaries[-1] - self.tboundaries[0] - 2 * self.Tcoh
         )
-        self._semicoherent_window_trick.dt0 = int(self.Tcoh)
+        self.semicoherentWindowRange.dt0 = int(self.Tcoh)
 
         # Range [tau, tau + tauBand] step dtau
         # Watch out: dtau must be !=0, but tauBand==0 is allowed
-        self._semicoherent_window_trick.tau = int(self.Tcoh)
-        self._semicoherent_window_trick.tauBand = int(0)
-        self._semicoherent_window_trick.dtau = int(1)  # Irrelevant
+        self.semicoherentWindowRange.tau = int(self.Tcoh)
+        self.semicoherentWindowRange.tauBand = int(0)
+        self.semicoherentWindowRange.dtau = int(1)  # Irrelevant
 
     def init_semicoherent_parameters(self):
         logging.info(
@@ -1613,7 +1613,7 @@ class SemiCoherentSearch(ComputeFstat):
                         self.tboundaries[-1], self.SFT_timestamps[-1]
                     )
                 )
-        self._init_semicoherent_window_trick()
+        self._init_semicoherent_window_range()
 
     def get_semicoherent_twoF(
         self,
@@ -1668,7 +1668,7 @@ class SemiCoherentSearch(ComputeFstat):
 
     def _get_per_segment_det_stat(self):
         FS = lalpulsar.ComputeTransientFstatMap(
-            self.FstatResults.multiFatoms[0], self._semicoherent_window_trick, False
+            self.FstatResults.multiFatoms[0], self.semicoherentWindowRange, False
         )
 
         if self.BSGL is False:
@@ -1680,13 +1680,13 @@ class SemiCoherentSearch(ComputeFstat):
             FstatResults_single.data = self.FstatResults.multiFatoms[0].data[0]
             FS0 = lalpulsar.ComputeTransientFstatMap(
                 FstatResults_single.multiFatoms[0],
-                self._semicoherent_window_trick,
+                self.semicoherentWindowRange,
                 False,
             )
             FstatResults_single.data = self.FstatResults.multiFatoms[0].data[1]
             FS1 = lalpulsar.ComputeTransientFstatMap(
                 FstatResults_single.multiFatoms[0],
-                self._semicoherent_window_trick,
+                self.semicoherentWindowRange,
                 False,
             )
 
