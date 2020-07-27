@@ -1568,8 +1568,8 @@ class SemiCoherentSearch(ComputeFstat):
     def _init_semicoherent_window_trick(self):
         """
         Use this window to compute the semicoherent Fstat using TransientFstatMaps.
-        This way we are able to decouple this clever shenanigan from the actual
-        usage of a transient window.
+        This way we are able to decouple the semicoherent computation from the 
+        actual usage of a transient window.
         """
         self._semicoherent_window_trick = lalpulsar.transientWindowRange_t()
         self._semicoherent_window_trick.type = lalpulsar.TRANSIENT_RECTANGULAR
@@ -1673,6 +1673,7 @@ class SemiCoherentSearch(ComputeFstat):
 
         if self.BSGL is False:
             d_detStat = 2 * FS.F_mn.data[:, 0]
+        # FIXME: BSGL should not be compute per segment, but for summed F!
         else:
             FstatResults_single = copy.copy(self.FstatResults)
             FstatResults_single.lenth = 1
@@ -1696,7 +1697,7 @@ class SemiCoherentSearch(ComputeFstat):
             )
             d_detStat = log10_BSGL / np.log10(np.exp(1))
         if np.isnan(np.sum(d_detStat)):
-            logging.debug("NaNs in semi-coherent twoF treated as zero")
+            logging.debug("NaNs in semi-coherent detection statistic treated as zero")
             d_detStat = np.nan_to_num(d_detStat, nan=0.0)
 
         return d_detStat
