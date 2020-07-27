@@ -1677,7 +1677,7 @@ class SemiCoherentSearch(ComputeFstat):
                 )
                 self.twoFX[X] = 2 * FSX.F_mn.data[0][0]
             log10_BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
-            ln_BSGL = log10_BSGL / np.log10(np.exp(1))
+            ln_BSGL = log10_BSGL * np.log(10.)
             if np.isnan(ln_BSGL):
                 logging.debug("NaNs in semi-coherent ln(BSGL) treated as zero")
                 ln_BSGL = 0.0
