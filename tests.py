@@ -19,6 +19,7 @@ class Test(unittest.TestCase):
             except OSError:
                 logging.warning("{} not removed prior to tests".format(self.outdir))
         self.h0 = 1
+        self.cosi = 0
         self.sqrtSX = 1
         self.F0 = 30
         self.F1 = -1e-10
@@ -38,6 +39,7 @@ class Test(unittest.TestCase):
             F2=self.F2,
             label="test",
             h0=self.h0,
+            cosi=self.cosi,
             sqrtSX=self.sqrtSX,
             outdir=self.outdir,
             tstart=self.minStartTime,
@@ -291,7 +293,7 @@ class BaseSearchClass(Test):
 class ComputeFstat(Test):
     def test_run_computefstatistic_single_point_injectSqrtSX(self):
 
-        search_H1L1 = pyfstat.ComputeFstat(
+        search = pyfstat.ComputeFstat(
             tref=self.minStartTime,
             minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime,
@@ -300,7 +302,7 @@ class ComputeFstat(Test):
             minCoverFreq=self.F0 - 0.1,
             maxCoverFreq=self.F0 + 0.1,
         )
-        FS = search_H1L1.get_fullycoherent_twoF(
+        FS = search.get_fullycoherent_twoF(
             tstart=self.minStartTime,
             tend=self.maxStartTime,
             F0=self.F0,
@@ -325,13 +327,13 @@ class ComputeFstat(Test):
 
         sftfilepattern = os.path.join(Writer.outdir, "*{}-*sft".format(Writer.label))
 
-        search_H1L1 = pyfstat.ComputeFstat(
+        search = pyfstat.ComputeFstat(
             tref=Writer.tref,
             sftfilepattern=sftfilepattern,
             minCoverFreq=-0.5,
             maxCoverFreq=-0.5,
         )
-        FS = search_H1L1.get_fullycoherent_twoF(
+        FS = search.get_fullycoherent_twoF(
             Writer.tstart,
             Writer.tend,
             Writer.F0,
@@ -344,7 +346,7 @@ class ComputeFstat(Test):
 
         Writer.detectors = "H1"
         predicted_FS = Writer.predict_fstat()
-        search_H1 = pyfstat.ComputeFstat(
+        search = pyfstat.ComputeFstat(
             tref=Writer.tref,
             detectors="H1",
             sftfilepattern=sftfilepattern,
@@ -352,7 +354,7 @@ class ComputeFstat(Test):
             minCoverFreq=-0.5,
             maxCoverFreq=-0.5,
         )
-        FS = search_H1.get_fullycoherent_twoF(
+        FS = search.get_fullycoherent_twoF(
             Writer.tstart,
             Writer.tend,
             Writer.F0,
@@ -423,6 +425,60 @@ class ComputeFstat(Test):
             Writer.Delta,
         )
         self.assertTrue(FS_from_dict == FS_from_file)
+
+    def test_get_fully_coherent_BSGL(self):
+        # first pure noise, expect lnBSGL<0
+        search_H1L1 = pyfstat.ComputeFstat(
+            tref=self.minStartTime,
+            minStartTime=self.minStartTime,
+            maxStartTime=self.maxStartTime,
+            detectors="H1,L1",
+            injectSqrtSX=np.repeat(self.sqrtSX, 2),
+            minCoverFreq=self.F0 - 0.1,
+            maxCoverFreq=self.F0 + 0.1,
+            BSGL=True,
+        )
+        lnBSGL = search_H1L1.get_fullycoherent_twoF(
+            tstart=self.minStartTime,
+            tend=self.maxStartTime,
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+        )
+        self.assertTrue(lnBSGL < 0)
+        # now with an added signal, expect lnBSGL<0
+        search_H1L1 = pyfstat.ComputeFstat(
+            tref=self.minStartTime,
+            minStartTime=self.minStartTime,
+            maxStartTime=self.maxStartTime,
+            detectors="H1,L1",
+            injectSqrtSX=np.repeat(self.sqrtSX, 2),
+            injectSources="{{Alpha={:g}; Delta={:g}; h0={:g}; cosi={:g}; Freq={:g}; f1dot={:g}; f2dot={:g}; refTime={:d};}}".format(
+                self.Alpha,
+                self.Delta,
+                self.h0,
+                self.cosi,
+                self.F0,
+                self.F1,
+                self.F2,
+                self.tref,
+            ),
+            minCoverFreq=self.F0 - 0.1,
+            maxCoverFreq=self.F0 + 0.1,
+            BSGL=True,
+        )
+        lnBSGL = search_H1L1.get_fullycoherent_twoF(
+            tstart=self.minStartTime,
+            tend=self.maxStartTime,
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+        )
+        self.assertTrue(lnBSGL > 0)
 
 
 class ComputeFstatNoNoise(Test):
