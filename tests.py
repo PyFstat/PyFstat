@@ -564,7 +564,7 @@ class SemiCoherentSearch(Test):
         )
         self.Writer.make_data()
 
-    def test_get_semicoherent_det_stat(self):
+    def test_get_semicoherent_twoF(self):
 
         search = pyfstat.SemiCoherentSearch(
             label=self.label,
@@ -578,6 +578,7 @@ class SemiCoherentSearch(Test):
             maxStartTime=self.Writer.tend,
             minCoverFreq=-0.5,
             maxCoverFreq=-0.5,
+            BSGL=False,
         )
 
         search.get_semicoherent_det_stat(
@@ -600,7 +601,7 @@ class SemiCoherentSearch(Test):
         FSB = self.Writer.predict_fstat()
 
         FSs = np.array([FSA, FSB])
-        diffs = (np.array(search.detStat_per_segment) - FSs) / FSs
+        diffs = (np.array(search.twoF_per_segment) - FSs) / FSs
         self.assertTrue(np.all(diffs < 0.3))
 
     def test_get_semicoherent_BSGL(self):

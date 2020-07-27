@@ -1661,7 +1661,7 @@ class SemiCoherentSearch(ComputeFstat):
             twoF = twoF_per_segment.sum()
 
         if record_segments:
-            self.detStat_per_segment = twoF_per_segment
+            self.twoF_per_segment = twoF_per_segment
 
         if self.BSGL is False:
             return twoF
@@ -1675,7 +1675,15 @@ class SemiCoherentSearch(ComputeFstat):
                     self.semicoherentWindowRange,
                     False,
                 )
-                self.twoFX[X] = 2 * FSX.F_mn.data[0][0]
+                twoFX_per_segment = 2 * FSX.F_mn.data[:, 0]
+                self.twoFX[X] = twoFX_per_segment.sum()
+                if np.isnan(self.twoFX[X]):
+                    logging.debug(
+                        "NaNs in per-segment per-detector 2F treated as zero"
+                        " and sum re-computed."
+                    )
+                    twoFX_per_segment = np.nan_to_num(twoFX_per_segment, nan=0.0)
+                    self.twoFX[X] = twoFX_per_segment.sum()
             log10_BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
             ln_BSGL = log10_BSGL * np.log(10.0)
             if np.isnan(ln_BSGL):
