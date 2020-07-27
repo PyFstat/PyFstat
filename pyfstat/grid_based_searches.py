@@ -796,7 +796,7 @@ class TransientGridSearch(GridSearch):
     def write_F_mn(self, tCWfile, F_mn, windowRange):
         with open(tCWfile, "w") as tfp:
             for hline in self.output_file_header:
-                tpf.write("# {:s}\n".format(hline))
+                tfp.write("# {:s}\n".format(hline))
             tfp.write("# t0 [s]     tau [s]     2F\n")
             for m, F_m in enumerate(F_mn):
                 this_t0 = windowRange.t0 + m * windowRange.dt0
