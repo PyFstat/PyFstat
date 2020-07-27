@@ -785,7 +785,7 @@ class ComputeFstat(BaseSearchClass):
             if len(self.injectSqrtSX) != len(self.detector_names):
                 raise ValueError(
                     "injectSqrtSX must be of same length as detector_names ({}!={})".format(
-                        len(self.injectSqrtSX), len(detector_names)
+                        len(self.injectSqrtSX), len(self.detector_names)
                     )
                 )
             FstatOAs.injectSqrtSX = lalpulsar.MultiNoiseFloor()
