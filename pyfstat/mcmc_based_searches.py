@@ -2595,7 +2595,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
     def logl(self, theta, search):
         for j, theta_i in enumerate(self.theta_idxs):
             self.fixed_theta[theta_i] = theta[j]
-        twoF = search.get_semicoherent_twoF(*self.fixed_theta)
+        twoF = search.get_semicoherent_det_stat(*self.fixed_theta)
         return twoF / 2.0 + self.likelihoodcoef
 
 

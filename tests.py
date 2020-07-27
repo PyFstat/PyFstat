@@ -508,7 +508,7 @@ class SemiCoherentSearch(Test):
         )
         self.Writer.make_data()
 
-    def test_get_semicoherent_twoF(self):
+    def test_get_semicoherent_det_stat(self):
 
         search = pyfstat.SemiCoherentSearch(
             label=self.label,
@@ -524,7 +524,7 @@ class SemiCoherentSearch(Test):
             maxCoverFreq=-0.5,
         )
 
-        search.get_semicoherent_twoF(
+        search.get_semicoherent_det_stat(
             self.Writer.F0,
             self.Writer.F1,
             self.Writer.F2,
@@ -564,7 +564,7 @@ class SemiCoherentSearch(Test):
             BSGL=True,
         )
 
-        BSGL = search.get_semicoherent_twoF(
+        BSGL = search.get_semicoherent_det_stat(
             self.Writer.F0,
             self.Writer.F1,
             self.Writer.F2,

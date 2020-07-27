@@ -1190,7 +1190,7 @@ class ComputeFstat(BaseSearchClass):
                 return twoF
 
         FstatResults_single = copy.copy(self.FstatResults)
-        FstatResults_single.lenth = 1
+        FstatResults_single.numDetectors = 1
         FstatResults_single.data = self.FstatResults.multiFatoms[0].data[0]
         FS0 = lalpulsar.ComputeTransientFstatMap(
             FstatResults_single.multiFatoms[0], self.windowRange, False
@@ -1615,7 +1615,7 @@ class SemiCoherentSearch(ComputeFstat):
                 )
         self._init_semicoherent_window_range()
 
-    def get_semicoherent_twoF(
+    def get_semicoherent_det_stat(
         self,
         F0,
         F1,
@@ -1649,57 +1649,46 @@ class SemiCoherentSearch(ComputeFstat):
             self.whatToCompute,
         )
 
-        # if not self.transientWindowType:
-        #    if self.BSGL is False:
-        #        return self.FstatResults.twoF[0]
-        #    twoF = np.float(self.FstatResults.twoF[0])
-        #    self.twoFX[0] = self.FstatResults.twoFPerDet(0)
-        #    self.twoFX[1] = self.FstatResults.twoFPerDet(1)
-        #    log10_BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX,
-        #                                       self.BSGLSetup)
-        #    return log10_BSGL/np.log10(np.exp(1))
+        twoF_per_segment = self._get_per_segment_twoF()
+        twoF = twoF_per_segment.sum()
 
-        det_stat_per_segment = self._get_per_segment_det_stat()
-        detStat = det_stat_per_segment.sum()
-
-        if np.isnan(detStat):
-            logging.debug("NaNs in semi-coherent detection statistic treated as zero")
-            det_stat_per_segment = np.nan_to_num(det_stat_per_segment, nan=0.0)
-            detStat = det_stat_per_segment.sum()
+        if np.isnan(twoF):
+            logging.debug(
+                "NaNs in per-segment 2F treated as zero"
+                " and semi-coherent 2F re-computed."
+            )
+            twoF_per_segment = np.nan_to_num(twoF_per_segment, nan=0.0)
+            twoF = twoF_per_segment.sum()
 
         if record_segments:
-            self.detStat_per_segment = det_stat_per_segment
-
-        return detStat
-
-    def _get_per_segment_det_stat(self):
-        FS = lalpulsar.ComputeTransientFstatMap(
-            self.FstatResults.multiFatoms[0], self.semicoherentWindowRange, False
-        )
+            self.detStat_per_segment = twoF_per_segment
 
         if self.BSGL is False:
-            d_detStat = 2 * FS.F_mn.data[:, 0]
-        # FIXME: BSGL should not be compute per segment, but for summed F!
+            return twoF
         else:
-            FstatResults_single = copy.copy(self.FstatResults)
-            FstatResults_single.lenth = 1
-            FstatResults_single.data = self.FstatResults.multiFatoms[0].data[0]
-            FS0 = lalpulsar.ComputeTransientFstatMap(
-                FstatResults_single.multiFatoms[0], self.semicoherentWindowRange, False,
-            )
-            FstatResults_single.data = self.FstatResults.multiFatoms[0].data[1]
-            FS1 = lalpulsar.ComputeTransientFstatMap(
-                FstatResults_single.multiFatoms[0], self.semicoherentWindowRange, False,
-            )
+            for X in range(self.FstatResults.numDetectors):
+                FstatResults_single = copy.copy(self.FstatResults)
+                FstatResults_single.numDetectors = 1
+                FstatResults_single.data = self.FstatResults.multiFatoms[0].data[X]
+                FSX = lalpulsar.ComputeTransientFstatMap(
+                    FstatResults_single.multiFatoms[0],
+                    self.semicoherentWindowRange,
+                    False,
+                )
+                self.twoFX[X] = 2 * FSX.F_mn.data[0][0]
+            log10_BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
+            ln_BSGL = log10_BSGL / np.log10(np.exp(1))
+            if np.isnan(ln_BSGL):
+                logging.debug("NaNs in semi-coherent ln(BSGL) treated as zero")
+                ln_BSGL = 0.0
+            return ln_BSGL
 
-            self.twoFX[0] = 2 * FS0.F_mn.data[0][0]
-            self.twoFX[1] = 2 * FS1.F_mn.data[0][0]
-            log10_BSGL = lalpulsar.ComputeBSGL(
-                2 * FS.F_mn.data[0][0], self.twoFX, self.BSGLSetup
-            )
-            d_detStat = log10_BSGL / np.log10(np.exp(1))
-
-        return d_detStat
+    def _get_per_segment_twoF(self):
+        Fmap = lalpulsar.ComputeTransientFstatMap(
+            self.FstatResults.multiFatoms[0], self.semicoherentWindowRange, False
+        )
+        twoF = 2 * Fmap.F_mn.data[:, 0]
+        return twoF
 
 
 class SemiCoherentGlitchSearch(ComputeFstat):

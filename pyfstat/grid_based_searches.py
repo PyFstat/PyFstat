@@ -163,7 +163,7 @@ class GridSearch(BaseSearchClass):
             )
 
             def cut_out_tstart_tend(*vals):
-                return self.search.get_semicoherent_twoF(*vals[2:])
+                return self.search.get_semicoherent_det_stat(*vals[2:])
 
             self.search.get_det_stat = cut_out_tstart_tend
 
