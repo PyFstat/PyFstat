@@ -448,7 +448,7 @@ class ComputeFstat(Test):
             Delta=self.Delta,
         )
         self.assertTrue(lnBSGL < 0)
-        # now with an added signal, expect lnBSGL<0
+        # now with an added signal, expect lnBSGL>0
         search_H1L1 = pyfstat.ComputeFstat(
             tref=self.minStartTime,
             minStartTime=self.minStartTime,
