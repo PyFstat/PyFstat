@@ -1667,15 +1667,18 @@ class MCMCSearch(core.BaseSearchClass):
 
     def get_savetxt_fmt(self):
         fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
+        fmt += ["%.9g"]  # for detection statistic
         return fmt
 
     def export_samples_to_disk(self):
         self.samples_file = os.path.join(self.outdir, self.label + "_samples.dat")
         logging.info("Exporting samples to {}".format(self.samples_file))
         header = "\n".join(self.output_file_header)
-        header += "\n" + " ".join(self.theta_keys)
+        header += "\n" + " ".join(self.theta_keys) + " twoF"
         outfmt = self.get_savetxt_fmt()
-        Ncols = np.shape(self.samples)[1]
+        twoF = np.atleast_2d(self._get_twoF_from_loglikelihood()).T
+        samples_out = np.concatenate((self.samples, twoF), axis=1)
+        Ncols = np.shape(samples_out)[1]
         if len(outfmt) != Ncols:
             raise RuntimeError(
                 "Lengths of data rows ({:d})"
@@ -1687,8 +1690,14 @@ class MCMCSearch(core.BaseSearchClass):
                 " method.".format(Ncols, len(outfmt))
             )
         np.savetxt(
-            self.samples_file, self.samples, delimiter=" ", header=header, fmt=outfmt,
+            self.samples_file, samples_out, delimiter=" ", header=header, fmt=outfmt,
         )
+
+    def _get_twoF_from_loglikelihood(self, idx=None):
+        if idx is None:
+            return (self.lnlikes - self.likelihoodcoef) * 2
+        else:
+            return (self.lnlikes[idx] - self.likelihoodcoef) * 2
 
     def get_max_twoF(self, threshold=0.05):
         """ Returns the max likelihood sample and the corresponding 2F value
@@ -1706,7 +1715,6 @@ class MCMCSearch(core.BaseSearchClass):
             logging.info("lnlike values contain nan")
         idxs = np.isfinite(self.lnlikes)
         jmax = np.nanargmax(self.lnlikes[idxs])
-        maxlogl = self.lnlikes[jmax]
         d = OrderedDict()
 
         if self.BSGL:
@@ -1717,7 +1725,7 @@ class MCMCSearch(core.BaseSearchClass):
             maxtwoF = self.logl(p, self.search)
             self.search.BSGL = self.BSGL
         else:
-            maxtwoF = (maxlogl - self.likelihoodcoef) * 2
+            maxtwoF = self._get_twoF_from_loglikelihood(jmax)
 
         repeats = []
         for i, k in enumerate(self.theta_keys):
@@ -2394,6 +2402,7 @@ class MCMCGlitchSearch(MCMCSearch):
         if "tglitch" in self.theta_keys:
             fmt += ["%d"]
         fmt += helper_functions.get_doppler_params_output_format(self.theta_keys)
+        fmt += ["%.9g"]  # for detection statistic
         return fmt
 
 
@@ -3288,4 +3297,5 @@ class MCMCTransientSearch(MCMCSearch):
         if "transient_duration" in self.theta_keys:
             fmt += ["%d"]
         fmt += helper_functions.get_doppler_params_output_format(self.theta_keys)
+        fmt += ["%.9g"]  # for detection statistic
         return fmt
