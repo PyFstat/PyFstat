@@ -6,17 +6,20 @@
    - negative values can be used to reproduce old default
      of setting from SFT width
    - explicit option estimate_covering_band deprecated
-- semicoherent searches:
+ - semicoherent searches:
    - sped up by only calling ComputeTransientFstatMap once per point
    - BSGL now computed from summed F-stats, not for each segment
    - per-segment results now stored in attribute twoF_per_segment
      instead of det_stat_per_segment
+ - MCMC searches: save twoF for each sample to .dat file
  - Writer:
    - options minStartTime, maxStartTime deprecated
    - always use tstart, duration for actual data range
    - and use transientStartTime, transientTau for transients
  - transient-on-GPU output file writing fix
- - all examples now write to a directory "PyFstat_example_data"
+ - examples:
+   - all output now goes to a directory "PyFstat_example_data"
+   - added mcmc_vs_grid_simple_example
 
 ## 1.4.2 [14/07/2020]
 
