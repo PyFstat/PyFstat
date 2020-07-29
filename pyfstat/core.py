@@ -1063,12 +1063,12 @@ class ComputeFstat(BaseSearchClass):
         scanInit.stepSizes.Alpha = (
             self.search_ranges["Alpha"][-1]
             if len(self.search_ranges["Alpha"]) == 3
-            else 0.001
+            else 0.001  # fallback, irrelevant for band estimate but must be > 0
         )
         scanInit.stepSizes.Delta = (
             self.search_ranges["Delta"][-1]
             if len(self.search_ranges["Delta"]) == 3
-            else 0.001
+            else 0.001  # fallback, irrelevant for band estimate but must be > 0
         )
         scanInit.stepSizes.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
         for k in range(3):
