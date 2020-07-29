@@ -124,8 +124,8 @@ pip install git+ssh://git@github.com/PyFstat/PyFstat
 PyFstat uses the following external python modules,
 which should all be pulled in automatically if you use `pip`:
 
-* [numpy](http://www.numpy.org/)
-* [matplotlib](http://matplotlib.org/) >= 2.1
+* [numpy](https://www.numpy.org/)
+* [matplotlib](https://matplotlib.org/) >= 2.1
 * [scipy](https://www.scipy.org/)
 * [ptemcee](https://github.com/willvousden/ptemcee)
 * [corner](https://pypi.python.org/pypi/corner/)
@@ -135,7 +135,7 @@ which should all be pulled in automatically if you use `pip`:
 * [peakutils](https://pypi.python.org/pypi/PeakUtils)
 * [pathos](https://pypi.python.org/pypi/pathos)
 * [lalsuite](https://pypi.org/project/lalsuite/) >= 6.72
-* [versioneer]
+* [versioneer](https://pypi.org/project/versioneer/)
 
 In case the automatic install doesn't properly pull in all dependencies,
 to install all of these modules manually, you can also run
