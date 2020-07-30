@@ -942,7 +942,7 @@ class ComputeFstat(BaseSearchClass):
                 "[minCoverFreq,maxCoverFreq] not provided, trying to estimate"
                 " from search ranges."
             )
-            self.estimate_min_max_CoverFreq(self.SFTCatalog)
+            self.estimate_min_max_CoverFreq()
         elif (self.minCoverFreq < 0.0) or (self.maxCoverFreq < 0.0):
             if self.sftfilepattern is None:
                 raise ValueError(
@@ -993,7 +993,7 @@ class ComputeFstat(BaseSearchClass):
         maxFreq_SFTs = np.max(fBs)
         return minFreq_SFTs, maxFreq_SFTs
 
-    def estimate_min_max_CoverFreq(self, catalog):
+    def estimate_min_max_CoverFreq(self):
         # extract spanned spin-range at reference-time from the template-bank
         # input self.search_ranges must be a dictionary of lists per search parameter
         # which can be either [single_value], [min,max] or [min,max,step].
@@ -1019,9 +1019,9 @@ class ComputeFstat(BaseSearchClass):
                     " (either [single_value], [min,max]"
                     " or [min,max,step]): {}".format(key, self.search_ranges[key])
                 )
-        Tsft = 1.0 / catalog.data[0].header.deltaF
-        startTime = catalog.data[0].header.epoch
-        endTime = catalog.data[-1].header.epoch + Tsft
+        Tsft = 1.0 / self.SFTCatalog.data[0].header.deltaF
+        startTime = self.SFTCatalog.data[0].header.epoch
+        endTime = self.SFTCatalog.data[-1].header.epoch + Tsft
         # start by constructing a DopplerRegion structure
         # which will be needed to conservatively account for sky-position dependent
         # Doppler shifts of the frequency range to be covered
