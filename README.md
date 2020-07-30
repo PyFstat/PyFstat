@@ -14,7 +14,6 @@ and [citing](#citing-this-work) PyFstat.
 [examples](https://github.com/PyFstat/PyFstat/tree/master/examples),
 demonstrating different use cases.
 
-[![DOI](https://zenodo.org/badge/236690092.svg)](https://zenodo.org/badge/latestdoi/236690092)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3967045.svg)](https://doi.org/10.5281/zenodo.3967045)
 [![PyPI version](https://badge.fury.io/py/PyFstat.svg)](https://badge.fury.io/py/PyFstat)
 ![Integration Tests](https://github.com/PyFstat/PyFstat/workflows/Integration%20Tests/badge.svg)
