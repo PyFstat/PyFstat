@@ -14,7 +14,7 @@ and [citing](#citing-this-work) PyFstat.
 [examples](https://github.com/PyFstat/PyFstat/tree/master/examples),
 demonstrating different use cases.
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1243930.svg)](https://doi.org/10.5281/zenodo.1243930)
+[![DOI](https://zenodo.org/badge/236690092.svg)](https://zenodo.org/badge/latestdoi/236690092)
 [![PyPI version](https://badge.fury.io/py/PyFstat.svg)](https://badge.fury.io/py/PyFstat)
 ![Integration Tests](https://github.com/PyFstat/PyFstat/workflows/Integration%20Tests/badge.svg)
 ![Docker](https://github.com/PyFstat/PyFstat/workflows/Docker/badge.svg)
@@ -274,7 +274,8 @@ and the original paper introducing the code: Ashton&Prix 2018 [[inspire](https:/
 If you use the transient module, please also cite: Keitel&Ashton 2018 [[inspire](https://inspirehep.net/literature/1673205)] [[ADS](https://ui.adsabs.harvard.edu/abs/2018CQGra..35t5003K/)].
 
 If you'd like to cite the `PyFstat` package in general,
-please refer to the [version-independent Zenodo listing](https://doi.org/10.5281/zenodo.1243930)
+or versions from 1.5.x upwards,
+please refer to the [version-independent Zenodo listing](https://doi.org/10.5281/zenodo.3967045)
 or use directly the following BibTeX entry:
 ```
 @misc{pyfstat,
@@ -283,13 +284,18 @@ or use directly the following BibTeX entry:
                   Prix, Reinhard,
                   and Tenorio, Rodrigo},
   title        = {PyFstat},
-  month        = jan,
+  month        = jul,
   year         = 2020,
   publisher    = {Zenodo},
-  doi          = {10.5281/zenodo.1243930},
-  url          = {https://doi.org/10.5281/zenodo.1243930}
-  note         = {\url{https://doi.org/10.5281/zenodo.1243930}}
+  doi          = {10.5281/zenodo.3967045},
+  url          = {https://doi.org/10.5281/zenodo.3967045}
+  note         = {\url{https://doi.org/10.5281/zenodo.3967045}}
 }
 ```
 You can also obtain DOIs for individual versioned releases
-from the right sidebar at [Zenodo](https://doi.org/10.5281/zenodo.1243930).
+from the right sidebar at [Zenodo](https://doi.org/10.5281/zenodo.3967045).
+
+Alternatively, if you've used PyFstat up to version 1.4.x in your works,
+the DOIs for those version can be found from the sidebar at
+[this older Zenodo record](https://doi.org/10.5281/zenodo.1243930)
+and please amend the BibTeX entry accordingly.
