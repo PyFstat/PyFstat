@@ -784,8 +784,16 @@ class MCMCSearch(Test):
             "F0": {"type": "norm", "loc": self.F0, "scale": np.abs(1e-10 * self.F0)},
             "F1": {"type": "norm", "loc": self.F1, "scale": np.abs(1e-10 * self.F1)},
             "F2": self.F2,
-            "Alpha": {"type": "norm", "loc": self.Alpha, "scale": 0.01},
-            "Delta": {"type": "norm", "loc": self.Delta, "scale": 0.02},
+            "Alpha": {
+                "type": "unif",
+                "lower": self.Alpha - 0.01,
+                "upper": self.Alpha + 0.01,
+            },
+            "Delta": {
+                "type": "unif",
+                "lower": self.Delta - 0.01,
+                "upper": self.Delta + 0.01,
+            },
         }
 
         search = pyfstat.MCMCSearch(
