@@ -1,4 +1,9 @@
-## 1.5 [30/07/2020]
+## 1.5.1 [30/07/2020]
+
+ - The only change in this release is an updated README
+   to point to the new 1.5+ Zenodo record.
+
+## 1.5.0 [30/07/2020]
 
  - new default coverage band behaviour for all search classes:
    - estimate from search ranges (GridSearch) or prior (MCMCSearch)
