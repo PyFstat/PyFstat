@@ -1,4 +1,4 @@
-## target version: 1.5 [??/??/2020]
+## 1.5 [30/07/2020]
 
  - new default coverage band behaviour for all search classes:
    - estimate from search ranges (GridSearch) or prior (MCMCSearch)
