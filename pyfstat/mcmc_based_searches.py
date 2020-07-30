@@ -235,8 +235,8 @@ class MCMCSearch(core.BaseSearchClass):
                 )
             # first start with parameters that have non-delta prior ranges
             search_ranges = {
-                key: [prior_bounds[key]["lower"], prior_bounds[key]["upper"], 0]
-                for key in prior_bounds.keys()
+                key: [bound["lower"], bound["upper"]]
+                for key, bound in prior_bounds.items()
             }
             # then add fixed-point (delta prior) parameters
             for key in self.theta_prior:

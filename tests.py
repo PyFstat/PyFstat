@@ -697,54 +697,113 @@ class SemiCoherentGlitchSearch(Test):
 
 class MCMCSearch(Test):
     label = "TestMCMCSearch"
+    h0 = 1
+    sqrtSX = 1
+    F0 = 30
+    F1 = -1e-10
+    F2 = 0
+    minStartTime = 700000000
+    duration = 1 * 86400
+    maxStartTime = minStartTime + duration
+    Alpha = 5e-3
+    Delta = 1.2
+    tref = minStartTime
 
-    def test_fully_coherent(self):
-        h0 = 1
-        sqrtSX = 1
-        F0 = 30
-        F1 = -1e-10
-        F2 = 0
-        minStartTime = 700000000
-        duration = 1 * 86400
-        maxStartTime = minStartTime + duration
-        Alpha = 5e-3
-        Delta = 1.2
-        tref = minStartTime
+    def test_fully_coherent_MCMC_fixedsky(self):
+
         Writer = pyfstat.Writer(
-            F0=F0,
-            F1=F1,
-            F2=F2,
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
             label=self.label,
-            h0=h0,
-            sqrtSX=sqrtSX,
+            h0=self.h0,
+            sqrtSX=self.sqrtSX,
             outdir=self.outdir,
-            tstart=minStartTime,
-            Alpha=Alpha,
-            Delta=Delta,
-            tref=tref,
-            duration=duration,
+            tstart=self.minStartTime,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+            tref=self.tref,
+            duration=self.duration,
             Band=4,
         )
-
         Writer.make_data()
+
         predicted_FS = Writer.predict_fstat()
 
         theta = {
-            "F0": {"type": "norm", "loc": F0, "scale": np.abs(1e-10 * F0)},
-            "F1": {"type": "norm", "loc": F1, "scale": np.abs(1e-10 * F1)},
-            "F2": F2,
-            "Alpha": Alpha,
-            "Delta": Delta,
+            "F0": {"type": "norm", "loc": self.F0, "scale": np.abs(1e-10 * self.F0)},
+            "F1": {"type": "norm", "loc": self.F1, "scale": np.abs(1e-10 * self.F1)},
+            "F2": self.F2,
+            "Alpha": self.Alpha,
+            "Delta": self.Delta,
         }
 
         search = pyfstat.MCMCSearch(
-            label=self.label,
+            label=self.label + "FixedSky",
             outdir=self.outdir,
             theta_prior=theta,
-            tref=tref,
-            sftfilepattern=os.path.join(Writer.outdir, "*{}-*sft".format(Writer.label)),
-            minStartTime=minStartTime,
-            maxStartTime=maxStartTime,
+            tref=self.tref,
+            sftfilepattern=os.path.join(self.outdir, "*{}-*sft".format(self.label)),
+            minStartTime=self.minStartTime,
+            maxStartTime=self.maxStartTime,
+            nsteps=[100, 100],
+            nwalkers=100,
+            ntemps=2,
+            log10beta_min=-1,
+        )
+        search.run(plot_walkers=False)
+        _, FS = search.get_max_twoF()
+
+        print(("Predicted twoF is {} while recovered is {}".format(predicted_FS, FS)))
+        self.assertTrue(
+            FS > predicted_FS or np.abs((FS - predicted_FS)) / predicted_FS < 0.3
+        )
+
+    def test_fully_coherent_MCMC_skyprior(self):
+
+        Writer = pyfstat.Writer(
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
+            label=self.label,
+            h0=self.h0,
+            sqrtSX=self.sqrtSX,
+            outdir=self.outdir,
+            tstart=self.minStartTime,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+            tref=self.tref,
+            duration=self.duration,
+            Band=4,
+        )
+        Writer.make_data()
+
+        predicted_FS = Writer.predict_fstat()
+
+        theta = {
+            "F0": {"type": "norm", "loc": self.F0, "scale": np.abs(1e-10 * self.F0)},
+            "F1": {"type": "norm", "loc": self.F1, "scale": np.abs(1e-10 * self.F1)},
+            "F2": self.F2,
+            "Alpha": {
+                "type": "unif",
+                "lower": self.Alpha - 0.01,
+                "upper": self.Alpha + 0.01,
+            },
+            "Delta": {
+                "type": "unif",
+                "lower": self.Delta - 0.01,
+                "upper": self.Delta + 0.01,
+            },
+        }
+
+        search = pyfstat.MCMCSearch(
+            label=self.label + "SkyPrior",
+            outdir=self.outdir,
+            theta_prior=theta,
+            tref=self.tref,
+            sftfilepattern=os.path.join(self.outdir, "*{}-*sft".format(self.label)),
+            minStartTime=self.minStartTime,
+            maxStartTime=self.maxStartTime,
             nsteps=[100, 100],
             nwalkers=100,
             ntemps=2,
