@@ -169,7 +169,7 @@ A minimal configuration line to use would be e.g.:
 
 ### install PyFstat from source (Zenodo or git clone)
 
-You can download a source release tarball from [Zenodo](https://doi.org/10.5281/zenodo.1243930)
+You can download a source release tarball from [Zenodo](https://doi.org/10.5281/zenodo.3967045)
 and extract to an arbitrary temporary directory.
 Alternatively, clone this repository:
 
