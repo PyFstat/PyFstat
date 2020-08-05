@@ -24,6 +24,7 @@ class Test(unittest.TestCase):
         self.F0 = 30
         self.F1 = -1e-10
         self.F2 = 0
+        self.Tsft = 1800
         self.minStartTime = 700000000
         self.duration = 2 * 86400
         self.maxStartTime = self.minStartTime + self.duration
@@ -33,6 +34,7 @@ class Test(unittest.TestCase):
         self.detectors = "H1"
         self.SFTWindowType = "tukey"
         self.SFTWindowBeta = 1.0
+        self.Band = 4
         Writer = pyfstat.Writer(
             F0=self.F0,
             F1=self.F1,
@@ -47,7 +49,7 @@ class Test(unittest.TestCase):
             Delta=self.Delta,
             tref=self.tref,
             duration=self.duration,
-            Band=4,
+            Band=self.Band,
             detectors=self.detectors,
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
@@ -118,7 +120,6 @@ class Writer(Test):
 
     def test_noise_sfts(self):
         duration_Tsft = 100
-        Tsft = 1800
         h0 = 1000
         randSeed = 69420
         window = "tukey"
@@ -129,8 +130,8 @@ class Writer(Test):
             label="test_noiseSFTs_noise_and_signal",
             outdir=self.outdir,
             h0=h0,
-            duration=duration_Tsft * Tsft,
-            Tsft=Tsft,
+            duration=duration_Tsft * self.Tsft,
+            Tsft=self.Tsft,
             randSeed=randSeed,
             SFTWindowType=window,
             SFTWindowBeta=window_beta,
@@ -164,8 +165,8 @@ class Writer(Test):
             label="test_noiseSFTs_only_noise",
             outdir=self.outdir,
             h0=0,
-            duration=duration_Tsft * Tsft,
-            Tsft=Tsft,
+            duration=duration_Tsft * self.Tsft,
+            Tsft=self.Tsft,
             randSeed=randSeed,
             SFTWindowType=window,
             SFTWindowBeta=window_beta,
@@ -176,8 +177,8 @@ class Writer(Test):
             label="test_noiseSFTs_add_signal",
             outdir=self.outdir,
             h0=h0,
-            duration=duration_Tsft * Tsft,
-            Tsft=Tsft,
+            duration=duration_Tsft * self.Tsft,
+            Tsft=self.Tsft,
             sqrtSX=0,
             SFTWindowType=window,
             SFTWindowBeta=window_beta,
@@ -604,8 +605,9 @@ class SemiCoherentSearch(Test):
 
         self.assertTrue(len(twoF_per_seg_computed) == len(twoF_per_seg_predicted))
         diffs = (
-            twoF_per_seg_computed - twoF_per_seg_predicted
-        ) / twoF_per_seg_predicted
+            np.abs(twoF_per_seg_computed - twoF_per_seg_predicted)
+            / twoF_per_seg_predicted
+        )
         print(
             (
                 "Predicted twoF per segment are {}"
@@ -616,7 +618,7 @@ class SemiCoherentSearch(Test):
             )
         )
         self.assertTrue(np.all(diffs < 0.2))
-        diff = (twoF_sc - twoF_predicted) / twoF_predicted
+        diff = np.abs(twoF_sc - twoF_predicted) / twoF_predicted
         print(
             (
                 "Predicted semicoherent twoF is {}"
@@ -719,19 +721,8 @@ class SemiCoherentGlitchSearch(Test):
 
 class MCMCSearch(Test):
     label = "TestMCMCSearch"
-    h0 = 1
-    sqrtSX = 1
-    F0 = 30
-    F1 = -1e-10
-    F2 = 0
-    minStartTime = 700000000
-    duration = 1 * 86400
-    maxStartTime = minStartTime + duration
-    Alpha = 5e-3
-    Delta = 1.2
-    tref = minStartTime
 
-    def test_fully_coherent_MCMC_fixedsky(self):
+    def test_fully_coherent_MCMC(self):
 
         Writer = pyfstat.Writer(
             F0=self.F0,
@@ -746,22 +737,157 @@ class MCMCSearch(Test):
             Delta=self.Delta,
             tref=self.tref,
             duration=self.duration,
-            Band=4,
+            Band=self.Band,
         )
         Writer.make_data()
 
-        predicted_FS = Writer.predict_fstat()
+        twoF_predicted = Writer.predict_fstat()
+
+        # use a single test case with loop over multiple prior choices
+        # this could be much more elegantly done with @pytest.mark.parametrize
+        # but that cannot be mixed with unittest classes
+        thetas = {
+            "uniformF0-uniformF1-fixedSky": {
+                "F0": {
+                    "type": "unif",
+                    "lower": self.F0 - 1e-6,
+                    "upper": self.F0 + 1e-6,
+                },
+                "F1": {
+                    "type": "unif",
+                    "lower": self.F1 - 1e-10,
+                    "upper": self.F1 + 1e-10,
+                },
+                "F2": self.F2,
+                "Alpha": self.Alpha,
+                "Delta": self.Delta,
+            },
+            "log10uniformF0-uniformF1-fixedSky": {
+                "F0": {
+                    "type": "log10unif",
+                    "log10lower": np.log10(self.F0 - 1e-6),
+                    "log10upper": np.log10(self.F0 + 1e-6),
+                },
+                "F1": {
+                    "type": "unif",
+                    "lower": self.F1 - 1e-10,
+                    "upper": self.F1 + 1e-10,
+                },
+                "F2": self.F2,
+                "Alpha": self.Alpha,
+                "Delta": self.Delta,
+            },
+            "normF0-normF1-fixedSky": {
+                "F0": {"type": "norm", "loc": self.F0, "scale": 1e-6},
+                "F1": {"type": "norm", "loc": self.F1, "scale": 1e-10},
+                "F2": self.F2,
+                "Alpha": self.Alpha,
+                "Delta": self.Delta,
+            },
+            "lognormF0-halfnormF1-fixedSky": {
+                # lognorm parametrization is weird, from the scipy docs:
+                # "A common parametrization for a lognormal random variable Y
+                # is in terms of the mean, mu, and standard deviation, sigma,
+                # of the unique normally distributed random variable X
+                # such that exp(X) = Y.
+                # This parametrization corresponds to setting s = sigma
+                # and scale = exp(mu)."
+                # Hence, to set up a "lognorm" prior, we need
+                # to give "loc" in log scale but "scale" in linear scale
+                # Also, "lognorm" makes no sense for negative F1,
+                # hence combining this with "halfnorm" into a single case.
+                "F0": {"type": "lognorm", "loc": np.log(self.F0), "scale": 1e-6},
+                "F1": {"type": "halfnorm", "loc": self.F1 - 1e-10, "scale": 1e-10},
+                "F2": self.F2,
+                "Alpha": self.Alpha,
+                "Delta": self.Delta,
+            },
+            "normF0-normF1-uniformSky": {
+                # norm in sky is too dangerous, can easily jump out of range
+                "F0": {"type": "norm", "loc": self.F0, "scale": 1e-6},
+                "F1": {"type": "norm", "loc": self.F1, "scale": 1e-10},
+                "F2": self.F2,
+                "Alpha": {
+                    "type": "unif",
+                    "lower": self.Alpha - 0.01,
+                    "upper": self.Alpha + 0.01,
+                },
+                "Delta": {
+                    "type": "unif",
+                    "lower": self.Delta - 0.01,
+                    "upper": self.Delta + 0.01,
+                },
+            },
+        }
+
+        for prior_choice in thetas:
+            search = pyfstat.MCMCSearch(
+                label=self.label + "-" + prior_choice,
+                outdir=self.outdir,
+                theta_prior=thetas[prior_choice],
+                tref=self.tref,
+                sftfilepattern=os.path.join(self.outdir, "*{}-*sft".format(self.label)),
+                minStartTime=self.minStartTime,
+                maxStartTime=self.maxStartTime,
+                nsteps=[100, 100],
+                nwalkers=100,
+                ntemps=2,
+                log10beta_min=-1,
+            )
+            search.run(plot_walkers=False)
+            max_dict, twoF = search.get_max_twoF()
+            diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
+
+            print(
+                (
+                    "Predicted twoF is {} while recovered is {},"
+                    " relative difference: {}".format(twoF_predicted, twoF, diff)
+                )
+            )
+            print("Maximum found at:", max_dict)
+            self.assertTrue(diff < 0.3)
+            self.assertTrue(np.abs((max_dict["F0"] - Writer.F0) / Writer.F0) < 1e-3)
+            self.assertTrue(np.abs((max_dict["F1"] - Writer.F1) / Writer.F1) < 0.1)
+            if "Alpha" in max_dict.keys():
+                self.assertTrue(np.abs(max_dict["Alpha"] - Writer.Alpha) < 0.01)
+            if "Delta" in max_dict.keys():
+                self.assertTrue(np.abs(max_dict["Delta"] - Writer.Delta) < 0.01)
+
+
+class MCMCSemiCoherentSearch(Test):
+    label = "TestMCMCSemiCoherentSearch"
+
+    def test_semi_coherent_MCMC(self):
+
+        Writer = pyfstat.Writer(
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
+            label=self.label,
+            h0=self.h0,
+            sqrtSX=self.sqrtSX,
+            outdir=self.outdir,
+            tstart=self.minStartTime,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+            tref=self.tref,
+            duration=self.duration,
+            Band=self.Band,
+        )
+        Writer.make_data()
+
+        twoF_predicted = Writer.predict_fstat()
 
         theta = {
-            "F0": {"type": "norm", "loc": self.F0, "scale": np.abs(1e-10 * self.F0)},
-            "F1": {"type": "norm", "loc": self.F1, "scale": np.abs(1e-10 * self.F1)},
+            "F0": {"type": "unif", "lower": self.F0 - 1e-6, "upper": self.F0 + 1e-6,},
+            "F1": {"type": "unif", "lower": self.F1 - 1e-10, "upper": self.F1 + 1e-10,},
             "F2": self.F2,
             "Alpha": self.Alpha,
             "Delta": self.Delta,
         }
-
-        search = pyfstat.MCMCSearch(
-            label=self.label + "FixedSky",
+        nsegs = 10
+        search = pyfstat.MCMCSemiCoherentSearch(
+            label=self.label,
             outdir=self.outdir,
             theta_prior=theta,
             tref=self.tref,
@@ -772,16 +898,104 @@ class MCMCSearch(Test):
             nwalkers=100,
             ntemps=2,
             log10beta_min=-1,
+            nsegs=nsegs,
         )
         search.run(plot_walkers=False)
-        _, FS = search.get_max_twoF()
-
-        print(("Predicted twoF is {} while recovered is {}".format(predicted_FS, FS)))
-        self.assertTrue(
-            FS > predicted_FS or np.abs((FS - predicted_FS)) / predicted_FS < 0.3
+        max_dict, twoF = search.get_max_twoF()
+        diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
+        print(
+            (
+                "Predicted twoF is {} while recovered is {},"
+                " relative difference: {}".format(twoF_predicted, twoF, diff)
+            )
         )
+        print("Maximum found at:", max_dict)
+        self.assertTrue(diff < 0.3)
 
-    def test_fully_coherent_MCMC_skyprior(self):
+        # recover per-segment twoF values at max point
+        twoF_sc = search.search.get_semicoherent_det_stat(
+            max_dict["F0"],
+            max_dict["F1"],
+            self.F2,
+            self.Alpha,
+            self.Delta,
+            record_segments=True,
+        )
+        self.assertTrue(np.abs(twoF_sc - twoF) / twoF < 0.01)
+        twoF_per_seg = np.array(search.search.twoF_per_segment)
+        self.assertTrue(len(twoF_per_seg) == nsegs)
+        twoF_summed = twoF_per_seg.sum()
+        self.assertTrue(np.abs(twoF_summed - twoF_sc) / twoF_sc < 0.01)
+        self.assertTrue(np.abs((max_dict["F0"] - Writer.F0) / Writer.F0) < 1e-3)
+        self.assertTrue(np.abs((max_dict["F1"] - Writer.F1) / Writer.F1) < 0.1)
+
+
+class MCMCFollowUpSearch(Test):
+    label = "TestMCMCFollowUpSearch"
+
+    def test_MCMC_followup_search(self):
+
+        Writer = pyfstat.Writer(
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
+            label=self.label,
+            h0=self.h0,
+            sqrtSX=self.sqrtSX,
+            outdir=self.outdir,
+            tstart=self.minStartTime,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+            tref=self.tref,
+            duration=5
+            * self.duration,  # Supersky metric cannot be computed for segment lengths <= ~24 hours
+            Band=self.Band,
+        )
+        Writer.make_data()
+
+        twoF_predicted = Writer.predict_fstat()
+
+        theta = {
+            "F0": {"type": "unif", "lower": self.F0 - 1e-6, "upper": self.F0 + 1e-6,},
+            "F1": {"type": "unif", "lower": self.F1 - 1e-10, "upper": self.F1 + 1e-10,},
+            "F2": self.F2,
+            "Alpha": self.Alpha,
+            "Delta": self.Delta,
+        }
+        nsegs = 10
+        NstarMax = 1000
+        search = pyfstat.MCMCFollowUpSearch(
+            label=self.label,
+            outdir=self.outdir,
+            theta_prior=theta,
+            tref=self.tref,
+            sftfilepattern=os.path.join(self.outdir, "*{}-*sft".format(self.label)),
+            nsteps=[100, 100],
+            nwalkers=100,
+            ntemps=2,
+            log10beta_min=-1,
+        )
+        search.run(
+            plot_walkers=False, NstarMax=NstarMax, Nsegs0=nsegs,
+        )
+        max_dict, twoF = search.get_max_twoF()
+        diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
+        print(
+            (
+                "Predicted twoF is {} while recovered is {},"
+                " relative difference: {}".format(twoF_predicted, twoF, diff)
+            )
+        )
+        print("Maximum found at:", max_dict)
+        self.assertTrue(diff < 0.3)
+        self.assertTrue(np.abs((max_dict["F0"] - Writer.F0) / Writer.F0) < 1e-3)
+        self.assertTrue(np.abs((max_dict["F1"] - Writer.F1) / Writer.F1) < 0.1)
+
+
+class MCMCTransientSearch(Test):
+    label = "TestMCMCTransientSearch"
+
+    def test_transient_MCMC(self):
 
         Writer = pyfstat.Writer(
             F0=self.F0,
@@ -796,30 +1010,35 @@ class MCMCSearch(Test):
             Delta=self.Delta,
             tref=self.tref,
             duration=self.duration,
-            Band=4,
+            Band=self.Band,
+            transientWindowType="rect",
+            transientStartTime=self.minStartTime + 0.25 * self.duration,
+            transientTau=0.5 * self.duration,
         )
         Writer.make_data()
 
-        predicted_FS = Writer.predict_fstat()
+        twoF_predicted = Writer.predict_fstat()
 
         theta = {
-            "F0": {"type": "norm", "loc": self.F0, "scale": np.abs(1e-10 * self.F0)},
-            "F1": {"type": "norm", "loc": self.F1, "scale": np.abs(1e-10 * self.F1)},
+            "F0": self.F0,
+            "F1": self.F1,
             "F2": self.F2,
-            "Alpha": {
+            "Alpha": self.Alpha,
+            "Delta": self.Delta,
+            "transient_tstart": {
                 "type": "unif",
-                "lower": self.Alpha - 0.01,
-                "upper": self.Alpha + 0.01,
+                "lower": self.minStartTime,
+                "upper": self.maxStartTime - 2 * self.Tsft,
             },
-            "Delta": {
+            "transient_duration": {
                 "type": "unif",
-                "lower": self.Delta - 0.01,
-                "upper": self.Delta + 0.01,
+                "lower": 2 * self.Tsft,
+                "upper": self.duration - 2 * self.Tsft,
             },
         }
-
-        search = pyfstat.MCMCSearch(
-            label=self.label + "SkyPrior",
+        nsegs = 10
+        search = pyfstat.MCMCTransientSearch(
+            label=self.label,
             outdir=self.outdir,
             theta_prior=theta,
             tref=self.tref,
@@ -830,13 +1049,32 @@ class MCMCSearch(Test):
             nwalkers=100,
             ntemps=2,
             log10beta_min=-1,
+            transientWindowType=Writer.transientWindowType,
         )
         search.run(plot_walkers=False)
-        _, FS = search.get_max_twoF()
-
-        print(("Predicted twoF is {} while recovered is {}".format(predicted_FS, FS)))
+        max_dict, twoF = search.get_max_twoF()
+        diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
+        print(
+            (
+                "Predicted twoF is {} while recovered is {},"
+                " relative difference: {}".format(twoF_predicted, twoF, diff)
+            )
+        )
+        print("Maximum found at:", max_dict)
+        self.assertTrue(diff < 0.3)
         self.assertTrue(
-            FS > predicted_FS or np.abs((FS - predicted_FS)) / predicted_FS < 0.3
+            np.abs(
+                (max_dict["transient_tstart"] - Writer.transientStartTime)
+                / Writer.transientStartTime
+            )
+            < 0.05
+        )
+        self.assertTrue(
+            np.abs(
+                (max_dict["transient_duration"] - Writer.transientTau)
+                / Writer.transientTau
+            )
+            < 0.05
         )
 
 

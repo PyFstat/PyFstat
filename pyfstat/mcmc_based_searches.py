@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from ptemcee import Sampler as PTSampler
 import corner
 import dill as pickle
+from scipy.stats import lognorm
 
 import pyfstat.core as core
 from pyfstat.core import tqdm, args, read_par, translate_keys_to_lal
@@ -1090,8 +1091,8 @@ class MCMCSearch(core.BaseSearchClass):
                 prior_bounds[key]["lower"] = prior_dict["lower"]
                 prior_bounds[key]["upper"] = prior_dict["upper"]
             elif prior_dict["type"] == "log10unif":
-                prior_bounds[key]["lower"] = prior_dict["log10lower"]
-                prior_bounds[key]["upper"] = prior_dict["log10upper"]
+                prior_bounds[key]["lower"] = 10 ** prior_dict["log10lower"]
+                prior_bounds[key]["upper"] = 10 ** prior_dict["log10upper"]
             elif prior_dict["type"] == "norm":
                 prior_bounds[key]["lower"] = (
                     prior_dict["loc"] - normal_stds * prior_dict["scale"]
@@ -1108,6 +1109,13 @@ class MCMCSearch(core.BaseSearchClass):
                 prior_bounds[key]["upper"] = prior_dict["loc"]
                 prior_bounds[key]["lower"] = (
                     prior_dict["loc"] - normal_stds * prior_dict["scale"]
+                )
+            elif prior_dict["type"] == "lognorm":
+                prior_bounds[key]["lower"] = np.exp(
+                    prior_dict["loc"] - normal_stds * prior_dict["scale"]
+                )
+                prior_bounds[key]["upper"] = np.exp(
+                    prior_dict["loc"] + normal_stds * prior_dict["scale"]
                 )
             else:
                 raise ValueError(
@@ -1269,9 +1277,15 @@ class MCMCSearch(core.BaseSearchClass):
                 (x - kwargs["loc"]) ** 2 / kwargs["scale"] ** 2
                 + np.log(2 * np.pi * kwargs["scale"] ** 2)
             )
+        elif kwargs["type"] == "lognorm":
+            # as of scipy 1.4.1 and numpy 1.18.1 the following parametrisation
+            # should be consistent with np.random.lognormal in _generate_rv()
+            return lambda x: lognorm.pdf(
+                x, s=kwargs["scale"], scale=np.exp(kwargs["loc"])
+            )
         else:
             logging.info("kwargs:", kwargs)
-            raise ValueError("Print unrecognise distribution")
+            raise ValueError("Prior pdf type {:s} unknown.".format(kwargs["type"]))
 
     def _generate_rv(self, **kwargs):
         dist_type = kwargs.pop("type")
