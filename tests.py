@@ -835,7 +835,7 @@ class MCMCSearch(Test):
                 log10beta_min=-1,
             )
             search.run(plot_walkers=False)
-            _, twoF = search.get_max_twoF()
+            max_dict, twoF = search.get_max_twoF()
             diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
 
             print(
@@ -844,7 +844,14 @@ class MCMCSearch(Test):
                     " relative difference: {}".format(twoF_predicted, twoF, diff)
                 )
             )
+            print("Maximum found at:", max_dict)
             self.assertTrue(diff < 0.3)
+            self.assertTrue(np.abs((max_dict["F0"] - Writer.F0) / Writer.F0) < 1e-3)
+            self.assertTrue(np.abs((max_dict["F1"] - Writer.F1) / Writer.F1) < 0.1)
+            if "Alpha" in max_dict.keys():
+                self.assertTrue(np.abs(max_dict["Alpha"] - Writer.Alpha) < 0.01)
+            if "Delta" in max_dict.keys():
+                self.assertTrue(np.abs(max_dict["Delta"] - Writer.Delta) < 0.01)
 
 
 class MCMCSemiCoherentSearch(Test):
@@ -919,6 +926,8 @@ class MCMCSemiCoherentSearch(Test):
         self.assertTrue(len(twoF_per_seg) == nsegs)
         twoF_summed = twoF_per_seg.sum()
         self.assertTrue(np.abs(twoF_summed - twoF_sc) / twoF_sc < 0.01)
+        self.assertTrue(np.abs((max_dict["F0"] - Writer.F0) / Writer.F0) < 1e-3)
+        self.assertTrue(np.abs((max_dict["F1"] - Writer.F1) / Writer.F1) < 0.1)
 
 
 class MCMCFollowUpSearch(Test):
@@ -979,8 +988,8 @@ class MCMCFollowUpSearch(Test):
         )
         print("Maximum found at:", max_dict)
         self.assertTrue(diff < 0.3)
-        self.assertTrue(np.abs((max_dict["F0"] - Writer.F0)) / Writer.F0 < 0.05)
-        self.assertTrue(np.abs((max_dict["F1"] - Writer.F1)) / Writer.F1 < 0.05)
+        self.assertTrue(np.abs((max_dict["F0"] - Writer.F0) / Writer.F0) < 1e-3)
+        self.assertTrue(np.abs((max_dict["F1"] - Writer.F1) / Writer.F1) < 0.1)
 
 
 class MCMCTransientSearch(Test):
@@ -1054,13 +1063,17 @@ class MCMCTransientSearch(Test):
         print("Maximum found at:", max_dict)
         self.assertTrue(diff < 0.3)
         self.assertTrue(
-            np.abs((max_dict["transient_tstart"] - Writer.transientStartTime))
-            / Writer.transientStartTime
+            np.abs(
+                (max_dict["transient_tstart"] - Writer.transientStartTime)
+                / Writer.transientStartTime
+            )
             < 0.05
         )
         self.assertTrue(
-            np.abs((max_dict["transient_duration"] - Writer.transientTau))
-            / Writer.transientTau
+            np.abs(
+                (max_dict["transient_duration"] - Writer.transientTau)
+                / Writer.transientTau
+            )
             < 0.05
         )
 
