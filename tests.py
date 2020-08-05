@@ -33,6 +33,7 @@ class Test(unittest.TestCase):
         self.detectors = "H1"
         self.SFTWindowType = "tukey"
         self.SFTWindowBeta = 1.0
+        self.Band = 4
         Writer = pyfstat.Writer(
             F0=self.F0,
             F1=self.F1,
@@ -47,7 +48,7 @@ class Test(unittest.TestCase):
             Delta=self.Delta,
             tref=self.tref,
             duration=self.duration,
-            Band=4,
+            Band=self.Band,
             detectors=self.detectors,
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
@@ -719,19 +720,8 @@ class SemiCoherentGlitchSearch(Test):
 
 class MCMCSearch(Test):
     label = "TestMCMCSearch"
-    h0 = 1
-    sqrtSX = 1
-    F0 = 30
-    F1 = -1e-10
-    F2 = 0
-    minStartTime = 700000000
-    duration = 1 * 86400
-    maxStartTime = minStartTime + duration
-    Alpha = 5e-3
-    Delta = 1.2
-    tref = minStartTime
 
-    def test_fully_coherent_MCMC_fixedsky(self):
+    def test_fully_coherent_MCMC(self):
 
         Writer = pyfstat.Writer(
             F0=self.F0,
@@ -746,98 +736,112 @@ class MCMCSearch(Test):
             Delta=self.Delta,
             tref=self.tref,
             duration=self.duration,
-            Band=4,
+            Band=self.Band,
         )
         Writer.make_data()
 
         predicted_FS = Writer.predict_fstat()
 
-        theta = {
-            "F0": {"type": "norm", "loc": self.F0, "scale": np.abs(1e-10 * self.F0)},
-            "F1": {"type": "norm", "loc": self.F1, "scale": np.abs(1e-10 * self.F1)},
-            "F2": self.F2,
-            "Alpha": self.Alpha,
-            "Delta": self.Delta,
+        # use a single test case with loop over multiple prior choices
+        # this could be much more elegantly done with @pytest.mark.parametrize
+        # but that cannot be mixed with unittest classes
+        thetas = {
+            "uniformF0-uniformF1-fixedSky": {
+                "F0": {
+                    "type": "unif",
+                    "lower": self.F0 - 1e-6,
+                    "upper": self.F0 + 1e-6,
+                },
+                "F1": {
+                    "type": "unif",
+                    "lower": self.F1 - 1e-10,
+                    "upper": self.F1 + 1e-10,
+                },
+                "F2": self.F2,
+                "Alpha": self.Alpha,
+                "Delta": self.Delta,
+            },
+            "log10uniformF0-uniformF1-fixedSky": {
+                "F0": {
+                    "type": "log10unif",
+                    "log10lower": np.log10(self.F0 - 1e-6),
+                    "log10upper": np.log10(self.F0 + 1e-6),
+                },
+                "F1": {
+                    "type": "unif",
+                    "lower": self.F1 - 1e-10,
+                    "upper": self.F1 + 1e-10,
+                },
+                "F2": self.F2,
+                "Alpha": self.Alpha,
+                "Delta": self.Delta,
+            },
+            "normF0-normF1-fixedSky": {
+                "F0": {"type": "norm", "loc": self.F0, "scale": 1e-6},
+                "F1": {"type": "norm", "loc": self.F1, "scale": 1e-10},
+                "F2": self.F2,
+                "Alpha": self.Alpha,
+                "Delta": self.Delta,
+            },
+            "lognormF0-halfnormF1-fixedSky": {
+                # lognorm parametrization is weird, from the scipy docs:
+                # "A common parametrization for a lognormal random variable Y
+                # is in terms of the mean, mu, and standard deviation, sigma,
+                # of the unique normally distributed random variable X
+                # such that exp(X) = Y.
+                # This parametrization corresponds to setting s = sigma
+                # and scale = exp(mu)."
+                # Hence, to set up a "lognorm" prior, we need
+                # to give "loc" in log scale but "scale" in linear scale
+                # Also, "lognorm" makes no sense for negative F1,
+                # hence combining this with "halfnorm" into a single case.
+                "F0": {"type": "lognorm", "loc": np.log(self.F0), "scale": 1e-6},
+                "F1": {"type": "halfnorm", "loc": self.F1 - 1e-10, "scale": 1e-10},
+                "F2": self.F2,
+                "Alpha": self.Alpha,
+                "Delta": self.Delta,
+            },
+            "normF0-normF1-uniformSky": {
+                # norm in sky is too dangerous, can easily jump out of range
+                "F0": {"type": "norm", "loc": self.F0, "scale": 1e-6},
+                "F1": {"type": "norm", "loc": self.F1, "scale": 1e-10},
+                "F2": self.F2,
+                "Alpha": {
+                    "type": "unif",
+                    "lower": self.Alpha - 0.01,
+                    "upper": self.Alpha + 0.01,
+                },
+                "Delta": {
+                    "type": "unif",
+                    "lower": self.Delta - 0.01,
+                    "upper": self.Delta + 0.01,
+                },
+            },
         }
 
-        search = pyfstat.MCMCSearch(
-            label=self.label + "FixedSky",
-            outdir=self.outdir,
-            theta_prior=theta,
-            tref=self.tref,
-            sftfilepattern=os.path.join(self.outdir, "*{}-*sft".format(self.label)),
-            minStartTime=self.minStartTime,
-            maxStartTime=self.maxStartTime,
-            nsteps=[100, 100],
-            nwalkers=100,
-            ntemps=2,
-            log10beta_min=-1,
-        )
-        search.run(plot_walkers=False)
-        _, FS = search.get_max_twoF()
+        for prior_choice in thetas:
+            search = pyfstat.MCMCSearch(
+                label=self.label + "-" + prior_choice,
+                outdir=self.outdir,
+                theta_prior=thetas[prior_choice],
+                tref=self.tref,
+                sftfilepattern=os.path.join(self.outdir, "*{}-*sft".format(self.label)),
+                minStartTime=self.minStartTime,
+                maxStartTime=self.maxStartTime,
+                nsteps=[100, 100],
+                nwalkers=100,
+                ntemps=2,
+                log10beta_min=-1,
+            )
+            search.run(plot_walkers=False)
+            _, FS = search.get_max_twoF()
 
-        print(("Predicted twoF is {} while recovered is {}".format(predicted_FS, FS)))
-        self.assertTrue(
-            FS > predicted_FS or np.abs((FS - predicted_FS)) / predicted_FS < 0.3
-        )
-
-    def test_fully_coherent_MCMC_skyprior(self):
-
-        Writer = pyfstat.Writer(
-            F0=self.F0,
-            F1=self.F1,
-            F2=self.F2,
-            label=self.label,
-            h0=self.h0,
-            sqrtSX=self.sqrtSX,
-            outdir=self.outdir,
-            tstart=self.minStartTime,
-            Alpha=self.Alpha,
-            Delta=self.Delta,
-            tref=self.tref,
-            duration=self.duration,
-            Band=4,
-        )
-        Writer.make_data()
-
-        predicted_FS = Writer.predict_fstat()
-
-        theta = {
-            "F0": {"type": "norm", "loc": self.F0, "scale": np.abs(1e-10 * self.F0)},
-            "F1": {"type": "norm", "loc": self.F1, "scale": np.abs(1e-10 * self.F1)},
-            "F2": self.F2,
-            "Alpha": {
-                "type": "unif",
-                "lower": self.Alpha - 0.01,
-                "upper": self.Alpha + 0.01,
-            },
-            "Delta": {
-                "type": "unif",
-                "lower": self.Delta - 0.01,
-                "upper": self.Delta + 0.01,
-            },
-        }
-
-        search = pyfstat.MCMCSearch(
-            label=self.label + "SkyPrior",
-            outdir=self.outdir,
-            theta_prior=theta,
-            tref=self.tref,
-            sftfilepattern=os.path.join(self.outdir, "*{}-*sft".format(self.label)),
-            minStartTime=self.minStartTime,
-            maxStartTime=self.maxStartTime,
-            nsteps=[100, 100],
-            nwalkers=100,
-            ntemps=2,
-            log10beta_min=-1,
-        )
-        search.run(plot_walkers=False)
-        _, FS = search.get_max_twoF()
-
-        print(("Predicted twoF is {} while recovered is {}".format(predicted_FS, FS)))
-        self.assertTrue(
-            FS > predicted_FS or np.abs((FS - predicted_FS)) / predicted_FS < 0.3
-        )
+            print(
+                ("Predicted twoF is {} while recovered is {}".format(predicted_FS, FS))
+            )
+            self.assertTrue(
+                FS > predicted_FS or np.abs((FS - predicted_FS)) / predicted_FS < 0.3
+            )
 
 
 class GridSearch(Test):
