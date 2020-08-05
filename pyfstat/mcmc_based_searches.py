@@ -1090,8 +1090,8 @@ class MCMCSearch(core.BaseSearchClass):
                 prior_bounds[key]["lower"] = prior_dict["lower"]
                 prior_bounds[key]["upper"] = prior_dict["upper"]
             elif prior_dict["type"] == "log10unif":
-                prior_bounds[key]["lower"] = prior_dict["log10lower"]
-                prior_bounds[key]["upper"] = prior_dict["log10upper"]
+                prior_bounds[key]["lower"] = 10 ** prior_dict["log10lower"]
+                prior_bounds[key]["upper"] = 10 ** prior_dict["log10upper"]
             elif prior_dict["type"] == "norm":
                 prior_bounds[key]["lower"] = (
                     prior_dict["loc"] - normal_stds * prior_dict["scale"]
