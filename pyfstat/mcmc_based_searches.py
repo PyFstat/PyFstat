@@ -1271,7 +1271,7 @@ class MCMCSearch(core.BaseSearchClass):
             )
         else:
             logging.info("kwargs:", kwargs)
-            raise ValueError("Print unrecognise distribution")
+            raise ValueError("Prior pdf type {:s} unknown.".format(kwargs["type"]))
 
     def _generate_rv(self, **kwargs):
         dist_type = kwargs.pop("type")
