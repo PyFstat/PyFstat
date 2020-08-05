@@ -1577,7 +1577,7 @@ class SemiCoherentSearch(ComputeFstat):
         # Range [t0, t0+t0Band] step dt0
         self.semicoherentWindowRange.t0 = int(self.tboundaries[0])
         self.semicoherentWindowRange.t0Band = int(
-            self.tboundaries[-1] - self.tboundaries[0] - 2 * self.Tcoh
+            self.tboundaries[-1] - self.tboundaries[0] - self.Tcoh
         )
         self.semicoherentWindowRange.dt0 = int(self.Tcoh)
 
