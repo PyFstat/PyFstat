@@ -566,10 +566,11 @@ class SemiCoherentSearch(Test):
 
     def test_get_semicoherent_twoF(self):
 
+        nsegs = 2
         search = pyfstat.SemiCoherentSearch(
             label=self.label,
             outdir=self.outdir,
-            nsegs=2,
+            nsegs=nsegs,
             sftfilepattern=os.path.join(
                 self.Writer.outdir, "*{}-*sft".format(self.Writer.label)
             ),
@@ -581,7 +582,7 @@ class SemiCoherentSearch(Test):
             BSGL=False,
         )
 
-        search.get_semicoherent_det_stat(
+        twoF_sc = search.get_semicoherent_det_stat(
             self.Writer.F0,
             self.Writer.F1,
             self.Writer.F2,
@@ -589,20 +590,41 @@ class SemiCoherentSearch(Test):
             self.Writer.Delta,
             record_segments=True,
         )
+        twoF_per_seg_computed = np.array(search.twoF_per_segment)
 
-        # Compute the predicted semi-coherent Fstat for the first segment
-        self.Writer.duration /= 2.0
-        self.Writer.tend = self.Writer.tstart + self.Writer.duration
-        FSA = self.Writer.predict_fstat()
+        twoF_predicted = self.Writer.predict_fstat()
+        # now compute the predicted semi-coherent Fstat for each segment
+        self.Writer.duration /= nsegs
+        tstart = self.Writer.tstart
+        twoF_per_seg_predicted = np.zeros(nsegs)
+        for n in range(nsegs):
+            self.Writer.tstart = tstart + n * self.Writer.duration
+            self.Writer.tend = tstart + (n + 1) * self.Writer.duration
+            twoF_per_seg_predicted[n] = self.Writer.predict_fstat()
 
-        # same for second segment
-        self.Writer.tstart += self.Writer.duration
-        self.Writer.tend += self.Writer.duration
-        FSB = self.Writer.predict_fstat()
-
-        FSs = np.array([FSA, FSB])
-        diffs = (np.array(search.twoF_per_segment) - FSs) / FSs
-        self.assertTrue(np.all(diffs < 0.3))
+        self.assertTrue(len(twoF_per_seg_computed) == len(twoF_per_seg_predicted))
+        diffs = (
+            twoF_per_seg_computed - twoF_per_seg_predicted
+        ) / twoF_per_seg_predicted
+        print(
+            (
+                "Predicted twoF per segment are {}"
+                " while recovered values are {},"
+                " relative difference: {}".format(
+                    twoF_per_seg_predicted, twoF_per_seg_computed, diffs
+                )
+            )
+        )
+        self.assertTrue(np.all(diffs < 0.2))
+        diff = (twoF_sc - twoF_predicted) / twoF_predicted
+        print(
+            (
+                "Predicted semicoherent twoF is {}"
+                " while recovered value is {},"
+                " relative difference: {}".format(twoF_predicted, twoF_sc, diff)
+            )
+        )
+        self.assertTrue(diff < 0.3)
 
     def test_get_semicoherent_BSGL(self):
 
