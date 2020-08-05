@@ -1067,14 +1067,14 @@ class MCMCTransientSearch(Test):
                 (max_dict["transient_tstart"] - Writer.transientStartTime)
                 / Writer.transientStartTime
             )
-            < 0.05
+            < 0.1
         )
         self.assertTrue(
             np.abs(
                 (max_dict["transient_duration"] - Writer.transientTau)
                 / Writer.transientTau
             )
-            < 0.05
+            < 0.1
         )
 
 
