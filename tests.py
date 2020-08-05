@@ -835,14 +835,89 @@ class MCMCSearch(Test):
                 log10beta_min=-1,
             )
             search.run(plot_walkers=False)
-            _, FS = search.get_max_twoF()
+            _, twoF = search.get_max_twoF()
+            diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
 
             print(
-                ("Predicted twoF is {} while recovered is {}".format(predicted_FS, FS))
+                (
+                    "Predicted twoF is {} while recovered is {},"
+                    " relative difference: {}".format(twoF_predicted, twoF, diff)
+                )
             )
-            self.assertTrue(
-                FS > predicted_FS or np.abs((FS - predicted_FS)) / predicted_FS < 0.3
+            self.assertTrue(diff < 0.3)
+
+
+class MCMCSemiCoherentSearch(Test):
+    label = "TestMCMCSemiCoherentSearch"
+
+    def test_semi_coherent_MCMC(self):
+
+        Writer = pyfstat.Writer(
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
+            label=self.label,
+            h0=self.h0,
+            sqrtSX=self.sqrtSX,
+            outdir=self.outdir,
+            tstart=self.minStartTime,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+            tref=self.tref,
+            duration=self.duration,
+            Band=self.Band,
+        )
+        Writer.make_data()
+
+        twoF_predicted = Writer.predict_fstat()
+
+        theta = {
+            "F0": {"type": "unif", "lower": self.F0 - 1e-6, "upper": self.F0 + 1e-6,},
+            "F1": {"type": "unif", "lower": self.F1 - 1e-10, "upper": self.F1 + 1e-10,},
+            "F2": self.F2,
+            "Alpha": self.Alpha,
+            "Delta": self.Delta,
+        }
+        nsegs = 10
+        search = pyfstat.MCMCSemiCoherentSearch(
+            label=self.label,
+            outdir=self.outdir,
+            theta_prior=theta,
+            tref=self.tref,
+            sftfilepattern=os.path.join(self.outdir, "*{}-*sft".format(self.label)),
+            minStartTime=self.minStartTime,
+            maxStartTime=self.maxStartTime,
+            nsteps=[100, 100],
+            nwalkers=100,
+            ntemps=2,
+            log10beta_min=-1,
+            nsegs=nsegs,
+        )
+        search.run(plot_walkers=False)
+        max_dict, twoF = search.get_max_twoF()
+        diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
+        print(
+            (
+                "Predicted twoF is {} while recovered is {},"
+                " relative difference: {}".format(twoF_predicted, twoF, diff)
             )
+        )
+        self.assertTrue(diff < 0.3)
+
+        # recover per-segment twoF values at max point
+        twoF_sc = search.search.get_semicoherent_det_stat(
+            max_dict["F0"],
+            max_dict["F1"],
+            self.F2,
+            self.Alpha,
+            self.Delta,
+            record_segments=True,
+        )
+        self.assertTrue(np.abs(twoF_sc - twoF) / twoF < 0.01)
+        twoF_per_seg = np.array(search.search.twoF_per_segment)
+        self.assertTrue(len(twoF_per_seg) == nsegs)
+        twoF_summed = twoF_per_seg.sum()
+        self.assertTrue(np.abs(twoF_summed - twoF_sc) / twoF_sc < 0.01)
 
 
 class GridSearch(Test):
