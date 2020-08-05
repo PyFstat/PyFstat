@@ -398,9 +398,21 @@ def get_covering_band(
     psr.fkdotBand[1] = F1band
     psr.fkdotBand[2] = F2band
     psr.refTime = tref
-    return lalpulsar.CWSignalCoveringBand(
+    minCoverFreq, maxCoverFreq = lalpulsar.CWSignalCoveringBand(
         tstart, tend, psr, maxOrbitAsini, minOrbitPeriod, maxOrbitEcc
     )
+    if (
+        np.isnan(minCoverFreq)
+        or np.isnan(maxCoverFreq)
+        or minCoverFreq <= 0.0
+        or maxCoverFreq <= 0.0
+        or maxCoverFreq < minCoverFreq
+    ):
+        raise RuntimeError(
+            "Got invalid pair minCoverFreq={}, maxCoverFreq={} from"
+            " lalpulsar.CWSignalCoveringBand.".format(minCoverFreq, maxCoverFreq)
+        )
+    return minCoverFreq, maxCoverFreq
 
 
 def twoFDMoffThreshold(
