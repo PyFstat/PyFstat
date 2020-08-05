@@ -605,8 +605,9 @@ class SemiCoherentSearch(Test):
 
         self.assertTrue(len(twoF_per_seg_computed) == len(twoF_per_seg_predicted))
         diffs = (
-            twoF_per_seg_computed - twoF_per_seg_predicted
-        ) / twoF_per_seg_predicted
+            np.abs(twoF_per_seg_computed - twoF_per_seg_predicted)
+            / twoF_per_seg_predicted
+        )
         print(
             (
                 "Predicted twoF per segment are {}"
@@ -617,7 +618,7 @@ class SemiCoherentSearch(Test):
             )
         )
         self.assertTrue(np.all(diffs < 0.2))
-        diff = (twoF_sc - twoF_predicted) / twoF_predicted
+        diff = np.abs(twoF_sc - twoF_predicted) / twoF_predicted
         print(
             (
                 "Predicted semicoherent twoF is {}"
@@ -740,7 +741,7 @@ class MCMCSearch(Test):
         )
         Writer.make_data()
 
-        predicted_FS = Writer.predict_fstat()
+        twoF_predicted = Writer.predict_fstat()
 
         # use a single test case with loop over multiple prior choices
         # this could be much more elegantly done with @pytest.mark.parametrize
