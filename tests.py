@@ -921,6 +921,68 @@ class MCMCSemiCoherentSearch(Test):
         self.assertTrue(np.abs(twoF_summed - twoF_sc) / twoF_sc < 0.01)
 
 
+class MCMCFollowUpSearch(Test):
+    label = "TestMCMCFollowUpSearch"
+
+    def test_MCMC_followup_search(self):
+
+        Writer = pyfstat.Writer(
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
+            label=self.label,
+            h0=self.h0,
+            sqrtSX=self.sqrtSX,
+            outdir=self.outdir,
+            tstart=self.minStartTime,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+            tref=self.tref,
+            duration=5
+            * self.duration,  # Supersky metric cannot be computed for segment lengths <= ~24 hours
+            Band=self.Band,
+        )
+        Writer.make_data()
+
+        twoF_predicted = Writer.predict_fstat()
+
+        theta = {
+            "F0": {"type": "unif", "lower": self.F0 - 1e-6, "upper": self.F0 + 1e-6,},
+            "F1": {"type": "unif", "lower": self.F1 - 1e-10, "upper": self.F1 + 1e-10,},
+            "F2": self.F2,
+            "Alpha": self.Alpha,
+            "Delta": self.Delta,
+        }
+        nsegs = 10
+        NstarMax = 1000
+        search = pyfstat.MCMCFollowUpSearch(
+            label=self.label,
+            outdir=self.outdir,
+            theta_prior=theta,
+            tref=self.tref,
+            sftfilepattern=os.path.join(self.outdir, "*{}-*sft".format(self.label)),
+            nsteps=[100, 100],
+            nwalkers=100,
+            ntemps=2,
+            log10beta_min=-1,
+        )
+        search.run(
+            plot_walkers=False, NstarMax=NstarMax, Nsegs0=nsegs,
+        )
+        max_dict, twoF = search.get_max_twoF()
+        diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
+        print(
+            (
+                "Predicted twoF is {} while recovered is {},"
+                " relative difference: {}".format(twoF_predicted, twoF, diff)
+            )
+        )
+        print("Maximum found at:", max_dict)
+        self.assertTrue(diff < 0.3)
+        self.assertTrue(np.abs((max_dict["F0"] - Writer.F0)) / Writer.F0 < 0.05)
+        self.assertTrue(np.abs((max_dict["F1"] - Writer.F1)) / Writer.F1 < 0.05)
+
+
 class MCMCTransientSearch(Test):
     label = "TestMCMCTransientSearch"
 
