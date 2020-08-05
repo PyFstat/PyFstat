@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from ptemcee import Sampler as PTSampler
 import corner
 import dill as pickle
+from scipy.stats import lognorm
 
 import pyfstat.core as core
 from pyfstat.core import tqdm, args, read_par, translate_keys_to_lal
@@ -1109,6 +1110,13 @@ class MCMCSearch(core.BaseSearchClass):
                 prior_bounds[key]["lower"] = (
                     prior_dict["loc"] - normal_stds * prior_dict["scale"]
                 )
+            elif prior_dict["type"] == "lognorm":
+                prior_bounds[key]["lower"] = np.exp(
+                    prior_dict["loc"] - normal_stds * prior_dict["scale"]
+                )
+                prior_bounds[key]["upper"] = np.exp(
+                    prior_dict["loc"] + normal_stds * prior_dict["scale"]
+                )
             else:
                 raise ValueError(
                     "Not implemented for prior type {}".format(prior_dict["type"])
@@ -1268,6 +1276,12 @@ class MCMCSearch(core.BaseSearchClass):
             return lambda x: -0.5 * (
                 (x - kwargs["loc"]) ** 2 / kwargs["scale"] ** 2
                 + np.log(2 * np.pi * kwargs["scale"] ** 2)
+            )
+        elif kwargs["type"] == "lognorm":
+            # as of scipy 1.4.1 and numpy 1.18.1 the following parametrisation
+            # should be consistent with np.random.lognormal in _generate_rv()
+            return lambda x: lognorm.pdf(
+                x, s=kwargs["scale"], scale=np.exp(kwargs["loc"])
             )
         else:
             logging.info("kwargs:", kwargs)
