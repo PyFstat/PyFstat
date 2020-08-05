@@ -24,6 +24,7 @@ class Test(unittest.TestCase):
         self.F0 = 30
         self.F1 = -1e-10
         self.F2 = 0
+        self.Tsft = 1800
         self.minStartTime = 700000000
         self.duration = 2 * 86400
         self.maxStartTime = self.minStartTime + self.duration
@@ -119,7 +120,6 @@ class Writer(Test):
 
     def test_noise_sfts(self):
         duration_Tsft = 100
-        Tsft = 1800
         h0 = 1000
         randSeed = 69420
         window = "tukey"
@@ -130,8 +130,8 @@ class Writer(Test):
             label="test_noiseSFTs_noise_and_signal",
             outdir=self.outdir,
             h0=h0,
-            duration=duration_Tsft * Tsft,
-            Tsft=Tsft,
+            duration=duration_Tsft * self.Tsft,
+            Tsft=self.Tsft,
             randSeed=randSeed,
             SFTWindowType=window,
             SFTWindowBeta=window_beta,
@@ -165,8 +165,8 @@ class Writer(Test):
             label="test_noiseSFTs_only_noise",
             outdir=self.outdir,
             h0=0,
-            duration=duration_Tsft * Tsft,
-            Tsft=Tsft,
+            duration=duration_Tsft * self.Tsft,
+            Tsft=self.Tsft,
             randSeed=randSeed,
             SFTWindowType=window,
             SFTWindowBeta=window_beta,
@@ -177,8 +177,8 @@ class Writer(Test):
             label="test_noiseSFTs_add_signal",
             outdir=self.outdir,
             h0=h0,
-            duration=duration_Tsft * Tsft,
-            Tsft=Tsft,
+            duration=duration_Tsft * self.Tsft,
+            Tsft=self.Tsft,
             sqrtSX=0,
             SFTWindowType=window,
             SFTWindowBeta=window_beta,
@@ -902,6 +902,7 @@ class MCMCSemiCoherentSearch(Test):
                 " relative difference: {}".format(twoF_predicted, twoF, diff)
             )
         )
+        print("Maximum found at:", max_dict)
         self.assertTrue(diff < 0.3)
 
         # recover per-segment twoF values at max point
@@ -918,6 +919,88 @@ class MCMCSemiCoherentSearch(Test):
         self.assertTrue(len(twoF_per_seg) == nsegs)
         twoF_summed = twoF_per_seg.sum()
         self.assertTrue(np.abs(twoF_summed - twoF_sc) / twoF_sc < 0.01)
+
+
+class MCMCTransientSearch(Test):
+    label = "TestMCMCTransientSearch"
+
+    def test_transient_MCMC(self):
+
+        Writer = pyfstat.Writer(
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
+            label=self.label,
+            h0=self.h0,
+            sqrtSX=self.sqrtSX,
+            outdir=self.outdir,
+            tstart=self.minStartTime,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+            tref=self.tref,
+            duration=self.duration,
+            Band=self.Band,
+            transientWindowType="rect",
+            transientStartTime=self.minStartTime + 0.25 * self.duration,
+            transientTau=0.5 * self.duration,
+        )
+        Writer.make_data()
+
+        twoF_predicted = Writer.predict_fstat()
+
+        theta = {
+            "F0": self.F0,
+            "F1": self.F1,
+            "F2": self.F2,
+            "Alpha": self.Alpha,
+            "Delta": self.Delta,
+            "transient_tstart": {
+                "type": "unif",
+                "lower": self.minStartTime,
+                "upper": self.maxStartTime - 2 * self.Tsft,
+            },
+            "transient_duration": {
+                "type": "unif",
+                "lower": 2 * self.Tsft,
+                "upper": self.duration - 2 * self.Tsft,
+            },
+        }
+        nsegs = 10
+        search = pyfstat.MCMCTransientSearch(
+            label=self.label,
+            outdir=self.outdir,
+            theta_prior=theta,
+            tref=self.tref,
+            sftfilepattern=os.path.join(self.outdir, "*{}-*sft".format(self.label)),
+            minStartTime=self.minStartTime,
+            maxStartTime=self.maxStartTime,
+            nsteps=[100, 100],
+            nwalkers=100,
+            ntemps=2,
+            log10beta_min=-1,
+            transientWindowType=Writer.transientWindowType,
+        )
+        search.run(plot_walkers=False)
+        max_dict, twoF = search.get_max_twoF()
+        diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
+        print(
+            (
+                "Predicted twoF is {} while recovered is {},"
+                " relative difference: {}".format(twoF_predicted, twoF, diff)
+            )
+        )
+        print("Maximum found at:", max_dict)
+        self.assertTrue(diff < 0.3)
+        self.assertTrue(
+            np.abs((max_dict["transient_tstart"] - Writer.transientStartTime))
+            / Writer.transientStartTime
+            < 0.05
+        )
+        self.assertTrue(
+            np.abs((max_dict["transient_duration"] - Writer.transientTau))
+            / Writer.transientTau
+            < 0.05
+        )
 
 
 class GridSearch(Test):
