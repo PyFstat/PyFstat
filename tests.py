@@ -719,11 +719,57 @@ class SemiCoherentGlitchSearch(Test):
         self.assertTrue(np.abs((FS - predicted_FS)) / predicted_FS < 0.3)
 
 
-class MCMCSearch(Test):
+class MCMCSearchTest(Test):
+    def _check_mcmc_quantiles(self, search, max_dict, writer, transient=False):
+        summary_stats = search.get_summary_stats()
+        nsigmas = 3
+        conf = "99"
+
+        if not transient:
+            inj = {k: getattr(writer, k) for k in max_dict}
+        else:
+            inj = {
+                "transient_tstart": writer.transientStartTime,
+                "transient_duration": writer.transientTau,
+            }
+
+        for k in inj.keys():
+            reldiff = np.abs((max_dict[k] - inj[k]) / inj[k])
+            print("max2F  {:s} reldiff: {:.2e}".format(k, reldiff))
+            reldiff = np.abs((summary_stats[k]["mean"] - inj[k]) / inj[k])
+            print("mean   {:s} reldiff: {:.2e}".format(k, reldiff))
+            reldiff = np.abs((summary_stats[k]["median"] - inj[k]) / inj[k])
+            print("median {:s} reldiff: {:.2e}".format(k, reldiff))
+        for k in inj.keys():
+            lower = summary_stats[k]["mean"] - nsigmas * summary_stats[k]["std"]
+            upper = summary_stats[k]["mean"] + nsigmas * summary_stats[k]["std"]
+            within = (inj[k] >= lower) and (inj[k] <= upper)
+            print(
+                "{:s} in mean+-{:d}std ({} in [{},{}])? {}".format(
+                    k, nsigmas, inj[k], lower, upper, within
+                )
+            )
+            self.assertTrue(within)
+            within = (inj[k] >= summary_stats[k]["lower" + conf]) and (
+                inj[k] <= summary_stats[k]["upper" + conf]
+            )
+            print(
+                "{:s} in {:s}% quantiles ({} in [{},{}])? {}".format(
+                    k,
+                    conf,
+                    inj[k],
+                    summary_stats[k]["lower" + conf],
+                    summary_stats[k]["upper" + conf],
+                    within,
+                )
+            )
+            self.assertTrue(within)
+
+
+class MCMCSearch(MCMCSearchTest):
     label = "TestMCMCSearch"
 
     def test_fully_coherent_MCMC(self):
-
         Writer = pyfstat.Writer(
             F0=self.F0,
             F1=self.F1,
@@ -738,6 +784,7 @@ class MCMCSearch(Test):
             tref=self.tref,
             duration=self.duration,
             Band=self.Band,
+            randSeed=42,  # reduce chance of random failures in parameter recovery
         )
         Writer.make_data()
 
@@ -835,26 +882,21 @@ class MCMCSearch(Test):
                 log10beta_min=-1,
             )
             search.run(plot_walkers=False)
+            search.print_summary()
+
             max_dict, twoF = search.get_max_twoF()
             diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
-
             print(
                 (
                     "Predicted twoF is {} while recovered is {},"
                     " relative difference: {}".format(twoF_predicted, twoF, diff)
                 )
             )
-            print("Maximum found at:", max_dict)
             self.assertTrue(diff < 0.3)
-            # self.assertTrue(np.abs((max_dict["F0"] - Writer.F0) / Writer.F0) < 1e-3)
-            # self.assertTrue(np.abs((max_dict["F1"] - Writer.F1) / Writer.F1) < 0.1)
-            # if "Alpha" in max_dict.keys():
-            # self.assertTrue(np.abs(max_dict["Alpha"] - Writer.Alpha) < 0.01)
-            # if "Delta" in max_dict.keys():
-            # self.assertTrue(np.abs(max_dict["Delta"] - Writer.Delta) < 0.01)
+            self._check_mcmc_quantiles(search, max_dict, Writer)
 
 
-class MCMCSemiCoherentSearch(Test):
+class MCMCSemiCoherentSearch(MCMCSearchTest):
     label = "TestMCMCSemiCoherentSearch"
 
     def test_semi_coherent_MCMC(self):
@@ -873,6 +915,7 @@ class MCMCSemiCoherentSearch(Test):
             tref=self.tref,
             duration=self.duration,
             Band=self.Band,
+            randSeed=42,  # reduce chance of random failures in parameter recovery
         )
         Writer.make_data()
 
@@ -901,6 +944,8 @@ class MCMCSemiCoherentSearch(Test):
             nsegs=nsegs,
         )
         search.run(plot_walkers=False)
+        search.print_summary()
+
         max_dict, twoF = search.get_max_twoF()
         diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
         print(
@@ -909,7 +954,6 @@ class MCMCSemiCoherentSearch(Test):
                 " relative difference: {}".format(twoF_predicted, twoF, diff)
             )
         )
-        print("Maximum found at:", max_dict)
         self.assertTrue(diff < 0.3)
 
         # recover per-segment twoF values at max point
@@ -926,11 +970,10 @@ class MCMCSemiCoherentSearch(Test):
         self.assertTrue(len(twoF_per_seg) == nsegs)
         twoF_summed = twoF_per_seg.sum()
         self.assertTrue(np.abs(twoF_summed - twoF_sc) / twoF_sc < 0.01)
-        # self.assertTrue(np.abs((max_dict["F0"] - Writer.F0) / Writer.F0) < 1e-3)
-        # self.assertTrue(np.abs((max_dict["F1"] - Writer.F1) / Writer.F1) < 0.1)
+        self._check_mcmc_quantiles(search, max_dict, Writer)
 
 
-class MCMCFollowUpSearch(Test):
+class MCMCFollowUpSearch(MCMCSearchTest):
     label = "TestMCMCFollowUpSearch"
 
     def test_MCMC_followup_search(self):
@@ -950,6 +993,7 @@ class MCMCFollowUpSearch(Test):
             duration=5
             * self.duration,  # Supersky metric cannot be computed for segment lengths <= ~24 hours
             Band=self.Band,
+            randSeed=42,  # reduce chance of random failures in parameter recovery
         )
         Writer.make_data()
 
@@ -978,6 +1022,8 @@ class MCMCFollowUpSearch(Test):
         search.run(
             plot_walkers=False, NstarMax=NstarMax, Nsegs0=nsegs,
         )
+        search.print_summary()
+
         max_dict, twoF = search.get_max_twoF()
         diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
         print(
@@ -986,13 +1032,11 @@ class MCMCFollowUpSearch(Test):
                 " relative difference: {}".format(twoF_predicted, twoF, diff)
             )
         )
-        print("Maximum found at:", max_dict)
         self.assertTrue(diff < 0.3)
-        # self.assertTrue(np.abs((max_dict["F0"] - Writer.F0) / Writer.F0) < 1e-3)
-        # self.assertTrue(np.abs((max_dict["F1"] - Writer.F1) / Writer.F1) < 0.1)
+        self._check_mcmc_quantiles(search, max_dict, Writer)
 
 
-class MCMCTransientSearch(Test):
+class MCMCTransientSearch(MCMCSearchTest):
     label = "TestMCMCTransientSearch"
 
     def test_transient_MCMC(self):
@@ -1014,6 +1058,7 @@ class MCMCTransientSearch(Test):
             transientWindowType="rect",
             transientStartTime=self.minStartTime + 0.25 * self.duration,
             transientTau=0.5 * self.duration,
+            randSeed=42,  # reduce chance of random failures in parameter recovery
         )
         Writer.make_data()
 
@@ -1052,6 +1097,8 @@ class MCMCTransientSearch(Test):
             transientWindowType=Writer.transientWindowType,
         )
         search.run(plot_walkers=False)
+        search.print_summary()
+
         max_dict, twoF = search.get_max_twoF()
         diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
         print(
@@ -1060,22 +1107,8 @@ class MCMCTransientSearch(Test):
                 " relative difference: {}".format(twoF_predicted, twoF, diff)
             )
         )
-        print("Maximum found at:", max_dict)
         self.assertTrue(diff < 0.3)
-        # self.assertTrue(
-        # np.abs(
-        # (max_dict["transient_tstart"] - Writer.transientStartTime)
-        # / Writer.transientStartTime
-        # )
-        # < 0.1
-        # )
-        # self.assertTrue(
-        # np.abs(
-        # (max_dict["transient_duration"] - Writer.transientTau)
-        # / Writer.transientTau
-        # )
-        # < 0.1
-        # )
+        self._check_mcmc_quantiles(search, max_dict, Writer, transient=True)
 
 
 class GridSearch(Test):
