@@ -1758,6 +1758,13 @@ class MCMCSearch(core.BaseSearchClass):
 
     def get_median_stds(self):
         """ Returns a dict of the median and std of all production samples """
+        logging.warning(
+            "get_median_stds() method is deprecated"
+            " and will be removed in future releases,"
+            " use get_summary_stats() instead"
+            " and choose an appropriate set of estimators!"
+            " (Recommended: mean,std or median,lower90,upper90)"
+        )
         d = OrderedDict()
         repeats = []
         for s, k in zip(self.samples.T, self.theta_keys):
@@ -1776,6 +1783,31 @@ class MCMCSearch(core.BaseSearchClass):
 
             d[k] = np.median(s)
             d[k + "_std"] = np.std(s)
+        return d
+
+    def get_summary_stats(self):
+        """ Returns a dict of point estimates for all production samples """
+        d = OrderedDict()
+        repeats = []  # taken from old get_median_stds(), not sure why necessary
+        for s, k in zip(self.samples.T, self.theta_keys):
+            if k in d and k not in repeats:
+                d[k + "_0"] = d[k]  # relabel the old key
+                d.pop(k)
+                repeats.append(k)
+            if k in repeats:
+                k = k + "_0"
+                count = 1
+                while k in d:
+                    k = k.replace("_{}".format(count - 1), "_{}".format(count))
+                    count += 1
+
+            d[k] = {}
+            d[k]["mean"] = np.mean(s)
+            d[k]["std"] = np.std(s)
+            d[k]["lower90"], d[k]["median"], d[k]["upper90"] = np.quantile(
+                s, [0.05, 0.5, 0.95]
+            )
+
         return d
 
     def check_if_samples_are_railing(self, threshold=0.01):
@@ -1813,13 +1845,15 @@ class MCMCSearch(core.BaseSearchClass):
                     return_flag = True
         return return_flag
 
-    def write_par(self, method="med"):
+    def write_par(self, method="median"):
         """ Writes a .par of the best-fit params with an estimated std """
 
         if method == "med":
-            median_std_d = self.get_median_stds()
-            filename = os.path.join(self.outdir, self.label + "_median.par")
-            logging.info("Writing {} using median parameters.".format(filename))
+            method = "median"
+        if method in ["median", "mean"]:
+            summary_stats = self.get_summary_stats()
+            filename = os.path.join(self.outdir, self.label + "_" + method + ".par")
+            logging.info("Writing {} using {} parameters.".format(filename, method))
         elif method == "twoFmax":
             max_twoF_d, max_twoF = self.get_max_twoF()
             filename = os.path.join(self.outdir, self.label + "_max2F.par")
@@ -1835,9 +1869,9 @@ class MCMCSearch(core.BaseSearchClass):
             f.write("tref = {}\n".format(self.tref))
             if hasattr(self, "theta0_index"):
                 f.write("theta0_index = {}\n".format(self.theta0_idx))
-            if method == "med":
-                for key, val in median_std_d.items():
-                    f.write("{} = {:1.16e}\n".format(key, val))
+            if method in ["median", "mean"]:
+                for key, stat_d in summary_stats.items():
+                    f.write("{} = {:1.16e}\n".format(key, stat_d[method],))
             elif method == "twoFmax":
                 for key, val in max_twoF_d.items():
                     f.write("{} = {:1.16e}\n".format(key, val))
@@ -1934,21 +1968,30 @@ class MCMCSearch(core.BaseSearchClass):
     def print_summary(self):
         """ Prints a summary of the max twoF found to the terminal """
         max_twoFd, max_twoF = self.get_max_twoF()
-        median_std_d = self.get_median_stds()
+        summary_stats = self.get_summary_stats()
         logging.info("Summary:")
         if hasattr(self, "theta0_idx"):
             logging.info("theta0 index: {}".format(self.theta0_idx))
         logging.info("Max twoF: {} with parameters:".format(max_twoF))
         for k in np.sort(list(max_twoFd.keys())):
             print("  {:10s} = {:1.9e}".format(k, max_twoFd[k]))
-        logging.info("Median +/- std for production values")
-        for k in np.sort(list(median_std_d.keys())):
-            if "std" not in k:
-                logging.info(
-                    "  {:10s} = {:1.9e} +/- {:1.9e}".format(
-                        k, median_std_d[k], median_std_d[k + "_std"]
-                    )
+        logging.info("Mean +- std for production values:")
+        for k in np.sort(list(summary_stats.keys())):
+            logging.info(
+                "  {:10s} = {:1.9e} +/- {:1.9e}".format(
+                    k, summary_stats[k]["mean"], summary_stats[k]["std"]
                 )
+            )
+        logging.info("Median and 90% quantiles for production values:")
+        for k in np.sort(list(summary_stats.keys())):
+            logging.info(
+                "  {:10s} = {:1.9e} - {:1.9e} + {:1.9e}".format(
+                    k,
+                    summary_stats[k]["median"],
+                    summary_stats[k]["median"] - summary_stats[k]["lower90"],
+                    summary_stats[k]["upper90"] - summary_stats[k]["median"],
+                )
+            )
         logging.info("\n")
 
     def _CF_twoFmax(self, theta, twoFmax, ntrials):
