@@ -1974,7 +1974,7 @@ class MCMCSearch(core.BaseSearchClass):
             logging.info("theta0 index: {}".format(self.theta0_idx))
         logging.info("Max twoF: {} with parameters:".format(max_twoF))
         for k in np.sort(list(max_twoFd.keys())):
-            print("  {:10s} = {:1.9e}".format(k, max_twoFd[k]))
+            logging.info("  {:10s} = {:1.9e}".format(k, max_twoFd[k]))
         logging.info("Mean +- std for production values:")
         for k in np.sort(list(summary_stats.keys())):
             logging.info(
@@ -2055,7 +2055,7 @@ class MCMCSearch(core.BaseSearchClass):
         deltaTs = np.diff(tboundaries)
         ntrials = [time_trials + delta_F0 * dT for dT in deltaTs]
         p_val = self._p_val_twoFhat(max_twoF, ntrials)
-        print("p-value = {}".format(p_val))
+        logging.info("p-value = {}".format(p_val))
         return p_val
 
     def compute_evidence(self, make_plots=False, write_to_file=None):
@@ -2067,8 +2067,8 @@ class MCMCSearch(core.BaseSearchClass):
         betas = betas[::-1]
 
         if any(np.isinf(mean_lnlikes)):
-            print(
-                "WARNING mean_lnlikes contains inf: recalculating without"
+            logging.warning(
+                "mean_lnlikes contains inf: recalculating without"
                 " the {} infs".format(len(betas[np.isinf(mean_lnlikes)]))
             )
             idxs = np.isinf(mean_lnlikes)
