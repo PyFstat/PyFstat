@@ -1,3 +1,15 @@
+## 1.5.2 [06/08/2020]
+
+ - fixed semi-coherent search bug introduced in 1.5.0:
+    - last segment was always skipped due to off-by-one error
+      in segment boundary calculation.
+ - MCMC searches:
+    - extended print_summary()
+      with new get_summary_stats() helper
+      and deprecated get_median_stds()
+    - fixes to some of the more exotic prior types.
+ - Extended MCMC test coverage.
+   
 ## 1.5.1 [30/07/2020]
 
  - The only change in this release is an updated README
