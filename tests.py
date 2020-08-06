@@ -719,7 +719,54 @@ class SemiCoherentGlitchSearch(Test):
         self.assertTrue(np.abs((FS - predicted_FS)) / predicted_FS < 0.3)
 
 
-class MCMCSearch(Test):
+class MCMCSearchTest(Test):
+    def _check_mcmc_quantiles(self, search, max_dict, writer, transient=False):
+        summary_stats = search.get_summary_stats()
+        nsigmas = 3
+        conf = "99"
+
+        if not transient:
+            inj = {k: getattr(writer, k) for k in max_dict}
+        else:
+            inj = {
+                "transient_tstart": writer.transientStartTime,
+                "transient_duration": writer.transientTau,
+            }
+
+        for k in inj.keys():
+            reldiff = np.abs((max_dict[k] - inj[k]) / inj[k])
+            print("max2F  {:s} reldiff: {:.2e}".format(k, reldiff))
+            reldiff = np.abs((summary_stats[k]["mean"] - inj[k]) / inj[k])
+            print("mean   {:s} reldiff: {:.2e}".format(k, reldiff))
+            reldiff = np.abs((summary_stats[k]["median"] - inj[k]) / inj[k])
+            print("median {:s} reldiff: {:.2e}".format(k, reldiff))
+        for k in inj.keys():
+            lower = summary_stats[k]["mean"] - nsigmas * summary_stats[k]["std"]
+            upper = summary_stats[k]["mean"] + nsigmas * summary_stats[k]["std"]
+            within = (inj[k] >= lower) and (inj[k] <= upper)
+            print(
+                "{:s} in mean+-{:d}std ({} in [{},{}])? {}".format(
+                    k, nsigmas, inj[k], lower, upper, within
+                )
+            )
+            self.assertTrue(within)
+            within = (inj[k] >= summary_stats[k]["lower" + conf]) and (
+                inj[k] <= summary_stats[k]["upper" + conf]
+            )
+            print(
+                "{:s} in {:s}% quantiles ({} in [{},{}])? {}".format(
+                    k,
+                    conf,
+                    inj[k],
+                    summary_stats[k]["lower" + conf],
+                    summary_stats[k]["upper" + conf],
+                    within,
+                )
+            )
+            self.assertTrue(within)
+
+
+class MCMCSearch(MCMCSearchTest):
     label = "TestMCMCSearch"
 
     def test_fully_coherent_MCMC(self):
@@ -846,45 +893,10 @@ class MCMCSearch(Test):
                 )
             )
             self.assertTrue(diff < 0.3)
-
-            summary_stats = search.get_summary_stats()
-            nsigmas = 3
-            conf = "99"
-            inj = {k: getattr(Writer, k) for k in max_dict}
-            for k in inj.keys():
-                reldiff = np.abs((max_dict[k] - inj[k]) / inj[k])
-                print("max2F  {:s} reldiff: {:.2e}".format(k, reldiff))
-                reldiff = np.abs((summary_stats[k]["mean"] - inj[k]) / inj[k])
-                print("mean   {:s} reldiff: {:.2e}".format(k, reldiff))
-                reldiff = np.abs((summary_stats[k]["median"] - inj[k]) / inj[k])
-                print("median {:s} reldiff: {:.2e}".format(k, reldiff))
-            for k in inj.keys():
-                lower = summary_stats[k]["mean"] - nsigmas * summary_stats[k]["std"]
-                upper = summary_stats[k]["mean"] + nsigmas * summary_stats[k]["std"]
-                within = (inj[k] >= lower) and (inj[k] <= upper)
-                print(
-                    "{:s} in mean+-{:d}std ({} in [{},{}])? {}".format(
-                        k, nsigmas, inj[k], lower, upper, within
-                    )
-                )
-                self.assertTrue(within)
-                within = (inj[k] >= summary_stats[k]["lower" + conf]) and (
-                    inj[k] <= summary_stats[k]["upper" + conf]
-                )
-                print(
-                    "{:s} in {:s}% quantiles ({} in [{},{}])? {}".format(
-                        k,
-                        conf,
-                        inj[k],
-                        summary_stats[k]["lower" + conf],
-                        summary_stats[k]["upper" + conf],
-                        within,
-                    )
-                )
-                self.assertTrue(within)
+            self._check_mcmc_quantiles(search, max_dict, Writer)
 
 
-class MCMCSemiCoherentSearch(Test):
+class MCMCSemiCoherentSearch(MCMCSearchTest):
     label = "TestMCMCSemiCoherentSearch"
 
     def test_semi_coherent_MCMC(self):
@@ -958,45 +970,10 @@ class MCMCSemiCoherentSearch(Test):
         self.assertTrue(len(twoF_per_seg) == nsegs)
         twoF_summed = twoF_per_seg.sum()
         self.assertTrue(np.abs(twoF_summed - twoF_sc) / twoF_sc < 0.01)
-
-        summary_stats = search.get_summary_stats()
-        nsigmas = 3
-        conf = "99"
-        inj = {k: getattr(Writer, k) for k in max_dict}
-        for k in inj.keys():
-            reldiff = np.abs((max_dict[k] - inj[k]) / inj[k])
-            print("max2F  {:s} reldiff: {:.2e}".format(k, reldiff))
-            reldiff = np.abs((summary_stats[k]["mean"] - inj[k]) / inj[k])
-            print("mean   {:s} reldiff: {:.2e}".format(k, reldiff))
-            reldiff = np.abs((summary_stats[k]["median"] - inj[k]) / inj[k])
-            print("median {:s} reldiff: {:.2e}".format(k, reldiff))
-        for k in inj.keys():
-            lower = summary_stats[k]["mean"] - nsigmas * summary_stats[k]["std"]
-            upper = summary_stats[k]["mean"] + nsigmas * summary_stats[k]["std"]
-            within = (inj[k] >= lower) and (inj[k] <= upper)
-            print(
-                "{:s} in mean+-{:d}std ({} in [{},{}])? {}".format(
-                    k, nsigmas, inj[k], lower, upper, within
-                )
-            )
-            self.assertTrue(within)
-            within = (inj[k] >= summary_stats[k]["lower" + conf]) and (
-                inj[k] <= summary_stats[k]["upper" + conf]
-            )
-            print(
-                "{:s} in {:s}% quantiles ({} in [{},{}])? {}".format(
-                    k,
-                    conf,
-                    inj[k],
-                    summary_stats[k]["lower" + conf],
-                    summary_stats[k]["upper" + conf],
-                    within,
-                )
-            )
-            self.assertTrue(within)
+        self._check_mcmc_quantiles(search, max_dict, Writer)
 
 
-class MCMCFollowUpSearch(Test):
+class MCMCFollowUpSearch(MCMCSearchTest):
     label = "TestMCMCFollowUpSearch"
 
     def test_MCMC_followup_search(self):
@@ -1056,45 +1033,10 @@ class MCMCFollowUpSearch(Test):
             )
         )
         self.assertTrue(diff < 0.3)
-
-        summary_stats = search.get_summary_stats()
-        nsigmas = 3
-        conf = "99"
-        inj = {k: getattr(Writer, k) for k in max_dict}
-        for k in inj.keys():
-            reldiff = np.abs((max_dict[k] - inj[k]) / inj[k])
-            print("max2F  {:s} reldiff: {:.2e}".format(k, reldiff))
-            reldiff = np.abs((summary_stats[k]["mean"] - inj[k]) / inj[k])
-            print("mean   {:s} reldiff: {:.2e}".format(k, reldiff))
-            reldiff = np.abs((summary_stats[k]["median"] - inj[k]) / inj[k])
-            print("median {:s} reldiff: {:.2e}".format(k, reldiff))
-        for k in inj.keys():
-            lower = summary_stats[k]["mean"] - nsigmas * summary_stats[k]["std"]
-            upper = summary_stats[k]["mean"] + nsigmas * summary_stats[k]["std"]
-            within = (inj[k] >= lower) and (inj[k] <= upper)
-            print(
-                "{:s} in mean+-{:d}std ({} in [{},{}])? {}".format(
-                    k, nsigmas, inj[k], lower, upper, within
-                )
-            )
-            self.assertTrue(within)
-            within = (inj[k] >= summary_stats[k]["lower" + conf]) and (
-                inj[k] <= summary_stats[k]["upper" + conf]
-            )
-            print(
-                "{:s} in {:s}% quantiles ({} in [{},{}])? {}".format(
-                    k,
-                    conf,
-                    inj[k],
-                    summary_stats[k]["lower" + conf],
-                    summary_stats[k]["upper" + conf],
-                    within,
-                )
-            )
-            self.assertTrue(within)
+        self._check_mcmc_quantiles(search, max_dict, Writer)
 
 
-class MCMCTransientSearch(Test):
+class MCMCTransientSearch(MCMCSearchTest):
     label = "TestMCMCTransientSearch"
 
     def test_transient_MCMC(self):
@@ -1166,45 +1108,7 @@ class MCMCTransientSearch(Test):
             )
         )
         self.assertTrue(diff < 0.3)
-
-        summary_stats = search.get_summary_stats()
-        nsigmas = 3
-        conf = "99"
-        inj = {
-            "transient_tstart": Writer.transientStartTime,
-            "transient_duration": Writer.transientTau,
-        }
-        for k in inj.keys():
-            reldiff = np.abs((max_dict[k] - inj[k]) / inj[k])
-            print("max2F  {:s} reldiff: {:.2e}".format(k, reldiff))
-            reldiff = np.abs((summary_stats[k]["mean"] - inj[k]) / inj[k])
-            print("mean   {:s} reldiff: {:.2e}".format(k, reldiff))
-            reldiff = np.abs((summary_stats[k]["median"] - inj[k]) / inj[k])
-            print("median {:s} reldiff: {:.2e}".format(k, reldiff))
-        for k in inj.keys():
-            lower = summary_stats[k]["mean"] - nsigmas * summary_stats[k]["std"]
-            upper = summary_stats[k]["mean"] + nsigmas * summary_stats[k]["std"]
-            within = (inj[k] >= lower) and (inj[k] <= upper)
-            print(
-                "{:s} in mean+-{:d}std ({} in [{},{}])? {}".format(
-                    k, nsigmas, inj[k], lower, upper, within
-                )
-            )
-            self.assertTrue(within)
-            within = (inj[k] >= summary_stats[k]["lower" + conf]) and (
-                inj[k] <= summary_stats[k]["upper" + conf]
-            )
-            print(
-                "{:s} in {:s}% quantiles ({} in [{},{}])? {}".format(
-                    k,
-                    conf,
-                    inj[k],
-                    summary_stats[k]["lower" + conf],
-                    summary_stats[k]["upper" + conf],
-                    within,
-                )
-            )
-            self.assertTrue(within)
+        self._check_mcmc_quantiles(search, max_dict, Writer, transient=True)
 
 
 class GridSearch(Test):
