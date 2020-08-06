@@ -1804,9 +1804,15 @@ class MCMCSearch(core.BaseSearchClass):
             d[k] = {}
             d[k]["mean"] = np.mean(s)
             d[k]["std"] = np.std(s)
-            d[k]["lower90"], d[k]["median"], d[k]["upper90"] = np.quantile(
-                s, [0.05, 0.5, 0.95]
-            )
+            (
+                d[k]["lower99"],
+                d[k]["lower90"],
+                d[k]["lower50"],
+                d[k]["median"],
+                d[k]["upper50"],
+                d[k]["upper90"],
+                d[k]["upper99"],
+            ) = np.quantile(s, [0.005, 0.05, 0.25, 0.5, 0.75, 0.95, 0.995])
 
         return d
 
