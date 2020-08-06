@@ -13,12 +13,12 @@
     {
       "affiliation": "Albert Einstein Institute",
       "name": "Prix, Reinhard",
-      "orcid": "0000-0002-3582-2587"
+      "orcid": "0000-0002-3789-6424"
     },
     {
       "affiliation": "Universitat de les Illes Balears",
       "name": "Tenorio, Rodrigo",
-      "orcid": "0000-0002-3789-6424"
+      "orcid": "0000-0002-3582-2587"
     }
   ],
   "keywords": [
@@ -35,5 +35,6 @@
   "access_right": "open",
   "license": "MIT",
   "upload_type": "software",
-  "language": "eng"
+  "language": "eng",
+  "notes": "See record https://doi.org/10.5281/zenodo.1243930 for previous versions of PyFstat up to v1.4.1."
 }
