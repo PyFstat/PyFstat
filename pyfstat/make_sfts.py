@@ -31,8 +31,8 @@ class Writer(BaseSearchClass):
     def __init__(
         self,
         label="Test",
-        tstart=700000000,
-        duration=100 * 86400,
+        tstart=None,
+        duration=None,
         tref=None,
         F0=30,
         F1=1e-10,
@@ -73,10 +73,13 @@ class Writer(BaseSearchClass):
             frequency, sky-position, and amplitude parameters
         Tsft: float
             the sft duration
+        noiseSFTs: str
+            SFT on top of which signals will be injected. 
+            If not None, additional constraints can be applied using the arguments 
+            tstart and duration.
         minStartTime, maxStartTime: float
             DEPRECATED, use [tstart,duration] and/or
-            [transientWindowType,transientStartTime,transientTau] instead!
-
+            [transientWindowType,transientStartTime,transientTau] instead!    
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
 
@@ -92,31 +95,44 @@ class Writer(BaseSearchClass):
         self.tbounds = [self.tstart, self.tend]
         logging.info("Using segment boundaries {}".format(self.tbounds))
 
-    def basic_setup(self):
+    def _get_sft_constraints_from_tstart_duration(self):
+        """
+        Use start and duration to set up a lalpulsar.SFTConstraints
+        object. This method is only used if noiseSFTs is not None.
+        """
+        SFTConstraint = lalpulsar.SFTConstraints()
+
+        if self.tstart is None:
+            SFTConstraint.minStartTime = None
+            SFTConstraint.maxStartTime = None
+        elif self.duration is None:
+            SFTConstraint.maxStartTime = None
+        else:
+            SFTConstraint.minStartTime = lal.LIGOTimeGPS(self.tstart)
+            SFTConstraint.maxStartTime = SFTConstraint.minStartTime + self.duration
+
+        SFTConstraint.timestamps = None  # FIXME: not currently supported
+
+        logging.info(
+            "SFT Constraints: [minStartTime:{}, maxStartTime:{}]".format(
+                SFTConstraint.minStartTime, SFTConstraint.maxStartTime,
+            )
+        )
+
+        return SFTConstraint
+
+    def _get_setup_from_tstart_duration(self):
+        """
+        Default behavior: If no noiseSFTs are given, use the input parameters (tstart, 
+        duration, detectors and Tsft) to make fake data.
+        """
         self.tstart = int(self.tstart)
         self.duration = int(self.duration)
         self.tend = self.tstart + self.duration
 
         IFOs = self.detectors.split(",")
-        if self.noiseSFTs:
-            numSFTs = []
-            for ifo in IFOs:
-                constraint = lalpulsar.SFTConstraints()
-                constraint.detector = ifo
-                constraint.minStartTime = lal.LIGOTimeGPS(self.tstart)
-                constraint.maxStartTime = lal.LIGOTimeGPS(self.tend)
-                catalog = lalpulsar.SFTdataFind(self.noiseSFTs, constraint)
-                numSFTs.append(catalog.length)
-        else:
-            numSFTs = len(IFOs) * [int(float(self.duration) / self.Tsft)]
+        numSFTs = len(IFOs) * [int(float(self.duration) / self.Tsft)]
 
-        self.theta = np.array([self.phi, self.F0, self.F1, self.F2])
-
-        if os.path.isdir(self.outdir) is False:
-            os.makedirs(self.outdir)
-        if self.tref is None:
-            self.tref = self.tstart
-        self.config_file_name = os.path.join(self.outdir, self.label + ".cff")
         self.sftfilenames = [
             lalpulsar.OfficialSFTFilename(
                 dets[0],
@@ -129,10 +145,93 @@ class Writer(BaseSearchClass):
             )
             for ind, dets in enumerate(IFOs)
         ]
+        self.IFOs = ",".join(['"{}"'.format(d) for d in IFOs])
+
+    def _get_setup_from_noiseSFTs(self):
+        """
+        If noiseSFTs are given, use them to obtain relevant data parameters (tstart,
+        duration, detectors and Tsft). The corresponding input values will be used to
+        set up a lalpulsar.SFTConstraints object to be imposed to the SFTs. Keep in
+        mind that Tsft will also be checked to be consistent accross all SFTs (this is
+        not implemented through SFTConstraints but through a simple list check).
+        """
+        SFTConstraint = self._get_sft_constraints_from_tstart_duration()
+        noise_multi_sft_catalog = lalpulsar.GetMultiSFTCatalogView(
+            lalpulsar.SFTdataFind(self.noiseSFTs, SFTConstraint)
+        )
+
+        # Information to be extracted from the SFTs themselves
+        IFOs = []
+        tstart = []
+        tend = []
+        Tsft = []
+        self.sftfilenames = []  # This refers to the MFD output!
+
+        # SWIG-LAL does not import this functionality
+        gps_to_int = lambda x: x.gpsSeconds
+
+        for ifo_catalog in noise_multi_sft_catalog.data:
+            ifo_name = lalpulsar.ListIFOsInCatalog(ifo_catalog).data[0]
+
+            time_stamps = lalpulsar.TimestampsFromSFTCatalog(ifo_catalog)
+            this_Tsft = int(round(1.0 / ifo_catalog.data[0].header.deltaF))
+            this_start_time = gps_to_int(time_stamps.data[0])
+            this_end_time = gps_to_int(time_stamps.data[-1]) + this_Tsft
+
+            self.sftfilenames.append(
+                lalpulsar.OfficialSFTFilename(
+                    ifo_name[0],
+                    ifo_name[1],
+                    ifo_catalog.length,
+                    this_Tsft,
+                    this_start_time,
+                    this_end_time - this_start_time,
+                    self.label,
+                )
+            )
+
+            IFOs.append(ifo_name)
+            tstart.append(this_start_time)
+            tend.append(this_end_time)
+            Tsft.append(this_Tsft)
+
+        # Get the "overall" values of the search
+        Tsft = np.unique(Tsft)
+        if len(Tsft) != 1:
+            raise ValueError("SFTs contain different basetimes: {}".format(Tsft))
+        elif Tsft[0] != self.Tsft:
+            raise ValueError(
+                "SFT basetime {} differs from input base time {}".format(
+                    Tsft[0], self.Tsft
+                )
+            )
+        self.tstart = min(tstart)
+        self.tend = max(tend)
+        self.duration = self.tend - self.tstart
+        self.IFOs = ",".join(['"{}"'.format(d) for d in IFOs])
+
+    def basic_setup(self):
+        os.makedirs(self.outdir, exist_ok=True)
+        self.config_file_name = os.path.join(self.outdir, self.label + ".cff")
+        self.theta = np.array([self.phi, self.F0, self.F1, self.F2])
+
+        if self.noiseSFTs is not None:
+            logging.warning(
+                "noiseSFTs is not None: Inferring tstart, duration, tend, Tsft. "
+                "Input tstart and duration will be treated as SFT constraints "
+                "using lalpulsar.SFTConstraints; Tsft will be checked for "
+                "internal consistency accross input SFTs."
+            )
+            self._get_setup_from_noiseSFTs()
+        else:
+            self._get_setup_from_tstart_duration()
+
         self.sftfilepath = ";".join(
             [os.path.join(self.outdir, fn) for fn in self.sftfilenames]
         )
-        self.IFOs = ",".join(['"{}"'.format(d) for d in IFOs])
+
+        if self.tref is None:
+            self.tref = self.tstart
 
     def make_data(self):
         """ A convienience wrapper to generate a cff file then sfts """

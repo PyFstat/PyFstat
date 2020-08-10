@@ -69,26 +69,33 @@ class Test(unittest.TestCase):
 
 class Writer(Test):
     label = "TestWriter"
-    tested_class = pyfstat.Writer
+    writer_class_to_test = pyfstat.Writer
+    tstart = 1094809861
+    duration = 4 * 1800
 
     def test_make_cff(self):
-        Writer = self.tested_class(label=self.label, outdir=self.outdir)
+        Writer = self.writer_class_to_test(
+            label=self.label,
+            outdir=self.outdir,
+            tstart=self.tstart,
+            duration=self.duration,
+        )
         Writer.make_cff()
         self.assertTrue(
             os.path.isfile(os.path.join(".", self.outdir, self.label + ".cff"))
         )
 
     def test_run_makefakedata(self):
-        duration = 3600
-        Writer = self.tested_class(
-            label=self.label, outdir=self.outdir, duration=duration
+        duration = 4 * 1800
+        Writer = self.writer_class_to_test(
+            label=self.label, outdir=self.outdir, duration=duration, tstart=self.tstart
         )
         Writer.make_cff()
         Writer.run_makefakedata()
         expected_outfile = os.path.join(
             ".",
             Writer.outdir,
-            "H-2_H1_1800SFT_{}-{}-{}.sft".format(
+            "H-4_H1_1800SFT_{}-{}-{}.sft".format(
                 Writer.label, Writer.tstart, Writer.duration
             ),
         )
@@ -99,7 +106,9 @@ class Writer(Test):
         )
 
     def test_makefakedata_usecached(self):
-        Writer = self.tested_class(label=self.label, outdir=self.outdir, duration=3600)
+        Writer = self.writer_class_to_test(
+            label=self.label, outdir=self.outdir, duration=3600, tstart=self.tstart
+        )
         if os.path.isfile(Writer.sftfilepath):
             os.remove(Writer.sftfilepath)
         # first run: make everything from scratch
@@ -119,34 +128,32 @@ class Writer(Test):
         self.assertFalse(time_first == time_third)
 
     def test_noise_sfts(self):
-        duration_Tsft = 100
+        duration = 4 * self.Tsft
         h0 = 1000
         randSeed = 69420
         window = "tukey"
         window_beta = 0.01
+        detectors = "L1,H1"
 
         # create sfts with a strong signal in them
-        noise_and_signal_writer = self.tested_class(
+        noise_and_signal_writer = self.writer_class_to_test(
             label="test_noiseSFTs_noise_and_signal",
             outdir=self.outdir,
             h0=h0,
-            duration=duration_Tsft * self.Tsft,
+            duration=duration,
             Tsft=self.Tsft,
+            tstart=self.tstart,
+            detectors=detectors,
             randSeed=randSeed,
             SFTWindowType=window,
             SFTWindowBeta=window_beta,
         )
-        sftfilepattern = os.path.join(
-            noise_and_signal_writer.outdir,
-            "*{}*{}-*sft".format(duration_Tsft, noise_and_signal_writer.label),
-        )
-
         noise_and_signal_writer.make_data()
 
         # compute Fstat
         coherent_search = pyfstat.ComputeFstat(
             tref=noise_and_signal_writer.tref,
-            sftfilepattern=sftfilepattern,
+            sftfilepattern=noise_and_signal_writer.sftfilepath,
             minCoverFreq=-0.5,
             maxCoverFreq=-0.5,
         )
@@ -161,42 +168,40 @@ class Writer(Test):
         )
 
         # create noise sfts and then inject a strong signal
-        noise_writer = self.tested_class(
+        noise_writer = self.writer_class_to_test(
             label="test_noiseSFTs_only_noise",
             outdir=self.outdir,
             h0=0,
-            duration=duration_Tsft * self.Tsft,
+            duration=duration,
             Tsft=self.Tsft,
+            tstart=self.tstart,
+            detectors=detectors,
             randSeed=randSeed,
             SFTWindowType=window,
             SFTWindowBeta=window_beta,
         )
         noise_writer.make_data()
 
-        add_signal_writer = self.tested_class(
+        # first without additional constraints
+        add_signal_writer = self.writer_class_to_test(
             label="test_noiseSFTs_add_signal",
             outdir=self.outdir,
             h0=h0,
-            duration=duration_Tsft * self.Tsft,
+            duration=None,
             Tsft=self.Tsft,
+            tstart=None,
+            detectors=detectors,
             sqrtSX=0,
             SFTWindowType=window,
             SFTWindowBeta=window_beta,
-            noiseSFTs=os.path.join(
-                noise_writer.outdir,
-                "*{}*{}-*sft".format(duration_Tsft, noise_writer.label),
-            ),
-        )
-        sftfilepattern = os.path.join(
-            add_signal_writer.outdir,
-            "*{}*{}-*sft".format(duration_Tsft, add_signal_writer.label),
+            noiseSFTs=noise_writer.sftfilepath,
         )
         add_signal_writer.make_data()
 
         # compute Fstat
         coherent_search = pyfstat.ComputeFstat(
             tref=add_signal_writer.tref,
-            sftfilepattern=sftfilepattern,
+            sftfilepattern=add_signal_writer.sftfilepath,
             minCoverFreq=-0.5,
             maxCoverFreq=-0.5,
         )
@@ -212,10 +217,46 @@ class Writer(Test):
 
         self.assertTrue(np.abs(FS_1 - FS_2) / FS_1 < 0.01)
 
+        # same again but with explicit (tstart,duration) to build constraints
+        add_signal_writer_constr = self.writer_class_to_test(
+            label="test_noiseSFTs_add_signal_with_constraints",
+            outdir=self.outdir,
+            h0=h0,
+            duration=duration / 2,
+            Tsft=self.Tsft,
+            tstart=self.tstart,
+            detectors=detectors,
+            sqrtSX=0,
+            SFTWindowType=window,
+            SFTWindowBeta=window_beta,
+            noiseSFTs=noise_writer.sftfilepath,
+        )
+        add_signal_writer_constr.make_data()
+
+        # compute Fstat
+        coherent_search = pyfstat.ComputeFstat(
+            tref=add_signal_writer_constr.tref,
+            sftfilepattern=add_signal_writer_constr.sftfilepath,
+            minCoverFreq=-0.5,
+            maxCoverFreq=-0.5,
+        )
+        FS_3 = coherent_search.get_fullycoherent_twoF(
+            add_signal_writer_constr.tstart,
+            add_signal_writer_constr.tend,
+            add_signal_writer_constr.F0,
+            add_signal_writer_constr.F1,
+            add_signal_writer_constr.F2,
+            add_signal_writer_constr.Alpha,
+            add_signal_writer_constr.Delta,
+        )
+
+        # we've used half the data, so expect half the FS
+        self.assertTrue(np.abs(FS_1 - 2 * FS_3) / FS_1 < 0.05)
+
 
 class BinaryModulatedWriter(Writer):
     label = "TestBinaryModulatedWriter"
-    tested_class = pyfstat.BinaryModulatedWriter
+    writer_class_to_test = pyfstat.BinaryModulatedWriter
 
 
 class Bunch(Test):
@@ -319,6 +360,7 @@ class ComputeFstat(Test):
             label="TestComputeFstatSinglePoint",
             outdir=self.outdir,
             duration=86400,
+            tstart=1094809861,
             h0=1,
             sqrtSX=1,
             detectors="H1",
@@ -373,6 +415,7 @@ class ComputeFstat(Test):
             outdir=self.outdir,
             add_noise=False,
             duration=86400,
+            tstart=1094809861,
             h0=1,
             sqrtSX=1,
         )
@@ -491,6 +534,7 @@ class ComputeFstatNoNoise(Test):
             outdir=self.outdir,
             add_noise=False,
             duration=86400,
+            tstart=1094809861,
             h0=1,
             sqrtSX=0,
         )
@@ -559,6 +603,7 @@ class SemiCoherentSearch(Test):
             label=self.label,
             outdir=self.outdir,
             duration=10 * 86400,
+            tstart=1094809861,
             h0=1,
             sqrtSX=1,
             detectors="H1,L1",
