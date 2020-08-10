@@ -34,7 +34,6 @@ class Test(unittest.TestCase):
         self.detectors = "H1"
         self.SFTWindowType = "tukey"
         self.SFTWindowBeta = 1.0
-        self.Band = 4
         Writer = pyfstat.Writer(
             F0=self.F0,
             F1=self.F1,
@@ -49,7 +48,6 @@ class Test(unittest.TestCase):
             Delta=self.Delta,
             tref=self.tref,
             duration=self.duration,
-            Band=self.Band,
             detectors=self.detectors,
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
@@ -57,6 +55,8 @@ class Test(unittest.TestCase):
         )
         Writer.make_data()
         self.sftfilepath = Writer.sftfilepath
+        self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
+        self.search_ranges = {key: [getattr(self, key)] for key in self.search_keys}
 
     @classmethod
     def tearDownClass(self):
@@ -154,8 +154,7 @@ class Writer(Test):
         coherent_search = pyfstat.ComputeFstat(
             tref=noise_and_signal_writer.tref,
             sftfilepattern=noise_and_signal_writer.sftfilepath,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
         )
         FS_1 = coherent_search.get_fullycoherent_twoF(
             noise_and_signal_writer.tstart,
@@ -167,7 +166,7 @@ class Writer(Test):
             noise_and_signal_writer.Delta,
         )
 
-        # create noise sfts and then inject a strong signal
+        # create noise-only sfts first and then inject a strong signal
         noise_writer = self.writer_class_to_test(
             label="test_noiseSFTs_only_noise",
             outdir=self.outdir,
@@ -179,10 +178,11 @@ class Writer(Test):
             randSeed=randSeed,
             SFTWindowType=window,
             SFTWindowBeta=window_beta,
+            Band=1,
         )
         noise_writer.make_data()
 
-        # first without additional constraints
+        # first inject without additional SFT loading constraints
         add_signal_writer = self.writer_class_to_test(
             label="test_noiseSFTs_add_signal",
             outdir=self.outdir,
@@ -202,8 +202,7 @@ class Writer(Test):
         coherent_search = pyfstat.ComputeFstat(
             tref=add_signal_writer.tref,
             sftfilepattern=add_signal_writer.sftfilepath,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
         )
         FS_2 = coherent_search.get_fullycoherent_twoF(
             add_signal_writer.tstart,
@@ -237,8 +236,7 @@ class Writer(Test):
         coherent_search = pyfstat.ComputeFstat(
             tref=add_signal_writer_constr.tref,
             sftfilepattern=add_signal_writer_constr.sftfilepath,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
         )
         FS_3 = coherent_search.get_fullycoherent_twoF(
             add_signal_writer_constr.tstart,
@@ -427,8 +425,7 @@ class ComputeFstat(Test):
         search = pyfstat.ComputeFstat(
             tref=Writer.tref,
             sftfilepattern=sftfilepattern,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
         )
         FS = search.get_fullycoherent_twoF(
             Writer.tstart,
@@ -448,8 +445,7 @@ class ComputeFstat(Test):
             detectors="H1",
             sftfilepattern=sftfilepattern,
             SSBprec=lalpulsar.SSBPREC_RELATIVISTIC,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
         )
         FS = search.get_fullycoherent_twoF(
             Writer.tstart,
@@ -603,8 +599,7 @@ class ComputeFstatNoNoise(Test):
             sftfilepattern=os.path.join(
                 self.Writer.outdir, "*{}-*sft".format(self.Writer.label)
             ),
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
         )
         FS = search.get_fullycoherent_twoF(
             self.Writer.tstart,
@@ -634,8 +629,7 @@ class ComputeFstatNoNoise(Test):
             ),
             earth_ephem=earth_ephem_default,
             sun_ephem=sun_ephem_default,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
         )
         FS = search.get_fullycoherent_twoF(
             self.Writer.tstart,
@@ -677,8 +671,7 @@ class SemiCoherentSearch(Test):
             tref=self.Writer.tref,
             minStartTime=self.Writer.tstart,
             maxStartTime=self.Writer.tend,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
             BSGL=False,
         )
 
@@ -739,8 +732,7 @@ class SemiCoherentSearch(Test):
             tref=self.Writer.tref,
             minStartTime=self.Writer.tstart,
             maxStartTime=self.Writer.tend,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
             BSGL=True,
         )
 
@@ -882,7 +874,6 @@ class MCMCSearch(MCMCSearchTest):
             Delta=self.Delta,
             tref=self.tref,
             duration=self.duration,
-            Band=self.Band,
             randSeed=42,  # reduce chance of random failures in parameter recovery
         )
         Writer.make_data()
@@ -1013,7 +1004,6 @@ class MCMCSemiCoherentSearch(MCMCSearchTest):
             Delta=self.Delta,
             tref=self.tref,
             duration=self.duration,
-            Band=self.Band,
             randSeed=42,  # reduce chance of random failures in parameter recovery
         )
         Writer.make_data()
@@ -1091,8 +1081,8 @@ class MCMCFollowUpSearch(MCMCSearchTest):
             tref=self.tref,
             duration=5
             * self.duration,  # Supersky metric cannot be computed for segment lengths <= ~24 hours
-            Band=self.Band,
             randSeed=42,  # reduce chance of random failures in parameter recovery
+            Band=0.1,
         )
         Writer.make_data()
 
@@ -1153,7 +1143,6 @@ class MCMCTransientSearch(MCMCSearchTest):
             Delta=self.Delta,
             tref=self.tref,
             duration=self.duration,
-            Band=self.Band,
             transientWindowType="rect",
             transientStartTime=self.minStartTime + 0.25 * self.duration,
             transientTau=0.5 * self.duration,
@@ -1214,6 +1203,7 @@ class GridSearch(Test):
     F0s = [29, 31, 0.1]
     F1s = [-1e-10, 0, 1e-11]
     tref = 700000000
+    Band = 1.5
 
     def test_grid_search(self):
         search = pyfstat.GridSearch(
