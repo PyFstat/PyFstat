@@ -69,12 +69,12 @@ class Test(unittest.TestCase):
 
 class Writer(Test):
     label = "TestWriter"
-    tested_class = pyfstat.Writer
+    writer_class_to_test = pyfstat.Writer
     tstart = 1094809861
     duration = 4 * 1800
 
     def test_make_cff(self):
-        Writer = self.tested_class(
+        Writer = self.writer_class_to_test(
             label=self.label,
             outdir=self.outdir,
             tstart=self.tstart,
@@ -87,7 +87,7 @@ class Writer(Test):
 
     def test_run_makefakedata(self):
         duration = 4 * 1800
-        Writer = self.tested_class(
+        Writer = self.writer_class_to_test(
             label=self.label, outdir=self.outdir, duration=duration, tstart=self.tstart
         )
         Writer.make_cff()
@@ -106,7 +106,7 @@ class Writer(Test):
         )
 
     def test_makefakedata_usecached(self):
-        Writer = self.tested_class(
+        Writer = self.writer_class_to_test(
             label=self.label, outdir=self.outdir, duration=3600, tstart=self.tstart
         )
         if os.path.isfile(Writer.sftfilepath):
@@ -136,7 +136,7 @@ class Writer(Test):
         detectors = "L1,H1"
 
         # create sfts with a strong signal in them
-        noise_and_signal_writer = self.tested_class(
+        noise_and_signal_writer = self.writer_class_to_test(
             label="test_noiseSFTs_noise_and_signal",
             outdir=self.outdir,
             h0=h0,
@@ -168,7 +168,7 @@ class Writer(Test):
         )
 
         # create noise sfts and then inject a strong signal
-        noise_writer = self.tested_class(
+        noise_writer = self.writer_class_to_test(
             label="test_noiseSFTs_only_noise",
             outdir=self.outdir,
             h0=0,
@@ -182,7 +182,7 @@ class Writer(Test):
         )
         noise_writer.make_data()
 
-        add_signal_writer = self.tested_class(
+        add_signal_writer = self.writer_class_to_test(
             label="test_noiseSFTs_add_signal",
             outdir=self.outdir,
             h0=h0,
@@ -219,7 +219,7 @@ class Writer(Test):
 
 class BinaryModulatedWriter(Writer):
     label = "TestBinaryModulatedWriter"
-    tested_class = pyfstat.BinaryModulatedWriter
+    writer_class_to_test = pyfstat.BinaryModulatedWriter
 
 
 class Bunch(Test):
