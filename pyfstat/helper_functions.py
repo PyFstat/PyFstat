@@ -375,11 +375,6 @@ def get_covering_band(
     maxOrbitEcc: float
         Highest orbital eccentricity to be covered
 
-    Note: this is similar to the function
-    `injection_helper_functions.get_frequency_range_of_signal`, however this
-    does not use the sky position and calculates an estimate for a full year
-    search over any sky position. In this sense, it is much more conservative.
-
     Returns
     -------
     F0min, F0max: float
