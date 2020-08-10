@@ -182,13 +182,14 @@ class Writer(Test):
         )
         noise_writer.make_data()
 
+        # first without additional constraints
         add_signal_writer = self.writer_class_to_test(
             label="test_noiseSFTs_add_signal",
             outdir=self.outdir,
             h0=h0,
-            duration=duration,
+            duration=None,
             Tsft=self.Tsft,
-            tstart=self.tstart,
+            tstart=None,
             detectors=detectors,
             sqrtSX=0,
             SFTWindowType=window,
@@ -215,6 +216,42 @@ class Writer(Test):
         )
 
         self.assertTrue(np.abs(FS_1 - FS_2) / FS_1 < 0.01)
+
+        # same again but with explicit (tstart,duration) to build constraints
+        add_signal_writer_constr = self.writer_class_to_test(
+            label="test_noiseSFTs_add_signal_with_constraints",
+            outdir=self.outdir,
+            h0=h0,
+            duration=duration / 2,
+            Tsft=self.Tsft,
+            tstart=self.tstart,
+            detectors=detectors,
+            sqrtSX=0,
+            SFTWindowType=window,
+            SFTWindowBeta=window_beta,
+            noiseSFTs=noise_writer.sftfilepath,
+        )
+        add_signal_writer_constr.make_data()
+
+        # compute Fstat
+        coherent_search = pyfstat.ComputeFstat(
+            tref=add_signal_writer_constr.tref,
+            sftfilepattern=add_signal_writer_constr.sftfilepath,
+            minCoverFreq=-0.5,
+            maxCoverFreq=-0.5,
+        )
+        FS_3 = coherent_search.get_fullycoherent_twoF(
+            add_signal_writer_constr.tstart,
+            add_signal_writer_constr.tend,
+            add_signal_writer_constr.F0,
+            add_signal_writer_constr.F1,
+            add_signal_writer_constr.F2,
+            add_signal_writer_constr.Alpha,
+            add_signal_writer_constr.Delta,
+        )
+
+        # we've used half the data, so expect half the FS
+        self.assertTrue(np.abs(FS_1 - 2 * FS_3) / FS_1 < 0.05)
 
 
 class BinaryModulatedWriter(Writer):
