@@ -559,8 +559,8 @@ class BinaryModulatedWriter(Writer):
     def __init__(
         self,
         label="Test",
-        tstart=700000000,
-        duration=100 * 86400,
+        tstart=None,
+        duration=None,
         tref=None,
         F0=30,
         F1=1e-10,

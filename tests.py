@@ -253,6 +253,60 @@ class Writer(Test):
         # we've used half the data, so expect half the FS
         self.assertTrue(np.abs(FS_1 - 2 * FS_3) / FS_1 < 0.05)
 
+    def test_data_with_gaps(self):
+        duration = 10 * self.Tsft
+        gap_time = 4 * self.Tsft
+        window = "tukey"
+        window_beta = 0.01
+        detectors = "H1"
+
+        first_chunk_of_data = self.writer_class_to_test(
+            label="first_chunk_of_data",
+            outdir=self.outdir,
+            duration=duration,
+            Tsft=self.Tsft,
+            tstart=self.tstart,
+            detectors=detectors,
+            SFTWindowType=window,
+            SFTWindowBeta=window_beta,
+        )
+        first_chunk_of_data.make_data()
+
+        second_chunk_of_data = self.writer_class_to_test(
+            label="second_chunk_of_data",
+            outdir=self.outdir,
+            duration=duration,
+            Tsft=self.Tsft,
+            tstart=self.tstart + duration + gap_time,
+            tref=self.tstart,
+            detectors=detectors,
+            SFTWindowType=window,
+            SFTWindowBeta=window_beta,
+        )
+        second_chunk_of_data.make_data()
+
+        both_chunks_of_data = self.writer_class_to_test(
+            label="both_chunks_of_data",
+            outdir=self.outdir,
+            noiseSFTs=first_chunk_of_data.sftfilepath
+            + ";"
+            + second_chunk_of_data.sftfilepath,
+            SFTWindowType=window,
+            SFTWindowBeta=window_beta,
+        )
+        both_chunks_of_data.make_data()
+
+        Tsft = both_chunks_of_data.Tsft
+        total_duration = 2 * duration + gap_time
+        Nsft = int((total_duration - gap_time) / Tsft)
+        expected_SFT_filepath = (
+            self.outdir
+            + "/H-{}_H1_{}SFT_both_chunks_of_data-{}-{}.sft".format(
+                Nsft, Tsft, self.tstart, total_duration
+            )
+        )
+        self.assertTrue(os.path.isfile(expected_SFT_filepath))
+
 
 class BinaryModulatedWriter(Writer):
     label = "TestBinaryModulatedWriter"
