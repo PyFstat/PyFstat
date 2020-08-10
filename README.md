@@ -68,28 +68,27 @@ or [conda environment](#conda-installation),
 on many systems you may need to use the `--user` flag.
 
 ### conda installation
-PyFstat requires `python3.6+`.
+
+`PyFstat` requires `python3.6+`.
 While many systems come with a system-wide python installation,
 it may not be sufficiently recent for this package;
 anyway, it can often be easier to manage a user-specific python installation
 (this way one does not require root access to install or remove modules).
 One method to do this is to use the `conda` system, either through
-the stripped down [miniconda](https://conda.pydata.org/miniconda.html)
+the stripped down [`Miniconda`](https://conda.pydata.org/miniconda.html)
 installation, or the full-featured
-[anaconda](https://www.anaconda.com/products/individual#Downloads)
+[`Anaconda`](https://www.anaconda.com/products/individual#Downloads)
 (these are essentially the
-same, but the `anaconda` version installs a variety of useful packages such as
+same, but the `Anaconda` version installs a variety of useful packages such as
 `numpy` and `scipy` by default).
 The fastest/easiest method is to follow your OS instructions
 [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/)
-which will install Miniconda.
+which will install `Miniconda`.
 
-After you have installed a version of conda and
+After you have installed a version of `conda` and
 [set up an environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html), 
-`pip` can also be used to install modules
-(not all packages can be directly installed with `conda` itself,
-including PyFstat at the moment, and for those using alternatives
-to `conda`, `pip` is more universal).
+`pip` can also be used to install modules into this environment.
+(There is no direct `conda` release of `PyFstat` at the moment.)
 This can be installed with
 ```
 conda install pip
@@ -100,10 +99,16 @@ as described above
 or [the latest development version directly from github](#pip-install-from-github)
 as described below.
 
-You may also consider starting to build your own `conda` environment from an
-[igwn environment](https://computing.docs.ligo.org/conda/),
+A simple way to get started with an otherwise clean environment
+is to use a minimal .yml recipe file
+[as explained here](https://github.com/PyFstat/PyFstat/wiki/conda-environments).
+
+Alternatively, you may consider starting from an
+[`igwn` environment](https://computing.docs.ligo.org/conda/),
 which contains most packages relevant to gravitational waves,
-instead of doing it from scratch.
+instead of doing it from scratch,
+and just adding `PyFstat` to it through pip as described above.
+But be advised that the downloads for the `igwn` environments are huge.
 
 ### pip install from github
 
@@ -233,6 +238,8 @@ and set your path up properly through something like
 `source $MYLALPATH/etc/lalsuite-user-env.sh`,
 then the ephemerides path should be automatically picked up from
 the `$LALPULSAR_DATADIR` environment variable.
+Similarly, if you have installed lalsuite from conda-forge,
+it should come with ephemerides included and properly set up.
 
 Alternatively, you can place a file
 `~/.pyfstat.conf` into your home directory which looks like
