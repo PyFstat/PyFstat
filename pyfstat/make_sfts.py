@@ -671,9 +671,9 @@ class BinaryModulatedWriter(Writer):
             key: value for key, value in signal_parameters.items() if value is not None
         }
 
-        signal_parameter_formats = (len(signal_parameter_labels) - 1) * [":1.18e"] + [
-            ":s"
-        ]
+        signal_parameter_formats = (
+            [":10.6f"] + (len(signal_parameter_labels) - 2) * [":1.18e"] + [":s"]
+        )
         signal_formats = dict(zip(signal_parameter_labels, signal_parameter_formats))
 
         self.signal_parameters = translate_keys_to_lal(self.signal_parameters)
