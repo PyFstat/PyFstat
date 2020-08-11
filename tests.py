@@ -385,6 +385,22 @@ class TestBaseSearchClass(Test):
 
 
 class TestComputeFstat(Test):
+    label = "TestComputeFstat"
+
+    def setup_method(self, method):
+        self.Writer = pyfstat.Writer(
+            label=self.label,
+            outdir=self.outdir,
+            duration=86400,
+            tstart=1094809861,
+            h0=1,
+            sqrtSX=1,
+            detectors="H1",
+        )
+        self.Writer.make_data()
+        self.predicted_FS = self.Writer.predict_fstat()
+        self.sftfilepattern = self.Writer.sftfilepath
+
     def test_run_computefstatistic_single_point_injectSqrtSX(self):
 
         search = pyfstat.ComputeFstat(
@@ -408,115 +424,94 @@ class TestComputeFstat(Test):
         self.assertTrue(FS > 0.0)
 
     def test_run_computefstatistic_single_point_with_SFTs(self):
-        Writer = pyfstat.Writer(
-            label="TestComputeFstatSinglePoint",
-            outdir=self.outdir,
-            duration=86400,
-            tstart=1094809861,
-            h0=1,
-            sqrtSX=1,
-            detectors="H1",
-        )
-        Writer.make_data()
-        predicted_FS = Writer.predict_fstat()
-
-        sftfilepattern = os.path.join(Writer.outdir, "*{}-*sft".format(Writer.label))
 
         search = pyfstat.ComputeFstat(
-            tref=Writer.tref,
-            sftfilepattern=sftfilepattern,
+            tref=self.Writer.tref,
+            sftfilepattern=self.sftfilepattern,
             search_ranges=self.search_ranges,
         )
         FS = search.get_fullycoherent_twoF(
-            Writer.tstart,
-            Writer.tend,
-            Writer.F0,
-            Writer.F1,
-            Writer.F2,
-            Writer.Alpha,
-            Writer.Delta,
+            self.Writer.tstart,
+            self.Writer.tend,
+            self.Writer.F0,
+            self.Writer.F1,
+            self.Writer.F2,
+            self.Writer.Alpha,
+            self.Writer.Delta,
         )
-        self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
+        self.assertTrue(np.abs(self.predicted_FS - FS) / FS < 0.3)
 
-        Writer.detectors = "H1"
-        predicted_FS = Writer.predict_fstat()
+        # the following seems to be a leftover from when this test case was
+        # doing separate H1 vs H1,L1 searches, but now only really tests the
+        # SSBprec. But well, it still does add a tiny bit of coverage, can still
+        # be replaced by something more systematic later.
         search = pyfstat.ComputeFstat(
-            tref=Writer.tref,
-            detectors="H1",
-            sftfilepattern=sftfilepattern,
+            tref=self.Writer.tref,
+            detectors=self.Writer.detectors,
+            sftfilepattern=self.sftfilepattern,
             SSBprec=lalpulsar.SSBPREC_RELATIVISTIC,
             search_ranges=self.search_ranges,
         )
-        FS = search.get_fullycoherent_twoF(
-            Writer.tstart,
-            Writer.tend,
-            Writer.F0,
-            Writer.F1,
-            Writer.F2,
-            Writer.Alpha,
-            Writer.Delta,
+        FS2 = search.get_fullycoherent_twoF(
+            self.Writer.tstart,
+            self.Writer.tend,
+            self.Writer.F0,
+            self.Writer.F1,
+            self.Writer.F2,
+            self.Writer.Alpha,
+            self.Writer.Delta,
         )
-        self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
+        self.assertTrue(np.abs(self.predicted_FS - FS2) / FS2 < 0.3)
+        self.assertTrue(np.abs(FS2 - FS) / FS < 0.001)
 
     def test_run_computefstatistic_single_point_injectSources(self):
-        # This seems to be writing with a signal...
-        Writer = pyfstat.Writer(
-            label="TestComputeFstatSinglePointInjectSources",
-            outdir=self.outdir,
-            add_noise=False,
-            duration=86400,
-            tstart=1094809861,
-            h0=1,
-            sqrtSX=1,
-        )
-        Writer.make_cff()
-        injectSources = Writer.config_file_name
 
+        injectSources = self.Writer.config_file_name
         search = pyfstat.ComputeFstat(
-            tref=Writer.tref,
+            tref=self.Writer.tref,
             assumeSqrtSX=1,
             injectSources=injectSources,
             minCoverFreq=28,
             maxCoverFreq=32,
-            minStartTime=Writer.tstart,
-            maxStartTime=Writer.tstart + Writer.duration,
-            detectors=Writer.detectors,
+            minStartTime=self.Writer.tstart,
+            maxStartTime=self.Writer.tstart + self.Writer.duration,
+            detectors=self.Writer.detectors,
         )
         FS_from_file = search.get_fullycoherent_twoF(
-            Writer.tstart,
-            Writer.tend,
-            Writer.F0,
-            Writer.F1,
-            Writer.F2,
-            Writer.Alpha,
-            Writer.Delta,
+            self.Writer.tstart,
+            self.Writer.tend,
+            self.Writer.F0,
+            self.Writer.F1,
+            self.Writer.F2,
+            self.Writer.Alpha,
+            self.Writer.Delta,
         )
-        Writer.make_data()
-        predicted_FS = Writer.predict_fstat()
-        self.assertTrue(np.abs(predicted_FS - FS_from_file) / FS_from_file < 0.3)
+        # Writer.make_data()
+        # predicted_FS = Writer.predict_fstat()
+        self.assertTrue(np.abs(self.predicted_FS - FS_from_file) / FS_from_file < 0.3)
 
-        injectSourcesdict = pyfstat.core.read_par(Writer.config_file_name)
+        injectSourcesdict = pyfstat.core.read_par(injectSources)
         injectSourcesdict["F0"] = injectSourcesdict["Freq"]
         injectSourcesdict["F1"] = injectSourcesdict["f1dot"]
         injectSourcesdict["F2"] = injectSourcesdict["f2dot"]
         search = pyfstat.ComputeFstat(
-            tref=Writer.tref,
+            tref=self.Writer.tref,
             assumeSqrtSX=1,
             injectSources=injectSourcesdict,
             minCoverFreq=28,
             maxCoverFreq=32,
-            minStartTime=Writer.tstart,
-            maxStartTime=Writer.tstart + Writer.duration,
-            detectors=Writer.detectors,
+            minStartTime=self.Writer.tstart,
+            maxStartTime=self.Writer.tstart + self.Writer.duration,
+            detectors=self.Writer.detectors,
         )
         FS_from_dict = search.get_fullycoherent_twoF(
-            Writer.tstart,
-            Writer.tend,
-            Writer.F0,
-            Writer.F1,
-            Writer.F2,
-            Writer.Alpha,
-            Writer.Delta,
+            self.Writer.tstart,
+            self.Writer.tend,
+            self.Writer.F0,
+            self.Writer.F1,
+            self.Writer.F2,
+            self.Writer.Alpha,
+            self.Writer.Delta,
         )
         self.assertTrue(FS_from_dict == FS_from_file)
 
@@ -582,14 +577,27 @@ class TestComputeFstatNoNoise(Test):
         self.Writer = pyfstat.Writer(
             label=self.label,
             outdir=self.outdir,
-            add_noise=False,
             duration=86400,
             tstart=1094809861,
             h0=1,
-            sqrtSX=0,
         )
         self.Writer.make_data()
         self.predicted_FS = self.Writer.predict_fstat(assumeSqrtSX=1)
+
+    def test_nonoise_Writer(self):
+        # just a paranoia test that by using the default above,
+        # we really get SFTs without noise
+        Writer2 = pyfstat.Writer(
+            label=self.label + "_sqrtSX0",
+            outdir=self.outdir,
+            duration=86400,
+            tstart=1094809861,
+            h0=1,
+            sqrtSX=0,  # this should be the default, but test it explicitly
+        )
+        Writer2.make_data()
+        predicted_FS_W2 = Writer2.predict_fstat(assumeSqrtSX=1)
+        self.assertTrue(predicted_FS_W2 == self.predicted_FS)
 
     def test_run_computefstatistic_single_point_no_noise(self):
 

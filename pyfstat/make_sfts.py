@@ -45,7 +45,7 @@ class Writer(BaseSearchClass):
         phi=0,
         Tsft=1800,
         outdir=".",
-        sqrtSX=0.0,
+        sqrtSX=None,
         noiseSFTs=None,
         SFTWindowType=None,
         SFTWindowBeta=0.0,
@@ -53,7 +53,6 @@ class Writer(BaseSearchClass):
         detectors="H1",
         minStartTime=None,
         maxStartTime=None,
-        add_noise=True,
         transientWindowType="none",
         transientStartTime=None,
         transientTau=None,
@@ -530,28 +529,26 @@ transientTau = {:10.0f}\n"""
         cl_mfd.append('--outSFTdir="{}"'.format(self.outdir))
         cl_mfd.append('--outLabel="{}"'.format(self.label))
 
-        if self.add_noise:
-            if self.noiseSFTs is not None and self.SFTWindowType is None:
-                raise ValueError(
-                    "SFTWindowType is required when using noiseSFTs. "
-                    "Please, make sure you understand the window function used "
-                    "to produce noiseSFTs."
-                )
-            elif self.noiseSFTs is not None:
-                if self.sqrtSX > 0.0:
-                    logging.warning(
-                        "In addition to using noiseSFTs, you are adding "
-                        "Gaussian noise with sqrtSX={} "
-                        "Please, make sure this is what you intend to do.".format(
-                            self.sqrtSX
-                        )
+        if self.noiseSFTs is not None and self.SFTWindowType is None:
+            raise ValueError(
+                "SFTWindowType is required when using noiseSFTs. "
+                "Please, make sure you understand the window function used "
+                "to produce noiseSFTs."
+            )
+        elif self.noiseSFTs is not None:
+            if self.sqrtSX and self.sqrtSX > 0.0:
+                logging.warning(
+                    "In addition to using noiseSFTs, you are adding "
+                    "Gaussian noise with sqrtSX={} "
+                    "Please, make sure this is what you intend to do.".format(
+                        self.sqrtSX
                     )
-                cl_mfd.append('--noiseSFTs="{}"'.format(self.noiseSFTs))
-            else:
-                cl_mfd.append("--IFOs={}".format(self.IFOs))
-            cl_mfd.append('--sqrtSX="{}"'.format(self.sqrtSX))
+                )
+            cl_mfd.append('--noiseSFTs="{}"'.format(self.noiseSFTs))
         else:
             cl_mfd.append("--IFOs={}".format(self.IFOs))
+        if self.sqrtSX:
+            cl_mfd.append('--sqrtSX="{}"'.format(self.sqrtSX))
 
         if self.SFTWindowType is not None:
             cl_mfd.append('--SFTWindowType="{}"'.format(self.SFTWindowType))
@@ -627,7 +624,7 @@ class BinaryModulatedWriter(Writer):
         phi=0,
         Tsft=1800,
         outdir=".",
-        sqrtSX=0.0,
+        sqrtSX=None,
         noiseSFTs=None,
         SFTWindowType=None,
         SFTWindowBeta=0.0,
@@ -635,7 +632,6 @@ class BinaryModulatedWriter(Writer):
         detectors="H1",
         minStartTime=None,
         maxStartTime=None,
-        add_noise=True,
         transientWindowType="none",
         transientStartTime=None,
         transientTau=None,
@@ -682,7 +678,6 @@ class BinaryModulatedWriter(Writer):
             noiseSFTs=noiseSFTs,
             Band=Band,
             detectors=detectors,
-            add_noise=add_noise,
             transientWindowType=transientWindowType,
             transientStartTime=transientStartTime,
             transientTau=transientTau,
@@ -791,7 +786,7 @@ class GlitchWriter(Writer):
         phi=0,
         Tsft=1800,
         outdir=".",
-        sqrtSX=0.0,
+        sqrtSX=None,
         noiseSFTs=None,
         SFTWindowType=None,
         SFTWindowBeta=0.0,
@@ -799,7 +794,6 @@ class GlitchWriter(Writer):
         detectors="H1",
         minStartTime=None,
         maxStartTime=None,
-        add_noise=True,
         transientWindowType="rect",
         randSeed=None,
     ):
