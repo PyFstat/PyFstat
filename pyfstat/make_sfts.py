@@ -227,8 +227,10 @@ class Writer(BaseSearchClass):
                 "internal consistency accross input SFTs."
             )
             self._get_setup_from_noiseSFTs()
-        else:
+        elif self.tstart is not None and self.duration is not None:
             self._get_setup_from_tstart_duration()
+        else:
+            raise ValueError("Need either noiseSFTs or both of (tstart,duration).")
 
         self.sftfilepath = ";".join(
             [os.path.join(self.outdir, fn) for fn in self.sftfilenames]
