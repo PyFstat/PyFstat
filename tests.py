@@ -767,6 +767,7 @@ class TestSemiCoherentGlitchSearch(Test):
         Writer = pyfstat.GlitchWriter(
             self.label,
             outdir=self.outdir,
+            tstart=self.minStartTime,
             duration=duration,
             dtglitch=dtglitch,
             delta_F0=delta_F0,
