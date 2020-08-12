@@ -50,7 +50,7 @@ class Writer(BaseSearchClass):
         SFTWindowType=None,
         SFTWindowBeta=0.0,
         Band=None,
-        detectors="H1",
+        detectors=None,
         minStartTime=None,
         maxStartTime=None,
         transientWindowType="none",
@@ -144,7 +144,6 @@ class Writer(BaseSearchClass):
             )
             for ind, dets in enumerate(IFOs)
         ]
-        self.IFOs = ",".join(['"{}"'.format(d) for d in IFOs])
 
     def _get_setup_from_noiseSFTs(self):
         """
@@ -208,13 +207,14 @@ class Writer(BaseSearchClass):
             )
         self.tstart = min(tstart)
         self.duration = max(tend) - self.tstart
-        self.IFOs = ",".join(['"{}"'.format(d) for d in IFOs])
+        self.detectors = ",".join(IFOs)
 
     def basic_setup(self):
         os.makedirs(self.outdir, exist_ok=True)
         self.config_file_name = os.path.join(self.outdir, self.label + ".cff")
         self.theta = np.array([self.phi, self.F0, self.F1, self.F2])
 
+        no_noiseSFTs_options = ["tstart", "duration", "detectors"]
         if self.noiseSFTs is not None:
             logging.warning(
                 "noiseSFTs is not None: Inferring tstart, duration, Tsft. "
@@ -223,10 +223,14 @@ class Writer(BaseSearchClass):
                 "internal consistency accross input SFTs."
             )
             self._get_setup_from_noiseSFTs()
-        elif self.tstart is not None and self.duration is not None:
-            self._get_setup_from_tstart_duration()
+        elif np.any([getattr(self, k) is None for k in no_noiseSFTs_options]):
+            raise ValueError(
+                "Need either noiseSFTs or all of ({:s}).".format(
+                    ",".join(no_noiseSFTs_options)
+                )
+            )
         else:
-            raise ValueError("Need either noiseSFTs or both of (tstart,duration).")
+            self._get_setup_from_tstart_duration()
 
         self.sftfilepath = ";".join(
             [os.path.join(self.outdir, fn) for fn in self.sftfilenames]
@@ -559,7 +563,7 @@ transientTau = {:10.0f}\n"""
                 )
             cl_mfd.append('--noiseSFTs="{}"'.format(self.noiseSFTs))
         else:
-            cl_mfd.append("--IFOs={}".format(self.IFOs))
+            cl_mfd.append('--IFOs="{}"'.format(self.detectors))
         if self.sqrtSX:
             cl_mfd.append('--sqrtSX="{}"'.format(self.sqrtSX))
 
@@ -608,7 +612,7 @@ transientTau = {:10.0f}\n"""
             transientWindowType=self.transientWindowType,
             transientStartTime=self.transientStartTime,
             transientTau=self.transientTau,
-        )  # detectors OR IFO?
+        )
         return twoF_expected
 
 
@@ -643,7 +647,7 @@ class BinaryModulatedWriter(Writer):
         SFTWindowType=None,
         SFTWindowBeta=0.0,
         Band=None,
-        detectors="H1",
+        detectors=None,
         minStartTime=None,
         maxStartTime=None,
         transientWindowType="none",
@@ -813,7 +817,7 @@ class GlitchWriter(Writer):
         SFTWindowType=None,
         SFTWindowBeta=0.0,
         Band=None,
-        detectors="H1",
+        detectors=None,
         minStartTime=None,
         maxStartTime=None,
         transientWindowType="rect",
@@ -945,10 +949,9 @@ class FrequencyModulatedArtifactWriter(Writer):
         Pmod_amp=1,
         Alpha=None,
         Delta=None,
-        IFO="H1",
         minStartTime=None,
         maxStartTime=None,
-        detectors="H1",
+        detectors=None,
         randSeed=None,
     ):
         """
@@ -1025,10 +1028,14 @@ class FrequencyModulatedArtifactWriter(Writer):
             # Pos and vel returned in units of c
             DeltaFOrbital = np.dot(self.n, orbit_posvel.vel) * self.Fmax
 
-            if self.IFO == "H1":
+            if self.detectors == "H1":
                 Lambda = lal.LHO_4K_DETECTOR_LATITUDE_RAD
-            elif self.IFO == "L1":
+            elif self.detectors == "L1":
                 Lambda = lal.LLO_4K_DETECTOR_LATITUDE_RAD
+            else:
+                raise ValueError(
+                    "This class currently only supports detectors H1 or L1."
+                )
 
             DeltaFSpin = (
                 self.Pmod_amp
@@ -1052,8 +1059,8 @@ class FrequencyModulatedArtifactWriter(Writer):
 
     def concatenate_sft_files(self):
         SFTFilename = lalpulsar.OfficialSFTFilename(
-            self.IFO[0],
-            self.IFO[1],
+            self.detectors[0],
+            self.detectors[1],
             self.nsfts,
             self.Tsft,
             int(self.tstart),
@@ -1165,7 +1172,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         cl_mfd.append("lalapps_Makefakedata_v4")
         cl_mfd.append("--outSingleSFT=FALSE")
         cl_mfd.append('--outSFTbname="{}"'.format(tmp_outdir))
-        cl_mfd.append("--IFO={}".format(self.IFO))
+        cl_mfd.append("--IFO={}".format(self.detectors))
         cl_mfd.append('--noiseSqrtSh="{}"'.format(self.sqrtSX))
         cl_mfd.append("--startTime={:0.0f}".format(mid_time - self.Tsft / 2.0))
         cl_mfd.append("--refTime={:0.0f}".format(mid_time))
