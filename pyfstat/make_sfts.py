@@ -30,17 +30,17 @@ class Writer(BaseSearchClass):
     @helper_functions.initializer
     def __init__(
         self,
-        label="Test",
+        label="PyFstat",
         tstart=None,
         duration=None,
         tref=None,
-        F0=30,
-        F1=1e-10,
+        F0=None,
+        F1=0,
         F2=0,
-        Alpha=5e-3,
-        Delta=6e-2,
-        h0=0.1,
-        cosi=0.0,
+        Alpha=None,
+        Delta=None,
+        h0=None,
+        cosi=None,
         psi=0.0,
         phi=0,
         Tsft=1800,
@@ -68,8 +68,16 @@ class Writer(BaseSearchClass):
         tref: float or None
             reference time (default is None, which sets the reference time to
             tstart)
-        F0, F1, F2, Alpha, Delta, h0, cosi, psi, phi: float
-            frequency, sky-position, and amplitude parameters
+        F0: float or None
+            frequency of signal to inject,
+            also used (if Band is not None) as center of frequency band;
+            also needed when noise-only (h0==None or ==0)
+            but no noiseSFTs given,
+            then again used as center of frequency band.
+        F1, F2, Alpha, Delta, h0, cosi, psi, phi: float or None
+            frequency evolution and amplitude parameters for injection
+            if h0==None or h0==0, these are all ignored
+            if h0>0, then Alpha, Delta, cosi need to be set explicitly
         Tsft: float
             the sft duration
         noiseSFTs: str
@@ -77,8 +85,11 @@ class Writer(BaseSearchClass):
             If not None, additional constraints can be applied using the arguments 
             tstart and duration.
         Band: float or None
-            If float, output SFTs cover [F0-Band/2,F0+Band/2].
-            If None, a minimal covering band for a perfectly-matched
+            If float, and F0 is also not None, then output SFTs cover
+            [F0-Band/2,F0+Band/2].
+            If None and noiseSFTs given, use their bandwidth.
+            If None and no noiseSFTs given,
+            a minimal covering band for a perfectly-matched
             single-template ComputeFstat analysis is estimated.
         minStartTime, maxStartTime: float
             DEPRECATED, use [tstart,duration] and/or
@@ -214,6 +225,22 @@ class Writer(BaseSearchClass):
         self.config_file_name = os.path.join(self.outdir, self.label + ".cff")
         self.theta = np.array([self.phi, self.F0, self.F1, self.F2])
 
+        required_signal_params = [
+            # leaving out "F1","F2","psi","phi","tref" as they have defaults
+            "F0",
+            "Alpha",
+            "Delta",
+            "cosi",
+        ]
+        if self.h0 and np.any(
+            [getattr(self, k, None) is None for k in required_signal_params]
+        ):
+            raise ValueError(
+                "If h0>0, also need all of ({:s})".format(
+                    ",".join(required_signal_params)
+                )
+            )
+
         no_noiseSFTs_options = ["tstart", "duration", "detectors"]
         if self.noiseSFTs is not None:
             logging.warning(
@@ -244,10 +271,10 @@ class Writer(BaseSearchClass):
 
     def make_data(self, verbose=False):
         """ A convienience wrapper to generate a cff file then sfts """
-        if self.h0 == 0:
-            logging.info("Got h0=0, not writing an injection .cff file.")
-        else:
+        if self.h0:
             self.make_cff(verbose)
+        else:
+            logging.info("Got h0=0, not writing an injection .cff file.")
         self.run_makefakedata()
 
     def get_base_template(self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref):
@@ -398,14 +425,29 @@ transientTau = {:10.0f}\n"""
         """
         Set fmin and Band for the output SFTs to cover.
 
-        Either uses the user-provided Band and puts the injection in the middle,
-        or if Band==None estimates a minimal band for just the injected signal:
+        Either uses the user-provided Band and puts F0 in the middle,
+        does nothing to later reuse full bandwidth of noiseSFTs,
+        or if F0!=None, noiseSFTs==None and Band==None
+        it estimates a minimal band for just the injected signal:
         F-stat covering band plus extra bins for demod default parameters.
         This way a perfectly matched single-template ComputeFstat analysis
         should run through perfectly on the SFTs.
         For any wider-band or mismatched search, the set Band manually.
+
+        If you want to use noiseSFTs but auto-estimate a minimal band,
+        call helper_functions.get_covering_band() yourself
+        and pass the results as fmin, Band.
         """
-        if self.Band is None:
+        if self.F0 is not None and self.Band is not None:
+            self.fmin = self.F0 - 0.5 * self.Band
+        elif self.noiseSFTs:
+            logging.info("Generating SFTs with full bandwidth from noiseSFTs.")
+        elif self.F0 is None:
+            raise ValueError(
+                "Need F0 and Band, or one of (F0 or noiseSFTs)"
+                " to auto-estimate bandwidth."
+            )
+        else:
             extraBins = (
                 # matching extraBinsFull in XLALCreateFstatInput():
                 # https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/_compute_fstat_8c_source.html#l00490
@@ -434,11 +476,10 @@ transientTau = {:10.0f}\n"""
             )
             self.fmin = minCoverFreq - extraBins / self.Tsft
             self.Band = maxCoverFreq - minCoverFreq + 2 * extraBins / self.Tsft
-        else:
-            self.fmin = self.F0 - 0.5 * self.Band
-        logging.info(
-            "Generating SFTs with fmin={}, Band={}".format(self.fmin, self.Band)
-        )
+        if hasattr(self, "fmin"):
+            logging.info(
+                "Generating SFTs with fmin={}, Band={}".format(self.fmin, self.Band)
+            )
 
     def check_cached_data_okay_to_use(self, cl_mfd):
         """ Check if cached data exists and, if it does, if it can be used """
@@ -572,10 +613,12 @@ transientTau = {:10.0f}\n"""
             cl_mfd.append("--SFTWindowBeta={}".format(self.SFTWindowBeta))
         cl_mfd.append("--startTime={}".format(self.tstart))
         cl_mfd.append("--duration={}".format(self.duration))
-        cl_mfd.append("--fmin={:.16g}".format(self.fmin))
-        cl_mfd.append("--Band={:.16g}".format(self.Band))
+        if hasattr(self, "fmin") and self.fmin:
+            cl_mfd.append("--fmin={:.16g}".format(self.fmin))
+        if hasattr(self, "Band") and self.Band:
+            cl_mfd.append("--Band={:.16g}".format(self.Band))
         cl_mfd.append("--Tsft={}".format(self.Tsft))
-        if self.h0 != 0:
+        if self.h0:
             cl_mfd.append('--injectionSources="{}"'.format(self.config_file_name))
         earth_ephem = getattr(self, "earth_ephem", None)
         sun_ephem = getattr(self, "sun_ephem", None)
@@ -622,22 +665,22 @@ class BinaryModulatedWriter(Writer):
     @helper_functions.initializer
     def __init__(
         self,
-        label="Test",
+        label="PyFstat",
         tstart=None,
         duration=None,
         tref=None,
-        F0=30,
-        F1=1e-10,
+        F0=None,
+        F1=0,
         F2=0,
-        Alpha=5e-3,
-        Delta=6e-2,
+        Alpha=None,
+        Delta=None,
         tp=0.0,
         argp=0.0,
         asini=0.0,
         ecc=0.0,
         period=0.0,
-        h0=0.1,
-        cosi=0.0,
+        h0=None,
+        cosi=None,
         psi=0.0,
         phi=0,
         Tsft=1800,
@@ -792,7 +835,7 @@ class GlitchWriter(Writer):
     @helper_functions.initializer
     def __init__(
         self,
-        label="Test",
+        label="PyFstat",
         tstart=None,
         duration=None,
         dtglitch=None,
@@ -801,13 +844,13 @@ class GlitchWriter(Writer):
         delta_F1=0,
         delta_F2=0,
         tref=None,
-        F0=30,
-        F1=1e-10,
+        F0=None,
+        F1=0,
         F2=0,
-        Alpha=5e-3,
-        Delta=6e-2,
-        h0=0.1,
-        cosi=0.0,
+        Alpha=None,
+        Delta=None,
+        h0=None,
+        cosi=None,
         psi=0.0,
         phi=0,
         Tsft=1800,
