@@ -572,6 +572,7 @@ transientTau = {:10.0f}\n"""
         check_ok = self.check_cached_data_okay_to_use(cl_mfd)
         if check_ok is False:
             helper_functions.run_commandline(cl_mfd)
+        logging.info("Successfully wrote SFTs to: {}".format(self.sftfilepath))
 
     def predict_fstat(self, assumeSqrtSX=None):
         """ Wrapper to lalapps_PredictFstat """
