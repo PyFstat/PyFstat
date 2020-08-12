@@ -311,6 +311,71 @@ class TestBinaryModulatedWriter(TestWriter):
     writer_class_to_test = pyfstat.BinaryModulatedWriter
 
 
+class TestGlitchWriter(TestWriter):
+
+    label = "TestGlitchWriter"
+    writer_class_to_test = pyfstat.GlitchWriter
+
+    def test_glitch_injection(self):
+        duration = 4 * 1800
+        Band = 1
+        vanillaWriter = pyfstat.Writer(
+            label=self.label + "_vanilla",
+            outdir=self.outdir,
+            duration=duration,
+            tstart=self.tstart,
+            Band=Band,
+        )
+        vanillaWriter.make_cff()
+        vanillaWriter.run_makefakedata()
+        noGlitchWriter = self.writer_class_to_test(
+            label=self.label + "_noglitch",
+            outdir=self.outdir,
+            duration=duration,
+            tstart=self.tstart,
+            Band=Band,
+        )
+        noGlitchWriter.make_cff()
+        noGlitchWriter.run_makefakedata()
+        glitchWriter = self.writer_class_to_test(
+            label=self.label + "_glitch",
+            outdir=self.outdir,
+            duration=duration,
+            tstart=self.tstart,
+            Band=Band,
+            dtglitch=2 * 1800,
+            delta_F0=0.1,
+        )
+        glitchWriter.make_cff()
+        glitchWriter.run_makefakedata()
+        (
+            times_vanilla,
+            freqs_vanilla,
+            data_vanilla,
+        ) = pyfstat.helper_functions.get_sft_array(vanillaWriter.sftfilepath)
+        (
+            times_noglitch,
+            freqs_noglitch,
+            data_noglitch,
+        ) = pyfstat.helper_functions.get_sft_array(noGlitchWriter.sftfilepath)
+        (
+            times_glitch,
+            freqs_glitch,
+            data_glitch,
+        ) = pyfstat.helper_functions.get_sft_array(glitchWriter.sftfilepath)
+        max_freq_vanilla = freqs_vanilla[np.argmax(data_vanilla, axis=0)]
+        max_freq_noglitch = freqs_noglitch[np.argmax(data_noglitch, axis=0)]
+        max_freq_glitch = freqs_glitch[np.argmax(data_glitch, axis=0)]
+        self.assertEqual(times_noglitch, times_vanilla)
+        self.assertEqual(times_glitch, times_vanilla)
+        self.assertEqual(len(np.unique(max_freq_vanilla)), 1)
+        self.assertEqual(len(np.unique(max_freq_noglitch)), 1)
+        self.assertEqual(len(np.unique(max_freq_glitch)), 2)
+        self.assertEqual(max_freq_noglitch[0], max_freq_vanilla[0])
+        self.assertEqual(max_freq_glitch[0], max_freq_noglitch[0])
+        self.assertTrue(max_freq_glitch[-1] > max_freq_noglitch[-1])
+
+
 class TestBunch(Test):
     def test_bunch(self):
         b = pyfstat.core.Bunch(dict(x=10))
