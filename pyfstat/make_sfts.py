@@ -95,9 +95,6 @@ class Writer(BaseSearchClass):
         self.basic_setup()
         self.calculate_fmin_Band()
 
-        self.tbounds = [self.tstart, self.tend]
-        logging.info("Using segment boundaries {}".format(self.tbounds))
-
     def _get_sft_constraints_from_tstart_duration(self):
         """
         Use start and duration to set up a lalpulsar.SFTConstraints
