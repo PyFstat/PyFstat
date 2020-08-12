@@ -158,7 +158,7 @@ class TestWriter(Test):
         )
         FS_1 = coherent_search.get_fullycoherent_twoF(
             noise_and_signal_writer.tstart,
-            noise_and_signal_writer.tend,
+            noise_and_signal_writer.tend(),
             noise_and_signal_writer.F0,
             noise_and_signal_writer.F1,
             noise_and_signal_writer.F2,
@@ -206,7 +206,7 @@ class TestWriter(Test):
         )
         FS_2 = coherent_search.get_fullycoherent_twoF(
             add_signal_writer.tstart,
-            add_signal_writer.tend,
+            add_signal_writer.tend(),
             add_signal_writer.F0,
             add_signal_writer.F1,
             add_signal_writer.F2,
@@ -240,7 +240,7 @@ class TestWriter(Test):
         )
         FS_3 = coherent_search.get_fullycoherent_twoF(
             add_signal_writer_constr.tstart,
-            add_signal_writer_constr.tend,
+            add_signal_writer_constr.tend(),
             add_signal_writer_constr.F0,
             add_signal_writer_constr.F1,
             add_signal_writer_constr.F2,
@@ -497,7 +497,7 @@ class TestComputeFstat(Test):
         )
         FS = search.get_fullycoherent_twoF(
             self.Writer.tstart,
-            self.Writer.tend,
+            self.Writer.tend(),
             self.Writer.F0,
             self.Writer.F1,
             self.Writer.F2,
@@ -519,7 +519,7 @@ class TestComputeFstat(Test):
         )
         FS2 = search.get_fullycoherent_twoF(
             self.Writer.tstart,
-            self.Writer.tend,
+            self.Writer.tend(),
             self.Writer.F0,
             self.Writer.F1,
             self.Writer.F2,
@@ -539,12 +539,12 @@ class TestComputeFstat(Test):
             minCoverFreq=28,
             maxCoverFreq=32,
             minStartTime=self.Writer.tstart,
-            maxStartTime=self.Writer.tstart + self.Writer.duration,
+            maxStartTime=self.Writer.tend(),
             detectors=self.Writer.detectors,
         )
         FS_from_file = search.get_fullycoherent_twoF(
             self.Writer.tstart,
-            self.Writer.tend,
+            self.Writer.tend(),
             self.Writer.F0,
             self.Writer.F1,
             self.Writer.F2,
@@ -566,12 +566,12 @@ class TestComputeFstat(Test):
             minCoverFreq=28,
             maxCoverFreq=32,
             minStartTime=self.Writer.tstart,
-            maxStartTime=self.Writer.tstart + self.Writer.duration,
+            maxStartTime=self.Writer.tend(),
             detectors=self.Writer.detectors,
         )
         FS_from_dict = search.get_fullycoherent_twoF(
             self.Writer.tstart,
-            self.Writer.tend,
+            self.Writer.tend(),
             self.Writer.F0,
             self.Writer.F1,
             self.Writer.F2,
@@ -676,7 +676,7 @@ class TestComputeFstatNoNoise(Test):
         )
         FS = search.get_fullycoherent_twoF(
             self.Writer.tstart,
-            self.Writer.tend,
+            self.Writer.tend(),
             self.Writer.F0,
             self.Writer.F1,
             self.Writer.F2,
@@ -706,7 +706,7 @@ class TestComputeFstatNoNoise(Test):
         )
         FS = search.get_fullycoherent_twoF(
             self.Writer.tstart,
-            self.Writer.tend,
+            self.Writer.tend(),
             self.Writer.F0,
             self.Writer.F1,
             self.Writer.F2,
@@ -743,7 +743,7 @@ class TestSemiCoherentSearch(Test):
             ),
             tref=self.Writer.tref,
             minStartTime=self.Writer.tstart,
-            maxStartTime=self.Writer.tend,
+            maxStartTime=self.Writer.tend(),
             search_ranges=self.search_ranges,
             BSGL=False,
         )
@@ -765,7 +765,6 @@ class TestSemiCoherentSearch(Test):
         twoF_per_seg_predicted = np.zeros(nsegs)
         for n in range(nsegs):
             self.Writer.tstart = tstart + n * self.Writer.duration
-            self.Writer.tend = tstart + (n + 1) * self.Writer.duration
             twoF_per_seg_predicted[n] = self.Writer.predict_fstat()
 
         self.assertTrue(len(twoF_per_seg_computed) == len(twoF_per_seg_predicted))
@@ -804,7 +803,7 @@ class TestSemiCoherentSearch(Test):
             ),
             tref=self.Writer.tref,
             minStartTime=self.Writer.tstart,
-            maxStartTime=self.Writer.tend,
+            maxStartTime=self.Writer.tend(),
             search_ranges=self.search_ranges,
             BSGL=True,
         )
@@ -856,7 +855,7 @@ class TestSemiCoherentGlitchSearch(Test):
             sftfilepattern=os.path.join(Writer.outdir, "*{}-*sft".format(Writer.label)),
             tref=Writer.tref,
             minStartTime=Writer.tstart,
-            maxStartTime=Writer.tend,
+            maxStartTime=Writer.tend(),
             nglitch=1,
             search_ranges=search_ranges,
         )

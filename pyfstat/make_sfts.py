@@ -128,7 +128,6 @@ class Writer(BaseSearchClass):
         """
         self.tstart = int(self.tstart)
         self.duration = int(self.duration)
-        self.tend = self.tstart + self.duration
 
         IFOs = self.detectors.split(",")
         numSFTs = len(IFOs) * [int(float(self.duration) / self.Tsft)]
@@ -208,8 +207,7 @@ class Writer(BaseSearchClass):
                 )
             )
         self.tstart = min(tstart)
-        self.tend = max(tend)
-        self.duration = self.tend - self.tstart
+        self.duration = max(tend) - self.tstart
         self.IFOs = ",".join(['"{}"'.format(d) for d in IFOs])
 
     def basic_setup(self):
@@ -219,7 +217,7 @@ class Writer(BaseSearchClass):
 
         if self.noiseSFTs is not None:
             logging.warning(
-                "noiseSFTs is not None: Inferring tstart, duration, tend, Tsft. "
+                "noiseSFTs is not None: Inferring tstart, duration, Tsft. "
                 "Input tstart and duration will be treated as SFT constraints "
                 "using lalpulsar.SFTConstraints; Tsft will be checked for "
                 "internal consistency accross input SFTs."
@@ -236,6 +234,9 @@ class Writer(BaseSearchClass):
 
         if self.tref is None:
             self.tref = self.tstart
+
+    def tend(self):
+        return self.tstart + self.duration
 
     def make_data(self):
         """ A convienience wrapper to generate a cff file then sfts """
@@ -403,7 +404,7 @@ transientTau = {:10.0f}\n"""
             minCoverFreq, maxCoverFreq = helper_functions.get_covering_band(
                 tref=self.tref,
                 tstart=self.tstart,
-                tend=self.tend,
+                tend=self.tend(),
                 F0=self.F0,
                 F1=self.F1,
                 F2=self.F2,
@@ -585,7 +586,7 @@ transientTau = {:10.0f}\n"""
             Freq=self.F0,
             sftfilepattern=self.sftfilepath,
             minStartTime=self.tstart,
-            maxStartTime=self.tend,
+            maxStartTime=self.tend(),
             IFOs=self.detectors,
             assumeSqrtSX=(assumeSqrtSX or self.sqrtSX),
             tempory_filename=os.path.join(self.outdir, self.label + ".tmp"),
@@ -845,11 +846,11 @@ class GlitchWriter(Writer):
                 d = np.atleast_1d(d)
 
         if self.dtglitch is None:
-            self.tbounds = [self.tstart, self.tend]
+            self.tbounds = [self.tstart, self.tend()]
         else:
             self.dtglitch = np.atleast_1d(self.dtglitch)
             self.tglitch = self.tstart + self.dtglitch
-            self.tbounds = np.concatenate(([self.tstart], self.tglitch, [self.tend]))
+            self.tbounds = np.concatenate(([self.tstart], self.tglitch, [self.tend()]))
         logging.info("Using segment boundaries {}".format(self.tbounds))
 
         tbs = np.array(self.tbounds)
