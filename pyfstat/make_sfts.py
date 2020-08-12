@@ -238,9 +238,12 @@ class Writer(BaseSearchClass):
     def tend(self):
         return self.tstart + self.duration
 
-    def make_data(self):
+    def make_data(self, verbose=False):
         """ A convienience wrapper to generate a cff file then sfts """
-        self.make_cff()
+        if self.h0 == 0:
+            logging.info("Got h0=0, not writing an injection .cff file.")
+        else:
+            self.make_cff(verbose)
         self.run_makefakedata()
 
     def get_base_template(self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref):
@@ -349,7 +352,7 @@ transientTau = {:10.0f}\n"""
                 transientTau,
             )
 
-    def make_cff(self):
+    def make_cff(self, verbose=False):
         """
         Generates a .cff file
 
@@ -373,6 +376,16 @@ transientTau = {:10.0f}\n"""
         )
 
         if self.check_if_cff_file_needs_rewritting(content):
+            if verbose:
+                logging.info(
+                    "Writing the following injection parameters"
+                    " to config file {:s}:".format(self.config_file_name)
+                )
+                logging.info(content)
+            else:
+                logging.info(
+                    "Writing config file {:s}...".format(self.config_file_name)
+                )
             config_file = open(self.config_file_name, "w+")
             config_file.write(content)
             config_file.close()
@@ -748,12 +761,20 @@ class BinaryModulatedWriter(Writer):
 
         return config_line
 
-    def make_cff(self):
+    def make_cff(self, verbose=False):
         """
         Generates a .cff file
 
         """
+
         content = self.get_single_config_line(0)
+
+        if verbose:
+            logging.info(
+                "Writing the following injection parameters"
+                " to config file {:s}:".format(self.config_file_name)
+            )
+            logging.info(content)
 
         if self.check_if_cff_file_needs_rewritting(content):
             config_file = open(self.config_file_name, "w+")
@@ -860,7 +881,7 @@ class GlitchWriter(Writer):
             np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T
         )
 
-    def make_cff(self):
+    def make_cff(self, verbose=False):
         """
         Generates an .cff file for a 'glitching' signal
 
@@ -888,6 +909,13 @@ class GlitchWriter(Writer):
             )
 
             content += line
+
+        if verbose:
+            logging.info(
+                "Writing the following injection parameters"
+                " to config file {:s}:".format(self.config_file_name)
+            )
+            logging.info(content)
 
         if self.check_if_cff_file_needs_rewritting(content):
             config_file = open(self.config_file_name, "w+")
