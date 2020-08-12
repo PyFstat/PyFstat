@@ -34,7 +34,6 @@ class Test(unittest.TestCase):
         self.detectors = "H1"
         self.SFTWindowType = "tukey"
         self.SFTWindowBeta = 1.0
-        self.Band = 4
         Writer = pyfstat.Writer(
             F0=self.F0,
             F1=self.F1,
@@ -49,7 +48,6 @@ class Test(unittest.TestCase):
             Delta=self.Delta,
             tref=self.tref,
             duration=self.duration,
-            Band=self.Band,
             detectors=self.detectors,
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
@@ -57,6 +55,8 @@ class Test(unittest.TestCase):
         )
         Writer.make_data()
         self.sftfilepath = Writer.sftfilepath
+        self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
+        self.search_ranges = {key: [getattr(self, key)] for key in self.search_keys}
 
     @classmethod
     def tearDownClass(self):
@@ -67,7 +67,7 @@ class Test(unittest.TestCase):
                 logging.warning("{} not removed prior to tests".format(self.outdir))
 
 
-class Writer(Test):
+class TestWriter(Test):
     label = "TestWriter"
     writer_class_to_test = pyfstat.Writer
     tstart = 1094809861
@@ -154,8 +154,7 @@ class Writer(Test):
         coherent_search = pyfstat.ComputeFstat(
             tref=noise_and_signal_writer.tref,
             sftfilepattern=noise_and_signal_writer.sftfilepath,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
         )
         FS_1 = coherent_search.get_fullycoherent_twoF(
             noise_and_signal_writer.tstart,
@@ -167,7 +166,7 @@ class Writer(Test):
             noise_and_signal_writer.Delta,
         )
 
-        # create noise sfts and then inject a strong signal
+        # create noise-only sfts first and then inject a strong signal
         noise_writer = self.writer_class_to_test(
             label="test_noiseSFTs_only_noise",
             outdir=self.outdir,
@@ -179,10 +178,11 @@ class Writer(Test):
             randSeed=randSeed,
             SFTWindowType=window,
             SFTWindowBeta=window_beta,
+            Band=1,
         )
         noise_writer.make_data()
 
-        # first without additional constraints
+        # first inject without additional SFT loading constraints
         add_signal_writer = self.writer_class_to_test(
             label="test_noiseSFTs_add_signal",
             outdir=self.outdir,
@@ -202,8 +202,7 @@ class Writer(Test):
         coherent_search = pyfstat.ComputeFstat(
             tref=add_signal_writer.tref,
             sftfilepattern=add_signal_writer.sftfilepath,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
         )
         FS_2 = coherent_search.get_fullycoherent_twoF(
             add_signal_writer.tstart,
@@ -237,8 +236,7 @@ class Writer(Test):
         coherent_search = pyfstat.ComputeFstat(
             tref=add_signal_writer_constr.tref,
             sftfilepattern=add_signal_writer_constr.sftfilepath,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
         )
         FS_3 = coherent_search.get_fullycoherent_twoF(
             add_signal_writer_constr.tstart,
@@ -308,18 +306,18 @@ class Writer(Test):
         self.assertTrue(os.path.isfile(expected_SFT_filepath))
 
 
-class BinaryModulatedWriter(Writer):
+class TestBinaryModulatedWriter(TestWriter):
     label = "TestBinaryModulatedWriter"
     writer_class_to_test = pyfstat.BinaryModulatedWriter
 
 
-class Bunch(Test):
+class TestBunch(Test):
     def test_bunch(self):
         b = pyfstat.core.Bunch(dict(x=10))
         self.assertTrue(b.x == 10)
 
 
-class par(Test):
+class TestPar(Test):
     label = "TestPar"
 
     def test(self):
@@ -338,7 +336,7 @@ class par(Test):
         os.system("rm -r {}".format(self.outdir))
 
 
-class BaseSearchClass(Test):
+class TestBaseSearchClass(Test):
     def test_shift_matrix(self):
         BSC = pyfstat.BaseSearchClass()
         dT = 10
@@ -386,7 +384,7 @@ class BaseSearchClass(Test):
         )
 
 
-class ComputeFstat(Test):
+class TestComputeFstat(Test):
     def test_run_computefstatistic_single_point_injectSqrtSX(self):
 
         search = pyfstat.ComputeFstat(
@@ -427,8 +425,7 @@ class ComputeFstat(Test):
         search = pyfstat.ComputeFstat(
             tref=Writer.tref,
             sftfilepattern=sftfilepattern,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
         )
         FS = search.get_fullycoherent_twoF(
             Writer.tstart,
@@ -448,8 +445,7 @@ class ComputeFstat(Test):
             detectors="H1",
             sftfilepattern=sftfilepattern,
             SSBprec=lalpulsar.SSBPREC_RELATIVISTIC,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
         )
         FS = search.get_fullycoherent_twoF(
             Writer.tstart,
@@ -579,7 +575,7 @@ class ComputeFstat(Test):
         self.assertTrue(lnBSGL > 0)
 
 
-class ComputeFstatNoNoise(Test):
+class TestComputeFstatNoNoise(Test):
     label = "TestComputeFstatSinglePointNoNoise"
 
     def setup_method(self, method):
@@ -603,8 +599,7 @@ class ComputeFstatNoNoise(Test):
             sftfilepattern=os.path.join(
                 self.Writer.outdir, "*{}-*sft".format(self.Writer.label)
             ),
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
         )
         FS = search.get_fullycoherent_twoF(
             self.Writer.tstart,
@@ -634,8 +629,7 @@ class ComputeFstatNoNoise(Test):
             ),
             earth_ephem=earth_ephem_default,
             sun_ephem=sun_ephem_default,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
         )
         FS = search.get_fullycoherent_twoF(
             self.Writer.tstart,
@@ -649,7 +643,7 @@ class ComputeFstatNoNoise(Test):
         self.assertTrue(np.abs(self.predicted_FS - FS) / FS < 0.3)
 
 
-class SemiCoherentSearch(Test):
+class TestSemiCoherentSearch(Test):
     label = "TestSemiCoherentSearch"
 
     def setup_method(self, method):
@@ -677,8 +671,7 @@ class SemiCoherentSearch(Test):
             tref=self.Writer.tref,
             minStartTime=self.Writer.tstart,
             maxStartTime=self.Writer.tend,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
             BSGL=False,
         )
 
@@ -739,8 +732,7 @@ class SemiCoherentSearch(Test):
             tref=self.Writer.tref,
             minStartTime=self.Writer.tstart,
             maxStartTime=self.Writer.tend,
-            minCoverFreq=-0.5,
-            maxCoverFreq=-0.5,
+            search_ranges=self.search_ranges,
             BSGL=True,
         )
 
@@ -755,7 +747,7 @@ class SemiCoherentSearch(Test):
         self.assertTrue(BSGL > 0)
 
 
-class SemiCoherentGlitchSearch(Test):
+class TestSemiCoherentGlitchSearch(Test):
     label = "TestSemiCoherentGlitchSearch"
 
     def test_get_semicoherent_nglitch_twoF(self):
@@ -818,22 +810,62 @@ class SemiCoherentGlitchSearch(Test):
         self.assertTrue(np.abs((FS - predicted_FS)) / predicted_FS < 0.3)
 
 
-class MCMCSearchTest(Test):
-    def _check_mcmc_quantiles(self, search, max_dict, writer, transient=False):
-        summary_stats = search.get_summary_stats()
+class BaseForMCMCSearchTests(Test):
+    # this class is only used for common setup of
+    # tests for all MCMCSearch-based classes
+    label = "TestMCMCSearch"
+    randSeed = 42  # reduce chance of random failures in parameter recovery
+    Band = 1
+
+    def setup_method(self, method):
+        self.Writer = pyfstat.Writer(
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
+            label=self.label,
+            h0=self.h0,
+            sqrtSX=self.sqrtSX,
+            outdir=self.outdir,
+            tstart=self.minStartTime,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+            tref=self.tref,
+            duration=self.duration,
+            randSeed=self.randSeed,
+            Band=self.Band,
+        )
+        self.Writer.make_data()
+        self.sftfilepath = self.Writer.sftfilepath
+        self.twoF_predicted = self.Writer.predict_fstat()
+
+    def _check_twoF_predicted(self):
+        self.max_dict, self.maxTwoF = self.search.get_max_twoF()
+        diff = np.abs((self.maxTwoF - self.twoF_predicted)) / self.twoF_predicted
+        print(
+            (
+                "Predicted twoF is {} while recovered is {},"
+                " relative difference: {}".format(
+                    self.twoF_predicted, self.maxTwoF, diff
+                )
+            )
+        )
+        self.assertTrue(diff < 0.3)
+
+    def _check_mcmc_quantiles(self, transient=False):
+        summary_stats = self.search.get_summary_stats()
         nsigmas = 3
         conf = "99"
 
         if not transient:
-            inj = {k: getattr(writer, k) for k in max_dict}
+            inj = {k: getattr(self.Writer, k) for k in self.max_dict}
         else:
             inj = {
-                "transient_tstart": writer.transientStartTime,
-                "transient_duration": writer.transientTau,
+                "transient_tstart": self.Writer.transientStartTime,
+                "transient_duration": self.Writer.transientTau,
             }
 
         for k in inj.keys():
-            reldiff = np.abs((max_dict[k] - inj[k]) / inj[k])
+            reldiff = np.abs((self.max_dict[k] - inj[k]) / inj[k])
             print("max2F  {:s} reldiff: {:.2e}".format(k, reldiff))
             reldiff = np.abs((summary_stats[k]["mean"] - inj[k]) / inj[k])
             print("mean   {:s} reldiff: {:.2e}".format(k, reldiff))
@@ -865,29 +897,10 @@ class MCMCSearchTest(Test):
             self.assertTrue(within)
 
 
-class MCMCSearch(MCMCSearchTest):
+class TestMCMCSearch(BaseForMCMCSearchTests):
     label = "TestMCMCSearch"
 
     def test_fully_coherent_MCMC(self):
-        Writer = pyfstat.Writer(
-            F0=self.F0,
-            F1=self.F1,
-            F2=self.F2,
-            label=self.label,
-            h0=self.h0,
-            sqrtSX=self.sqrtSX,
-            outdir=self.outdir,
-            tstart=self.minStartTime,
-            Alpha=self.Alpha,
-            Delta=self.Delta,
-            tref=self.tref,
-            duration=self.duration,
-            Band=self.Band,
-            randSeed=42,  # reduce chance of random failures in parameter recovery
-        )
-        Writer.make_data()
-
-        twoF_predicted = Writer.predict_fstat()
 
         # use a single test case with loop over multiple prior choices
         # this could be much more elegantly done with @pytest.mark.parametrize
@@ -967,7 +980,7 @@ class MCMCSearch(MCMCSearchTest):
         }
 
         for prior_choice in thetas:
-            search = pyfstat.MCMCSearch(
+            self.search = pyfstat.MCMCSearch(
                 label=self.label + "-" + prior_choice,
                 outdir=self.outdir,
                 theta_prior=thetas[prior_choice],
@@ -980,45 +993,16 @@ class MCMCSearch(MCMCSearchTest):
                 ntemps=2,
                 log10beta_min=-1,
             )
-            search.run(plot_walkers=False)
-            search.print_summary()
-
-            max_dict, twoF = search.get_max_twoF()
-            diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
-            print(
-                (
-                    "Predicted twoF is {} while recovered is {},"
-                    " relative difference: {}".format(twoF_predicted, twoF, diff)
-                )
-            )
-            self.assertTrue(diff < 0.3)
-            self._check_mcmc_quantiles(search, max_dict, Writer)
+            self.search.run(plot_walkers=False)
+            self.search.print_summary()
+            self._check_twoF_predicted()
+            self._check_mcmc_quantiles()
 
 
-class MCMCSemiCoherentSearch(MCMCSearchTest):
+class TestMCMCSemiCoherentSearch(BaseForMCMCSearchTests):
     label = "TestMCMCSemiCoherentSearch"
 
     def test_semi_coherent_MCMC(self):
-
-        Writer = pyfstat.Writer(
-            F0=self.F0,
-            F1=self.F1,
-            F2=self.F2,
-            label=self.label,
-            h0=self.h0,
-            sqrtSX=self.sqrtSX,
-            outdir=self.outdir,
-            tstart=self.minStartTime,
-            Alpha=self.Alpha,
-            Delta=self.Delta,
-            tref=self.tref,
-            duration=self.duration,
-            Band=self.Band,
-            randSeed=42,  # reduce chance of random failures in parameter recovery
-        )
-        Writer.make_data()
-
-        twoF_predicted = Writer.predict_fstat()
 
         theta = {
             "F0": {"type": "unif", "lower": self.F0 - 1e-6, "upper": self.F0 + 1e-6,},
@@ -1028,7 +1012,7 @@ class MCMCSemiCoherentSearch(MCMCSearchTest):
             "Delta": self.Delta,
         }
         nsegs = 10
-        search = pyfstat.MCMCSemiCoherentSearch(
+        self.search = pyfstat.MCMCSemiCoherentSearch(
             label=self.label,
             outdir=self.outdir,
             theta_prior=theta,
@@ -1042,105 +1026,37 @@ class MCMCSemiCoherentSearch(MCMCSearchTest):
             log10beta_min=-1,
             nsegs=nsegs,
         )
-        search.run(plot_walkers=False)
-        search.print_summary()
+        self.search.run(plot_walkers=False)
+        self.search.print_summary()
 
-        max_dict, twoF = search.get_max_twoF()
-        diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
-        print(
-            (
-                "Predicted twoF is {} while recovered is {},"
-                " relative difference: {}".format(twoF_predicted, twoF, diff)
-            )
-        )
-        self.assertTrue(diff < 0.3)
+        self._check_twoF_predicted()
 
         # recover per-segment twoF values at max point
-        twoF_sc = search.search.get_semicoherent_det_stat(
-            max_dict["F0"],
-            max_dict["F1"],
+        twoF_sc = self.search.search.get_semicoherent_det_stat(
+            self.max_dict["F0"],
+            self.max_dict["F1"],
             self.F2,
             self.Alpha,
             self.Delta,
             record_segments=True,
         )
-        self.assertTrue(np.abs(twoF_sc - twoF) / twoF < 0.01)
-        twoF_per_seg = np.array(search.search.twoF_per_segment)
+        self.assertTrue(np.abs(twoF_sc - self.maxTwoF) / self.maxTwoF < 0.01)
+        twoF_per_seg = np.array(self.search.search.twoF_per_segment)
         self.assertTrue(len(twoF_per_seg) == nsegs)
         twoF_summed = twoF_per_seg.sum()
         self.assertTrue(np.abs(twoF_summed - twoF_sc) / twoF_sc < 0.01)
-        self._check_mcmc_quantiles(search, max_dict, Writer)
+
+        self._check_mcmc_quantiles()
 
 
-class MCMCFollowUpSearch(MCMCSearchTest):
+class TestMCMCFollowUpSearch(BaseForMCMCSearchTests):
     label = "TestMCMCFollowUpSearch"
 
-    def test_MCMC_followup_search(self):
-
-        Writer = pyfstat.Writer(
-            F0=self.F0,
-            F1=self.F1,
-            F2=self.F2,
-            label=self.label,
-            h0=self.h0,
-            sqrtSX=self.sqrtSX,
-            outdir=self.outdir,
-            tstart=self.minStartTime,
-            Alpha=self.Alpha,
-            Delta=self.Delta,
-            tref=self.tref,
-            duration=5
-            * self.duration,  # Supersky metric cannot be computed for segment lengths <= ~24 hours
-            Band=self.Band,
-            randSeed=42,  # reduce chance of random failures in parameter recovery
-        )
-        Writer.make_data()
-
-        twoF_predicted = Writer.predict_fstat()
-
-        theta = {
-            "F0": {"type": "unif", "lower": self.F0 - 1e-6, "upper": self.F0 + 1e-6,},
-            "F1": {"type": "unif", "lower": self.F1 - 1e-10, "upper": self.F1 + 1e-10,},
-            "F2": self.F2,
-            "Alpha": self.Alpha,
-            "Delta": self.Delta,
-        }
-        nsegs = 10
-        NstarMax = 1000
-        search = pyfstat.MCMCFollowUpSearch(
-            label=self.label,
-            outdir=self.outdir,
-            theta_prior=theta,
-            tref=self.tref,
-            sftfilepattern=os.path.join(self.outdir, "*{}-*sft".format(self.label)),
-            nsteps=[100, 100],
-            nwalkers=100,
-            ntemps=2,
-            log10beta_min=-1,
-        )
-        search.run(
-            plot_walkers=False, NstarMax=NstarMax, Nsegs0=nsegs,
-        )
-        search.print_summary()
-
-        max_dict, twoF = search.get_max_twoF()
-        diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
-        print(
-            (
-                "Predicted twoF is {} while recovered is {},"
-                " relative difference: {}".format(twoF_predicted, twoF, diff)
-            )
-        )
-        self.assertTrue(diff < 0.3)
-        self._check_mcmc_quantiles(search, max_dict, Writer)
-
-
-class MCMCTransientSearch(MCMCSearchTest):
-    label = "TestMCMCTransientSearch"
-
-    def test_transient_MCMC(self):
-
-        Writer = pyfstat.Writer(
+    def setup_method(self, method):
+        self.duration = (
+            10 * 86400
+        )  # Supersky metric cannot be computed for segment lengths <= ~24 hours
+        self.Writer = pyfstat.Writer(
             F0=self.F0,
             F1=self.F1,
             F2=self.F2,
@@ -1153,15 +1069,74 @@ class MCMCTransientSearch(MCMCSearchTest):
             Delta=self.Delta,
             tref=self.tref,
             duration=self.duration,
+            randSeed=self.randSeed,
             Band=self.Band,
-            transientWindowType="rect",
-            transientStartTime=self.minStartTime + 0.25 * self.duration,
-            transientTau=0.5 * self.duration,
-            randSeed=42,  # reduce chance of random failures in parameter recovery
         )
-        Writer.make_data()
+        self.Writer.make_data()
+        self.sftfilepath = self.Writer.sftfilepath
+        self.twoF_predicted = self.Writer.predict_fstat()
 
-        twoF_predicted = Writer.predict_fstat()
+    def test_MCMC_followup_search(self):
+
+        theta = {
+            "F0": {"type": "unif", "lower": self.F0 - 1e-6, "upper": self.F0 + 1e-6,},
+            "F1": {"type": "unif", "lower": self.F1 - 1e-10, "upper": self.F1 + 1e-10,},
+            "F2": self.F2,
+            "Alpha": self.Alpha,
+            "Delta": self.Delta,
+        }
+        nsegs = 10
+        NstarMax = 1000
+        self.search = pyfstat.MCMCFollowUpSearch(
+            label=self.label,
+            outdir=self.outdir,
+            theta_prior=theta,
+            tref=self.tref,
+            sftfilepattern=os.path.join(self.outdir, "*{}-*sft".format(self.label)),
+            nsteps=[100, 100],
+            nwalkers=100,
+            ntemps=2,
+            log10beta_min=-1,
+        )
+        self.search.run(
+            plot_walkers=False, NstarMax=NstarMax, Nsegs0=nsegs,
+        )
+        self.search.print_summary()
+        self._check_twoF_predicted()
+        self._check_mcmc_quantiles()
+
+
+class TestMCMCTransientSearch(BaseForMCMCSearchTests):
+    label = "TestMCMCTransientSearch"
+
+    def setup_method(self, method):
+        self.transientWindowType = "rect"
+        self.transientStartTime = self.minStartTime + 0.25 * self.duration
+        self.transientTau = 0.5 * self.duration
+        self.Writer = pyfstat.Writer(
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
+            label=self.label,
+            h0=self.h0,
+            sqrtSX=self.sqrtSX,
+            outdir=self.outdir,
+            tstart=self.minStartTime,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+            tref=self.tref,
+            duration=self.duration,
+            transientWindowType=self.transientWindowType,
+            transientStartTime=self.transientStartTime,
+            transientTau=self.transientTau,
+            randSeed=self.randSeed,
+            Band=self.Band,
+        )
+        self.Writer.make_data()
+        self.sftfilepath = self.Writer.sftfilepath
+        self.twoF_predicted = self.Writer.predict_fstat()
+
+    def test_transient_MCMC(self):
 
         theta = {
             "F0": self.F0,
@@ -1181,7 +1156,7 @@ class MCMCTransientSearch(MCMCSearchTest):
             },
         }
         nsegs = 10
-        search = pyfstat.MCMCTransientSearch(
+        self.search = pyfstat.MCMCTransientSearch(
             label=self.label,
             outdir=self.outdir,
             theta_prior=theta,
@@ -1193,27 +1168,49 @@ class MCMCTransientSearch(MCMCSearchTest):
             nwalkers=100,
             ntemps=2,
             log10beta_min=-1,
-            transientWindowType=Writer.transientWindowType,
+            transientWindowType=self.transientWindowType,
         )
-        search.run(plot_walkers=False)
-        search.print_summary()
+        self.search.run(plot_walkers=False)
+        self.search.print_summary()
+        self._check_twoF_predicted()
+        self._check_mcmc_quantiles(transient=True)
 
-        max_dict, twoF = search.get_max_twoF()
-        diff = np.abs((twoF - twoF_predicted)) / twoF_predicted
-        print(
-            (
-                "Predicted twoF is {} while recovered is {},"
-                " relative difference: {}".format(twoF_predicted, twoF, diff)
-            )
+
+class BaseForGridSearchTests(Test):
+    # this class is only used for common setup of
+    # TestGridSearchCW and TestTransientGridSearch
+    label = "TestGridSearch"
+
+    def setup_method(self, method):
+        self.Band = 2.5
+        self.Writer = pyfstat.Writer(
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
+            label=self.label,
+            h0=self.h0,
+            cosi=self.cosi,
+            sqrtSX=self.sqrtSX,
+            outdir=self.outdir,
+            tstart=self.minStartTime,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+            tref=self.tref,
+            duration=self.duration,
+            detectors=self.detectors,
+            SFTWindowType=self.SFTWindowType,
+            SFTWindowBeta=self.SFTWindowBeta,
+            randSeed=None,
+            Band=self.Band,
         )
-        self.assertTrue(diff < 0.3)
-        self._check_mcmc_quantiles(search, max_dict, Writer, transient=True)
+        self.Writer.make_data()
+        self.sftfilepath = self.Writer.sftfilepath
 
 
-class GridSearch(Test):
+class TestGridSearch(BaseForGridSearchTests):
+    label = "TestGridSearch"
     F0s = [29, 31, 0.1]
     F1s = [-1e-10, 0, 1e-11]
-    tref = 700000000
 
     def test_grid_search(self):
         search = pyfstat.GridSearch(
@@ -1354,10 +1351,9 @@ class GridSearch(Test):
         self.assertTrue(os.path.isfile(search.out_file))
 
 
-class TransientGridSearch(Test):
+class TestTransientGridSearch(BaseForGridSearchTests):
+    label = "TestTransientGridSearch"
     F0s = [29, 31, 0.1]
-    F1s = [-1e-10, 0, 1e-11]
-    tref = 700000000
 
     def test_transient_grid_search(self):
         search = pyfstat.TransientGridSearch(

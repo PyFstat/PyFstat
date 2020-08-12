@@ -49,7 +49,7 @@ class Writer(BaseSearchClass):
         noiseSFTs=None,
         SFTWindowType=None,
         SFTWindowBeta=0.0,
-        Band=4,
+        Band=None,
         detectors="H1",
         minStartTime=None,
         maxStartTime=None,
@@ -77,6 +77,10 @@ class Writer(BaseSearchClass):
             SFT on top of which signals will be injected. 
             If not None, additional constraints can be applied using the arguments 
             tstart and duration.
+        Band: float or None
+            If float, output SFTs cover [F0-Band/2,F0+Band/2].
+            If None, a minimal covering band for a perfectly-matched
+            single-template ComputeFstat analysis is estimated.
         minStartTime, maxStartTime: float
             DEPRECATED, use [tstart,duration] and/or
             [transientWindowType,transientStartTime,transientTau] instead!    
@@ -223,8 +227,10 @@ class Writer(BaseSearchClass):
                 "internal consistency accross input SFTs."
             )
             self._get_setup_from_noiseSFTs()
-        else:
+        elif self.tstart is not None and self.duration is not None:
             self._get_setup_from_tstart_duration()
+        else:
+            raise ValueError("Need either noiseSFTs or both of (tstart,duration).")
 
         self.sftfilepath = ";".join(
             [os.path.join(self.outdir, fn) for fn in self.sftfilenames]
@@ -373,7 +379,50 @@ transientTau = {:10.0f}\n"""
             config_file.close()
 
     def calculate_fmin_Band(self):
-        self.fmin = self.F0 - 0.5 * self.Band
+        """
+        Set fmin and Band for the output SFTs to cover.
+
+        Either uses the user-provided Band and puts the injection in the middle,
+        or if Band==None estimates a minimal band for just the injected signal:
+        F-stat covering band plus extra bins for demod default parameters.
+        This way a perfectly matched single-template ComputeFstat analysis
+        should run through perfectly on the SFTs.
+        For any wider-band or mismatched search, the set Band manually.
+        """
+        if self.Band is None:
+            extraBins = (
+                # matching extraBinsFull in XLALCreateFstatInput():
+                # https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/_compute_fstat_8c_source.html#l00490
+                lalpulsar.FstatOptionalArgsDefaults.Dterms
+                + int(lalpulsar.FstatOptionalArgsDefaults.runningMedianWindow / 2)
+                + 1
+            )
+            logging.info(
+                "Estimating required SFT frequency range from properties"
+                " of signal to inject plus {:d} extra bins either side"
+                " (corresponding to default F-statistic settings).".format(extraBins)
+            )
+            minCoverFreq, maxCoverFreq = helper_functions.get_covering_band(
+                tref=self.tref,
+                tstart=self.tstart,
+                tend=self.tend,
+                F0=self.F0,
+                F1=self.F1,
+                F2=self.F2,
+                F0band=0.0,
+                F1band=0.0,
+                F2band=0.0,
+                maxOrbitAsini=getattr(self, "asini", 0.0),
+                minOrbitPeriod=getattr(self, "period", 0.0),
+                maxOrbitEcc=getattr(self, "ecc", 0.0),
+            )
+            self.fmin = minCoverFreq - extraBins / self.Tsft
+            self.Band = maxCoverFreq - minCoverFreq + 2 * extraBins / self.Tsft
+        else:
+            self.fmin = self.F0 - 0.5 * self.Band
+        logging.info(
+            "Generating SFTs with fmin={}, Band={}".format(self.fmin, self.Band)
+        )
 
     def check_cached_data_okay_to_use(self, cl_mfd):
         """ Check if cached data exists and, if it does, if it can be used """
@@ -582,7 +631,7 @@ class BinaryModulatedWriter(Writer):
         noiseSFTs=None,
         SFTWindowType=None,
         SFTWindowBeta=0.0,
-        Band=4,
+        Band=None,
         detectors="H1",
         minStartTime=None,
         maxStartTime=None,
@@ -602,7 +651,7 @@ class BinaryModulatedWriter(Writer):
         tref: float or None
             reference time (default is None, which sets the reference time to
             tstart)
-        F0, F1, F2, Alpha, Delta, orbitTp, orbitArgp, orbitasini, orbitEcc, h0, cosi, psi, phi: float
+        F0, F1, F2, Alpha, Delta, tp, argp, asini, ecc, period, h0, cosi, psi, phi: float
             frequency, sky-position, binary orbit and amplitude parameters
         Tsft: float
             the sft duration
