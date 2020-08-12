@@ -159,6 +159,8 @@ class Writer(BaseSearchClass):
         noise_multi_sft_catalog = lalpulsar.GetMultiSFTCatalogView(
             lalpulsar.SFTdataFind(self.noiseSFTs, SFTConstraint)
         )
+        if noise_multi_sft_catalog.length == 0:
+            raise IOError("Got empty SFT catalog.")
 
         # Information to be extracted from the SFTs themselves
         IFOs = []
