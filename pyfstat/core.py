@@ -689,7 +689,10 @@ class ComputeFstat(BaseSearchClass):
         if self.minStartTime is None:
             self.minStartTime = int(SFT_timestamps[0])
         if self.maxStartTime is None:
-            self.maxStartTime = int(SFT_timestamps[-1])
+            # XLALCWGPSinRange() convention: half-open intervals,
+            # maxStartTime must always be > last actual SFT timestamp
+            Tsft = int(1.0 / SFTCatalog.data[0].header.deltaF)
+            self.maxStartTime = int(SFT_timestamps[-1]) + Tsft
 
         detector_names = list(set([d.header.name for d in SFTCatalog.data]))
         self.detector_names = detector_names
