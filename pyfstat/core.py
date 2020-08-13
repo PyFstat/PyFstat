@@ -485,6 +485,7 @@ class ComputeFstat(BaseSearchClass):
         sftfilepattern=None,
         minStartTime=None,
         maxStartTime=None,
+        Tsft=1800,
         binary=False,
         BSGL=False,
         transientWindowType=None,
@@ -517,9 +518,10 @@ class ComputeFstat(BaseSearchClass):
         sftfilepattern : str
             Pattern to match SFTs using wildcards (*?) and ranges [0-9];
             mutiple patterns can be given separated by colons.
-        minStartTime, maxStartTime : float GPStime
-            Only use SFTs with timestemps starting from (including, excluding)
-            this epoch
+        minStartTime, maxStartTime : int
+            Only use SFTs with timestamps starting from this range,
+            following the XLALCWGPSinRange convention:
+            half-open intervals [minStartTime,maxStartTime]
         binary : bool
             If true, search of binary parameters.
         BSGL : bool
@@ -624,19 +626,21 @@ class ComputeFstat(BaseSearchClass):
                     )
             C1 = getattr(self, "injectSources", None) is None
             C2 = getattr(self, "injectSqrtSX", None) is None
-            if C1 and C2:
+            C3 = getattr(self, "Tsft", None) is None
+            if (C1 and C2) or C3:
                 raise ValueError(
-                    "If sftfilepattern==None, you must specify either one of"
-                    " injectSources or injectSqrtSX."
+                    "If sftfilepattern==None, you must specify Tsft and"
+                    " either one of injectSources or injectSqrtSX."
                 )
             SFTCatalog = lalpulsar.SFTCatalog()
-            Tsft = 1800
             Toverlap = 0
-            Tspan = self.maxStartTime - self.minStartTime
             self.detector_names = self.detectors.split(",")
             detNames = lal.CreateStringVector(*[d for d in self.detector_names])
+            # MakeMultiTimestamps follows the same [minStartTime,maxStartTime)
+            # convention as the SFT library, so we can pass Tspan like this
+            Tspan = self.maxStartTime - self.minStartTime
             multiTimestamps = lalpulsar.MakeMultiTimestamps(
-                self.minStartTime, Tspan, Tsft, Toverlap, detNames.length
+                self.minStartTime, Tspan, self.Tsft, Toverlap, detNames.length
             )
             SFTCatalog = lalpulsar.MultiAddToFakeSFTCatalog(
                 SFTCatalog, detNames, multiTimestamps
@@ -646,6 +650,7 @@ class ComputeFstat(BaseSearchClass):
 
         logging.info("Initialising SFTCatalog")
         constraints = lalpulsar.SFTConstraints()
+        constr_str = []
         if self.detectors:
             if "," in self.detectors:
                 logging.warning(
@@ -654,14 +659,30 @@ class ComputeFstat(BaseSearchClass):
                 )
             else:
                 constraints.detector = self.detectors
+                constr_str.append("detector=" + constraints.detector)
         if self.minStartTime:
             constraints.minStartTime = lal.LIGOTimeGPS(self.minStartTime)
+            constr_str.append("minStartTime={}".format(self.minStartTime))
         if self.maxStartTime:
             constraints.maxStartTime = lal.LIGOTimeGPS(self.maxStartTime)
-        logging.info("Loading data matching pattern {}".format(self.sftfilepattern))
-        SFTCatalog = lalpulsar.SFTdataFind(self.sftfilepattern, constraints)
+            constr_str.append("maxStartTime={}".format(self.maxStartTime))
+        logging.info(
+            "Loading data matching SFT file name pattern '{}'"
+            " with constraints {}.".format(self.sftfilepattern, ", ".join(constr_str))
+        )
+        self.SFTCatalog = lalpulsar.SFTdataFind(self.sftfilepattern, constraints)
+        Tsft_from_catalog = int(1.0 / self.SFTCatalog.data[0].header.deltaF)
+        if Tsft_from_catalog != self.Tsft:
+            logging.info(
+                "Overwriting pre-set Tsft={:d} with {:d} obtained from SFTs.".format(
+                    self.Tsft, Tsft_from_catalog
+                )
+            )
+        self.Tsft = Tsft_from_catalog
 
-        SFT_timestamps = [d.header.epoch for d in SFTCatalog.data]
+        # NOTE: in multi-IFO case, this will be a joint list of timestamps
+        # over all IFOs, probably sorted and not cleaned for uniqueness.
+        SFT_timestamps = [d.header.epoch for d in self.SFTCatalog.data]
         self.SFT_timestamps = [float(s) for s in SFT_timestamps]
         if len(SFT_timestamps) == 0:
             raise ValueError("Failed to load any data")
@@ -681,7 +702,7 @@ class ComputeFstat(BaseSearchClass):
         output = helper_functions.run_commandline(cl_tconv2, log_level=logging.DEBUG)
         tconvert2 = output.rstrip("\n")
         logging.info(
-            "Data contains SFT timestamps from {} ({}) to {} ({})".format(
+            "Data contains SFT timestamps from {} ({}) to (including) {} ({})".format(
                 int(SFT_timestamps[0]), tconvert1, int(SFT_timestamps[-1]), tconvert2
             )
         )
@@ -691,10 +712,9 @@ class ComputeFstat(BaseSearchClass):
         if self.maxStartTime is None:
             # XLALCWGPSinRange() convention: half-open intervals,
             # maxStartTime must always be > last actual SFT timestamp
-            Tsft = int(1.0 / SFTCatalog.data[0].header.deltaF)
-            self.maxStartTime = int(SFT_timestamps[-1]) + Tsft
+            self.maxStartTime = int(SFT_timestamps[-1]) + self.Tsft
 
-        detector_names = list(set([d.header.name for d in SFTCatalog.data]))
+        detector_names = list(set([d.header.name for d in self.SFTCatalog.data]))
         self.detector_names = detector_names
         if len(detector_names) == 0:
             raise ValueError("No data loaded.")
@@ -703,8 +723,6 @@ class ComputeFstat(BaseSearchClass):
                 len(SFT_timestamps), detector_names
             )
         )
-
-        self.SFTCatalog = SFTCatalog
 
     def init_computefstatistic(self):
         """ Initialisation step of run_computefstatistic for a single point or search range """
@@ -845,7 +863,7 @@ class ComputeFstat(BaseSearchClass):
                 numDetectors, Fstar0, oLGX, True, 1
             )
             self.twoFX = np.zeros(10)
-            self.whatToCompute = self.whatToCompute + lalpulsar.FSTATQ_2F_PER_DET
+            self.whatToCompute += lalpulsar.FSTATQ_2F_PER_DET
 
         if self.transientWindowType:
             logging.info("Initialising transient parameters")
@@ -865,7 +883,6 @@ class ComputeFstat(BaseSearchClass):
                 )
 
             # default spacing
-            self.Tsft = int(1.0 / self.SFTCatalog.data[0].header.deltaF)
             self.windowRange.dt0 = self.Tsft
             self.windowRange.dtau = self.Tsft
 
@@ -1022,9 +1039,6 @@ class ComputeFstat(BaseSearchClass):
                     " (either [single_value], [min,max]"
                     " or [min,max,step]): {}".format(key, self.search_ranges[key])
                 )
-        Tsft = 1.0 / self.SFTCatalog.data[0].header.deltaF
-        startTime = self.SFTCatalog.data[0].header.epoch
-        endTime = self.SFTCatalog.data[-1].header.epoch + Tsft
         # start by constructing a DopplerRegion structure
         # which will be needed to conservatively account for sky-position dependent
         # Doppler shifts of the frequency range to be covered
@@ -1082,8 +1096,8 @@ class ComputeFstat(BaseSearchClass):
                     if len(self.search_ranges[Fk]) == 3
                     else 0.0
                 )
-        scanInit.startTime = startTime
-        scanInit.Tspan = float(endTime - startTime)
+        scanInit.startTime = self.minStartTime
+        scanInit.Tspan = float(self.maxStartTime - self.minStartTime)
         scanState = lalpulsar.InitDopplerFullScan(scanInit)
         # now obtain the PulsarSpinRange extended over all relevant Doppler shifts
         spinRangeRef = lalpulsar.PulsarSpinRange()
@@ -1111,8 +1125,8 @@ class ComputeFstat(BaseSearchClass):
         # extended PulsarSpinRange and optional binary parameters
         self.minCoverFreq, self.maxCoverFreq = helper_functions.get_covering_band(
             tref=self.tref,
-            tstart=startTime,
-            tend=endTime,
+            tstart=self.minStartTime,
+            tend=self.maxStartTime,
             F0=spinRangeRef.fkdot[0],
             F1=spinRangeRef.fkdot[1],
             F2=spinRangeRef.fkdot[2],
@@ -1522,6 +1536,7 @@ class SemiCoherentSearch(ComputeFstat):
         BSGL=False,
         minStartTime=None,
         maxStartTime=None,
+        Tsft=1800,
         minCoverFreq=None,
         maxCoverFreq=None,
         search_ranges=None,
@@ -1539,13 +1554,20 @@ class SemiCoherentSearch(ComputeFstat):
         ----------
         label, outdir: str
             A label and directory to read/write data from/to.
-        tref, minStartTime, maxStartTime: int
-            GPS seconds of the reference time, and start and end of the data.
+        tref: int
+            GPS seconds of the reference time.
+        minStartTime, maxStartTime : int
+            Only use SFTs with timestamps starting from this range,
+            following the XLALCWGPSinRange convention:
+            half-open intervals [minStartTime,maxStartTime].
+            Also used to set up segment boundaries, i.e.
+            maxStartTime-minStartTime will be divided by nsegs
+            to obtain the per-segment coherence time Tcoh.
         nsegs: int
             The (fixed) number of segments
         sftfilepattern: str
             Pattern to match SFTs using wildcards (*?) and ranges [0-9];
-            mutiple patterns can be given separated by colons.
+            multiple patterns can be given separated by colons.
 
         For all other parameters, see pyfstat.ComputeFStat.
         """
@@ -1560,9 +1582,8 @@ class SemiCoherentSearch(ComputeFstat):
 
         self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
         self.set_ephemeris_files(earth_ephem, sun_ephem)
-        self.transientWindowType = "rect"
-        self.t0Band = None
-        self.tauBand = None
+        self.transientWindowType = None  # will use semicoherentWindowRange instead
+        self.computeAtoms = True  # for semicoh 2F from ComputeTransientFstatMap()
         self.tCWFstatMapVersion = "lal"
         self.cudaDeviceName = None
         self.init_computefstatistic()
@@ -1593,29 +1614,45 @@ class SemiCoherentSearch(ComputeFstat):
     def init_semicoherent_parameters(self):
         logging.info(
             (
-                "Initialising semicoherent parameters from {} to {} in" " {} segments"
+                "Initialising semicoherent parameters from"
+                " minStartTime={:d} to maxStartTime={:d} in {:d} segments..."
             ).format(self.minStartTime, self.maxStartTime, self.nsegs)
         )
-        self.transientWindowType = "rect"
-        self.whatToCompute = lalpulsar.FSTATQ_2F + lalpulsar.FSTATQ_ATOMS_PER_DET
         self.tboundaries = np.linspace(
             self.minStartTime, self.maxStartTime, self.nsegs + 1
         )
         self.Tcoh = self.tboundaries[1] - self.tboundaries[0]
-
-        if hasattr(self, "SFT_timestamps"):
-            if self.tboundaries[0] < self.SFT_timestamps[0]:
-                logging.debug(
-                    "Semi-coherent start time {} before first SFT timestamp {}".format(
-                        self.tboundaries[0], self.SFT_timestamps[0]
-                    )
+        logging.info(
+            ("Obtained {:d} segments of length Tcoh={:f}s (={:f}d).").format(
+                self.nsegs, self.Tcoh, self.Tcoh / 86400.0
+            )
+        )
+        logging.debug("Segment boundaries: {}".format(self.tboundaries))
+        if self.Tcoh < 2 * self.Tsft:
+            raise RuntimeError(
+                "Per-segment coherent time {} may not be < Tsft={}"
+                " to avoid degenerate F-statistic computations".format(
+                    self.Tcoh, self.Tsft
                 )
-            if self.tboundaries[-1] > self.SFT_timestamps[-1]:
-                logging.debug(
-                    "Semi-coherent end time {} after last SFT timestamp {}".format(
-                        self.tboundaries[-1], self.SFT_timestamps[-1]
-                    )
+            )
+        # FIXME: We can only easily do the next sanity check for a single
+        # detector, since self.SFT_timestamps is a joint list for multi-IFO case
+        # and the lower-level error checking of XLAL is complicated in that case.
+        # But even in the multi-IFO case, if the last segment does not include
+        # enough data, there will still be an error message (just uglier) from
+        # XLALComputeTransientFstatMap()
+        if (
+            (len(self.detector_names) == 1)
+            and hasattr(self, "SFT_timestamps")
+            and (self.tboundaries[-2] > self.SFT_timestamps[-2])
+        ):
+            raise RuntimeError(
+                "Each segment must contain at least 2 SFTs to avoid degenerate"
+                " F-statistic computations, but last segment start time {}"
+                " is after second-to-last SFT timestamp {}.".format(
+                    self.tboundaries[-2], self.SFT_timestamps[-2]
                 )
+            )
         self._init_semicoherent_window_range()
 
     def get_semicoherent_det_stat(
@@ -1719,6 +1756,7 @@ class SemiCoherentGlitchSearch(ComputeFstat):
         tref,
         minStartTime,
         maxStartTime,
+        Tsft=1800,
         nglitch=1,
         sftfilepattern=None,
         theta0_idx=0,
