@@ -681,7 +681,7 @@ class ComputeFstat(BaseSearchClass):
         output = helper_functions.run_commandline(cl_tconv2, log_level=logging.DEBUG)
         tconvert2 = output.rstrip("\n")
         logging.info(
-            "Data spans from {} ({}) to {} ({})".format(
+            "Data contains SFT timestamps from {} ({}) to {} ({})".format(
                 int(SFT_timestamps[0]), tconvert1, int(SFT_timestamps[-1]), tconvert2
             )
         )
