@@ -363,7 +363,7 @@ def get_sft_array(sftfilepattern, data_duration=None, F0=None, dF0=None):
     nbins, nsfts = data.shape
 
     sft0 = SFTs.data[0]
-    freqs = np.linspace(sft0.f0, sft0.f0 + nbins * sft0.deltaF, nbins)
+    freqs = np.linspace(sft0.f0, sft0.f0 + (nbins - 1) * sft0.deltaF, nbins)
 
     return times, freqs, data
 
