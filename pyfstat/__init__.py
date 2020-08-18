@@ -1,6 +1,7 @@
 from .core import (
     BaseSearchClass,
     ComputeFstat,
+    SearchForSignalWithJumps,
     SemiCoherentSearch,
     SemiCoherentGlitchSearch,
 )

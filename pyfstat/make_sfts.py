@@ -12,6 +12,7 @@ import lalpulsar
 
 from pyfstat.core import (
     BaseSearchClass,
+    SearchForSignalWithJumps,
     tqdm,
     args,
     predict_fstat,
@@ -829,7 +830,7 @@ class BinaryModulatedWriter(Writer):
             config_file.close()
 
 
-class GlitchWriter(Writer):
+class GlitchWriter(SearchForSignalWithJumps, Writer):
     """ Instance object for generating SFTs containing glitch signals """
 
     @helper_functions.initializer
