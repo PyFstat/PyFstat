@@ -327,19 +327,43 @@ def convert_array_to_gsl_matrix(array):
     return gsl_matrix
 
 
-def get_sft_array(sftfilepattern, data_duration, F0, dF0):
-    """ Return the raw data from a set of sfts """
+def get_sft_array(sftfilepattern, data_duration=None, F0=None, dF0=None):
+    """ Return the raw data (absolute value) from a set of SFTs
+
+    FIXME: currently only returns data for first detector
+    """
+
+    if F0 is None and dF0 is None:
+        fMin = -1
+        fMax = -1
+    elif F0 is None or dF0 is None:
+        raise ValueError("Need either none or both of F0, dF0.")
+    else:
+        fMin = F0 - dF0
+        fMax = F0 + dF0
+
+    if data_duration is not None:
+        logging.warning(
+            "Option 'data_duration' for get_sft_array()"
+            " is no longer in use and will be removed."
+        )
 
     SFTCatalog = lalpulsar.SFTdataFind(sftfilepattern, lalpulsar.SFTConstraints())
-    MultiSFTs = lalpulsar.LoadMultiSFTs(SFTCatalog, F0 - dF0, F0 + dF0)
+    MultiSFTs = lalpulsar.LoadMultiSFTs(SFTCatalog, fMin, fMax)
+    ndet = MultiSFTs.length
+    if ndet > 1:
+        logging.warning(
+            "Loaded SFTs from {:d} detectors, only using the first.".format(ndet)
+        )
+
     SFTs = MultiSFTs.data[0]
-    data = []
-    for sft in SFTs.data:
-        data.append(np.abs(sft.data.data))
+    times = [sft.epoch.gpsSeconds for sft in SFTs.data]
+    data = [np.abs(sft.data.data) for sft in SFTs.data]
     data = np.array(data).T
-    n, nsfts = data.shape
-    freqs = np.linspace(sft.f0, sft.f0 + n * sft.deltaF, n)
-    times = np.linspace(0, data_duration, nsfts)
+    nbins, nsfts = data.shape
+
+    sft0 = SFTs.data[0]
+    freqs = np.linspace(sft0.f0, sft0.f0 + (nbins - 1) * sft0.deltaF, nbins)
 
     return times, freqs, data
 
