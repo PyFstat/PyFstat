@@ -1,3 +1,28 @@
+## 1.6.0 [19/08/2020]
+
+ - Writer classes, including several backwards-incompatbile changes:
+   - removed lots of default values where there isn't really
+     a logical "default"; e.g. detectors and signal parameters
+     now always need to be explicitly set.
+   - more flexible setup getting info from noiseSFTs
+     (tstart, duration now optional and used as constraints)
+   - can now auto-estimate SFT frequency band if not set by user
+     (assuming a single-template search)
+   - added manual ephemerides options
+   - removed add_noise option, same behaviour can still
+     be controlled through options sqrtSX or noiseSFTs
+   - no .cff file generated any more if h0==0 (no signal)
+   - verbose option for make_cff() and make_data() methods
+   - clearer error messages in many cases
+ - ComputeFstat, SemiCoherentSearch and derived classes:
+   - fixed internal maxStartTime default if not set by user
+   - by that, fixed the SemiCoherentSearch segments auto-setup
+   - added Tsft as user option
+   - clearer error and logging messages
+ - improved helper_functions.get_sft_array()
+ - extended, cleaned up and further modularised test suite
+ - updated examples to changes in Writer and other classes
+ 
 ## 1.5.2 [06/08/2020]
 
  - fixed semi-coherent search bug introduced in 1.5.0:
