@@ -10,6 +10,7 @@ outdir = os.path.join("PyFstat_example_data", label)
 tstart = 1269734418
 duration_Tsft = 100
 Tsft = 1800
+
 randSeed = 69420
 IFO = "H1"
 h0 = 1000
