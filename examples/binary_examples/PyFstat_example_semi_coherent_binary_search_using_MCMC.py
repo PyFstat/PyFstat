@@ -10,6 +10,7 @@ data_parameters = {
     "sqrtSX": 1e-23,
     "tstart": 1000000000,
     "duration": 100 * 86400,
+    "detectors": "H1",
 }
 tend = data_parameters["tstart"] + data_parameters["duration"]
 mid_time = 0.5 * (data_parameters["tstart"] + tend)
@@ -29,6 +30,7 @@ signal_parameters = {
     "period": 45 * 24 * 3600.0,
     "tref": mid_time,
     "h0": data_parameters["sqrtSX"] / depth,
+    "cosi": 1.0,
 }
 
 data = pyfstat.BinaryModulatedWriter(
