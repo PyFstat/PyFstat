@@ -7,10 +7,16 @@ import pyfstat
 label = os.path.splitext(os.path.basename(__file__))[0]
 outdir = os.path.join("PyFstat_example_data", label)
 
+tstart = 1269734418
 duration_Tsft = 100
 Tsft = 1800
-h0 = 1000
 randSeed = 69420
+IFO = "H1"
+h0 = 1000
+cosi = 0
+F0 = 30
+Alpha = 0
+Delta = 0
 
 # create sfts with a strong signal in them
 # window options are optional here
@@ -18,8 +24,14 @@ noise_and_signal_writer = pyfstat.Writer(
     label="test_noiseSFTs_noise_and_signal",
     outdir=outdir,
     h0=h0,
+    cosi=cosi,
+    F0=F0,
+    Alpha=Alpha,
+    Delta=Delta,
+    tstart=tstart,
     duration=duration_Tsft * Tsft,
     Tsft=Tsft,
+    detectors=IFO,
     randSeed=randSeed,
     SFTWindowType="tukey",
     SFTWindowBeta=0.001,
@@ -33,7 +45,10 @@ noise_and_signal_writer.make_data()
 
 # compute Fstat
 coherent_search = pyfstat.ComputeFstat(
-    tref=noise_and_signal_writer.tref, sftfilepattern=sftfilepattern
+    tref=noise_and_signal_writer.tref,
+    sftfilepattern=sftfilepattern,
+    minCoverFreq=noise_and_signal_writer.F0 - 0.001,
+    maxCoverFreq=noise_and_signal_writer.F0 + 0.001,
 )
 FS_1 = coherent_search.get_fullycoherent_twoF(
     noise_and_signal_writer.tstart,
@@ -51,8 +66,11 @@ noise_writer = pyfstat.Writer(
     label="test_noiseSFTs_only_noise",
     outdir=outdir,
     h0=0,
+    F0=F0,
+    tstart=tstart,
     duration=duration_Tsft * Tsft,
     Tsft=Tsft,
+    detectors=IFO,
     randSeed=randSeed,
     SFTWindowType="tukey",
     SFTWindowBeta=0.001,
@@ -65,8 +83,14 @@ add_signal_writer = pyfstat.Writer(
     label="test_noiseSFTs_add_signal",
     outdir=outdir,
     h0=h0,
+    cosi=cosi,
+    F0=F0,
+    Alpha=Alpha,
+    Delta=Delta,
+    tstart=tstart,
     duration=duration_Tsft * Tsft,
     Tsft=Tsft,
+    detectors=IFO,
     sqrtSX=0,
     noiseSFTs=os.path.join(
         noise_writer.outdir, "*{}*{}*sft".format(duration_Tsft, noise_writer.label)
@@ -82,7 +106,10 @@ add_signal_writer.make_data()
 
 # compute Fstat
 coherent_search = pyfstat.ComputeFstat(
-    tref=add_signal_writer.tref, sftfilepattern=sftfilepattern
+    tref=add_signal_writer.tref,
+    sftfilepattern=sftfilepattern,
+    minCoverFreq=noise_and_signal_writer.F0 - 0.001,
+    maxCoverFreq=noise_and_signal_writer.F0 + 0.001,
 )
 FS_2 = coherent_search.get_fullycoherent_twoF(
     add_signal_writer.tstart,

@@ -64,6 +64,8 @@ mcmc = pyfstat.MCMCTransientSearch(
     ntemps=ntemps,
     log10beta_min=log10beta_min,
     transientWindowType="rect",
+    # minCoverFreq=-0.04,
+    # maxCoverFreq=-0.04,
 )
 mcmc.run()
 mcmc.plot_corner(add_prior=True)

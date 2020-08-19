@@ -18,6 +18,7 @@ F2 = 0
 Alpha = np.radians(83.6292)
 Delta = np.radians(22.0144)
 tref = 0.5 * (tstart + tend)
+cosi = 0
 
 depth = 100
 h0 = sqrtSX / depth
@@ -34,6 +35,7 @@ data = pyfstat.Writer(
     Alpha=Alpha,
     Delta=Delta,
     h0=h0,
+    cosi=cosi,
     sqrtSX=sqrtSX,
     detectors="H1,L1",
 )

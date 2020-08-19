@@ -16,6 +16,7 @@ Delta = 1.5
 depth = 70
 sqrtS = "1e-23"
 h0 = float(sqrtS) / depth
+cosi = 0
 IFOs = "H1"
 # IFOs = "H1,L1"
 sqrtSX = ",".join(np.repeat(sqrtS, len(IFOs.split(","))))
@@ -38,6 +39,7 @@ data = pyfstat.Writer(
     Alpha=Alpha,
     Delta=Delta,
     h0=h0,
+    cosi=cosi,
     sqrtSX=sqrtSX,
     detectors=IFOs,
 )

@@ -15,6 +15,7 @@ Delta = np.radians(22.0144)
 
 # Signal strength
 h0 = 5e-24
+cosi = 0
 
 # Properties of the GW data
 sqrtSX = 1e-22
@@ -22,6 +23,7 @@ tstart = 1000000000
 duration = 50 * 86400
 tend = tstart + duration
 tref = tstart + 0.5 * duration
+IFO = "H1"
 
 data = Writer(
     label="0_glitch",
@@ -35,7 +37,9 @@ data = Writer(
     Alpha=Alpha,
     Delta=Delta,
     h0=h0,
+    cosi=cosi,
     sqrtSX=sqrtSX,
+    detectors=IFO,
 )
 data.make_data()
 
@@ -56,7 +60,9 @@ glitch_data = GlitchWriter(
     Alpha=Alpha,
     Delta=Delta,
     h0=h0,
+    cosi=cosi,
     sqrtSX=sqrtSX,
+    detectors=IFO,
     dtglitch=dtglitch,
     delta_F0=delta_F0,
     delta_F1=delta_F1,
@@ -83,7 +89,9 @@ two_glitch_data = GlitchWriter(
     Alpha=Alpha,
     Delta=Delta,
     h0=h0,
+    cosi=cosi,
     sqrtSX=sqrtSX,
+    detectors=IFO,
     dtglitch=dtglitch_2,
     delta_phi=delta_phi_2,
     delta_F0=delta_F0_2,
