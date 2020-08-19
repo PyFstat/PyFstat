@@ -18,7 +18,7 @@ F0 = 30
 Alpha = 0
 Delta = 0
 
-Band = 2.
+Band = 2.0
 
 # create sfts with a strong signal in them
 # window options are optional here

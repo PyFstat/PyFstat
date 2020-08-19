@@ -10,6 +10,7 @@ sqrtSX = 1e-23
 tstart = 1000000000
 duration = 100 * 86400
 tend = tstart + duration
+detectors = "H1"
 
 # Properties of the signal
 F0 = 30.0
@@ -22,6 +23,7 @@ cosi = 0
 
 depth = 60
 h0 = sqrtSX / depth
+cosi = 1.0
 
 data = pyfstat.Writer(
     label=label,
@@ -32,6 +34,7 @@ data = pyfstat.Writer(
     F1=F1,
     F2=F2,
     duration=duration,
+    detectors=detectors,
     Alpha=Alpha,
     Delta=Delta,
     h0=h0,
