@@ -18,6 +18,8 @@ F0 = 30
 Alpha = 0
 Delta = 0
 
+Band = 2.0
+
 # create sfts with a strong signal in them
 # window options are optional here
 noise_and_signal_writer = pyfstat.Writer(
@@ -31,6 +33,7 @@ noise_and_signal_writer = pyfstat.Writer(
     tstart=tstart,
     duration=duration_Tsft * Tsft,
     Tsft=Tsft,
+    Band=Band,
     detectors=IFO,
     randSeed=randSeed,
     SFTWindowType="tukey",
@@ -47,8 +50,8 @@ noise_and_signal_writer.make_data()
 coherent_search = pyfstat.ComputeFstat(
     tref=noise_and_signal_writer.tref,
     sftfilepattern=sftfilepattern,
-    minCoverFreq=noise_and_signal_writer.F0 - 0.001,
-    maxCoverFreq=noise_and_signal_writer.F0 + 0.001,
+    minCoverFreq=-0.5,
+    maxCoverFreq=-0.5,
 )
 FS_1 = coherent_search.get_fullycoherent_twoF(
     noise_and_signal_writer.tstart,
@@ -70,6 +73,7 @@ noise_writer = pyfstat.Writer(
     tstart=tstart,
     duration=duration_Tsft * Tsft,
     Tsft=Tsft,
+    Band=Band,
     detectors=IFO,
     randSeed=randSeed,
     SFTWindowType="tukey",
@@ -82,14 +86,15 @@ noise_writer.make_data()
 add_signal_writer = pyfstat.Writer(
     label="test_noiseSFTs_add_signal",
     outdir=outdir,
-    h0=h0,
-    cosi=cosi,
     F0=F0,
     Alpha=Alpha,
     Delta=Delta,
+    h0=h0,
+    cosi=cosi,
     tstart=tstart,
     duration=duration_Tsft * Tsft,
     Tsft=Tsft,
+    Band=Band,
     detectors=IFO,
     sqrtSX=0,
     noiseSFTs=os.path.join(
@@ -108,8 +113,8 @@ add_signal_writer.make_data()
 coherent_search = pyfstat.ComputeFstat(
     tref=add_signal_writer.tref,
     sftfilepattern=sftfilepattern,
-    minCoverFreq=noise_and_signal_writer.F0 - 0.001,
-    maxCoverFreq=noise_and_signal_writer.F0 + 0.001,
+    minCoverFreq=-0.5,
+    maxCoverFreq=-0.5,
 )
 FS_2 = coherent_search.get_fullycoherent_twoF(
     add_signal_writer.tstart,

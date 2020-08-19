@@ -17,7 +17,7 @@ maxStartTime = minStartTime + duration
 tref = minStartTime
 
 h0 = 1e-23
-cosi = 0
+cosi = 1.0
 sqrtSX = 1e-22
 detectors = "H1,L1"
 
