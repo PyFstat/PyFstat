@@ -26,10 +26,12 @@ tstart = 1000000000
 duration = 10 * 86400
 tend = tstart + duration
 tref = 0.5 * (tstart + tend)
+IFOs = "H1"
 
 depth = 20
 
 h0 = sqrtSX / depth
+cosi = 0
 
 data = pyfstat.Writer(
     label=label,
@@ -43,7 +45,9 @@ data = pyfstat.Writer(
     Alpha=Alpha,
     Delta=Delta,
     h0=h0,
+    cosi=cosi,
     sqrtSX=sqrtSX,
+    detectors=IFOs,
 )
 data.make_data()
 

@@ -17,6 +17,7 @@ maxStartTime = minStartTime + duration
 tref = minStartTime
 
 h0 = 1e-23
+cosi = 0
 sqrtSX = 1e-22
 detectors = "H1,L1"
 
@@ -34,6 +35,7 @@ transient = pyfstat.Writer(
     Alpha=Alpha,
     Delta=Delta,
     h0=h0,
+    cosi=cosi,
     detectors=detectors,
     sqrtSX=sqrtSX,
     Tsft=Tsft,
