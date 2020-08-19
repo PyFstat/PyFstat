@@ -51,6 +51,8 @@ class Writer(BaseSearchClass):
         SFTWindowBeta=0.0,
         Band=None,
         detectors=None,
+        earth_ephem=None,
+        sun_ephem=None,
         minStartTime=None,
         maxStartTime=None,
         transientWindowType="none",
@@ -102,7 +104,7 @@ class Writer(BaseSearchClass):
                 "Options 'minStartTime' and 'maxStartTime' are no longer supported!"
             )
 
-        self.set_ephemeris_files()
+        self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.basic_setup()
         self.calculate_fmin_Band()
 
@@ -691,6 +693,8 @@ class BinaryModulatedWriter(Writer):
         SFTWindowBeta=0.0,
         Band=None,
         detectors=None,
+        earth_ephem=None,
+        sun_ephem=None,
         minStartTime=None,
         maxStartTime=None,
         transientWindowType="none",
@@ -739,6 +743,8 @@ class BinaryModulatedWriter(Writer):
             noiseSFTs=noiseSFTs,
             Band=Band,
             detectors=detectors,
+            earth_ephem=earth_ephem,
+            sun_ephem=sun_ephem,
             transientWindowType=transientWindowType,
             transientStartTime=transientStartTime,
             transientTau=transientTau,
@@ -861,6 +867,8 @@ class GlitchWriter(Writer):
         SFTWindowBeta=0.0,
         Band=None,
         detectors=None,
+        earth_ephem=None,
+        sun_ephem=None,
         minStartTime=None,
         maxStartTime=None,
         transientWindowType="rect",
@@ -896,7 +904,7 @@ class GlitchWriter(Writer):
                 "Options 'minStartTime' and 'maxStartTime' are no longer supported!"
             )
 
-        self.set_ephemeris_files()
+        self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.basic_setup()
         self.calculate_fmin_Band()
 
@@ -995,6 +1003,8 @@ class FrequencyModulatedArtifactWriter(Writer):
         minStartTime=None,
         maxStartTime=None,
         detectors=None,
+        earth_ephem=None,
+        sun_ephem=None,
         randSeed=None,
     ):
         """
@@ -1026,7 +1036,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         self.F2 = 0
 
         self.basic_setup()
-        self.set_ephemeris_files()
+        self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.tstart = int(tstart)
         self.duration = int(duration)
 
