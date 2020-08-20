@@ -453,52 +453,9 @@ class TestPar(BaseForTestsWithOutdir):
         self.assertTrue(par["y"] == 10)
 
 
-class TestBaseSearchClass(BaseForTestsWithData):
-    def test_shift_matrix(self):
-        BSC = pyfstat.BaseSearchClass()
-        dT = 10
-        a = BSC._shift_matrix(4, dT)
-        b = np.array(
-            [
-                [
-                    1,
-                    2 * np.pi * dT,
-                    2 * np.pi * dT ** 2 / 2.0,
-                    2 * np.pi * dT ** 3 / 6.0,
-                ],
-                [0, 1, dT, dT ** 2 / 2.0],
-                [0, 0, 1, dT],
-                [0, 0, 0, 1],
-            ]
-        )
-        self.assertTrue(np.array_equal(a, b))
-
-    def test_shift_coefficients(self):
-        BSC = pyfstat.BaseSearchClass()
-        thetaA = np.array([10.0, 1e2, 10.0, 1e2])
-        dT = 100
-
-        # Calculate the 'long' way
-        thetaB = np.zeros(len(thetaA))
-        thetaB[3] = thetaA[3]
-        thetaB[2] = thetaA[2] + thetaA[3] * dT
-        thetaB[1] = thetaA[1] + thetaA[2] * dT + 0.5 * thetaA[3] * dT ** 2
-        thetaB[0] = thetaA[0] + 2 * np.pi * (
-            thetaA[1] * dT + 0.5 * thetaA[2] * dT ** 2 + thetaA[3] * dT ** 3 / 6.0
-        )
-
-        self.assertTrue(np.array_equal(thetaB, BSC._shift_coefficients(thetaA, dT)))
-
-    def test_shift_coefficients_loop(self):
-        BSC = pyfstat.BaseSearchClass()
-        thetaA = np.array([10.0, 1e2, 10.0, 1e2])
-        dT = 1e1
-        thetaB = BSC._shift_coefficients(thetaA, dT)
-        self.assertTrue(
-            np.allclose(
-                thetaA, BSC._shift_coefficients(thetaB, -dT), rtol=1e-9, atol=1e-9
-            )
-        )
+class TestBaseSearchClass(unittest.TestCase):
+    # TODO test the basic methods
+    pass
 
 
 class TestComputeFstat(BaseForTestsWithData):
@@ -748,6 +705,54 @@ class TestComputeFstatNoNoise(BaseForTestsWithData):
             self.Writer.Delta,
         )
         self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
+
+
+class TestSearchForSignalWithJumps(TestBaseSearchClass):
+    def test_shift_matrix(self):
+        search = pyfstat.SearchForSignalWithJumps()
+        dT = 10
+        a = search._shift_matrix(4, dT)
+        b = np.array(
+            [
+                [
+                    1,
+                    2 * np.pi * dT,
+                    2 * np.pi * dT ** 2 / 2.0,
+                    2 * np.pi * dT ** 3 / 6.0,
+                ],
+                [0, 1, dT, dT ** 2 / 2.0],
+                [0, 0, 1, dT],
+                [0, 0, 0, 1],
+            ]
+        )
+        self.assertTrue(np.array_equal(a, b))
+
+    def test_shift_coefficients(self):
+        search = pyfstat.SearchForSignalWithJumps()
+        thetaA = np.array([10.0, 1e2, 10.0, 1e2])
+        dT = 100
+
+        # Calculate the 'long' way
+        thetaB = np.zeros(len(thetaA))
+        thetaB[3] = thetaA[3]
+        thetaB[2] = thetaA[2] + thetaA[3] * dT
+        thetaB[1] = thetaA[1] + thetaA[2] * dT + 0.5 * thetaA[3] * dT ** 2
+        thetaB[0] = thetaA[0] + 2 * np.pi * (
+            thetaA[1] * dT + 0.5 * thetaA[2] * dT ** 2 + thetaA[3] * dT ** 3 / 6.0
+        )
+
+        self.assertTrue(np.array_equal(thetaB, search._shift_coefficients(thetaA, dT)))
+
+    def test_shift_coefficients_loop(self):
+        search = pyfstat.SearchForSignalWithJumps()
+        thetaA = np.array([10.0, 1e2, 10.0, 1e2])
+        dT = 1e1
+        thetaB = search._shift_coefficients(thetaA, dT)
+        self.assertTrue(
+            np.allclose(
+                thetaA, search._shift_coefficients(thetaB, -dT), rtol=1e-9, atol=1e-9
+            )
+        )
 
 
 class TestSemiCoherentSearch(BaseForTestsWithData):

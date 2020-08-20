@@ -294,109 +294,6 @@ class BaseSearchClass(object):
         )
         logging.getLogger().addHandler(fh)
 
-    def _shift_matrix(self, n, dT):
-        """ Generate the shift matrix
-
-        Parameters
-        ----------
-        n : int
-            The dimension of the shift-matrix to generate
-        dT : float
-            The time delta of the shift matrix
-
-        Returns
-        -------
-        m : ndarray, shape (n,)
-            The shift matrix.
-
-        """
-        m = np.zeros((n, n))
-        factorial = np.math.factorial
-        for i in range(n):
-            for j in range(n):
-                if i == j:
-                    m[i, j] = 1.0
-                elif i > j:
-                    m[i, j] = 0.0
-                else:
-                    if i == 0:
-                        m[i, j] = 2 * np.pi * float(dT) ** (j - i) / factorial(j - i)
-                    else:
-                        m[i, j] = float(dT) ** (j - i) / factorial(j - i)
-        return m
-
-    def _shift_coefficients(self, theta, dT):
-        """ Shift a set of coefficients by dT
-
-        Parameters
-        ----------
-        theta : array-like, shape (n,)
-            Vector of the expansion coefficients to transform starting from the
-            lowest degree e.g [phi, F0, F1,...].
-        dT : float
-            Difference between the two reference times as tref_new - tref_old.
-
-        Returns
-        -------
-        theta_new : ndarray, shape (n,)
-            Vector of the coefficients as evaluated as the new reference time.
-        """
-        n = len(theta)
-        m = self._shift_matrix(n, dT)
-        return np.dot(m, theta)
-
-    def _calculate_thetas(self, theta, delta_thetas, tbounds, theta0_idx=0):
-        """ Calculates the set of thetas given delta_thetas, the jumps
-
-        This is used when generating data containing glitches or timing noise.
-        Specifically, the source parameters of the signal are not constant in
-        time, but jump by `delta_theta` at `tbounds`.
-
-        Parameters
-        ----------
-        theta : array_like
-            The source parameters of size (n,).
-        delta_thetas : array_like
-            The jumps in the source parameters of size (m, n) where m is the
-            number of jumps.
-        tbounds : array_like
-            Time boundaries of the jumps of size (m+2,).
-        theta0_idx : int
-            Index of the segment for which the theta are defined.
-
-        Returns
-        -------
-        ndarray
-            The set of thetas, shape (m+1, n).
-
-        """
-        thetas = [theta]
-        for i, dt in enumerate(delta_thetas):
-            if i < theta0_idx:
-                pre_theta_at_ith_glitch = self._shift_coefficients(
-                    thetas[0], tbounds[i + 1] - self.tref
-                )
-                post_theta_at_ith_glitch = pre_theta_at_ith_glitch - dt
-                thetas.insert(
-                    0,
-                    self._shift_coefficients(
-                        post_theta_at_ith_glitch, self.tref - tbounds[i + 1]
-                    ),
-                )
-
-            elif i >= theta0_idx:
-                pre_theta_at_ith_glitch = self._shift_coefficients(
-                    thetas[i], tbounds[i + 1] - self.tref
-                )
-                post_theta_at_ith_glitch = pre_theta_at_ith_glitch + dt
-                thetas.append(
-                    self._shift_coefficients(
-                        post_theta_at_ith_glitch, self.tref - tbounds[i + 1]
-                    )
-                )
-        self.thetas_at_tref = thetas
-        return thetas
-
     def _get_list_of_matching_sfts(self):
         """ Returns a list of sfts matching the attribute sftfilepattern """
         sftfilepatternlist = np.atleast_1d(self.sftfilepattern.split(";"))
@@ -1739,7 +1636,114 @@ class SemiCoherentSearch(ComputeFstat):
         return twoF
 
 
-class SemiCoherentGlitchSearch(ComputeFstat):
+class SearchForSignalWithJumps(BaseSearchClass):
+    """ A class which just adds some useful methods for glitches or timing noise """
+
+    def _shift_matrix(self, n, dT):
+        """ Generate the shift matrix
+
+        Parameters
+        ----------
+        n : int
+            The dimension of the shift-matrix to generate
+        dT : float
+            The time delta of the shift matrix
+
+        Returns
+        -------
+        m : ndarray, shape (n,)
+            The shift matrix.
+
+        """
+        m = np.zeros((n, n))
+        factorial = np.math.factorial
+        for i in range(n):
+            for j in range(n):
+                if i == j:
+                    m[i, j] = 1.0
+                elif i > j:
+                    m[i, j] = 0.0
+                else:
+                    if i == 0:
+                        m[i, j] = 2 * np.pi * float(dT) ** (j - i) / factorial(j - i)
+                    else:
+                        m[i, j] = float(dT) ** (j - i) / factorial(j - i)
+        return m
+
+    def _shift_coefficients(self, theta, dT):
+        """ Shift a set of coefficients by dT
+
+        Parameters
+        ----------
+        theta : array-like, shape (n,)
+            Vector of the expansion coefficients to transform starting from the
+            lowest degree e.g [phi, F0, F1,...].
+        dT : float
+            Difference between the two reference times as tref_new - tref_old.
+
+        Returns
+        -------
+        theta_new : ndarray, shape (n,)
+            Vector of the coefficients as evaluated as the new reference time.
+        """
+        n = len(theta)
+        m = self._shift_matrix(n, dT)
+        return np.dot(m, theta)
+
+    def _calculate_thetas(self, theta, delta_thetas, tbounds, theta0_idx=0):
+        """ Calculates the set of thetas given delta_thetas, the jumps
+
+        This is used when generating data containing glitches or timing noise.
+        Specifically, the source parameters of the signal are not constant in
+        time, but jump by `delta_theta` at `tbounds`.
+
+        Parameters
+        ----------
+        theta : array_like
+            The source parameters of size (n,).
+        delta_thetas : array_like
+            The jumps in the source parameters of size (m, n) where m is the
+            number of jumps.
+        tbounds : array_like
+            Time boundaries of the jumps of size (m+2,).
+        theta0_idx : int
+            Index of the segment for which the theta are defined.
+
+        Returns
+        -------
+        ndarray
+            The set of thetas, shape (m+1, n).
+
+        """
+        thetas = [theta]
+        for i, dt in enumerate(delta_thetas):
+            if i < theta0_idx:
+                pre_theta_at_ith_glitch = self._shift_coefficients(
+                    thetas[0], tbounds[i + 1] - self.tref
+                )
+                post_theta_at_ith_glitch = pre_theta_at_ith_glitch - dt
+                thetas.insert(
+                    0,
+                    self._shift_coefficients(
+                        post_theta_at_ith_glitch, self.tref - tbounds[i + 1]
+                    ),
+                )
+
+            elif i >= theta0_idx:
+                pre_theta_at_ith_glitch = self._shift_coefficients(
+                    thetas[i], tbounds[i + 1] - self.tref
+                )
+                post_theta_at_ith_glitch = pre_theta_at_ith_glitch + dt
+                thetas.append(
+                    self._shift_coefficients(
+                        post_theta_at_ith_glitch, self.tref - tbounds[i + 1]
+                    )
+                )
+        self.thetas_at_tref = thetas
+        return thetas
+
+
+class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
     """ A semi-coherent glitch search
 
     This implements a basic `semi-coherent glitch F-stat in which the data
