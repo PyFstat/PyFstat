@@ -57,7 +57,7 @@ mcmc = pyfstat.MCMCSearch(
     ntemps=ntemps,
     log10beta_min=log10beta_min,
 )
-mcmc.run()
+mcmc.run(walker_plot_args={"plot_det_stat": True})
 mcmc.plot_corner()
 mcmc.print_summary()
 mcmc.plot_prior_posterior()

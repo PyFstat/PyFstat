@@ -1453,7 +1453,7 @@ class MCMCSearch(core.BaseSearchClass):
                 if burnin_idx and add_det_stat_burnin:
                     burn_in_vals = lnl[:, :burnin_idx].flatten()
                     try:
-                        twoF_burnin = (
+                        twoF_burnin = 2 * (
                             burn_in_vals[~np.isnan(burn_in_vals)] - self.likelihoodcoef
                         )
                         axes[-1].hist(twoF_burnin, bins=50, histtype="step", color="C3")
@@ -1467,7 +1467,7 @@ class MCMCSearch(core.BaseSearchClass):
                     twoF_burnin = []
                 prod_vals = lnl[:, burnin_idx:].flatten()
                 try:
-                    twoF = prod_vals[~np.isnan(prod_vals)] - self.likelihoodcoef
+                    twoF = 2 * (prod_vals[~np.isnan(prod_vals)] - self.likelihoodcoef)
                     axes[-1].hist(twoF, bins=50, histtype="step", color="k")
                 except ValueError:
                     logging.info(
