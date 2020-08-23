@@ -57,7 +57,11 @@ theta_prior = {
         "upper": 45.01 * 24 * 3600.0,
     },
     "ecc": signal_parameters["ecc"],
-    "tp": {"type": "unif", "lower": 0.999 * mid_time, "upper": 1.001 * mid_time,},
+    "tp": {
+        "type": "unif",
+        "lower": mid_time - signal_parameters["period"] / 2.0,
+        "upper": mid_time + signal_parameters["period"] / 2.0,
+    },
     "argp": signal_parameters["argp"],
 }
 
@@ -82,6 +86,6 @@ mcmc = pyfstat.MCMCSemiCoherentSearch(
     binary=True,
 )
 mcmc.run()
-mcmc.plot_corner(add_prior=True)
+mcmc.plot_corner(add_prior=True, truths=signal_parameters)
 mcmc.plot_prior_posterior()
 mcmc.print_summary()

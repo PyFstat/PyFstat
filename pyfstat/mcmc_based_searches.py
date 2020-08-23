@@ -883,9 +883,18 @@ class MCMCSearch(core.BaseSearchClass):
 
         """
 
-        if "truths" in kwargs and len(kwargs["truths"]) != self.ndim:
-            logging.warning("len(Truths) != ndim, Truths will be ignored")
-            kwargs["truths"] = None
+        if "truths" in kwargs:
+
+            if isinstance(kwargs["truths"], dict):
+                kwargs["truths"] = [kwargs["truths"][key] for key in self.theta_keys]
+
+            if len(kwargs["truths"]) != self.ndim:
+                logging.warning("len(Truths) != ndim, Truths will be ignored")
+                kwargs["truths"] = None
+            else:
+                kwargs["truths"] = self._scale_samples(
+                    np.reshape(kwargs["truths"], (1, -1)), self.theta_keys
+                ).ravel()
 
         if self.ndim < 2:
             with plt.rc_context(rc_context):
