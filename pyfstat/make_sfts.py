@@ -15,7 +15,6 @@ from pyfstat.core import (
     SearchForSignalWithJumps,
     tqdm,
     args,
-    predict_fstat,
 )
 import pyfstat.helper_functions as helper_functions
 
@@ -562,7 +561,7 @@ class Writer(BaseSearchClass):
 
     def predict_fstat(self, assumeSqrtSX=None):
         """ Wrapper to lalapps_PredictFstat """
-        twoF_expected, twoF_sigma = predict_fstat(
+        twoF_expected, twoF_sigma = helper_functions.predict_fstat(
             h0=self.h0,
             cosi=self.cosi,
             psi=self.psi,

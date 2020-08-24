@@ -37,86 +37,6 @@ args, tqdm = helper_functions.set_up_command_line_arguments()
 detector_colors = {"h1": "C0", "l1": "C1"}
 
 
-def predict_fstat(
-    h0,
-    cosi,
-    psi,
-    Alpha,
-    Delta,
-    Freq,
-    sftfilepattern,
-    minStartTime,
-    maxStartTime,
-    IFOs=None,
-    assumeSqrtSX=None,
-    tempory_filename="fs.tmp",
-    earth_ephem=None,
-    sun_ephem=None,
-    transientWindowType="none",
-    transientStartTime=None,
-    transientTau=None,
-    **kwargs
-):
-    """ Wrapper to lalapps_PredictFstat
-
-    Parameters
-    ----------
-    h0, cosi, psi, Alpha, Delta, Freq : float
-        Signal properties, see `lalapps_PredictFstat --help` for more info.
-    sftfilepattern : str
-        Pattern matching the sftfiles to use.
-    minStartTime, maxStartTime : int
-    IFOs : str
-        See `lalapps_PredictFstat --help`
-    assumeSqrtSX : float or None
-        See `lalapps_PredictFstat --help`, if None this option is not used
-
-    Returns
-    -------
-    twoF_expected, twoF_sigma : float
-        The expectation and standard deviation of 2F
-
-    """
-
-    cl_pfs = []
-    cl_pfs.append("lalapps_PredictFstat")
-    cl_pfs.append("--h0={}".format(h0))
-    cl_pfs.append("--cosi={}".format(cosi))
-    cl_pfs.append("--psi={}".format(psi))
-    cl_pfs.append("--Alpha={}".format(Alpha))
-    cl_pfs.append("--Delta={}".format(Delta))
-    cl_pfs.append("--Freq={}".format(Freq))
-
-    cl_pfs.append("--DataFiles='{}'".format(sftfilepattern))
-    if assumeSqrtSX:
-        cl_pfs.append("--assumeSqrtSX={}".format(assumeSqrtSX))
-    # if IFOs:
-    #    cl_pfs.append("--IFOs={}".format(IFOs))
-
-    cl_pfs.append("--minStartTime={}".format(int(minStartTime)))
-    cl_pfs.append("--maxStartTime={}".format(int(maxStartTime)))
-    cl_pfs.append("--outputFstat={}".format(tempory_filename))
-
-    earth_ephem_default, sun_ephem_default = helper_functions.get_ephemeris_files()
-    if earth_ephem is None:
-        earth_ephem = earth_ephem_default
-    if sun_ephem is None:
-        sun_ephem = sun_ephem_default
-    cl_pfs.append("--ephemEarth='{}'".format(earth_ephem))
-    cl_pfs.append("--ephemSun='{}'".format(sun_ephem))
-
-    if transientWindowType != "none":
-        cl_pfs.append("--transientWindowType='{}'".format(transientWindowType))
-        cl_pfs.append("--transientStartTime='{}'".format(transientStartTime))
-        cl_pfs.append("--transientTau='{}'".format(transientTau))
-
-    cl_pfs = " ".join(cl_pfs)
-    helper_functions.run_commandline(cl_pfs)
-    d = helper_functions.read_par(filename=tempory_filename)
-    os.remove(tempory_filename)
-    return float(d["twoF_expected"]), float(d["twoF_sigma"])
-
-
 class BaseSearchClass(object):
     """ The base search class providing parent methods to other searches """
 
@@ -1115,7 +1035,7 @@ class ComputeFstat(BaseSearchClass):
         times = np.linspace(self.minStartTime, self.maxStartTime, N + 1)[1:]
         times = np.insert(times, 0, self.minStartTime + 86400 / 2.0)
         out = [
-            predict_fstat(
+            helper_functions.predict_fstat(
                 minStartTime=self.minStartTime,
                 maxStartTime=t,
                 sftfilepattern=self.sftfilepattern,
