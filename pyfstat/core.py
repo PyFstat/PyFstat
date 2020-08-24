@@ -440,8 +440,9 @@ class ComputeFstat(BaseSearchClass):
             grid resolutions in transient start-time and duration,
             both default to Tsft
         detectors : str
-            Two character reference to the data to use, specify None for no
-            contraint. If multiple-separate by comma.
+            Two-character references to the detectors for which to use data.
+            Specify None for no constraint.
+            For multiple detectors, separate by comma.
         minCoverFreq, maxCoverFreq : float
             The min and max cover frequency passed to CreateFstatInput.
             For negative values, these will be used as offsets from the min/max
@@ -551,8 +552,8 @@ class ComputeFstat(BaseSearchClass):
         if self.detectors:
             if "," in self.detectors:
                 logging.warning(
-                    "Multiple detector selection not available,"
-                    " using all available data"
+                    "Multiple-detector constraints not available,"
+                    " using all available data."
                 )
             else:
                 constraints.detector = self.detectors
@@ -611,13 +612,12 @@ class ComputeFstat(BaseSearchClass):
             # maxStartTime must always be > last actual SFT timestamp
             self.maxStartTime = int(SFT_timestamps[-1]) + self.Tsft
 
-        detector_names = list(set([d.header.name for d in self.SFTCatalog.data]))
-        self.detector_names = detector_names
-        if len(detector_names) == 0:
+        self.detector_names = list(set([d.header.name for d in self.SFTCatalog.data]))
+        if len(self.detector_names) == 0:
             raise ValueError("No data loaded.")
         logging.info(
-            "Loaded {} data files from detectors {}".format(
-                len(SFT_timestamps), detector_names
+            "Loaded {} SFTs from detectors {}".format(
+                len(SFT_timestamps), self.detector_names
             )
         )
 
