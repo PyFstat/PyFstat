@@ -405,7 +405,6 @@ class ComputeFstat(BaseSearchClass):
         computeAtoms=False,
         earth_ephem=None,
         sun_ephem=None,
-        estimate_covering_band=None,
     ):
         """
         Parameters
@@ -489,18 +488,7 @@ class ComputeFstat(BaseSearchClass):
             Sun ephemeris file path
             if None, will check standard sources as per
             helper_functions.get_ephemeris_files()
-        estimate_covering_band : bool
-            DEPRECATED: default behaviour is now equivalent to old
-            estimate_covering_band=True.
         """
-
-        if estimate_covering_band is not None:
-            raise ValueError(
-                "Option 'estimate_covering_band' is no longer supported!"
-                " Default behaviour is now equivalent to old"
-                " estimate_covering_band=True,"
-                " unless [minCoverFreq,maxCoverFreq] are given."
-            )
 
         self._set_init_params_dict(locals())
         self.set_ephemeris_files(earth_ephem, sun_ephem)
@@ -1444,7 +1432,6 @@ class SemiCoherentSearch(ComputeFstat):
         RngMedWindow=None,
         earth_ephem=None,
         sun_ephem=None,
-        estimate_covering_band=None,
     ):
         """
         Parameters
@@ -1468,14 +1455,6 @@ class SemiCoherentSearch(ComputeFstat):
 
         For all other parameters, see pyfstat.ComputeFStat.
         """
-
-        if estimate_covering_band is not None:
-            raise ValueError(
-                "Option 'estimate_covering_band' is no longer supported!"
-                " Default behaviour is now equivalent to old"
-                " estimate_covering_band=True,"
-                " unless [minCoverFreq,maxCoverFreq] are given."
-            )
 
         self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
         self.set_ephemeris_files(earth_ephem, sun_ephem)
@@ -1775,7 +1754,6 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         injectSources=None,
         earth_ephem=None,
         sun_ephem=None,
-        estimate_covering_band=None,
     ):
         """
         Parameters
@@ -1797,14 +1775,6 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
 
         For all other parameters, see pyfstat.ComputeFStat.
         """
-
-        if estimate_covering_band is not None:
-            raise ValueError(
-                "Option 'estimate_covering_band' is no longer supported!"
-                " Default behaviour is now equivalent to old"
-                " estimate_covering_band=True,"
-                " unless [minCoverFreq,maxCoverFreq] are given."
-            )
 
         self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
         self.set_ephemeris_files(earth_ephem, sun_ephem)
