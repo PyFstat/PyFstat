@@ -37,164 +37,6 @@ args, tqdm = helper_functions.set_up_command_line_arguments()
 detector_colors = {"h1": "C0", "l1": "C1"}
 
 
-def translate_keys_to_lal(dictionary):
-    """Convert input keys into lal input keys
-
-    Input keys are F0, F1, F2, ..., while LAL functions
-    prefer to use Freq, f1dot, f2dot, ....
-
-    Since lal keys are only used to call for lal routines,
-    it makes sense to have this function defined this way
-    so it can be called on the fly.
-
-    Parameters
-    ----------
-    dictionary: dict
-        Dictionary to translate. A copy will be made (an returned)
-        before translation takes place.
-
-    Returns
-    -------
-    translated_dict: dict
-        Copy of "dictionary" with new keys according to lal.
-    """
-
-    translation = {
-        "F0": "Freq",
-        "F1": "f1dot",
-        "F2": "f2dot",
-        "phi": "phi0",
-        "tref": "refTime",
-        "asini": "orbitasini",
-        "period": "orbitPeriod",
-        "tp": "orbitTp",
-        "argp": "orbitArgp",
-        "ecc": "orbitEcc",
-        "transient_tstart": "transient-t0Epoch",
-        "transient_duration": "transient-tau",
-    }
-
-    keys_to_translate = [key for key in dictionary.keys() if key in translation]
-
-    translated_dict = dictionary.copy()
-    for key in keys_to_translate:
-        translated_dict[translation[key]] = translated_dict.pop(key)
-    return translated_dict
-
-
-class Bunch(object):
-    """ Turns dictionary into object with attribute-style access
-
-    Parameters
-    ----------
-    dict
-        Input dictionary
-
-    Examples
-    --------
-    >>> data = Bunch(dict(x=1, y=[1, 2, 3], z=True))
-    >>> print(data.x)
-    1
-    >>> print(data.y)
-    [1, 2, 3]
-    >>> print(data.z)
-    True
-
-    """
-
-    def __init__(self, dictionary):
-        self.__dict__.update(dictionary)
-
-
-def read_par(
-    filename=None,
-    label=None,
-    outdir=None,
-    suffix="par",
-    return_type="dict",
-    comments=["%", "#"],
-    raise_error=False,
-):
-    """ Read in a .par or .loudest file, returns a dict or Bunch of the data
-
-    Parameters
-    ----------
-    filename : str
-        Filename (path) containing rows of `key=val` data to read in.
-    label, outdir, suffix : str, optional
-        If filename is None, form the file to read as `outdir/label.suffix`.
-    return_type : {'dict', 'bunch'}, optional
-        If `dict`, return a dictionary, if 'bunch' return a Bunch
-    comments : str or list of strings, optional
-        Characters denoting that a row is a comment.
-    raise_error : bool, optional
-        If True, raise an error for lines which are not comments, but cannot
-        be read.
-
-    Notes
-    -----
-    This can also be used to read in .loudest files, or any file which has
-    rows of `key=val` data (in which the val can be understood using eval(val)
-
-    Returns
-    -------
-    d: Bunch or dict
-        The par values as either a `Bunch` or dict type
-
-    """
-    if filename is None:
-        filename = os.path.join(outdir, "{}.{}".format(label, suffix))
-    if os.path.isfile(filename) is False:
-        raise ValueError("No file {} found".format(filename))
-    d = {}
-    with open(filename, "r") as f:
-        d = _get_dictionary_from_lines(f, comments, raise_error)
-    if return_type in ["bunch", "Bunch"]:
-        return Bunch(d)
-    elif return_type in ["dict", "dictionary"]:
-        return d
-    else:
-        raise ValueError("return_type {} not understood".format(return_type))
-
-
-def _get_dictionary_from_lines(lines, comments, raise_error):
-    """ Return dictionary of key=val pairs for each line in lines
-
-    Parameters
-    ----------
-    comments : str or list of strings
-        Characters denoting that a row is a comment.
-    raise_error : bool
-        If True, raise an error for lines which are not comments, but cannot
-        be read.
-
-    Returns
-    -------
-    d: Bunch or dict
-        The par values as either a `Bunch` or dict type
-
-    """
-    d = {}
-    for line in lines:
-        if line[0] not in comments and len(line.split("=")) == 2:
-            try:
-                key, val = line.rstrip("\n").split("=")
-                key = key.strip()
-                val = val.strip()
-                if (val[0] in ["'", '"']) and (val[-1] in ["'", '"']):
-                    d[key] = val.lstrip('"').lstrip("'").rstrip('"').rstrip("'")
-                else:
-                    try:
-                        d[key] = np.float64(eval(val.rstrip("; ")))
-                    except NameError:
-                        d[key] = val.rstrip("; ")
-            except SyntaxError:
-                if raise_error:
-                    raise IOError("Line {} not understood".format(line))
-                pass
-    return d
-
-
 def predict_fstat(
     h0,
     cosi,
@@ -270,7 +112,7 @@ def predict_fstat(
 
     cl_pfs = " ".join(cl_pfs)
     helper_functions.run_commandline(cl_pfs)
-    d = read_par(filename=tempory_filename)
+    d = helper_functions.read_par(filename=tempory_filename)
     os.remove(tempory_filename)
     return float(d["twoF_expected"]), float(d["twoF_sigma"])
 
@@ -370,6 +212,62 @@ class BaseSearchClass(object):
         ]
         header += self.pprint_init_params_dict()
         return header
+
+    def read_par(
+        self, filename=None, label=None, outdir=None, suffix="par", raise_error=True
+    ):
+        params_dict = helper_functions.read_par(
+            filename=filename,
+            label=label or getattr(self, "label", None),
+            outdir=outdir or getattr(self, "outdir", None),
+            suffix=suffix,
+            raise_error=raise_error,
+        )
+        return params_dict
+
+    def translate_keys_to_lal(self, dictionary):
+        """Convert input keys into lal input keys
+
+        Input keys are F0, F1, F2, ..., while LAL functions
+        prefer to use Freq, f1dot, f2dot, ....
+
+        Since lal keys are only used to call for lal routines,
+        it makes sense to have this function defined this way
+        so it can be called on the fly.
+
+        Parameters
+        ----------
+        dictionary: dict
+            Dictionary to translate. A copy will be made (an returned)
+            before translation takes place.
+
+        Returns
+        -------
+        translated_dict: dict
+            Copy of "dictionary" with new keys according to lal.
+        """
+
+        translation = {
+            "F0": "Freq",
+            "F1": "f1dot",
+            "F2": "f2dot",
+            "phi": "phi0",
+            "tref": "refTime",
+            "asini": "orbitasini",
+            "period": "orbitPeriod",
+            "tp": "orbitTp",
+            "argp": "orbitArgp",
+            "ecc": "orbitEcc",
+            "transient_tstart": "transient-t0Epoch",
+            "transient_duration": "transient-tau",
+        }
+
+        keys_to_translate = [key for key in dictionary.keys() if key in translation]
+
+        translated_dict = dictionary.copy()
+        for key in keys_to_translate:
+            translated_dict[translation[key]] = translated_dict.pop(key)
+        return translated_dict
 
 
 class ComputeFstat(BaseSearchClass):
@@ -1207,7 +1105,9 @@ class ComputeFstat(BaseSearchClass):
         if pfs_input is None:
             if os.path.isfile(os.path.join(outdir, label + ".loudest")) is False:
                 raise ValueError("Need a loudest file to add the predicted Fstat")
-            loudest = read_par(label=label, outdir=outdir, suffix="loudest")
+            loudest = self.read_par(
+                label=label, outdir=outdir, suffix="loudest", raise_error=False
+            )
             pfs_input = {
                 key: loudest[key]
                 for key in ["h0", "cosi", "psi", "Alpha", "Delta", "Freq"]
@@ -1377,7 +1277,7 @@ class ComputeFstat(BaseSearchClass):
                 self.sun_ephem,
             )
         )
-        loudest = read_par(LoudestFile, return_type="dict")
+        loudest = self.read_par(filename=LoudestFile, raise_error=False)
         os.remove(LoudestFile)
         return loudest
 

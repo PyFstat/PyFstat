@@ -628,3 +628,87 @@ def get_parameters_dict_from_file_header(outfile, comments="#", eval_values=Fals
             val = eval(val)  # DANGER
         params_dict[key] = val
     return params_dict
+
+
+def read_par(
+    filename=None,
+    label=None,
+    outdir=None,
+    suffix="par",
+    comments=["%", "#"],
+    raise_error=False,
+):
+    """ Read in a .par or .loudest file, returns a dict of the data
+
+    Parameters
+    ----------
+    filename : str
+        Filename (path) containing rows of `key=val` data to read in.
+    label, outdir, suffix : str, optional
+        If filename is None, form the file to read as `outdir/label.suffix`.
+    comments : str or list of strings, optional
+        Characters denoting that a row is a comment.
+    raise_error : bool, optional
+        If True, raise an error for lines which are not comments, but cannot
+        be read.
+
+    Notes
+    -----
+    This can also be used to read in .loudest files, or any file which has
+    rows of `key=val` data (in which the val can be understood using eval(val)
+
+    Returns
+    -------
+    d: dict
+        The par values as a dict type
+
+    """
+    if filename is None:
+        filename = os.path.join(outdir, "{}.{}".format(label, suffix))
+    if os.path.isfile(filename) is False:
+        raise ValueError("No file {} found".format(filename))
+    d = {}
+    with open(filename, "r") as f:
+        d = get_dictionary_from_lines(f, comments, raise_error)
+    return d
+
+
+def get_dictionary_from_lines(lines, comments, raise_error):
+    """ Return dictionary of key=val pairs for each line in lines
+
+    Parameters
+    ----------
+    comments : str or list of strings
+        Characters denoting that a row is a comment.
+    raise_error : bool
+        If True, raise an error for lines which are not comments, but cannot
+        be read.
+        Note that CFSv2 "loudest" files contain complex numbers which fill raise
+        an error unless this is set to False.
+
+    Returns
+    -------
+    d: dict
+        The par values as a dict type
+
+    """
+    d = {}
+    for line in lines:
+        if line[0] not in comments and len(line.split("=")) == 2:
+            try:
+                key, val = line.rstrip("\n").split("=")
+                key = key.strip()
+                val = val.strip()
+                if (val[0] in ["'", '"']) and (val[-1] in ["'", '"']):
+                    d[key] = val.lstrip('"').lstrip("'").rstrip('"').rstrip("'")
+                else:
+                    try:
+                        d[key] = np.float64(eval(val.rstrip("; ")))
+                    except NameError:
+                        d[key] = val.rstrip("; ")
+                    # FIXME: learn how to deal with complex numbers
+            except SyntaxError:
+                if raise_error:
+                    raise IOError("Line {} not understood".format(line))
+                pass
+    return d

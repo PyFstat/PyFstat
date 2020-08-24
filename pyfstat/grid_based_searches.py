@@ -20,7 +20,6 @@ from pyfstat.core import (
     SemiCoherentSearch,
     tqdm,
     args,
-    read_par,
 )
 import lalpulsar
 import lal
@@ -1721,7 +1720,7 @@ class DMoff_NO_SPIN(GridSearch):
         if type(par) == dict:
             self.par = par
         elif type(par) == str and os.path.isfile(par):
-            self.par = read_par(filename=par)
+            self.par = self.read_par(filename=par)
         else:
             raise ValueError("The .par file does not exist")
 

@@ -16,12 +16,12 @@ import dill as pickle
 from scipy.stats import lognorm
 
 import pyfstat.core as core
-from pyfstat.core import tqdm, args, read_par, translate_keys_to_lal
+from pyfstat.core import BaseSearchClass, tqdm, args
 import pyfstat.optimal_setup_functions as optimal_setup_functions
 import pyfstat.helper_functions as helper_functions
 
 
-class MCMCSearch(core.BaseSearchClass):
+class MCMCSearch(BaseSearchClass):
     """MCMC search using ComputeFstat
 
     Parameters
@@ -1871,7 +1871,7 @@ class MCMCSearch(core.BaseSearchClass):
         """ Use lalapps_ComputeFstatistic_v2 to produce a .loudest file """
         logging.info("Running CFSv2 to get .loudest file")
         self.write_par(method="twoFmax")
-        params = read_par(label=self.label + "_max2F", outdir=self.outdir)
+        params = self.read_par(label=self.label + "_max2F")
         if np.any([key in params for key in ["delta_F0", "delta_F1", "tglitch"]]):
             raise RuntimeError(
                 "CFSv2 --outputLoudest cannot deal with glitch parameters."
@@ -1884,7 +1884,7 @@ class MCMCSearch(core.BaseSearchClass):
         for key in self.theta_prior:
             if key not in params:
                 params[key] = self.theta_prior[key]
-        params_sanitised = translate_keys_to_lal(params)
+        params_sanitised = self.translate_keys_to_lal(params)
         for key in ["transient-t0Epoch", "transient-t0Offset", "transient-tau"]:
             if (
                 key in params_sanitised
@@ -1897,7 +1897,7 @@ class MCMCSearch(core.BaseSearchClass):
                     )
                 )
                 params_sanitised[key] = rounded
-        signal_parameter_keys = translate_keys_to_lal(self.theta_prior).keys()
+        signal_parameter_keys = self.translate_keys_to_lal(self.theta_prior).keys()
 
         self.loudest_file = os.path.join(self.outdir, self.label + ".loudest")
         cmd = "lalapps_ComputeFstatistic_v2 "

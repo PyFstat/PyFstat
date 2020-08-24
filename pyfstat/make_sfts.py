@@ -16,7 +16,6 @@ from pyfstat.core import (
     tqdm,
     args,
     predict_fstat,
-    translate_keys_to_lal,
 )
 import pyfstat.helper_functions as helper_functions
 
@@ -284,7 +283,7 @@ class Writer(BaseSearchClass):
         return self.tstart + self.duration
 
     def parse_args_consistent_with_mfd(self):
-        self.signal_parameters = translate_keys_to_lal(
+        self.signal_parameters = self.translate_keys_to_lal(
             {
                 key: self.__dict__[key]
                 for key in self.signal_parameter_labels

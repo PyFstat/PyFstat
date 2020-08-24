@@ -483,26 +483,18 @@ class TestGlitchWriter(TestWriter):
         self.assertTrue(max_freq_glitch[-1] > max_freq_noglitch[-1])
 
 
-class TestBunch(unittest.TestCase):
-    def test_bunch(self):
-        b = pyfstat.core.Bunch(dict(x=10))
-        self.assertTrue(b.x == 10)
-
-
-class TestPar(BaseForTestsWithOutdir):
-    label = "TestPar"
+class TestReadParFile(BaseForTestsWithOutdir):
+    label = "TestReadParFile"
 
     def test(self):
         parfile = os.path.join(self.outdir, self.label + ".par")
         os.system('echo "x=100\ny=10" > ' + parfile)
 
-        par = pyfstat.core.read_par(parfile, return_type="Bunch")
-        self.assertTrue(par.x == 100)
-        self.assertTrue(par.y == 10)
+        par = pyfstat.helper_functions.read_par(filename=parfile)
+        self.assertTrue(par["x"] == 100)
+        self.assertTrue(par["y"] == 10)
 
-        par = pyfstat.core.read_par(
-            outdir=self.outdir, label=self.label, return_type="dict"
-        )
+        par = pyfstat.helper_functions.read_par(outdir=self.outdir, label=self.label)
         self.assertTrue(par["x"] == 100)
         self.assertTrue(par["y"] == 10)
 
@@ -623,7 +615,7 @@ class TestComputeFstat(BaseForTestsWithData):
         )
         self.assertTrue(np.abs(predicted_FS - FS_from_file) / FS_from_file < 0.3)
 
-        injectSourcesdict = pyfstat.core.read_par(injectSources)
+        injectSourcesdict = search.read_par(filename=injectSources)
         injectSourcesdict["F0"] = injectSourcesdict["Freq"]
         injectSourcesdict["F1"] = injectSourcesdict["f1dot"]
         injectSourcesdict["F2"] = injectSourcesdict["f2dot"]
