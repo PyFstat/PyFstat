@@ -1770,35 +1770,6 @@ class MCMCSearch(core.BaseSearchClass):
             d[k] = self.samples[jmax][i]
         return d, maxtwoF
 
-    def get_median_stds(self):
-        """ Returns a dict of the median and std of all production samples """
-        logging.warning(
-            "get_median_stds() method is deprecated"
-            " and will be removed in future releases,"
-            " use get_summary_stats() instead"
-            " and choose an appropriate set of estimators!"
-            " (Recommended: mean,std or median,lower90,upper90)"
-        )
-        d = OrderedDict()
-        repeats = []
-        for s, k in zip(self.samples.T, self.theta_keys):
-            if k in d and k not in repeats:
-                d[k + "_0"] = d[k]  # relabel the old key
-                d[k + "_0_std"] = d[k + "_std"]
-                d.pop(k)
-                d.pop(k + "_std")
-                repeats.append(k)
-            if k in repeats:
-                k = k + "_0"
-                count = 1
-                while k in d:
-                    k = k.replace("_{}".format(count - 1), "_{}".format(count))
-                    count += 1
-
-            d[k] = np.median(s)
-            d[k + "_std"] = np.std(s)
-        return d
-
     def get_summary_stats(self):
         """ Returns a dict of point estimates for all production samples """
         d = OrderedDict()
