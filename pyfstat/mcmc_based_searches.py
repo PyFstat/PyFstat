@@ -1135,6 +1135,8 @@ class MCMCSearch(core.BaseSearchClass):
     def plot_prior_posterior(self, normal_stds=2, injection_parameters=None):
         """ Plot the posterior in the context of the prior """
         fig, axes = plt.subplots(nrows=self.ndim, figsize=(8, 4 * self.ndim))
+        if self.ndim == 1:
+            axes = [axes]
         N = 1000
         from scipy.stats import gaussian_kde
 
@@ -1447,7 +1449,7 @@ class MCMCSearch(core.BaseSearchClass):
                 )
                 if injection_parameters is not None:
                     axes[0].axhline(
-                        injection_parameters[self.theta_keys[i]],
+                        injection_parameters[self.theta_keys[0]],
                         ls="--",
                         lw=5.0,
                         color="orange",
