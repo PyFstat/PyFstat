@@ -1330,11 +1330,16 @@ class MCMCSearch(core.BaseSearchClass):
         fig=None,
         axes=None,
         xoffset=0,
+        injection_parameters=None,
         plot_det_stat=False,
         context="ggplot",
         labelpad=5,
     ):
         """ Plot all the chains from a sampler """
+        if injection_parameters is not None and not isinstance(
+            injection_parameters, dict
+        ):
+            raise ValueError("injection_parameters is not a dictionary")
 
         if symbols is None:
             symbols = self._get_labels()
@@ -1384,9 +1389,6 @@ class MCMCSearch(core.BaseSearchClass):
 
             idxs = np.arange(chain.shape[1])
             burnin_idx = chain.shape[1] - nprod
-            # if hasattr(self, 'convergence_idx'):
-            #    last_idx = self.convergence_idx
-            # else:
             last_idx = burnin_idx
             if ndim > 1:
                 for i in range(ndim):
@@ -1408,33 +1410,16 @@ class MCMCSearch(core.BaseSearchClass):
                         alpha=alpha,
                         lw=lw,
                     )
-
+                    if injection_parameters is not None:
+                        axes[i].axhline(
+                            injection_parameters[self.theta_keys[i]],
+                            ls="--",
+                            lw=2.0,
+                            color="orange",
+                        )
                     axes[i].set_xlim(0, xoffset + idxs[-1])
                     if symbols:
                         axes[i].set_ylabel(symbols[i], labelpad=labelpad)
-                        # if subtractions[i] == 0:
-                        #    axes[i].set_ylabel(symbols[i], labelpad=labelpad)
-                        # else:
-                        #    axes[i].set_ylabel(
-                        #        symbols[i]+'$-$'+symbols[i]+'$^\mathrm{s}$',
-                        #        labelpad=labelpad)
-
-            #                    if hasattr(self, 'convergence_diagnostic'):
-            #                        ax = axes[i].twinx()
-            #                        axes[i].set_zorder(ax.get_zorder()+1)
-            #                        axes[i].patch.set_visible(False)
-            #                        c_x = np.array(self.convergence_diagnosticx)
-            #                        c_y = np.array(self.convergence_diagnostic)
-            #                        break_idx = np.argmin(np.abs(c_x - burnin_idx))
-            #                        ax.plot(c_x[:break_idx], c_y[:break_idx, i], '-C0',
-            #                                zorder=-10)
-            #                        ax.plot(c_x[break_idx:], c_y[break_idx:, i], '-C0',
-            #                                zorder=-10)
-            #                        if self.convergence_test_type == 'autocorr':
-            #                            ax.set_ylabel(r'$\tau_\mathrm{exp}$')
-            #                        elif self.convergence_test_type == 'GR':
-            #                            ax.set_ylabel('PSRF')
-            #                        ax.ticklabel_format(useOffset=False)
             else:
                 axes[0].ticklabel_format(useOffset=False, axis="y")
                 cs = chain[:, :, temp].T
@@ -1449,6 +1434,13 @@ class MCMCSearch(core.BaseSearchClass):
                 axes[0].plot(
                     idxs[burnin_idx:], cs[burnin_idx:], color="k", alpha=alpha, lw=lw
                 )
+                if injection_parameters is not None:
+                    axes[0].axhline(
+                        injection_parameters[self.theta_keys[i]],
+                        ls="--",
+                        lw=5.0,
+                        color="orange",
+                    )
                 if symbols:
                     axes[0].set_ylabel(symbols[0], labelpad=labelpad)
 
