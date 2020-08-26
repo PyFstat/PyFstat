@@ -31,7 +31,7 @@ jobs:
         ls -l $LALPULSAR_DATADIR
     - name: Style check with black
       run: |
-        pip install black
+        pip install black==19.10b0
         black --check --diff .
     - name: Test with pytest
       run: |
