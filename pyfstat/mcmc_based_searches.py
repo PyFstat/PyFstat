@@ -1132,7 +1132,7 @@ class MCMCSearch(core.BaseSearchClass):
                 )
         return prior_bounds, norm_trunc_warning
 
-    def plot_prior_posterior(self, normal_stds=2):
+    def plot_prior_posterior(self, normal_stds=2, injection_parameters=None):
         """ Plot the posterior in the context of the prior """
         fig, axes = plt.subplots(nrows=self.ndim, figsize=(8, 4 * self.ndim))
         N = 1000
@@ -1161,8 +1161,19 @@ class MCMCSearch(core.BaseSearchClass):
             ax2.set_yticklabels([])
             ax.set_yticklabels([])
 
+            if injection_parameters is not None:
+                injection = ax.axvline(
+                    injection_parameters[key],
+                    label="Injection",
+                    color="purple",
+                    ls="--",
+                )
+
         lns = priorln + postln
         labs = [l.get_label() for l in lns]
+        if injection_parameters is not None:
+            lns.append(injection)
+            labs.append("injection")
         axes[0].legend(lns, labs, loc=1, framealpha=0.8)
 
         fig.savefig(os.path.join(self.outdir, self.label + "_prior_posterior.png"))
