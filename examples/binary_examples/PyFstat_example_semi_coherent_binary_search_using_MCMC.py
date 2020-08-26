@@ -24,9 +24,9 @@ signal_parameters = {
     "Alpha": 0.15,
     "Delta": 0.15,
     "tp": mid_time,
-    "argp": 0.0,
+    "argp": 0.3,
     "asini": 10.0,
-    "ecc": 0,
+    "ecc": 0.5,
     "period": 45 * 24 * 3600.0,
     "tref": mid_time,
     "h0": data_parameters["sqrtSX"] / depth,
@@ -56,15 +56,27 @@ theta_prior = {
         "lower": 44.99 * 24 * 3600.0,
         "upper": 45.01 * 24 * 3600.0,
     },
-    "ecc": signal_parameters["ecc"],
-    "tp": {"type": "unif", "lower": 0.999 * mid_time, "upper": 1.001 * mid_time,},
-    "argp": signal_parameters["argp"],
+    "ecc": {
+        "type": "unif",
+        "lower": signal_parameters["ecc"] - 5e-2,
+        "upper": signal_parameters["ecc"] + 5e-2,
+    },
+    "argp": {
+        "type": "unif",
+        "lower": signal_parameters["argp"] - np.pi / 2,
+        "upper": signal_parameters["argp"] + np.pi / 2,
+    },
+    "tp": {
+        "type": "unif",
+        "lower": mid_time - signal_parameters["period"] / 2.0,
+        "upper": mid_time + signal_parameters["period"] / 2.0,
+    },
 }
 
 ntemps = 3
 log10beta_min = -1
 nwalkers = 150
-nsteps = [300]
+nsteps = [100, 200]
 
 mcmc = pyfstat.MCMCSemiCoherentSearch(
     label=label,
@@ -81,7 +93,11 @@ mcmc = pyfstat.MCMCSemiCoherentSearch(
     log10beta_min=log10beta_min,
     binary=True,
 )
-mcmc.run()
-mcmc.plot_corner(add_prior=True)
-mcmc.plot_prior_posterior()
+
+mcmc.run(
+    plot_walkers=True,
+    walker_plot_args={"plot_det_stat": True, "injection_parameters": signal_parameters},
+)
+mcmc.plot_corner(add_prior=True, truths=signal_parameters)
+mcmc.plot_prior_posterior(injection_parameters=signal_parameters)
 mcmc.print_summary()
