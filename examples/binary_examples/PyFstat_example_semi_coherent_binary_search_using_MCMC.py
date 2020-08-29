@@ -22,7 +22,7 @@ signal_parameters = {
     "F1": 0,
     "F2": 0,
     "Alpha": 0.15,
-    "Delta": 0.15,
+    "Delta": 0.45,
     "tp": mid_time,
     "argp": 0.3,
     "asini": 10.0,
@@ -48,8 +48,16 @@ theta_prior = {
     "F0": signal_parameters["F0"],
     "F1": signal_parameters["F1"],
     "F2": signal_parameters["F2"],
-    "Alpha": signal_parameters["Alpha"],
-    "Delta": signal_parameters["Delta"],
+    "Alpha": {
+        "type": "unif",
+        "lower": signal_parameters["Alpha"] - 0.01,
+        "upper": signal_parameters["Alpha"] + 0.01,
+    },
+    "Delta": {
+        "type": "unif",
+        "lower": signal_parameters["Delta"] - 0.01,
+        "upper": signal_parameters["Delta"] + 0.01,
+    },
     "asini": {"type": "unif", "lower": 9.9, "upper": 10.1},
     "period": {
         "type": "unif",
