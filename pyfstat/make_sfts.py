@@ -28,6 +28,26 @@ class KeyboardInterruptError(Exception):
 class Writer(BaseSearchClass):
     """ Instance object for generating SFTs """
 
+    signal_parameter_labels = [
+        "tref",
+        "F0",
+        "F1",
+        "F2",
+        "Alpha",
+        "Delta",
+        "h0",
+        "cosi",
+        "psi",
+        "phi",
+        "transientWindowType",
+    ]
+    gps_time_and_string_formats_as_LAL = {
+        # GPS times should NOT be parsed using scientific notation
+        # LAL routines silently parse them wrongly
+        "refTime": ":1.9f",
+        "transientWindowType": ":s",
+    }
+
     @helper_functions.initializer
     def __init__(
         self,
@@ -107,6 +127,7 @@ class Writer(BaseSearchClass):
 
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.basic_setup()
+        self.parse_args_consistent_with_mfd()
         self.calculate_fmin_Band()
 
     def _get_sft_constraints_from_tstart_duration(self):
@@ -272,157 +293,29 @@ class Writer(BaseSearchClass):
     def tend(self):
         return self.tstart + self.duration
 
-    def make_data(self, verbose=False):
-        """ A convienience wrapper to generate a cff file then sfts """
-        if self.h0:
-            self.make_cff(verbose)
-        else:
-            logging.info("Got h0=0, not writing an injection .cff file.")
-        self.run_makefakedata()
-
-    def get_base_template(self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref):
-        return """[TS{}]
-Alpha = {:1.18e}
-Delta = {:1.18e}
-h0 = {:1.18e}
-cosi = {:1.18e}
-psi = {:1.18e}
-phi0 = {:1.18e}
-Freq = {:1.18e}
-f1dot = {:1.18e}
-f2dot = {:1.18e}
-refTime = {:10.9f}"""
-
-    def get_single_config_line_cw(
-        self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
-    ):
-        template = (
-            self.get_base_template(
-                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
-            )
-            + """\n"""
-        )
-        return template.format(i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref)
-
-    def get_single_config_line_tcw(
-        self,
-        i,
-        Alpha,
-        Delta,
-        h0,
-        cosi,
-        psi,
-        phi,
-        F0,
-        F1,
-        F2,
-        tref,
-        window,
-        transientStartTime,
-        transientTau,
-    ):
-        template = (
-            self.get_base_template(
-                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
-            )
-            + """
-transientWindowType = {:s}
-transientStartTime = {:10.0f}
-transientTau = {:10.0f}\n"""
-        )
-        return template.format(
-            i,
-            Alpha,
-            Delta,
-            h0,
-            cosi,
-            psi,
-            phi,
-            F0,
-            F1,
-            F2,
-            tref,
-            window,
-            transientStartTime,
-            transientTau,
-        )
-
-    def get_single_config_line(
-        self,
-        i,
-        Alpha,
-        Delta,
-        h0,
-        cosi,
-        psi,
-        phi,
-        F0,
-        F1,
-        F2,
-        tref,
-        window,
-        transientStartTime,
-        transientTau,
-    ):
-        if window == "none":
-            return self.get_single_config_line_cw(
-                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
-            )
-        else:
-            return self.get_single_config_line_tcw(
-                i,
-                Alpha,
-                Delta,
-                h0,
-                cosi,
-                psi,
-                phi,
-                F0,
-                F1,
-                F2,
-                tref,
-                window,
-                transientStartTime,
-                transientTau,
-            )
-
-    def make_cff(self, verbose=False):
-        """
-        Generates a .cff file
-
+    def parse_args_consistent_with_mfd(self):
+        """ This will allow us to get rid of the get_single_config_* family
+            Future rework may use a dictionary as the default input method,
         """
 
-        content = self.get_single_config_line(
-            0,
-            self.Alpha,
-            self.Delta,
-            self.h0,
-            self.cosi,
-            self.psi,
-            self.phi,
-            self.F0,
-            self.F1,
-            self.F2,
-            self.tref,
-            self.transientWindowType,
-            self.transientStartTime,
-            self.transientTau,
+        self.signal_parameters = translate_keys_to_lal(
+            {
+                key: self.__dict__[key]
+                for key in self.signal_parameter_labels
+                if self.__dict__.get(key, None) is not None
+            }
         )
 
-        if self.check_if_cff_file_needs_rewritting(content):
-            if verbose:
-                logging.info(
-                    "Writing the following injection parameters"
-                    " to config file {:s}:".format(self.config_file_name)
-                )
-                logging.info(content)
-            else:
-                logging.info(
-                    "Writing config file {:s}...".format(self.config_file_name)
-                )
-            config_file = open(self.config_file_name, "w+")
-            config_file.write(content)
-            config_file.close()
+        self.signal_formats = {
+            key: self.gps_time_and_string_formats_as_LAL.get(key, ":1.18e")
+            for key in self.signal_parameters
+        }
+
+        if self.signal_parameters["transientWindowType"] != "none":
+            self.signal_parameters["transientStartTime"] = self.transientStartTime
+            self.signal_formats["transientStartTime"] = ":10.0f"
+            self.signal_parameters["transientTau"] = self.transientTau
+            self.signal_formats["transientTau"] = ":10.0f"
 
     def calculate_fmin_Band(self):
         """
@@ -483,6 +376,40 @@ transientTau = {:10.0f}\n"""
             logging.info(
                 "Generating SFTs with fmin={}, Band={}".format(self.fmin, self.Band)
             )
+
+    def get_single_config_line(self, i):
+        config_line = "[TS{}]\n".format(i)
+        config_line += "\n".join(
+            [
+                "{} = {{{}}}".format(key, self.signal_formats[key]).format(
+                    self.signal_parameters[key]
+                )
+                for key in self.signal_parameters.keys()
+            ]
+        )
+        config_line += "\n"
+
+        return config_line
+
+    def make_cff(self, verbose=False):
+        """
+        Generates a .cff file
+
+        """
+
+        content = self.get_single_config_line(0)
+
+        if verbose:
+            logging.info(
+                "Writing the following injection parameters"
+                " to config file {:s}:".format(self.config_file_name)
+            )
+            logging.info(content)
+
+        if self.check_if_cff_file_needs_rewritting(content):
+            config_file = open(self.config_file_name, "w+")
+            config_file.write(content)
+            config_file.close()
 
     def check_cached_data_okay_to_use(self, cl_mfd):
         """ Check if cached data exists and, if it does, if it can be used """
@@ -574,6 +501,14 @@ transientTau = {:10.0f}\n"""
                     )
                 )
                 return True
+
+    def make_data(self, verbose=False):
+        """ A convienience wrapper to generate a cff file then sfts """
+        if self.h0:
+            self.make_cff(verbose)
+        else:
+            logging.info("Got h0=0, not writing an injection .cff file.")
+        self.run_makefakedata()
 
     def run_makefakedata(self):
         """ Generate the sft data from the configuration file """
@@ -722,6 +657,16 @@ class BinaryModulatedWriter(Writer):
             [transientWindowType,transientStartTime,transientTau] instead!
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
+        signal_parameter_labels = super().signal_parameter_labels + [
+            "tp",
+            "argp",
+            "asini",
+            "ecc",
+            "period",
+        ]
+        gps_time_and_string_formats_as_LAL = super().gps_time_and_string_formats_as_LAL.update(
+            {"orbitTp": ":1.9f"}
+        )
         super().__init__(
             label=label,
             tstart=tstart,
@@ -750,91 +695,6 @@ class BinaryModulatedWriter(Writer):
             transientStartTime=transientStartTime,
             transientTau=transientTau,
         )
-
-        self.parse_args_consistent_with_mfd()
-
-    def parse_args_consistent_with_mfd(self):
-        """ This will allow us to get rid of the get_single_config_* family
-            Future rework may use a dictionary as the default input method,
-        """
-        signal_parameter_labels = [
-            "tref",
-            "F0",
-            "F1",
-            "F2",
-            "Alpha",
-            "Delta",
-            "h0",
-            "cosi",
-            "psi",
-            "phi",
-            "tp",
-            "argp",
-            "asini",
-            "ecc",
-            "period",
-            "transientWindowType",
-        ]
-        gps_time_and_string_formats = {
-            # GPS times should NOT be parsed using scientific notation
-            # LAL routines silently parse them wrongly
-            "orbitTp": ":10.9f",
-            "refTime": ":10.9f",
-            "transientWindowType": ":s",
-        }
-
-        self.signal_parameters = translate_keys_to_lal(
-            {
-                key: self.__dict__[key]
-                for key in signal_parameter_labels
-                if self.__dict__.get(key, None) is not None
-            }
-        )
-
-        self.signal_formats = {
-            key: gps_time_and_string_formats.get(key, ":1.18e")
-            for key in self.signal_parameters
-        }
-
-        if self.signal_parameters["transientWindowType"] != "none":
-            self.signal_parameters["transientStartTime"] = self.transientStartTime
-            self.signal_formats["transientStartTime"] = ":10.0f"
-            self.signal_parameters["transientTau"] = self.transientTau
-            self.signal_formats["transientTau"] = ":10.0f"
-
-    def get_single_config_line(self, i):
-        config_line = "[TS{}]\n".format(i)
-        config_line += "\n".join(
-            [
-                "{} = {{{}}}".format(key, self.signal_formats[key]).format(
-                    self.signal_parameters[key]
-                )
-                for key in self.signal_parameters.keys()
-            ]
-        )
-        config_line += "\n"
-
-        return config_line
-
-    def make_cff(self, verbose=False):
-        """
-        Generates a .cff file
-
-        """
-
-        content = self.get_single_config_line(0)
-
-        if verbose:
-            logging.info(
-                "Writing the following injection parameters"
-                " to config file {:s}:".format(self.config_file_name)
-            )
-            logging.info(content)
-
-        if self.check_if_cff_file_needs_rewritting(content):
-            config_file = open(self.config_file_name, "w+")
-            config_file.write(content)
-            config_file.close()
 
 
 class GlitchWriter(SearchForSignalWithJumps, Writer):
