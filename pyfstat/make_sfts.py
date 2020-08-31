@@ -294,10 +294,6 @@ class Writer(BaseSearchClass):
         return self.tstart + self.duration
 
     def parse_args_consistent_with_mfd(self):
-        """ This will allow us to get rid of the get_single_config_* family
-            Future rework may use a dictionary as the default input method,
-        """
-
         self.signal_parameters = translate_keys_to_lal(
             {
                 key: self.__dict__[key]
@@ -405,6 +401,8 @@ class Writer(BaseSearchClass):
                 " to config file {:s}:".format(self.config_file_name)
             )
             logging.info(content)
+        else:
+            logging.info("Writing config file {:s}...".format(self.config_file_name))
 
         if self.check_if_cff_file_needs_rewritting(content):
             config_file = open(self.config_file_name, "w+")
@@ -798,6 +796,9 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
         )
 
     def get_base_template(self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref):
+        """ FIXME: ported over from Writer, 
+        should be replaced by a more elegant re-use of parse_args_consistent_with_mfd 
+        """
         return """[TS{}]
 Alpha = {:1.18e}
 Delta = {:1.18e}
