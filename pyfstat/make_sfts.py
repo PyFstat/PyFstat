@@ -44,7 +44,7 @@ class Writer(BaseSearchClass):
     gps_time_and_string_formats_as_LAL = {
         # GPS times should NOT be parsed using scientific notation
         # LAL routines silently parse them wrongly
-        "refTime": ":1.9f",
+        "refTime": ":10.9f",
         "transientWindowType": ":s",
     }
 
@@ -657,16 +657,15 @@ class BinaryModulatedWriter(Writer):
             [transientWindowType,transientStartTime,transientTau] instead!
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
-        signal_parameter_labels = super().signal_parameter_labels + [
+        self.signal_parameter_labels = super().signal_parameter_labels + [
             "tp",
             "argp",
             "asini",
             "ecc",
             "period",
         ]
-        gps_time_and_string_formats_as_LAL = super().gps_time_and_string_formats_as_LAL.update(
-            {"orbitTp": ":1.9f"}
-        )
+        self.gps_time_and_string_formats_as_LAL["orbitTp"] = ":10.9f"
+
         super().__init__(
             label=label,
             tstart=tstart,
