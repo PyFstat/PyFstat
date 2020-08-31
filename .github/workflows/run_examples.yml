@@ -1,0 +1,38 @@
+# This is a basic workflow that is manually triggered
+
+name: Run examples
+
+# Workflow runs when manually triggered using the UI or API.
+on:
+  workflow_dispatch:
+    # Optional: Inputs the workflow accepts.
+
+jobs:
+  examples:
+    runs-on: ubuntu-latest
+    env:
+      LALPULSAR_DATADIR: ${{ github.workspace }}/ephem
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Set up ephemerides
+      run: |
+        export EPHEM_SRC=https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib
+        echo "LALPULSAR_DATADIR: $LALPULSAR_DATADIR"
+        mkdir $LALPULSAR_DATADIR
+        wget $EPHEM_SRC/earth00-40-DE405.dat.gz -P $LALPULSAR_DATADIR
+        wget $EPHEM_SRC/sun00-40-DE405.dat.gz -P $LALPULSAR_DATADIR
+        echo "Successfully downloaded ephemerides:"
+        ls -l $LALPULSAR_DATADIR
+    - name: Run all the examples
+      run: |
+        # make sure to test *installed* version of pyFstat
+        pip install -e $GITHUB_WORKSPACE
+        (cd .. && python $GITHUB_WORKSPACE/examples/run_all_examples.py)
