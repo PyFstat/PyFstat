@@ -54,6 +54,14 @@ default_Writer_params = {
     **default_signal_params,
 }
 
+default_binary_params = {
+    "period": 45 * 24 * 3600.0,
+    "asini": 10.0,
+    "tp": default_Writer_params["tstart"] + 0.25 * default_Writer_params["duration"],
+    "ecc": 0.5,
+    "argp": 0.3,
+}
+
 
 class BaseForTestsWithData(BaseForTestsWithOutdir):
     outdir = "TestData"
@@ -357,6 +365,52 @@ class TestWriter(BaseForTestsWithData):
 class TestBinaryModulatedWriter(TestWriter):
     label = "TestBinaryModulatedWriter"
     writer_class_to_test = pyfstat.BinaryModulatedWriter
+
+    def test_tp_parsing(self):
+        this_writer = self.writer_class_to_test(
+            outdir=self.outdir, **default_Writer_params, **default_binary_params,
+        )
+        this_writer.make_data()
+
+        theta_prior = {
+            key: value
+            for key, value in default_signal_params.items()
+            if key not in ["h0", "cosi"]
+        }
+        theta_prior.update({key: value for key, value in default_binary_params.items()})
+        theta_prior["tp"] = {
+            "type": "unif",
+            "lower": default_binary_params["tp"]
+            - 0.5 * default_binary_params["period"],
+            "upper": default_binary_params["tp"]
+            + 0.5 * default_binary_params["period"],
+        }
+        theta_prior.pop
+
+        mcmc_kwargs = {
+            "nsteps": [500],
+            "nwalkers": 150,
+            "ntemps": 3,
+        }
+        print(theta_prior)
+        mcmc = pyfstat.MCMCSearch(
+            binary=True,
+            label="tp_parsing",
+            outdir=self.outdir,
+            sftfilepattern=this_writer.sftfilepath,
+            theta_prior=theta_prior,
+            tref=this_writer.tstart,
+            minStartTime=this_writer.tstart,
+            maxStartTime=this_writer.tend(),
+            **mcmc_kwargs,
+        )
+        mcmc.run(plot_walkers=False)
+        max_twoF_sample, _ = mcmc.get_max_twoF()
+
+        relative_difference = np.abs(
+            1.0 - max_twoF_sample["tp"] / default_binary_params["tp"]
+        )
+        self.assertTrue(relative_difference < 1e-5)
 
 
 class TestGlitchWriter(TestWriter):
