@@ -40,7 +40,6 @@ data = pyfstat.Writer(
     h0=h0,
     cosi=cosi,
     sqrtSX=sqrtSX,
-    detectors="H1",
 )
 data.make_data()
 

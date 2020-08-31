@@ -20,8 +20,8 @@ if os.path.isdir(outdir):
 ordered_cases = {
     "glitch_examples": [
         "make_data_for_search_on_1_glitch",
+        "standard_directed_MCMC_search_on_1_glitch",
         "glitch_robust_directed_grid_search_on_1_glitch",
-        "short_transient_grid_search",
         "glitch_robust_directed_MCMC_search_on_1_glitch",
     ],
     "transient_examples": [
