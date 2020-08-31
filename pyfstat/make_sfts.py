@@ -291,7 +291,7 @@ phi0 = {:1.18e}
 Freq = {:1.18e}
 f1dot = {:1.18e}
 f2dot = {:1.18e}
-refTime = {:10.6f}"""
+refTime = {:1.9f}"""
 
     def get_single_config_line_cw(
         self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
@@ -778,8 +778,8 @@ class BinaryModulatedWriter(Writer):
         gps_time_and_string_formats = {
             # GPS times should NOT be parsed using scientific notation
             # LAL routines silently parse them wrongly
-            "orbitTp": ":10.6f",
-            "refTime": ":10.6f",
+            "orbitTp": ":1.9f",
+            "refTime": ":1.9f",
             "transientWindowType": ":s",
         }
 
