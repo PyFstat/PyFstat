@@ -388,7 +388,7 @@ class TestBinaryModulatedWriter(TestWriter):
         theta_prior.pop
 
         mcmc_kwargs = {
-            "nsteps": [500],
+            "nsteps": [50],
             "nwalkers": 150,
             "ntemps": 3,
         }
