@@ -5,15 +5,14 @@ from pyfstat.helper_functions import run_commandline
 
 exit_on_first_failure = False
 
+basedir = os.path.abspath(os.path.dirname(__file__))
+
 outdir = "PyFstat_example_data"
 # make sure we start from a clean output directory
 # and scripts don't just recycle old output
 if os.path.isdir(outdir):
     print("Removing old output directory {}...".format(outdir))
     shutil.rmtree(outdir)
-
-basedir = "examples"
-example_dirs = os.listdir(basedir)
 
 # In some examples directories, scripts must be executed in a certain order.
 # Those need to be manually maintained here.
@@ -42,7 +41,7 @@ ordered_cases = {
 
 Nscripts = 0
 failures = []
-for case in example_dirs:
+for case in os.listdir(basedir):
     exdir = os.path.join(basedir, case)
     if os.path.isdir(exdir):
         if case in ordered_cases:
