@@ -798,6 +798,112 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
             np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T
         )
 
+    def get_base_template(self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref):
+        return """[TS{}]
+Alpha = {:1.18e}
+Delta = {:1.18e}
+h0 = {:1.18e}
+cosi = {:1.18e}
+psi = {:1.18e}
+phi0 = {:1.18e}
+Freq = {:1.18e}
+f1dot = {:1.18e}
+f2dot = {:1.18e}
+refTime = {:10.6f}"""
+
+    def get_single_config_line_cw(
+        self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
+    ):
+        template = (
+            self.get_base_template(
+                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
+            )
+            + """\n"""
+        )
+        return template.format(i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref)
+
+    def get_single_config_line_tcw(
+        self,
+        i,
+        Alpha,
+        Delta,
+        h0,
+        cosi,
+        psi,
+        phi,
+        F0,
+        F1,
+        F2,
+        tref,
+        window,
+        transientStartTime,
+        transientTau,
+    ):
+        template = (
+            self.get_base_template(
+                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
+            )
+            + """
+transientWindowType = {:s}
+transientStartTime = {:10.0f}
+transientTau = {:10.0f}\n"""
+        )
+        return template.format(
+            i,
+            Alpha,
+            Delta,
+            h0,
+            cosi,
+            psi,
+            phi,
+            F0,
+            F1,
+            F2,
+            tref,
+            window,
+            transientStartTime,
+            transientTau,
+        )
+
+    def get_single_config_line(
+        self,
+        i,
+        Alpha,
+        Delta,
+        h0,
+        cosi,
+        psi,
+        phi,
+        F0,
+        F1,
+        F2,
+        tref,
+        window,
+        transientStartTime,
+        transientTau,
+    ):
+        if window == "none":
+            return self.get_single_config_line_cw(
+                i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
+            )
+        else:
+            return self.get_single_config_line_tcw(
+                i,
+                Alpha,
+                Delta,
+                h0,
+                cosi,
+                psi,
+                phi,
+                F0,
+                F1,
+                F2,
+                tref,
+                window,
+                transientStartTime,
+                transientTau,
+            )
+
     def make_cff(self, verbose=False):
         """
         Generates an .cff file for a 'glitching' signal
