@@ -1,3 +1,20 @@
+## 1.7.0 [31/08/2020]
+
+ - Writer: fix binary tp handling and clean up injection parameter parsing
+ - MCMCSearch plotting improvements:
+   - add injection parameters through "truths" kwarg
+   - F->2F fixes
+   - fix failures for single-parameter posteriors
+ - removed unused Bunch class
+ - refactored some core functions into BaseSearchClass methods
+   or moved to helper_functions
+ - removed deprecated options/functions:
+   - ComputeFstat option estimate_covering_band
+   - Writer options minStartTime, maxStartTime
+   - MCMCSearch.get_median_stds()
+ - new internal class SearchForSignalWithJump
+   which SemiCoherentGlitchSearch and GlitchWriter inherit from
+
 ## 1.6.0 [19/08/2020]
 
  - Writer classes, including several backwards-incompatbile changes:
