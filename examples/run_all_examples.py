@@ -58,9 +58,8 @@ for case in os.listdir(basedir):
         )
         for script in scripts:
             Nscripts += 1
-            if Nscripts > 2:
-                continue
             cl = "python " + script
+            print("Running: ", script)
             try:
                 run_commandline(cl, return_output=False)
             except Exception as e:
@@ -68,7 +67,10 @@ for case in os.listdir(basedir):
                 failures.append(script)
                 if exit_on_first_failure:
                     raise RuntimeError("Exiting on first failure as requested.")
-            print("\n")
+                else:
+                    print("\n")
+            else:
+                print("Successfully ran: {}\n".format(script))
 
 print("\n")
 if len(failures) > 0:
