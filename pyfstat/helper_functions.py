@@ -628,3 +628,167 @@ def get_parameters_dict_from_file_header(outfile, comments="#", eval_values=Fals
             val = eval(val)  # DANGER
         params_dict[key] = val
     return params_dict
+
+
+def read_par(
+    filename=None,
+    label=None,
+    outdir=None,
+    suffix="par",
+    comments=["%", "#"],
+    raise_error=False,
+):
+    """ Read in a .par or .loudest file, returns a dict of the data
+
+    Parameters
+    ----------
+    filename : str
+        Filename (path) containing rows of `key=val` data to read in.
+    label, outdir, suffix : str, optional
+        If filename is None, form the file to read as `outdir/label.suffix`.
+    comments : str or list of strings, optional
+        Characters denoting that a row is a comment.
+    raise_error : bool, optional
+        If True, raise an error for lines which are not comments, but cannot
+        be read.
+
+    Notes
+    -----
+    This can also be used to read in .loudest files, or any file which has
+    rows of `key=val` data (in which the val can be understood using eval(val)
+
+    Returns
+    -------
+    d: dict
+        The par values as a dict type
+
+    """
+    if filename is None:
+        filename = os.path.join(outdir, "{}.{}".format(label, suffix))
+    if os.path.isfile(filename) is False:
+        raise ValueError("No file {} found".format(filename))
+    d = {}
+    with open(filename, "r") as f:
+        d = get_dictionary_from_lines(f, comments, raise_error)
+    return d
+
+
+def get_dictionary_from_lines(lines, comments, raise_error):
+    """ Return dictionary of key=val pairs for each line in lines
+
+    Parameters
+    ----------
+    comments : str or list of strings
+        Characters denoting that a row is a comment.
+    raise_error : bool
+        If True, raise an error for lines which are not comments, but cannot
+        be read.
+        Note that CFSv2 "loudest" files contain complex numbers which fill raise
+        an error unless this is set to False.
+
+    Returns
+    -------
+    d: dict
+        The par values as a dict type
+
+    """
+    d = {}
+    for line in lines:
+        if line[0] not in comments and len(line.split("=")) == 2:
+            try:
+                key, val = line.rstrip("\n").split("=")
+                key = key.strip()
+                val = val.strip()
+                if (val[0] in ["'", '"']) and (val[-1] in ["'", '"']):
+                    d[key] = val.lstrip('"').lstrip("'").rstrip('"').rstrip("'")
+                else:
+                    try:
+                        d[key] = np.float64(eval(val.rstrip("; ")))
+                    except NameError:
+                        d[key] = val.rstrip("; ")
+                    # FIXME: learn how to deal with complex numbers
+            except SyntaxError:
+                if raise_error:
+                    raise IOError("Line {} not understood".format(line))
+                pass
+    return d
+
+
+def predict_fstat(
+    h0,
+    cosi,
+    psi,
+    Alpha,
+    Delta,
+    Freq,
+    sftfilepattern,
+    minStartTime,
+    maxStartTime,
+    IFOs=None,
+    assumeSqrtSX=None,
+    tempory_filename="fs.tmp",
+    earth_ephem=None,
+    sun_ephem=None,
+    transientWindowType="none",
+    transientStartTime=None,
+    transientTau=None,
+    **kwargs
+):
+    """ Wrapper to lalapps_PredictFstat
+
+    Parameters
+    ----------
+    h0, cosi, psi, Alpha, Delta, Freq : float
+        Signal properties, see `lalapps_PredictFstat --help` for more info.
+    sftfilepattern : str
+        Pattern matching the sftfiles to use.
+    minStartTime, maxStartTime : int
+    IFOs : str
+        See `lalapps_PredictFstat --help`
+    assumeSqrtSX : float or None
+        See `lalapps_PredictFstat --help`, if None this option is not used
+
+    Returns
+    -------
+    twoF_expected, twoF_sigma : float
+        The expectation and standard deviation of 2F
+
+    """
+
+    cl_pfs = []
+    cl_pfs.append("lalapps_PredictFstat")
+    cl_pfs.append("--h0={}".format(h0))
+    cl_pfs.append("--cosi={}".format(cosi))
+    cl_pfs.append("--psi={}".format(psi))
+    cl_pfs.append("--Alpha={}".format(Alpha))
+    cl_pfs.append("--Delta={}".format(Delta))
+    cl_pfs.append("--Freq={}".format(Freq))
+
+    cl_pfs.append("--DataFiles='{}'".format(sftfilepattern))
+    if assumeSqrtSX:
+        cl_pfs.append("--assumeSqrtSX={}".format(assumeSqrtSX))
+    # if IFOs:
+    #    cl_pfs.append("--IFOs={}".format(IFOs))
+
+    cl_pfs.append("--minStartTime={}".format(int(minStartTime)))
+    cl_pfs.append("--maxStartTime={}".format(int(maxStartTime)))
+    cl_pfs.append("--outputFstat={}".format(tempory_filename))
+
+    earth_ephem_default, sun_ephem_default = get_ephemeris_files()
+    if earth_ephem is None:
+        earth_ephem = earth_ephem_default
+    if sun_ephem is None:
+        sun_ephem = sun_ephem_default
+    cl_pfs.append("--ephemEarth='{}'".format(earth_ephem))
+    cl_pfs.append("--ephemSun='{}'".format(sun_ephem))
+
+    if transientWindowType != "none":
+        cl_pfs.append("--transientWindowType='{}'".format(transientWindowType))
+        cl_pfs.append("--transientStartTime='{}'".format(transientStartTime))
+        cl_pfs.append("--transientTau='{}'".format(transientTau))
+
+    cl_pfs = " ".join(cl_pfs)
+    run_commandline(cl_pfs)
+    d = read_par(filename=tempory_filename)
+    os.remove(tempory_filename)
+    return float(d["twoF_expected"]), float(d["twoF_sigma"])

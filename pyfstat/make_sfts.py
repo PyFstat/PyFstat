@@ -15,8 +15,6 @@ from pyfstat.core import (
     SearchForSignalWithJumps,
     tqdm,
     args,
-    predict_fstat,
-    translate_keys_to_lal,
 )
 import pyfstat.helper_functions as helper_functions
 
@@ -74,8 +72,6 @@ class Writer(BaseSearchClass):
         detectors=None,
         earth_ephem=None,
         sun_ephem=None,
-        minStartTime=None,
-        maxStartTime=None,
         transientWindowType="none",
         transientStartTime=None,
         transientTau=None,
@@ -114,16 +110,8 @@ class Writer(BaseSearchClass):
             If None and no noiseSFTs given,
             a minimal covering band for a perfectly-matched
             single-template ComputeFstat analysis is estimated.
-        minStartTime, maxStartTime: float
-            DEPRECATED, use [tstart,duration] and/or
-            [transientWindowType,transientStartTime,transientTau] instead!    
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
-
-        if minStartTime is not None or maxStartTime is not None:
-            raise ValueError(
-                "Options 'minStartTime' and 'maxStartTime' are no longer supported!"
-            )
 
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.basic_setup()
@@ -294,7 +282,7 @@ class Writer(BaseSearchClass):
         return self.tstart + self.duration
 
     def parse_args_consistent_with_mfd(self):
-        self.signal_parameters = translate_keys_to_lal(
+        self.signal_parameters = self.translate_keys_to_lal(
             {
                 key: self.__dict__[key]
                 for key in self.signal_parameter_labels
@@ -573,7 +561,7 @@ class Writer(BaseSearchClass):
 
     def predict_fstat(self, assumeSqrtSX=None):
         """ Wrapper to lalapps_PredictFstat """
-        twoF_expected, twoF_sigma = predict_fstat(
+        twoF_expected, twoF_sigma = helper_functions.predict_fstat(
             h0=self.h0,
             cosi=self.cosi,
             psi=self.psi,
@@ -629,8 +617,6 @@ class BinaryModulatedWriter(Writer):
         detectors=None,
         earth_ephem=None,
         sun_ephem=None,
-        minStartTime=None,
-        maxStartTime=None,
         transientWindowType="none",
         transientStartTime=None,
         transientTau=None,
@@ -650,9 +636,6 @@ class BinaryModulatedWriter(Writer):
             frequency, sky-position, binary orbit and amplitude parameters
         Tsft: float
             the sft duration
-        minStartTime, maxStartTime: float
-            DEPRECATED, use [tstart,duration] and/or
-            [transientWindowType,transientStartTime,transientTau] instead!
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
         self.signal_parameter_labels = super().signal_parameter_labels + [
@@ -728,8 +711,6 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
         detectors=None,
         earth_ephem=None,
         sun_ephem=None,
-        minStartTime=None,
-        maxStartTime=None,
         transientWindowType="rect",
         randSeed=None,
     ):
@@ -752,16 +733,9 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
             frequency, sky-position, and amplitude parameters
         Tsft: float
             the sft duration
-        minStartTime, maxStartTime: float
-            DEPRECATED, use [tstart,duration] instead!
 
         see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
         """
-
-        if minStartTime is not None or maxStartTime is not None:
-            raise ValueError(
-                "Options 'minStartTime' and 'maxStartTime' are no longer supported!"
-            )
 
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.basic_setup()
@@ -968,8 +942,6 @@ class FrequencyModulatedArtifactWriter(Writer):
         Pmod_amp=1,
         Alpha=None,
         Delta=None,
-        minStartTime=None,
-        maxStartTime=None,
         detectors=None,
         earth_ephem=None,
         sun_ephem=None,
@@ -989,16 +961,9 @@ class FrequencyModulatedArtifactWriter(Writer):
             the sft duration
         sqrtSX: float
             Background IFO noise
-        minStartTime, maxStartTime: float
-            DEPRECATED, use [tstart,duration] instead!
 
         see `lalapps_Makefakedata_v4 --help` for help with the other paramaters
         """
-
-        if minStartTime is not None or maxStartTime is not None:
-            raise ValueError(
-                "Options 'minStartTime' and 'maxStartTime' are no longer supported!"
-            )
 
         self.phi = 0
         self.F2 = 0
