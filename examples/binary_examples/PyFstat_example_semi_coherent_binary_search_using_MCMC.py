@@ -2,6 +2,11 @@ import pyfstat
 import numpy as np
 import os
 
+# If False, sky priors are used
+directed_search = True
+# If False, ecc and argp priors are used
+known_eccentricity = True
+
 label = os.path.splitext(os.path.basename(__file__))[0]
 outdir = os.path.join("PyFstat_example_data", label)
 
@@ -9,7 +14,7 @@ outdir = os.path.join("PyFstat_example_data", label)
 data_parameters = {
     "sqrtSX": 1e-23,
     "tstart": 1000000000,
-    "duration": 100 * 86400,
+    "duration": 10 * 86400,
     "detectors": "H1",
 }
 tend = data_parameters["tstart"] + data_parameters["duration"]
@@ -26,7 +31,7 @@ signal_parameters = {
     "tp": mid_time,
     "argp": 0.3,
     "asini": 10.0,
-    "ecc": 0.5,
+    "ecc": 0.1,
     "period": 45 * 24 * 3600.0,
     "tref": mid_time,
     "h0": data_parameters["sqrtSX"] / depth,
@@ -38,41 +43,19 @@ data = pyfstat.BinaryModulatedWriter(
 )
 data.make_data()
 
-DeltaF0 = 1e-7
-DeltaF1 = 1e-13
-VF0 = (np.pi * data_parameters["duration"] * DeltaF0) ** 2 / 3.0
-VF1 = (np.pi * data_parameters["duration"] ** 2 * DeltaF1) ** 2 * 4 / 45.0
-print("\nV={:1.2e}, VF0={:1.2e}, VF1={:1.2e}\n".format(VF0 * VF1, VF0, VF1))
-
 theta_prior = {
     "F0": signal_parameters["F0"],
     "F1": signal_parameters["F1"],
     "F2": signal_parameters["F2"],
-    "Alpha": {
+    "asini": {
         "type": "unif",
-        "lower": signal_parameters["Alpha"] - 0.01,
-        "upper": signal_parameters["Alpha"] + 0.01,
+        "lower": 0.9 * signal_parameters["asini"],
+        "upper": 1.1 * signal_parameters["asini"],
     },
-    "Delta": {
-        "type": "unif",
-        "lower": signal_parameters["Delta"] - 0.01,
-        "upper": signal_parameters["Delta"] + 0.01,
-    },
-    "asini": {"type": "unif", "lower": 9.9, "upper": 10.1},
     "period": {
         "type": "unif",
-        "lower": 44.99 * 24 * 3600.0,
-        "upper": 45.01 * 24 * 3600.0,
-    },
-    "ecc": {
-        "type": "unif",
-        "lower": signal_parameters["ecc"] - 5e-2,
-        "upper": signal_parameters["ecc"] + 5e-2,
-    },
-    "argp": {
-        "type": "unif",
-        "lower": signal_parameters["argp"] - np.pi / 2,
-        "upper": signal_parameters["argp"] + np.pi / 2,
+        "lower": 0.9 * signal_parameters["period"],
+        "upper": 1.1 * signal_parameters["period"],
     },
     "tp": {
         "type": "unif",
@@ -80,6 +63,45 @@ theta_prior = {
         "upper": mid_time + signal_parameters["period"] / 2.0,
     },
 }
+
+if directed_search:
+    for key in "Alpha", "Delta":
+        theta_prior[key] = signal_parameters[key]
+else:
+    theta_prior.update(
+        {
+            "Alpha": {
+                "type": "unif",
+                "lower": signal_parameters["Alpha"] - 0.01,
+                "upper": signal_parameters["Alpha"] + 0.01,
+            },
+            "Delta": {
+                "type": "unif",
+                "lower": signal_parameters["Delta"] - 0.01,
+                "upper": signal_parameters["Delta"] + 0.01,
+            },
+        }
+    )
+
+
+if known_eccentricity:
+    for key in "ecc", "argp":
+        theta_prior[key] = signal_parameters[key]
+else:
+    theta_prior.update(
+        {
+            "ecc": {
+                "type": "unif",
+                "lower": signal_parameters["ecc"] - 5e-2,
+                "upper": signal_parameters["ecc"] + 5e-2,
+            },
+            "argp": {
+                "type": "unif",
+                "lower": signal_parameters["argp"] - np.pi / 2,
+                "upper": signal_parameters["argp"] + np.pi / 2,
+            },
+        }
+    )
 
 ntemps = 3
 log10beta_min = -1
