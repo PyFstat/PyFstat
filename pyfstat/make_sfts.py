@@ -291,7 +291,7 @@ phi0 = {:1.18e}
 Freq = {:1.18e}
 f1dot = {:1.18e}
 f2dot = {:1.18e}
-refTime = {:10.6f}"""
+refTime = {:10.9f}"""
 
     def get_single_config_line_cw(
         self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
@@ -775,29 +775,25 @@ class BinaryModulatedWriter(Writer):
             "period",
             "transientWindowType",
         ]
-
-        signal_parameters = {
-            key: self.__dict__.get(key, None) for key in signal_parameter_labels
+        gps_time_and_string_formats = {
+            # GPS times should NOT be parsed using scientific notation
+            # LAL routines silently parse them wrongly
+            "orbitTp": ":10.9f",
+            "refTime": ":10.9f",
+            "transientWindowType": ":s",
         }
-        self.signal_parameters = {
-            key: value for key, value in signal_parameters.items() if value is not None
-        }
 
-        signal_parameter_formats = (len(signal_parameter_labels) - 1) * [":1.18e"] + [
-            ":s"
-        ]
-        # Pledge MFD's way of parsing time-related variables in a .cff
-        for time_label in "tref", "tp":
-            signal_parameter_formats[
-                signal_parameter_labels.index(time_label)
-            ] = ":10.6f"
-        signal_formats = dict(zip(signal_parameter_labels, signal_parameter_formats))
-
-        self.signal_parameters = translate_keys_to_lal(self.signal_parameters)
-        signal_formats = translate_keys_to_lal(signal_formats)
+        self.signal_parameters = translate_keys_to_lal(
+            {
+                key: self.__dict__[key]
+                for key in signal_parameter_labels
+                if self.__dict__.get(key, None) is not None
+            }
+        )
 
         self.signal_formats = {
-            key: signal_formats[key] for key in self.signal_parameters.keys()
+            key: gps_time_and_string_formats.get(key, ":1.18e")
+            for key in self.signal_parameters
         }
 
         if self.signal_parameters["transientWindowType"] != "none":
