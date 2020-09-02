@@ -116,17 +116,6 @@ class TestWriter(BaseForTestsWithData):
     label = "TestWriter"
     writer_class_to_test = pyfstat.Writer
 
-    # def setup_method(self, method):
-    ## only setting up here, not actually running anything
-    # self.Writer = self.writer_class_to_test(
-    # label=self.label,
-    # outdir=self.outdir,
-    # tstart=self.tstart,
-    # duration=self.duration,
-    # detectors=self.detectors,
-    # **default_signal_params,
-    # )
-
     def test_make_cff(self):
         self.Writer.make_cff(verbose=True)
         self.assertTrue(
