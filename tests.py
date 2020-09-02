@@ -1384,7 +1384,6 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
                 "upper": self.Writer.duration - 2 * self.Writer.Tsft,
             },
         }
-        nsegs = 10
         self.search = pyfstat.MCMCTransientSearch(
             label=self.label,
             outdir=self.outdir,
