@@ -66,6 +66,8 @@ for case in os.listdir(basedir):
                 print("FAILED to run {}".format(script))
                 failures.append(script)
                 if exit_on_first_failure:
+                    print("Exception was:")
+                    print(e)
                     raise RuntimeError("Exiting on first failure as requested.")
                 else:
                     print("\n")
