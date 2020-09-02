@@ -46,9 +46,9 @@ mcmc = pyfstat.MCMCSearch(
     log10beta_min=log10beta_min,
 )
 
-mcmc.transform_dictionary["F0"] = dict(subtractor=F0, symbol="$f-f^\mathrm{s}$")
+mcmc.transform_dictionary["F0"] = dict(subtractor=F0, symbol=r"$f-f^\mathrm{s}$")
 mcmc.transform_dictionary["F1"] = dict(
-    subtractor=F1, symbol="$\dot{f}-\dot{f}^\mathrm{s}$"
+    subtractor=F1, symbol=r"$\dot{f}-\dot{f}^\mathrm{s}$"
 )
 
 mcmc.run()

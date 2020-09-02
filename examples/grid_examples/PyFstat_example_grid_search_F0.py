@@ -80,13 +80,13 @@ DeltaF = frequencies - F0
 sinc = np.sin(np.pi * DeltaF * duration) / (np.pi * DeltaF * duration)
 A = np.abs((np.max(twoF) - 4) * sinc ** 2 + 4)
 ax.plot(frequencies, A, "-r", lw=1)
-ax.set_ylabel("$\widetilde{2\mathcal{F}}$")
+ax.set_ylabel(r"$\widetilde{2\mathcal{F}}$")
 ax.set_xlabel("Frequency")
 ax.set_xlim(F0s[0], F0s[1])
 dF0 = np.sqrt(12 * 1) / (np.pi * duration)
 xticks = [F0 - 10 * dF0, F0, F0 + 10 * dF0]
 ax.set_xticks(xticks)
-xticklabels = ["$f_0 {-} 10\Delta f$", "$f_0$", "$f_0 {+} 10\Delta f$"]
+xticklabels = [r"$f_0 {-} 10\Delta f$", r"$f_0$", r"$f_0 {+} 10\Delta f$"]
 ax.set_xticklabels(xticklabels)
 plt.tight_layout()
 fig.savefig(os.path.join(outdir, label + "_1D.png"), dpi=300)

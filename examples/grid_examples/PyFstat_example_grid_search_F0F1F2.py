@@ -82,7 +82,7 @@ search.run()
 agg_chunksize = 10000
 
 search.plot_1D(
-    xkey="F0", xlabel="freq [Hz]", ylabel="$2\mathcal{F}$", agg_chunksize=agg_chunksize
+    xkey="F0", xlabel="freq [Hz]", ylabel=r"$2\mathcal{F}$", agg_chunksize=agg_chunksize
 )
 search.plot_1D(xkey="F1", agg_chunksize=agg_chunksize)
 search.plot_1D(xkey="F2", agg_chunksize=agg_chunksize)
@@ -99,10 +99,10 @@ F2_vals = np.unique(search.data[:, 4]) - F2
 twoF = search.data[:, -1].reshape((len(F0_vals), len(F1_vals), len(F2_vals)))
 xyz = [F0_vals, F1_vals, F2_vals]
 labels = [
-    "$f - f_0$",
-    "$\dot{f} - \dot{f}_0$",
-    "$\ddot{f} - \ddot{f}_0$",
-    "$\widetilde{2\mathcal{F}}$",
+    r"$f - f_0$",
+    r"$\dot{f} - \dot{f}_0$",
+    r"$\ddot{f} - \ddot{f}_0$",
+    r"$\widetilde{2\mathcal{F}}$",
 ]
 fig, axes = gridcorner(
     twoF, xyz, projection="log_mean", labels=labels, whspace=0.1, factor=1.8
