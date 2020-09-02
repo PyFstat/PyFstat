@@ -24,7 +24,6 @@ except ImportError:
         "https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner"
     )
 
-outdir = os.path.join("PyFstat_example_data", "PyFstat_example_glitch_robust_search")
 label = "semicoherent_glitch_robust_directed_grid_search_on_1_glitch"
 
 Nstar = 1000

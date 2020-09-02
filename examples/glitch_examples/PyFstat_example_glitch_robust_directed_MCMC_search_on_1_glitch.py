@@ -17,7 +17,6 @@ from PyFstat_example_make_data_for_search_on_1_glitch import (
 )
 import os
 
-outdir = os.path.join("PyFstat_example_data", "PyFstat_example_glitch_robust_search")
 label = "semicoherent_glitch_robust_directed_MCMC_search_on_1_glitch"
 
 Nstar = 1000
