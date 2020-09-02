@@ -141,7 +141,7 @@ def get_ephemeris_files():
         try:
             earth_ephem = d["earth_ephem"]
             sun_ephem = d["sun_ephem"]
-        except:
+        except KeyError:
             logging.warning(
                 "No [earth/sun]_ephem found in " + config_file + ". " + please
             )
@@ -307,7 +307,7 @@ def run_commandline(cl, log_level=20, raise_error=True, return_output=True):
                 universal_newlines=True,  # properly display linebreaks in error/output printing
             )
         else:
-            process = subprocess.check_call(cl, shell=True)
+            subprocess.check_call(cl, shell=True)
     except subprocess.CalledProcessError as e:
         logging.log(40, "Execution failed: {}".format(e))
         if e.output:
