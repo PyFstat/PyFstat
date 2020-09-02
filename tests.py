@@ -6,6 +6,7 @@ import pyfstat
 import lalpulsar
 import logging
 import time
+from scipy.stats import chi2
 
 
 class BaseForTestsWithOutdir(unittest.TestCase):
@@ -499,6 +500,68 @@ class TestReadParFile(BaseForTestsWithOutdir):
         par = pyfstat.helper_functions.read_par(outdir=self.outdir, label=self.label)
         self.assertTrue(par["x"] == 100)
         self.assertTrue(par["y"] == 10)
+
+
+class TestPredictFstat(BaseForTestsWithOutdir):
+    label = "TestPredictFstat"
+    # here we only test the modes WITHOUT sftfilepattern,
+    # which itself is tested through the Writer and Search classes
+
+    def test_PFS_noise(self):
+        twoF_expected, twoF_sigma = pyfstat.helper_functions.predict_fstat(
+            minStartTime=default_Writer_params["tstart"],
+            duration=default_Writer_params["duration"],
+            IFOs=default_Writer_params["detectors"],
+            assumeSqrtSX=1,
+        )
+        print(
+            "predict_fstat() returned: E[2F]={}+-{}".format(twoF_expected, twoF_sigma)
+        )
+        self.assertTrue(twoF_expected == 4)
+        self.assertAlmostEqual(twoF_sigma, chi2.std(df=4), places=5)
+
+    def test_PFS_noise_TSfiles(self):
+        IFOs = ["H1", "L1"]
+        TSfiles = [
+            os.path.join(self.outdir, "{:s}_{:s}.ts".format(self.label, IFO))
+            for IFO in IFOs
+        ]
+        for f in TSfiles:
+            with open(f, "w") as fp:
+                fp.write(
+                    "{:d} 0\n{:d} 0\n".format(
+                        default_Writer_params["tstart"],
+                        default_Writer_params["tstart"] + default_Writer_params["Tsft"],
+                    )
+                )
+        twoF_expected, twoF_sigma = pyfstat.helper_functions.predict_fstat(
+            timestampsFiles=",".join(TSfiles),
+            IFOs=",".join(IFOs),
+            assumeSqrtSX=1,
+        )
+        print(
+            "predict_fstat() returned: E[2F]={}+-{}".format(twoF_expected, twoF_sigma)
+        )
+        self.assertTrue(twoF_expected == 4)
+        self.assertAlmostEqual(twoF_sigma, chi2.std(df=4), places=5)
+
+    def test_PFS_signal(self):
+        twoF_expected, twoF_sigma = pyfstat.helper_functions.predict_fstat(
+            h0=1,
+            cosi=0,
+            psi=0,
+            Alpha=0,
+            Delta=0,
+            minStartTime=default_Writer_params["tstart"],
+            duration=default_Writer_params["duration"],
+            IFOs=default_Writer_params["detectors"],
+            assumeSqrtSX=1,
+        )
+        print(
+            "predict_fstat() returned: E[2F]={}+-{}".format(twoF_expected, twoF_sigma)
+        )
+        self.assertTrue(twoF_expected > 4)
+        self.assertTrue(twoF_sigma > 0)
 
 
 class TestBaseSearchClass(unittest.TestCase):
