@@ -368,7 +368,9 @@ class TestBinaryModulatedWriter(TestWriter):
 
     def test_tp_parsing(self):
         this_writer = self.writer_class_to_test(
-            outdir=self.outdir, **default_Writer_params, **default_binary_params,
+            outdir=self.outdir,
+            **default_Writer_params,
+            **default_binary_params,
         )
         this_writer.make_data()
 
@@ -1187,8 +1189,16 @@ class TestMCMCSemiCoherentSearch(BaseForMCMCSearchTests):
     def test_semi_coherent_MCMC(self):
 
         theta = {
-            "F0": {"type": "unif", "lower": self.F0 - 1e-6, "upper": self.F0 + 1e-6,},
-            "F1": {"type": "unif", "lower": self.F1 - 1e-10, "upper": self.F1 + 1e-10,},
+            "F0": {
+                "type": "unif",
+                "lower": self.F0 - 1e-6,
+                "upper": self.F0 + 1e-6,
+            },
+            "F1": {
+                "type": "unif",
+                "lower": self.F1 - 1e-10,
+                "upper": self.F1 + 1e-10,
+            },
             "F2": self.F2,
             "Alpha": self.Alpha,
             "Delta": self.Delta,
@@ -1239,8 +1249,16 @@ class TestMCMCFollowUpSearch(BaseForMCMCSearchTests):
     def test_MCMC_followup_search(self):
 
         theta = {
-            "F0": {"type": "unif", "lower": self.F0 - 1e-6, "upper": self.F0 + 1e-6,},
-            "F1": {"type": "unif", "lower": self.F1 - 1e-10, "upper": self.F1 + 1e-10,},
+            "F0": {
+                "type": "unif",
+                "lower": self.F0 - 1e-6,
+                "upper": self.F0 + 1e-6,
+            },
+            "F1": {
+                "type": "unif",
+                "lower": self.F1 - 1e-10,
+                "upper": self.F1 + 1e-10,
+            },
             "F2": self.F2,
             "Alpha": self.Alpha,
             "Delta": self.Delta,
@@ -1259,7 +1277,9 @@ class TestMCMCFollowUpSearch(BaseForMCMCSearchTests):
             log10beta_min=-1,
         )
         self.search.run(
-            plot_walkers=False, NstarMax=NstarMax, Nsegs0=nsegs,
+            plot_walkers=False,
+            NstarMax=NstarMax,
+            Nsegs0=nsegs,
         )
         self.search.print_summary()
         self._check_twoF_predicted()

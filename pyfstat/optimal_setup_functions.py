@@ -16,7 +16,7 @@ import pyfstat.helper_functions as helper_functions
 def get_optimal_setup(
     NstarMax, Nsegs0, tref, minStartTime, maxStartTime, prior, detector_names
 ):
-    """ Using an optimisation step, calculate the optimal setup ladder
+    """Using an optimisation step, calculate the optimal setup ladder
 
     The details of the methods are described in Sec Va of arXiv:1802.05450.
     Here we provide implementation details. All equation numbers refer to
@@ -77,7 +77,7 @@ def get_optimal_setup(
 def _get_nsegs_ip1(
     nsegs_i, NstarMax, tref, minStartTime, maxStartTime, prior, detector_names
 ):
-    """ Calculate Nsegs_{i+1} given Nsegs_{i}
+    """Calculate Nsegs_{i+1} given Nsegs_{i}
 
     Perform the optimization step to calculate nsegs and i+1 given the setup
     and i. The "Powell" minimiization method from scipy is used. Below, we give
@@ -144,7 +144,7 @@ def _get_nsegs_ip1(
 
 
 def _extract_data_from_prior(prior):
-    """ Calculate the input data from the prior
+    """Calculate the input data from the prior
 
     Parameters
     ----------
@@ -199,7 +199,7 @@ def _extract_data_from_prior(prior):
 
 
 def get_Nstar_estimate(nsegs, tref, minStartTime, maxStartTime, prior, detector_names):
-    """ Returns N* estimated from the super-sky metric
+    """Returns N* estimated from the super-sky metric
 
     Parameters
     ----------

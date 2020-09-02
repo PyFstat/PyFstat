@@ -64,7 +64,17 @@ F2s = [F2]
 Alphas = [Alpha]
 Deltas = [Delta]
 search = pyfstat.GridSearch(
-    label, outdir, data.sftfilepath, F0s, F1s, F2s, Alphas, Deltas, tref, tstart, tend,
+    label,
+    outdir,
+    data.sftfilepath,
+    F0s,
+    F1s,
+    F2s,
+    Alphas,
+    Deltas,
+    tref,
+    tstart,
+    tend,
 )
 search.run()
 
