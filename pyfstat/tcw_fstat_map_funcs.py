@@ -30,7 +30,7 @@ def _optional_import(modulename, shorthand=None):
         globals()[shorthand] = imp.import_module(modulename)
         logging.debug("Successfully imported module %s%s." % (modulename, shorthandbit))
         success = True
-    except ImportError as e:
+    except ImportError:
         logging.debug("Failed to import module {:s}.".format(modulename))
         success = False
 
@@ -94,7 +94,8 @@ def init_transient_fstat_map_features(wantCuda=False, cudaDeviceName=None):
     have_pycuda_tools = _optional_import("pycuda.tools", "cudatools")
     have_pycuda_compiler = _optional_import("pycuda.compiler", "cudacomp")
     features["pycuda"] = (
-        have_pycuda_drv
+        have_pycuda
+        and have_pycuda_drv
         and have_pycuda_gpuarray
         and have_pycuda_tools
         and have_pycuda_compiler
