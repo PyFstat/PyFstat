@@ -379,7 +379,7 @@ class MCMCSearch(BaseSearchClass):
         return p0
 
     def setup_initialisation(self, nburn0, scatter_val=1e-10):
-        """ Add an initialisation step to the MCMC run
+        """Add an initialisation step to the MCMC run
 
         If called prior to `run()`, adds an intial step in which the MCMC
         simulation is run for `nburn0` steps. After this, the MCMC simulation
@@ -537,7 +537,7 @@ class MCMCSearch(BaseSearchClass):
         return sampler
 
     def _estimate_run_time(self):
-        """ Print the estimated run time
+        """Print the estimated run time
 
         Uses timing coefficients based on a Lenovo T460p Intel(R)
         Core(TM) i5-6300HQ CPU @ 2.30GHz.
@@ -592,7 +592,7 @@ class MCMCSearch(BaseSearchClass):
         walker_plot_args=None,
         window=50,
     ):
-        """ Run the MCMC simulatation
+        """Run the MCMC simulatation
 
         Parameters
         ----------
@@ -742,7 +742,7 @@ class MCMCSearch(BaseSearchClass):
         return sampler
 
     def _get_rescale_multiplier_for_key(self, key):
-        """ Get the rescale multiplier from the transform_dictionary
+        """Get the rescale multiplier from the transform_dictionary
 
         Can either be a float, a string (in which case it is interpretted as
         a attribute of the MCMCSearch class, e.g. minStartTime, or non-existent
@@ -767,7 +767,7 @@ class MCMCSearch(BaseSearchClass):
         return multiplier
 
     def _get_rescale_subtractor_for_key(self, key):
-        """ Get the rescale subtractor from the transform_dictionary
+        """Get the rescale subtractor from the transform_dictionary
 
         Can either be a float, a string (in which case it is interpretted as
         a attribute of the MCMCSearch class, e.g. minStartTime, or non-existent
@@ -842,7 +842,7 @@ class MCMCSearch(BaseSearchClass):
         save_fig=True,
         **kwargs
     ):
-        """ Generate a corner plot of the posterior
+        """Generate a corner plot of the posterior
 
         Using the `corner` package (https://pypi.python.org/pypi/corner/),
         generate estimates of the posterior from the production samples.
@@ -990,7 +990,7 @@ class MCMCSearch(BaseSearchClass):
                 return fig, axes
 
     def plot_chainconsumer(self, save_fig=True, label_offset=0.25, dpi=300, **kwargs):
-        """ Generate a corner plot of the posterior using chainconsumer
+        """Generate a corner plot of the posterior using chainconsumer
 
         Parameters
         ----------
@@ -1072,7 +1072,7 @@ class MCMCSearch(BaseSearchClass):
                 axes[i][k].set_ylim(xlim[0], xlim[1])
 
     def _get_prior_bounds(self, normal_stds=2):
-        """ Get the lower/upper bounds of all priors
+        """Get the lower/upper bounds of all priors
 
         Parameters
         ----------
@@ -1181,7 +1181,7 @@ class MCMCSearch(BaseSearchClass):
         fig.savefig(os.path.join(self.outdir, self.label + "_prior_posterior.png"))
 
     def plot_cumulative_max(self, **kwargs):
-        """ Plot the cumulative twoF for the maximum posterior estimate
+        """Plot the cumulative twoF for the maximum posterior estimate
 
         See the pyfstat.core.plot_twoF_cumulative function for further details
         """
@@ -1229,7 +1229,7 @@ class MCMCSearch(BaseSearchClass):
             )
 
     def _generic_lnprior(self, **kwargs):
-        """ Return a lambda function of the pdf
+        """Return a lambda function of the pdf
 
         Parameters
         ----------
@@ -1557,7 +1557,7 @@ class MCMCSearch(BaseSearchClass):
         return p0
 
     def _get_new_p0(self, sampler):
-        """ Returns new initial positions for walkers are burn0 stage
+        """Returns new initial positions for walkers are burn0 stage
 
         This returns new positions for all walkers by scattering points about
         the maximum posterior with scale `scatter_val`.
@@ -1718,7 +1718,11 @@ class MCMCSearch(BaseSearchClass):
                 " method.".format(Ncols, len(outfmt))
             )
         np.savetxt(
-            self.samples_file, samples_out, delimiter=" ", header=header, fmt=outfmt,
+            self.samples_file,
+            samples_out,
+            delimiter=" ",
+            header=header,
+            fmt=outfmt,
         )
 
     def _get_twoF_from_loglikelihood(self, idx=None):
@@ -1728,7 +1732,7 @@ class MCMCSearch(BaseSearchClass):
             return (self.lnlikes[idx] - self.likelihoodcoef) * 2
 
     def get_max_twoF(self, threshold=0.05):
-        """ Returns the max likelihood sample and the corresponding 2F value
+        """Returns the max likelihood sample and the corresponding 2F value
 
         Note: the sample is returned as a dictionary along with an estimate of
         the standard deviation calculated from the std of all samples with a
@@ -1802,7 +1806,7 @@ class MCMCSearch(BaseSearchClass):
         return d
 
     def check_if_samples_are_railing(self, threshold=0.01):
-        """ Returns a boolean estimate of if the samples are railing
+        """Returns a boolean estimate of if the samples are railing
 
         Parameters
         ----------
@@ -1862,7 +1866,12 @@ class MCMCSearch(BaseSearchClass):
                 f.write("theta0_index = {}\n".format(self.theta0_idx))
             if method in ["median", "mean"]:
                 for key, stat_d in summary_stats.items():
-                    f.write("{} = {:1.16e}\n".format(key, stat_d[method],))
+                    f.write(
+                        "{} = {:1.16e}\n".format(
+                            key,
+                            stat_d[method],
+                        )
+                    )
             elif method == "twoFmax":
                 for key, val in max_twoF_d.items():
                     f.write("{} = {:1.16e}\n".format(key, val))
@@ -2022,7 +2031,7 @@ class MCMCSearch(BaseSearchClass):
         return pdf.real
 
     def _p_val_twoFhat(self, twoFhat, ntrials, twoFhatmax=500, Npoints=1000):
-        """ Caluculate the p-value for the given twoFhat in Gaussian noise
+        """Caluculate the p-value for the given twoFhat in Gaussian noise
 
         Parameters
         ----------
@@ -2455,7 +2464,7 @@ class MCMCGlitchSearch(MCMCSearch):
 
 
 class MCMCSemiCoherentSearch(MCMCSearch):
-    """ MCMC search for a signal using the semi-coherent ComputeFstat
+    """MCMC search for a signal using the semi-coherent ComputeFstat
 
     Parameters
     ----------
@@ -2657,7 +2666,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
 
 
 class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
-    """ A follow up procudure increasing the coherence time in a zoom
+    """A follow up procudure increasing the coherence time in a zoom
 
     Parameters
     ----------
@@ -2713,7 +2722,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         the search
     assumeSqrtSX: float, optional
         Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}
- 
+
     Attributes
     ----------
     symbol_dictionary: dict
@@ -3031,7 +3040,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         gen_tex_table=True,
         window=50,
     ):
-        """ Run the follow-up with the given run_setup
+        """Run the follow-up with the given run_setup
 
         Parameters
         ----------
@@ -3205,7 +3214,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
 
 class MCMCTransientSearch(MCMCSearch):
-    """ MCMC search for a transient signal using ComputeFstat
+    """MCMC search for a transient signal using ComputeFstat
 
     See parent MCMCSearch for a list of all additional parameters, here we list
     only the additional init parameters of this class.

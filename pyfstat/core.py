@@ -67,7 +67,7 @@ class BaseSearchClass(object):
             raise IOError("No sfts found matching {}".format(self.sftfilepattern))
 
     def set_ephemeris_files(self, earth_ephem=None, sun_ephem=None):
-        """ Set the ephemeris files to use for the Earth and Sun
+        """Set the ephemeris files to use for the Earth and Sun
 
         Parameters
         ----------
@@ -314,7 +314,7 @@ class ComputeFstat(BaseSearchClass):
         self.output_file_header = self.get_output_file_header()
 
     def _get_SFTCatalog(self):
-        """ Load the SFTCatalog
+        """Load the SFTCatalog
 
         If sftfilepattern is specified, load the data. If not, attempt to
         create data on the fly.
@@ -760,7 +760,10 @@ class ComputeFstat(BaseSearchClass):
             else 0.0
         )
         searchRegion.skyRegionString = lalpulsar.SkySquare2String(
-            Alpha, Delta, AlphaBand, DeltaBand,
+            Alpha,
+            Delta,
+            AlphaBand,
+            DeltaBand,
         )
         searchRegion.refTime = self.tref
         # frequency and spindowns
@@ -949,7 +952,7 @@ class ComputeFstat(BaseSearchClass):
         tend=None,
         npoints=1000,
     ):
-        """ Calculate the cumulative twoF along the obseration span
+        """Calculate the cumulative twoF along the obseration span
 
         Parameters
         ----------
@@ -1003,7 +1006,7 @@ class ComputeFstat(BaseSearchClass):
     def _calculate_predict_fstat_cumulative(
         self, N, label=None, outdir=None, IFO=None, pfs_input=None
     ):
-        """ Calculates the predicted 2F and standard deviation cumulatively
+        """Calculates the predicted 2F and standard deviation cumulatively
 
         Parameters
         ----------
@@ -1061,7 +1064,7 @@ class ComputeFstat(BaseSearchClass):
         plt_label=None,
         **kwargs
     ):
-        """ Plot the twoF value cumulatively
+        """Plot the twoF value cumulatively
 
         Parameters
         ----------
@@ -1288,7 +1291,7 @@ class SemiCoherentSearch(ComputeFstat):
     def _init_semicoherent_window_range(self):
         """
         Use this window to compute the semicoherent Fstat using TransientFstatMaps.
-        This way we are able to decouple the semicoherent computation from the 
+        This way we are able to decouple the semicoherent computation from the
         actual usage of a transient window.
         """
         self.semicoherentWindowRange = lalpulsar.transientWindowRange_t()
@@ -1439,7 +1442,7 @@ class SearchForSignalWithJumps(BaseSearchClass):
     """ A class which just adds some useful methods for glitches or timing noise """
 
     def _shift_matrix(self, n, dT):
-        """ Generate the shift matrix
+        """Generate the shift matrix
 
         Parameters
         ----------
@@ -1470,7 +1473,7 @@ class SearchForSignalWithJumps(BaseSearchClass):
         return m
 
     def _shift_coefficients(self, theta, dT):
-        """ Shift a set of coefficients by dT
+        """Shift a set of coefficients by dT
 
         Parameters
         ----------
@@ -1490,7 +1493,7 @@ class SearchForSignalWithJumps(BaseSearchClass):
         return np.dot(m, theta)
 
     def _calculate_thetas(self, theta, delta_thetas, tbounds, theta0_idx=0):
-        """ Calculates the set of thetas given delta_thetas, the jumps
+        """Calculates the set of thetas given delta_thetas, the jumps
 
         This is used when generating data containing glitches or timing noise.
         Specifically, the source parameters of the signal are not constant in
@@ -1543,7 +1546,7 @@ class SearchForSignalWithJumps(BaseSearchClass):
 
 
 class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
-    """ A semi-coherent glitch search
+    """A semi-coherent glitch search
 
     This implements a basic `semi-coherent glitch F-stat in which the data
     is divided into segments either side of the proposed glitches and the
@@ -1647,7 +1650,7 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
     def compute_glitch_fstat_single(
         self, F0, F1, F2, Alpha, Delta, delta_F0, delta_F1, tglitch
     ):
-        """ Returns the semi-coherent glitch summed twoF for nglitch=1
+        """Returns the semi-coherent glitch summed twoF for nglitch=1
 
         Note: OBSOLETE, used only for testing
         """

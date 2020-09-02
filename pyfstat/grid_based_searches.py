@@ -210,8 +210,8 @@ class GridSearch(BaseSearchClass):
                 return False
 
         logging.info("Checking header of '{:s}'".format(self.out_file))
-        old_params_dict_str_list = helper_functions.read_parameters_dict_lines_from_file_header(
-            self.out_file
+        old_params_dict_str_list = (
+            helper_functions.read_parameters_dict_lines_from_file_header(self.out_file)
         )
         new_params_dict_str_list = [
             l.strip(" ") for l in self.pprint_init_params_dict()[1:-1]
@@ -235,7 +235,12 @@ class GridSearch(BaseSearchClass):
         new_data = np.nan_to_num(self.input_data.astype(np.float64))
         rtol, atol = self._get_tolerance_from_savetxt_fmt()
         column_matches = [
-            np.allclose(old_data[:, n], new_data[:, n], rtol=rtol[n], atol=atol[n],)
+            np.allclose(
+                old_data[:, n],
+                new_data[:, n],
+                rtol=rtol[n],
+                atol=atol[n],
+            )
             for n in range(len(self.coord_arrays))
         ]
         if np.all(column_matches):
@@ -436,7 +441,7 @@ class GridSearch(BaseSearchClass):
         ylabel=None,
         zlabel=None,
     ):
-        """ Plots a 2D grid of 2F values
+        """Plots a 2D grid of 2F values
 
         Parameters
         ----------
@@ -528,7 +533,7 @@ class GridSearch(BaseSearchClass):
             return ax
 
     def get_max_twoF(self):
-        """ Get the maximum twoF over the grid
+        """Get the maximum twoF over the grid
 
         Returns
         -------
@@ -1739,7 +1744,7 @@ class DMoff_NO_SPIN(GridSearch):
         logging.info("Setting up DMoff_NO_SPIN search with m0 = {}".format(self.m0))
 
     def get_results(self):
-        """ Compute the three summed detection statistics
+        """Compute the three summed detection statistics
 
         Returns
         -------

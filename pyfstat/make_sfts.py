@@ -100,8 +100,8 @@ class Writer(BaseSearchClass):
         Tsft: float
             the sft duration
         noiseSFTs: str
-            SFT on top of which signals will be injected. 
-            If not None, additional constraints can be applied using the arguments 
+            SFT on top of which signals will be injected.
+            If not None, additional constraints can be applied using the arguments
             tstart and duration.
         Band: float or None
             If float, and F0 is also not None, then output SFTs cover
@@ -138,7 +138,8 @@ class Writer(BaseSearchClass):
 
         logging.info(
             "SFT Constraints: [minStartTime:{}, maxStartTime:{}]".format(
-                SFTConstraint.minStartTime, SFTConstraint.maxStartTime,
+                SFTConstraint.minStartTime,
+                SFTConstraint.maxStartTime,
             )
         )
 
@@ -146,7 +147,7 @@ class Writer(BaseSearchClass):
 
     def _get_setup_from_tstart_duration(self):
         """
-        Default behavior: If no noiseSFTs are given, use the input parameters (tstart, 
+        Default behavior: If no noiseSFTs are given, use the input parameters (tstart,
         duration, detectors and Tsft) to make fake data.
         """
         self.tstart = int(self.tstart)
@@ -459,7 +460,7 @@ class Writer(BaseSearchClass):
         return True
 
     def check_if_cff_file_needs_rewritting(self, content):
-        """ Check if the .cff file has changed
+        """Check if the .cff file has changed
 
         Returns True if the file should be overwritten - where possible avoid
         overwriting to allow cached data to be used
@@ -770,8 +771,8 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
         )
 
     def get_base_template(self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref):
-        """ FIXME: ported over from Writer, 
-        should be replaced by a more elegant re-use of parse_args_consistent_with_mfd 
+        """FIXME: ported over from Writer,
+        should be replaced by a more elegant re-use of parse_args_consistent_with_mfd
         """
         return """[TS{}]
 Alpha = {:1.18e}
