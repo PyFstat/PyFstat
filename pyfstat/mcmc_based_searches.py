@@ -1159,12 +1159,12 @@ class MCMCSearch(BaseSearchClass):
                     ls="--",
                 )
 
-        lns = priorln + postln
-        labs = [l.get_label() for l in lns]
+        plotlines = priorln + postln
+        labs = [plotline.get_label() for plotline in plotlines]
         if injection_parameters is not None:
-            lns.append(injection)
+            plotlines.append(injection)
             labs.append("injection")
-        axes[0].legend(lns, labs, loc=1, framealpha=0.8)
+        axes[0].legend(plotlines, labs, loc=1, framealpha=0.8)
 
         fig.savefig(os.path.join(self.outdir, self.label + "_prior_posterior.png"))
 
@@ -1813,10 +1813,10 @@ class MCMCSearch(BaseSearchClass):
                 prior_range = prior["upper"] - prior["lower"]
                 edges = []
                 fracs = []
-                for l in ["lower", "upper"]:
-                    bools = np.abs(s - prior[l]) / prior_range < threshold
+                for bound in ["lower", "upper"]:
+                    bools = np.abs(s - prior[bound]) / prior_range < threshold
                     if np.any(bools):
-                        edges.append(l)
+                        edges.append(bound)
                         fracs.append(str(100 * float(np.sum(bools)) / len(bools)))
                 if len(edges) > 0:
                     logging.warning(
