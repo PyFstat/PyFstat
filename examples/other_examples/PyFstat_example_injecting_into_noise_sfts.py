@@ -1,7 +1,5 @@
 import os
-import sys
 import numpy as np
-import lalpulsar
 import pyfstat
 
 label = os.path.splitext(os.path.basename(__file__))[0]
