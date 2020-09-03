@@ -715,15 +715,16 @@ def get_dictionary_from_lines(lines, comments, raise_error):
 
 
 def predict_fstat(
-    h0,
-    cosi,
-    psi,
-    Alpha,
-    Delta,
-    Freq,
-    sftfilepattern,
-    minStartTime,
-    maxStartTime,
+    h0=None,
+    cosi=None,
+    psi=None,
+    Alpha=None,
+    Delta=None,
+    Freq=None,
+    sftfilepattern=None,
+    timestampsFiles=None,
+    minStartTime=None,
+    duration=None,
     IFOs=None,
     assumeSqrtSX=None,
     tempory_filename="fs.tmp",
@@ -738,40 +739,106 @@ def predict_fstat(
 
     Parameters
     ----------
-    h0, cosi, psi, Alpha, Delta, Freq : float
+    h0, cosi, psi, Alpha, Delta : float
         Signal properties, see `lalapps_PredictFstat --help` for more info.
-    sftfilepattern : str
+    Freq: float or None
+        Only needed for noise floor estimation when given sftfilepattern
+        but assumeSqrtSX is None.
+    sftfilepattern : str or None
         Pattern matching the sftfiles to use.
-    minStartTime, maxStartTime : int
-    IFOs : str
-        See `lalapps_PredictFstat --help`
-    assumeSqrtSX : float or None
-        See `lalapps_PredictFstat --help`, if None this option is not used
+    timestampsFiles : str or None
+        Comma-separated list of per-detector files containing timestamps to use.
+        Only used if no sftfilepattern given.
+    minStartTime, duration : int or None
+        If sftfilepattern given: used as optional constraints.
+        If timestampsFiles given: ignored.
+        If neither given: used as the interval for prediction.
+    IFOs : str or None
+        Comma-separated list of detectors.
+        Ignored if sftfilepattern is given,
+        required if it is not.
+    assumeSqrtSX : float or str or None
+        Assume stationary per-detector noise-floor instead of estimating from SFTs.
+        For multiple detectors: comma-separated list
+        Required if sftfilepattern is not given,
+        optional if it is.
+    tempory_filename : str
+        Temporary file used for lalapps_PredictFstat output, will be deleted.
+    earth_ephem, sun_ephem : str or None
+        Ephemerides files, defaults will be used if None.
+    transientWindowType: str
+        Optional parameter for transient signals,
+        see `lalapps_PredictFstat --help`.
+        Default of "none" means a classical Continuous Wave signal.
+    transientStartTime, transientTau: int or None
+        Optional parameters for transient signals,
+        see `lalapps_PredictFstat --help`.
 
     Returns
     -------
     twoF_expected, twoF_sigma : float
-        The expectation and standard deviation of 2F
+        The expectation and standard deviation of 2F.
 
     """
 
     cl_pfs = []
     cl_pfs.append("lalapps_PredictFstat")
-    cl_pfs.append("--h0={}".format(h0))
-    cl_pfs.append("--cosi={}".format(cosi))
-    cl_pfs.append("--psi={}".format(psi))
-    cl_pfs.append("--Alpha={}".format(Alpha))
-    cl_pfs.append("--Delta={}".format(Delta))
-    cl_pfs.append("--Freq={}".format(Freq))
 
-    cl_pfs.append("--DataFiles='{}'".format(sftfilepattern))
-    if assumeSqrtSX:
+    if h0 is not None:
+        cl_pfs.append("--h0={}".format(h0))
+    if cosi is not None:
+        cl_pfs.append("--cosi={}".format(cosi))
+    # NOTE: as of lalsuite 6.76, [psi,Alpha,Delta] are required even for
+    # noise-only calls, hence we default them to 0 if h0 is None or ==0,
+    # but fail if they're not set with h0>0.
+    # This can likely be simplified after a future lalsuite release.
+    pars = {"psi": psi, "Alpha": Alpha, "Delta": Delta}
+    for par in pars.keys():
+        if pars[par] is None:
+            if h0:
+                raise ValueError(
+                    "For h0>0, {:s} needs to be set explicitly.".format(par)
+                )
+            else:
+                cl_pfs.append("--{:s}=0".format(par))
+        else:
+            cl_pfs.append("--{:s}={}".format(par, pars[par]))
+
+    if sftfilepattern is None:
+        if IFOs is None or assumeSqrtSX is None:
+            raise ValueError("Without sftfilepattern, need IFOs and assumeSqrtSX!")
+        cl_pfs.append("--IFOs={}".format(IFOs))
+        if timestampsFiles is None:
+            if minStartTime is None or duration is None:
+                raise ValueError(
+                    "Without sftfilepattern, need timestampsFiles or [minStartTime,duration]!"
+                )
+            else:
+                cl_pfs.append("--minStartTime={}".format(minStartTime))
+                cl_pfs.append("--duration={}".format(duration))
+        else:
+            if len(timestampsFiles.split(",")) != len(IFOs.split(",")):
+                # checking this manually here because PFS would segfault
+                raise ValueError("timestampsFiles and IFOs must have same length!")
+            cl_pfs.append("--timestampsFiles={}".format(timestampsFiles))
+    else:
+        cl_pfs.append("--DataFiles='{}'".format(sftfilepattern))
+        if minStartTime is not None:
+            cl_pfs.append("--minStartTime={}".format(minStartTime))
+            if duration is not None:
+                cl_pfs.append("--maxStartTime={}".format(minStartTime + duration))
+        if assumeSqrtSX is None:
+            if Freq is None:
+                raise ValueError(
+                    "With sftfilepattern but without assumeSqrtSX,"
+                    " we need Freq to estimate noise floor."
+                )
+            cl_pfs.append("--Freq={}".format(Freq))
+    if assumeSqrtSX is not None:
+        if assumeSqrtSX <= 0:
+            raise ValueError("assumeSqrtSX must be >0!")
         cl_pfs.append("--assumeSqrtSX={}".format(assumeSqrtSX))
-    # if IFOs:
-    #    cl_pfs.append("--IFOs={}".format(IFOs))
 
-    cl_pfs.append("--minStartTime={}".format(int(minStartTime)))
-    cl_pfs.append("--maxStartTime={}".format(int(maxStartTime)))
     cl_pfs.append("--outputFstat={}".format(tempory_filename))
 
     earth_ephem_default, sun_ephem_default = get_ephemeris_files()
@@ -790,5 +857,7 @@ def predict_fstat(
     cl_pfs = " ".join(cl_pfs)
     run_commandline(cl_pfs)
     d = read_par(filename=tempory_filename)
+    twoF_expected = float(d["twoF_expected"])
+    twoF_sigma = float(d["twoF_sigma"])
     os.remove(tempory_filename)
-    return float(d["twoF_expected"]), float(d["twoF_sigma"])
+    return twoF_expected, twoF_sigma

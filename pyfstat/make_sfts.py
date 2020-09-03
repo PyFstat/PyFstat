@@ -571,7 +571,7 @@ class Writer(BaseSearchClass):
             Freq=self.F0,
             sftfilepattern=self.sftfilepath,
             minStartTime=self.tstart,
-            maxStartTime=self.tend(),
+            duration=self.duration,
             IFOs=self.detectors,
             assumeSqrtSX=(assumeSqrtSX or self.sqrtSX),
             tempory_filename=os.path.join(self.outdir, self.label + ".tmp"),
