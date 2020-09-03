@@ -73,11 +73,12 @@ twoF = search.data[:, -1].reshape(
 )
 xyz = [F0_vals * 1e6, F1_vals * 1e12, delta_F0s_vals * 1e6, tglitch_vals_days]
 labels = [
-    r"$f - f_\mathrm{s}$\n[$\mu$Hz]",
-    r"$\dot{f} - \dot{f}_\mathrm{s}$\n[$p$Hz/s]",
-    r"$\delta f-\delta f_\mathrm{s}$\n[$\mu$Hz]",
-    r"$t^\mathrm{g} - t^\mathrm{g}_\mathrm{s}$\n[d]",
-    r"$\widehat{2\mathcal{F}}$",
+    "$f - f_\\mathrm{s}$\n[$\\mu$Hz]",
+    "$\\dot{f} - \\dot{f}_\\mathrm{s}$\n[$p$Hz/s]",
+    "$\\delta f-\\delta f_\\mathrm{s}$\n[$\\mu$Hz]",
+    "$t^\\mathrm{g} - t^\\mathrm{g}_\\mathrm{s}$\n[d]",
+    "$t^\\mathrm{g} - t^\\mathrm{g}_\\mathrm{s}$\n[d]",
+    "$\\widehat{2\\mathcal{F}}$",
 ]
 fig, axes = gridcorner(
     twoF,

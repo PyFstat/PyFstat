@@ -78,8 +78,10 @@ mcmc = pyfstat.MCMCSemiCoherentSearch(
     log10beta_min=log10beta_min,
 )
 mcmc.transform_dictionary = dict(
-    F0=dict(subtractor=signal_parameters["F0"], symbol=r"$f-f^\mathrm{s}$"),
-    F1=dict(subtractor=signal_parameters["F1"], symbol=r"$\dot{f}-\dot{f}^\mathrm{s}$"),
+    F0=dict(subtractor=signal_parameters["F0"], symbol="$f-f^\\mathrm{s}$"),
+    F1=dict(
+        subtractor=signal_parameters["F1"], symbol="$\\dot{f}-\\dot{f}^\\mathrm{s}$"
+    ),
 )
 mcmc.run()
 mcmc.plot_corner(add_prior=True)

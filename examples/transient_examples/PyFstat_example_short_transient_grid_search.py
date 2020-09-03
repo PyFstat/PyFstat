@@ -53,7 +53,7 @@ search1.run()
 search1.print_max_twoF()
 search1.save_array_to_disk(search1.data)
 
-search1.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel=r"$2\mathcal{F}$")
+search1.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")
 
 print("with t0,tau bands:")
 search2 = pyfstat.TransientGridSearch(
@@ -79,4 +79,4 @@ search2.run()
 search2.print_max_twoF()
 search2.save_array_to_disk(search2.data)
 
-search2.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel=r"$2\mathcal{F}$")
+search2.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")
