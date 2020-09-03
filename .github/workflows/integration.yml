@@ -29,6 +29,10 @@ jobs:
         wget $EPHEM_SRC/sun00-40-DE405.dat.gz -P $LALPULSAR_DATADIR
         echo "Successfully downloaded ephemerides:"
         ls -l $LALPULSAR_DATADIR
+    - name: Linting with flake8
+      run: |
+        pip install flake8
+        flake8 --count --statistics .
     - name: Style check with black
       run: |
         pip install black

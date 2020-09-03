@@ -214,7 +214,7 @@ class GridSearch(BaseSearchClass):
             helper_functions.read_parameters_dict_lines_from_file_header(self.out_file)
         )
         new_params_dict_str_list = [
-            l.strip(" ") for l in self.pprint_init_params_dict()[1:-1]
+            line.strip(" ") for line in self.pprint_init_params_dict()[1:-1]
         ]
         unmatched = np.setxor1d(old_params_dict_str_list, new_params_dict_str_list)
         if len(unmatched) > 0:

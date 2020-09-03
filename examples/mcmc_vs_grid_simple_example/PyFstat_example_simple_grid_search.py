@@ -64,7 +64,7 @@ search.print_max_twoF()
 search.save_array_to_disk(search.data)
 
 print("Plotting 2F(F0)...")
-search.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\mathcal{F}$")
+search.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")
 
 print("Making F0-F1 corner plot of 2F...")
 F0_vals = np.unique(search.data[:, 2]) - F0
@@ -73,8 +73,8 @@ twoF = search.data[:, -1].reshape((len(F0_vals), len(F1_vals)))
 xyz = [F0_vals, F1_vals]
 labels = [
     "$f - f_0$",
-    "$\dot{f} - \dot{f}_0$",
-    "$\widetilde{2\mathcal{F}}$",
+    "$\\dot{f} - \\dot{f}_0$",
+    "$\\widetilde{2\\mathcal{F}}$",
 ]
 fig, axes = gridcorner(
     twoF, xyz, projection="log_mean", labels=labels, whspace=0.1, factor=1.8

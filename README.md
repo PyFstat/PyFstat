@@ -151,13 +151,17 @@ For a general introduction to installing modules, see
 [here](https://docs.python.org/3/installing/index.html).
 
 *Optional dependencies*:
-* [pycuda](https://pypi.org/project/pycuda/), required for the `tCWFstatMapVersion=pycuda`
+* [pycuda](https://pypi.org/project/pycuda/),
+  required for the `tCWFstatMapVersion=pycuda`
   option of the `TransientGridSearch` class.
   (Note: `pip install pycuda` requires a working `nvcc` compiler in your path.)
-* [pytest](https://docs.pytest.org) for running the test suite locally (`python -m pytest tests.py`)
-* Developers are also highly encouraged to use the [black](https://black.readthedocs.io) style checker locally
-(`black --check --diff .`),
-as it is required to pass by the online integration pipeline.
+* [pytest](https://docs.pytest.org) for running the test suite locally
+  (`python -m pytest tests.py`)
+* Developers are also highly encouraged to use
+  the [flake8](https://flake8.pycqa.org/en/latest/) linter
+  and [black](https://black.readthedocs.io) style checker
+  locally,
+  as these checks are required to pass by the online integration pipeline.
 * Some of the [examples](./examples) require [gridcorner](https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner);
 for `pip` users this is most conveniently installed by
 ```
@@ -272,7 +276,13 @@ for advice or just jump in and submit an
 
 Here's what you need to know:
 * The github automated tests currently run on `python` [3.6,3.7,3.8] and new PRs need to pass all these.
-* The automated test also runs the [black](https://black.readthedocs.io) style checker. If possible, please run this locally before pushing changes / submitting PRs: `black --check --diff .` to show the required changes, or `black .` to automatically apply them.
+* The automated test also runs
+  the [black](https://black.readthedocs.io) style checker
+  and the [flake8](https://flake8.pycqa.org/en/latest/) linter.
+  If at all possible, please run these two tools locally before pushing changes / submitting PRs:
+  `flake8 --count --statistics .` to find common coding errors and then fix them manually,
+  and then
+  `black --check --diff .` to show the required style changes, or `black .` to automatically apply them.
 
 ## Citing this work
 

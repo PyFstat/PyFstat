@@ -169,6 +169,10 @@ class Writer(BaseSearchClass):
             for ind, dets in enumerate(IFOs)
         ]
 
+    def _gps_to_int(self, tGPS):
+        """Simple LIGOTimeGPS helper, SWIG-LAL does not import this functionality"""
+        return tGPS.gpsSeconds
+
     def _get_setup_from_noiseSFTs(self):
         """
         If noiseSFTs are given, use them to obtain relevant data parameters (tstart,
@@ -191,16 +195,13 @@ class Writer(BaseSearchClass):
         Tsft = []
         self.sftfilenames = []  # This refers to the MFD output!
 
-        # SWIG-LAL does not import this functionality
-        gps_to_int = lambda x: x.gpsSeconds
-
         for ifo_catalog in noise_multi_sft_catalog.data:
             ifo_name = lalpulsar.ListIFOsInCatalog(ifo_catalog).data[0]
 
             time_stamps = lalpulsar.TimestampsFromSFTCatalog(ifo_catalog)
             this_Tsft = int(round(1.0 / ifo_catalog.data[0].header.deltaF))
-            this_start_time = gps_to_int(time_stamps.data[0])
-            this_end_time = gps_to_int(time_stamps.data[-1]) + this_Tsft
+            this_start_time = self._gps_to_int(time_stamps.data[0])
+            this_end_time = self._gps_to_int(time_stamps.data[-1]) + this_Tsft
 
             self.sftfilenames.append(
                 lalpulsar.OfficialSFTFilename(

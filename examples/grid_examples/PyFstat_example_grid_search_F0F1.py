@@ -1,6 +1,5 @@
 import pyfstat
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 
 try:
@@ -78,7 +77,7 @@ search = pyfstat.GridSearch(
 )
 search.run()
 
-search.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\mathcal{F}$")
+search.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")
 search.plot_1D(xkey="F1")
 search.plot_2D(xkey="F0", ykey="F1", colorbar=True)
 
@@ -88,8 +87,8 @@ twoF = search.data[:, -1].reshape((len(F0_vals), len(F1_vals)))
 xyz = [F0_vals, F1_vals]
 labels = [
     "$f - f_0$",
-    "$\dot{f} - \dot{f}_0$",
-    "$\widetilde{2\mathcal{F}}$",
+    "$\\dot{f} - \\dot{f}_0$",
+    "$\\widetilde{2\\mathcal{F}}$",
 ]
 fig, axes = gridcorner(
     twoF, xyz, projection="log_mean", labels=labels, whspace=0.1, factor=1.8

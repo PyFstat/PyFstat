@@ -13,7 +13,6 @@ from PyFstat_example_make_data_for_search_on_1_glitch import (
 )
 import os
 
-outdir = os.path.join("PyFstat_example_data", "PyFstat_example_glitch_robust_search")
 label = "standard_directed_MCMC_search_on_1_glitch"
 
 Nstar = 10000
@@ -47,9 +46,9 @@ mcmc = pyfstat.MCMCSearch(
     log10beta_min=log10beta_min,
 )
 
-mcmc.transform_dictionary["F0"] = dict(subtractor=F0, symbol="$f-f^\mathrm{s}$")
+mcmc.transform_dictionary["F0"] = dict(subtractor=F0, symbol="$f-f^\\mathrm{s}$")
 mcmc.transform_dictionary["F1"] = dict(
-    subtractor=F1, symbol="$\dot{f}-\dot{f}^\mathrm{s}$"
+    subtractor=F1, symbol="$\\dot{f}-\\dot{f}^\\mathrm{s}$"
 )
 
 mcmc.run()

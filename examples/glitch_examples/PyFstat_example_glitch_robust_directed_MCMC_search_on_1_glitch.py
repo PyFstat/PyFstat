@@ -17,7 +17,6 @@ from PyFstat_example_make_data_for_search_on_1_glitch import (
 )
 import os
 
-outdir = os.path.join("PyFstat_example_data", "PyFstat_example_glitch_robust_search")
 label = "semicoherent_glitch_robust_directed_MCMC_search_on_1_glitch"
 
 Nstar = 1000
@@ -59,21 +58,21 @@ mcmc = pyfstat.MCMCGlitchSearch(
     nglitch=1,
 )
 mcmc.transform_dictionary["F0"] = dict(
-    subtractor=F0, multiplier=1e6, symbol="$f-f_\mathrm{s}$"
+    subtractor=F0, multiplier=1e6, symbol="$f-f_\\mathrm{s}$"
 )
-mcmc.unit_dictionary["F0"] = "$\mu$Hz"
+mcmc.unit_dictionary["F0"] = "$\\mu$Hz"
 mcmc.transform_dictionary["F1"] = dict(
-    subtractor=F1, multiplier=1e12, symbol="$\dot{f}-\dot{f}_\mathrm{s}$"
+    subtractor=F1, multiplier=1e12, symbol="$\\dot{f}-\\dot{f}_\\mathrm{s}$"
 )
 mcmc.unit_dictionary["F1"] = "$p$Hz/s"
 mcmc.transform_dictionary["delta_F0"] = dict(
-    multiplier=1e6, subtractor=delta_F0, symbol="$\delta f-\delta f_\mathrm{s}$"
+    multiplier=1e6, subtractor=delta_F0, symbol="$\\delta f-\\delta f_\\mathrm{s}$"
 )
-mcmc.unit_dictionary["delta_F0"] = "$\mu$Hz/s"
+mcmc.unit_dictionary["delta_F0"] = "$\\mu$Hz/s"
 mcmc.transform_dictionary["tglitch"]["subtractor"] = tstart + dtglitch
 mcmc.transform_dictionary["tglitch"][
     "label"
-] = "$t^\mathrm{g}-t^\mathrm{g}_\mathrm{s}$\n[d]"
+] = "$t^\\mathrm{g}-t^\\mathrm{g}_\\mathrm{s}$\n[d]"
 
 t1 = time.time()
 mcmc.run(save_loudest=False)  # uses CFSv2 which doesn't support glitch parameters
