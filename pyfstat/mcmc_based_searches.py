@@ -440,7 +440,7 @@ class MCMCSearch(BaseSearchClass):
     #            raise ValueError('test_type {} not understood'.format(test_type))
     #
     #
-    #    def _test_autocorr_convergence(self, i, sampler, test=True, n_cut=5):
+    #    def _test_autocorr_convergence(self, i, test=True, n_cut=5):
     #        try:
     #            acors = np.zeros((self.ntemps, self.ndim))
     #            for temp in range(self.ntemps):
@@ -448,7 +448,7 @@ class MCMCSearch(BaseSearchClass):
     #                    j = i-self.convergence_n
     #                else:
     #                    j = 0
-    #                x = np.mean(sampler.chain[temp, :, j:i, :], axis=0)
+    #                x = np.mean(self.sampler.chain[temp, :, j:i, :], axis=0)
     #                acors[temp, :] = emcee.autocorr.exponential_time(x)
     #            c = np.max(acors, axis=0)
     #        except emcee.autocorr.AutocorrError:
@@ -464,11 +464,11 @@ class MCMCSearch(BaseSearchClass):
     #        if test:
     #            return i > n_cut * np.max(c)
     #
-    #    def _test_GR_convergence(self, i, sampler, test=True, R=1.1):
+    #    def _test_GR_convergence(self, i, test=True, R=1.1):
     #        if self.convergence_windowed:
-    #            s = sampler.chain[0, :, i-self.convergence_n+1:i+1, :]
+    #            s = self.sampler.chain[0, :, i-self.convergence_n+1:i+1, :]
     #        else:
-    #            s = sampler.chain[0, :, :i+1, :]
+    #            s = self.sampler.chain[0, :, :i+1, :]
     #        N = float(self.convergence_n)
     #        M = float(self.nwalkers)
     #        W = np.mean(np.var(s, axis=1), axis=0)
@@ -485,18 +485,18 @@ class MCMCSearch(BaseSearchClass):
     #        else:
     #            return False
     #
-    #    def _test_convergence(self, i, sampler, **kwargs):
+    #    def _test_convergence(self, i, **kwargs):
     #        if np.mod(i+1, self.convergence_n) == 0:
-    #            return self._get_convergence_test(i, sampler, **kwargs)
+    #            return self._get_convergence_test(i, self.sampler, **kwargs)
     #        else:
     #            return False
     #
-    #    def _run_sampler_with_conv_test(self, sampler, p0, nprod=0, nburn=0):
+    #    def _run_sampler_with_conv_test(self, p0, nprod=0, nburn=0):
     #        logging.info('Running {} burn-in steps with convergence testing'
     #                     .format(nburn))
-    #        iterator = tqdm(sampler.sample(p0, iterations=nburn), total=nburn)
+    #        iterator = tqdm(self.sampler.sample(p0, iterations=nburn), total=nburn)
     #        for i, output in enumerate(iterator):
-    #            if self._test_convergence(i, sampler, test=True,
+    #            if self._test_convergence(i, self.sampler, test=True,
     #                                      **self.convergence_kwargs):
     #                logging.info(
     #                    'Converged at {} before max number {} of steps reached'
@@ -506,35 +506,34 @@ class MCMCSearch(BaseSearchClass):
     #        iterator.close()
     #        logging.info('Running {} production steps'.format(nprod))
     #        j = nburn
-    #        iterator = tqdm(sampler.sample(output[0], iterations=nprod),
+    #        iterator = tqdm(self.sampler.sample(output[0], iterations=nprod),
     #                        total=nprod)
     #        for result in iterator:
-    #            self._test_convergence(j, sampler, test=False,
+    #            self._test_convergence(j, self.sampler, test=False,
     #                                   **self.convergence_kwargs)
     #            j += 1
-    #        return sampler
 
-    def _run_sampler(self, sampler, p0, nprod=0, nburn=0, window=50):
+    def _run_sampler(self, p0, nprod=0, nburn=0, window=50):
         for result in tqdm(
-            sampler.sample(p0, iterations=nburn + nprod), total=nburn + nprod
+            self.sampler.sample(p0, iterations=nburn + nprod), total=nburn + nprod
         ):
             pass
 
-        self.mean_acceptance_fraction = np.mean(sampler.acceptance_fraction, axis=1)
+        self.mean_acceptance_fraction = np.mean(
+            self.sampler.acceptance_fraction, axis=1
+        )
         logging.info(
             "Mean acceptance fraction: {}".format(self.mean_acceptance_fraction)
         )
         if self.ntemps > 1:
-            self.tswap_acceptance_fraction = sampler.tswap_acceptance_fraction
+            self.tswap_acceptance_fraction = self.sampler.tswap_acceptance_fraction
             logging.info(
                 "Tswap acceptance fraction: {}".format(
-                    sampler.tswap_acceptance_fraction
+                    self.sampler.tswap_acceptance_fraction
                 )
             )
-        self.autocorr_time = sampler.get_autocorr_time(window=window)
+        self.autocorr_time = self.sampler.get_autocorr_time(window=window)
         logging.info("Autocorrelation length: {}".format(self.autocorr_time))
-
-        return sampler
 
     def _estimate_run_time(self):
         """Print the estimated run time
@@ -619,11 +618,6 @@ class MCMCSearch(BaseSearchClass):
             result when estimating the autocorrelation time (see
             ptemcee.Sampler.get_autocorr_time for further details.
 
-        Returns
-        -------
-        sampler: ptemcee.Sampler
-            The ptemcee ptsampler object
-
         """
 
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
@@ -642,7 +636,7 @@ class MCMCSearch(BaseSearchClass):
 
         walker_plot_args = walker_plot_args or {}
 
-        sampler = PTSampler(
+        self.sampler = PTSampler(
             ntemps=self.ntemps,
             nwalkers=self.nwalkers,
             dim=self.ndim,
@@ -664,12 +658,10 @@ class MCMCSearch(BaseSearchClass):
             logging.info(
                 "Running {}/{} initialisation with {} steps".format(j, ninit_steps, n)
             )
-            sampler = self._run_sampler(sampler, p0, nburn=n, window=window)
+            self._run_sampler(p0, nburn=n, window=window)
             if plot_walkers:
                 try:
-                    walker_fig, walker_axes = self._plot_walkers(
-                        sampler, **walker_plot_args
-                    )
+                    walker_fig, walker_axes = self._plot_walkers(**walker_plot_args)
                     walker_fig.tight_layout()
                     walker_fig.savefig(
                         os.path.join(
@@ -684,10 +676,10 @@ class MCMCSearch(BaseSearchClass):
                         )
                     )
 
-            p0 = self._get_new_p0(sampler)
+            p0 = self._get_new_p0()
             p0 = self._apply_corrections_to_p0(p0)
             self._check_initial_points(p0)
-            sampler.reset()
+            self.sampler.reset()
 
         if len(self.nsteps) > 1:
             nburn = self.nsteps[-2]
@@ -695,21 +687,19 @@ class MCMCSearch(BaseSearchClass):
             nburn = 0
         nprod = self.nsteps[-1]
         logging.info("Running final burn and prod with {} steps".format(nburn + nprod))
-        sampler = self._run_sampler(sampler, p0, nburn=nburn, nprod=nprod)
+        self._run_sampler(p0, nburn=nburn, nprod=nprod)
 
-        samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
-        lnprobs = sampler.logprobability[0, :, nburn:].reshape((-1))
-        lnlikes = sampler.loglikelihood[0, :, nburn:].reshape((-1))
-        all_lnlikelihood = sampler.loglikelihood[:, :, nburn:]
+        samples = self.sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
+        lnprobs = self.sampler.logprobability[0, :, nburn:].reshape((-1))
+        lnlikes = self.sampler.loglikelihood[0, :, nburn:].reshape((-1))
+        all_lnlikelihood = self.sampler.loglikelihood[:, :, nburn:]
         self.samples = samples
-        self.chain = sampler.chain
+        self.chain = self.sampler.chain
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes
         self.all_lnlikelihood = all_lnlikelihood
         if save_pickle:
-            self._pickle_data(
-                sampler, samples, lnprobs, lnlikes, all_lnlikelihood, sampler.chain
-            )
+            self._pickle_data(samples, lnprobs, lnlikes, all_lnlikelihood)
         if export_samples:
             self.export_samples_to_disk()
         if save_loudest:
@@ -718,7 +708,7 @@ class MCMCSearch(BaseSearchClass):
         if plot_walkers:
             try:
                 walkers_fig, walkers_axes = self._plot_walkers(
-                    sampler, nprod=nprod, **walker_plot_args
+                    nprod=nprod, **walker_plot_args
                 )
                 walkers_fig.tight_layout()
             except Exception as e:
@@ -738,8 +728,6 @@ class MCMCSearch(BaseSearchClass):
                     logging.warning(
                         "Failed to save walker plots due to Error {}".format(e)
                     )
-
-        return sampler
 
     def _get_rescale_multiplier_for_key(self, key):
         """Get the rescale multiplier from the transform_dictionary
@@ -1332,7 +1320,6 @@ class MCMCSearch(BaseSearchClass):
 
     def _plot_walkers(
         self,
-        sampler,
         symbols=None,
         alpha=0.8,
         color="k",
@@ -1367,10 +1354,10 @@ class MCMCSearch(BaseSearchClass):
         if np.ndim(axes) > 1:
             axes = axes.flatten()
 
-        shape = sampler.chain.shape
+        shape = self.sampler.chain.shape
         if len(shape) == 3:
             nwalkers, nsteps, ndim = shape
-            chain = sampler.chain[:, :, :].copy()
+            chain = self.sampler.chain[:, :, :].copy()
         if len(shape) == 4:
             ntemps, nwalkers, nsteps, ndim = shape
             if temp < ntemps:
@@ -1381,7 +1368,7 @@ class MCMCSearch(BaseSearchClass):
                         temp
                     )
                 )
-            chain = sampler.chain[temp, :, :, :].copy()
+            chain = self.sampler.chain[temp, :, :, :].copy()
 
         samples = chain.reshape((nwalkers * nsteps, ndim))
         samples = self._scale_samples(samples, self.theta_keys)
@@ -1463,7 +1450,7 @@ class MCMCSearch(BaseSearchClass):
                 if len(axes) == ndim:
                     axes.append(fig.add_subplot(ndim + 1, 1, ndim + 1))
 
-                lnl = sampler.loglikelihood[temp, :, :]
+                lnl = self.sampler.loglikelihood[temp, :, :]
                 if burnin_idx and add_det_stat_burnin:
                     burn_in_vals = lnl[:, :burnin_idx].flatten()
                     try:
@@ -1556,7 +1543,7 @@ class MCMCSearch(BaseSearchClass):
 
         return p0
 
-    def _get_new_p0(self, sampler):
+    def _get_new_p0(self):
         """Returns new initial positions for walkers are burn0 stage
 
         This returns new positions for all walkers by scattering points about
@@ -1564,9 +1551,9 @@ class MCMCSearch(BaseSearchClass):
 
         """
         temp_idx = 0
-        pF = sampler.chain[temp_idx, :, :, :]
-        lnl = sampler.loglikelihood[temp_idx, :, :]
-        lnp = sampler.logprobability[temp_idx, :, :]
+        pF = self.sampler.chain[temp_idx, :, :, :]
+        lnl = self.sampler.loglikelihood[temp_idx, :, :]
+        lnp = self.sampler.logprobability[temp_idx, :, :]
 
         # General warnings about the state of lnp
         if np.any(np.isnan(lnp)):
@@ -1619,12 +1606,12 @@ class MCMCSearch(BaseSearchClass):
         )
         return d
 
-    def _pickle_data(self, sampler, samples, lnprobs, lnlikes, all_lnlikelihood, chain):
+    def _pickle_data(self, samples, lnprobs, lnlikes, all_lnlikelihood):
         d = self._get_data_dictionary_to_save()
         d["samples"] = samples
         d["lnprobs"] = lnprobs
         d["lnlikes"] = lnlikes
-        d["chain"] = chain
+        d["chain"] = self.sampler.chain
         d["all_lnlikelihood"] = all_lnlikelihood
 
         if os.path.isfile(self.pickle_path):
@@ -3025,6 +3012,19 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         else:
             return run_setup
 
+    def _get_p0_per_stage(self, reset_p0=False):
+        """Returns new initial positions for walkers at each stage of the ladder"""
+        if not hasattr(self, "sampler"):  # must be stage 0
+            p0 = self._generate_initial_p0()
+            p0 = self._apply_corrections_to_p0(p0)
+        elif reset_p0:
+            p0 = self._get_new_p0(self.sampler)
+            p0 = self._apply_corrections_to_p0(p0)
+            # self._check_initial_points(p0)
+        else:
+            p0 = self.sampler.chain[:, :, -1, :]
+        return p0
+
     def run(
         self,
         run_setup=None,
@@ -3101,22 +3101,14 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
         nsteps_total = 0
         for j, ((nburn, nprod), nseg, reset_p0) in enumerate(run_setup):
-            if j == 0:
-                p0 = self._generate_initial_p0()
-                p0 = self._apply_corrections_to_p0(p0)
-            elif reset_p0:
-                p0 = self._get_new_p0(sampler)
-                p0 = self._apply_corrections_to_p0(p0)
-                # self._check_initial_points(p0)
-            else:
-                p0 = sampler.chain[:, :, -1, :]
+            p0 = self._get_p0_per_stage(reset_p0)
 
             self.nsegs = nseg
             self._set_likelihoodcoef()
             self.search.nsegs = nseg
             self.update_search_object()
             self.search.init_semicoherent_parameters()
-            sampler = PTSampler(
+            self.sampler = PTSampler(
                 ntemps=self.ntemps,
                 nwalkers=self.nwalkers,
                 dim=self.ndim,
@@ -3134,19 +3126,17 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                     "Running {}/{} with {} steps and {} nsegs " "(Tcoh={:1.2f} days)"
                 ).format(j + 1, len(run_setup), (nburn, nprod), nseg, Tcoh)
             )
-            sampler = self._run_sampler(
-                sampler, p0, nburn=nburn, nprod=nprod, window=window
-            )
+            self._run_sampler(p0, nburn=nburn, nprod=nprod, window=window)
             logging.info(
                 "Max detection statistic of run was {}".format(
-                    np.max(sampler.loglikelihood)
+                    np.max(self.sampler.loglikelihood)
                 )
             )
 
             if plot_walkers:
                 try:
                     walkers_fig, walkers_axes = self._plot_walkers(
-                        sampler, nprod=nprod, xoffset=nsteps_total, **walker_plot_args
+                        nprod=nprod, xoffset=nsteps_total, **walker_plot_args
                     )
                     for ax in walkers_axes[: self.ndim]:
                         ax.axvline(nsteps_total, color="k", ls="--", lw=0.25)
@@ -3170,18 +3160,16 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 axy.set_xticks(mids)
                 axy.set_xticklabels(mid_labels)
 
-        samples = sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
-        lnprobs = sampler.logprobability[0, :, nburn:].reshape((-1))
-        lnlikes = sampler.loglikelihood[0, :, nburn:].reshape((-1))
-        all_lnlikelihood = sampler.loglikelihood
+        samples = self.sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
+        lnprobs = self.sampler.logprobability[0, :, nburn:].reshape((-1))
+        lnlikes = self.sampler.loglikelihood[0, :, nburn:].reshape((-1))
+        all_lnlikelihood = self.sampler.loglikelihood
         self.samples = samples
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes
         self.all_lnlikelihood = all_lnlikelihood
         if save_pickle:
-            self._pickle_data(
-                sampler, samples, lnprobs, lnlikes, all_lnlikelihood, sampler.chain
-            )
+            self._pickle_data(samples, lnprobs, lnlikes, all_lnlikelihood)
         if export_samples:
             self.export_samples_to_disk()
         if save_loudest:
