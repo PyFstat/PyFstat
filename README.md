@@ -130,7 +130,7 @@ PyFstat uses the following external python modules,
 which should all be pulled in automatically if you use `pip`:
 
 * [numpy](https://www.numpy.org/)
-* [matplotlib](https://matplotlib.org/) >= 2.1
+* [matplotlib](https://matplotlib.org/)
 * [scipy](https://www.scipy.org/)
 * [ptemcee](https://github.com/willvousden/ptemcee)
 * [corner](https://pypi.python.org/pypi/corner/)
@@ -139,7 +139,7 @@ which should all be pulled in automatically if you use `pip`:
 * [bashplotlib](https://github.com/glamp/bashplotlib)
 * [peakutils](https://pypi.python.org/pypi/PeakUtils)
 * [pathos](https://pypi.python.org/pypi/pathos)
-* [lalsuite](https://pypi.org/project/lalsuite/) >= 6.72
+* [lalsuite](https://pypi.org/project/lalsuite/)
 * [versioneer](https://pypi.org/project/versioneer/)
 
 In case the automatic install doesn't properly pull in all dependencies,
