@@ -978,6 +978,7 @@ class SliceGridSearch(GridSearch):
 
         if save:
             fig.savefig(os.path.join(self.outdir, self.label + "_slice_projection.png"))
+            plt.close(fig)
         else:
             return fig, axes
 
@@ -1436,6 +1437,7 @@ class FrequencySlidingWindow(GridSearch):
         if savefig:
             plt.tight_layout()
             plt.savefig(os.path.join(self.outdir, self.label + "_sliding_window.png"))
+            plt.close()
         else:
             return ax
 
@@ -1613,7 +1615,12 @@ class EarthTest(GridSearch):
         return F_at_zero - marginalised_F, (F_at_zero - max_F) / F_at_zero
 
     def plot_corner(
-        self, prior_widths=None, fig=None, axes=None, projection="log_mean"
+        self,
+        prior_widths=None,
+        fig=None,  # FIXME: looks like this is currently ignored
+        axes=None,  # FIXME: looks like this is currently ignored
+        save_fig=True,
+        projection="log_mean",
     ):
         Bsa, FmaxMismatch = self.marginalised_bayes_factor(prior_widths)
 
@@ -1653,7 +1660,13 @@ class EarthTest(GridSearch):
             y=0.99,
             size=14,
         )
-        fig.savefig(os.path.join(self.outdir, self.label + "_projection_matrix.png"))
+        if save_fig:
+            fig.savefig(
+                os.path.join(self.outdir, self.label + "_projection_matrix.png")
+            )
+            plt.close(fig)
+        else:
+            return fig, axes
 
     def plot(self, key, prior_widths=None):
         Bsa, FmaxMismatch = self.marginalised_bayes_factor(prior_widths)
@@ -1679,6 +1692,7 @@ class EarthTest(GridSearch):
         )
         fig.tight_layout()
         fig.savefig(os.path.join(self.outdir, self.label + "_1D.png"))
+        plt.close(fig)
 
 
 class DMoff_NO_SPIN(GridSearch):
