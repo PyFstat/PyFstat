@@ -37,7 +37,7 @@ args, tqdm = helper_functions.set_up_command_line_arguments()
 detector_colors = {"h1": "C0", "l1": "C1"}
 
 
-class BaseSearchClass(object):
+class BaseSearchClass:
     """ The base search class providing parent methods to other searches """
 
     def __new__(cls, *args, **kwargs):
