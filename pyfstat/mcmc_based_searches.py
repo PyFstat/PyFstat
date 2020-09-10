@@ -894,6 +894,7 @@ class MCMCSearch(BaseSearchClass):
                 ax.set_xlabel(self.theta_symbols[0])
 
             fig.savefig(os.path.join(self.outdir, self.label + "_corner.png"), dpi=dpi)
+            plt.close(fig)
             return
 
         with plt.rc_context(rc_context):
@@ -974,6 +975,7 @@ class MCMCSearch(BaseSearchClass):
                 fig_triangle.savefig(
                     os.path.join(self.outdir, self.label + "_corner.png"), dpi=dpi
                 )
+                plt.close(fig_triangle)
             else:
                 return fig, axes
 
@@ -1028,8 +1030,9 @@ class MCMCSearch(BaseSearchClass):
 
         if save_fig:
             fig.savefig(os.path.join(self.outdir, self.label + "_corner.png"), dpi=dpi)
+            plt.close(fig)
         else:
-            return fig
+            return fig, axes
 
     def _add_prior_to_corner(self, axes, samples, add_prior):
         for i, key in enumerate(self.theta_keys):
@@ -1120,9 +1123,18 @@ class MCMCSearch(BaseSearchClass):
                 )
         return prior_bounds, norm_trunc_warning
 
-    def plot_prior_posterior(self, normal_stds=2, injection_parameters=None):
+    def plot_prior_posterior(
+        self,
+        normal_stds=2,
+        injection_parameters=None,
+        fig_and_axes=None,
+        save_fig=True,
+    ):
         """ Plot the posterior in the context of the prior """
-        fig, axes = plt.subplots(nrows=self.ndim, figsize=(8, 4 * self.ndim))
+        if fig_and_axes is None:
+            fig, axes = plt.subplots(nrows=self.ndim, figsize=(8, 4 * self.ndim))
+        else:
+            fig, ax = fig_and_axes
         if self.ndim == 1:
             axes = [axes]
         N = 1000
@@ -1166,7 +1178,11 @@ class MCMCSearch(BaseSearchClass):
             labs.append("injection")
         axes[0].legend(plotlines, labs, loc=1, framealpha=0.8)
 
-        fig.savefig(os.path.join(self.outdir, self.label + "_prior_posterior.png"))
+        if save_fig:
+            fig.savefig(os.path.join(self.outdir, self.label + "_prior_posterior.png"))
+            plt.close(fig)
+        else:
+            return fig, axes
 
     def plot_cumulative_max(self, **kwargs):
         """Plot the cumulative twoF for the maximum posterior estimate
@@ -2099,6 +2115,7 @@ class MCMCSearch(BaseSearchClass):
             ax2.set_xlabel(r"$\beta_{\mathrm{min}}$")
             plt.tight_layout()
             fig.savefig(os.path.join(self.outdir, self.label + "_beta_lnl.png"))
+            plt.close(fig)
 
         return log10evidence, log10evidence_err
 
@@ -2438,6 +2455,7 @@ class MCMCGlitchSearch(MCMCSearch):
 
         ax.set_xlabel("GPS time")
         fig.savefig(os.path.join(self.outdir, self.label + "_twoFcumulative.png"))
+        plt.close(fig)
 
     def get_savetxt_fmt(self):
         fmt = helper_functions.get_doppler_params_output_format(
