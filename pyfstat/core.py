@@ -37,8 +37,13 @@ args, tqdm = helper_functions.set_up_command_line_arguments()
 detector_colors = {"h1": "C0", "l1": "C1"}
 
 
-class BaseSearchClass(object):
+class BaseSearchClass:
     """ The base search class providing parent methods to other searches """
+
+    def __new__(cls, *args, **kwargs):
+        logging.info(f"Creating {cls.__name__} object...")
+        instance = super().__new__(cls)
+        return instance
 
     def _add_log_file(self, header=None):
         """ Log output to a file, requires class to have outdir and label """
@@ -1043,7 +1048,7 @@ class ComputeFstat(BaseSearchClass):
                 maxStartTime=t,
                 sftfilepattern=self.sftfilepattern,
                 IFO=IFO,
-                **pfs_input
+                **pfs_input,
             )
             for t in times
         ]
@@ -1062,7 +1067,7 @@ class ComputeFstat(BaseSearchClass):
         savefig=True,
         title=None,
         plt_label=None,
-        **kwargs
+        **kwargs,
     ):
         """Plot the twoF value cumulatively
 

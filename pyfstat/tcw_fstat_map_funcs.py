@@ -37,7 +37,7 @@ def _optional_import(modulename, shorthand=None):
     return success
 
 
-class pyTransientFstatMap(object):
+class pyTransientFstatMap:
     """
     simplified object class for a F(t0,tau) F-stat map (not 2F!)
     based on LALSuite's transientFstatMap_t type
