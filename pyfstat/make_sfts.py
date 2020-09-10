@@ -400,7 +400,15 @@ class Writer(BaseSearchClass):
             config_file.close()
 
     def check_cached_data_okay_to_use(self, cl_mfd):
-        """ Check if matching data already exists in SFT files and can be used. """
+        """Check if SFT files already exist that can be re-used.
+
+        This does not check the actual data contents of the SFTs,
+        but only the following criteria:
+         * filename
+         * if injecting a signal, that the .cff file is older than the SFTs
+           (but its contents should have been checked separately)
+         * that the commandline stored in the (first) SFT header matches
+        """
 
         need_new = "Will create new SFT file(s)."
 
@@ -456,7 +464,7 @@ class Writer(BaseSearchClass):
             )
             if len(cl_old) == 0:
                 logging.info(
-                    "......ould not obtain comparison commandline from first SFT"
+                    "......could not obtain comparison commandline from first SFT"
                     " header in old file '{}'. {}".format(sftfile, need_new)
                 )
                 return False
