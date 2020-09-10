@@ -394,45 +394,57 @@ class Writer(BaseSearchClass):
         else:
             logging.info("Writing config file {:s}...".format(self.config_file_name))
 
-        if self.check_if_cff_file_needs_rewritting(content):
+        if self.check_if_cff_file_needs_rewriting(content):
             config_file = open(self.config_file_name, "w+")
             config_file.write(content)
             config_file.close()
 
     def check_cached_data_okay_to_use(self, cl_mfd):
-        """ Check if cached data exists and, if it does, if it can be used """
+        """Check if SFT files already exist that can be re-used.
 
-        need_new = "Will create new SFT file."
+        This does not check the actual data contents of the SFTs,
+        but only the following criteria:
+         * filename
+         * if injecting a signal, that the .cff file is older than the SFTs
+           (but its contents should have been checked separately)
+         * that the commandline stored in the (first) SFT header matches
+        """
 
-        logging.info("Checking if cached data good to reuse...")
-        if os.path.isfile(self.sftfilepath) is False:
-            logging.info(
-                "No SFT file matching {} found. {}".format(self.sftfilepath, need_new)
-            )
-            return False
-        else:
-            logging.info("OK: Matching SFT file found.")
+        need_new = "Will create new SFT file(s)."
+
+        logging.info("Checking if we can re-use existing SFT data file(s)...")
+        sftfiles = self.sftfilepath.split(";")
+        for sftfile in sftfiles:
+            if os.path.isfile(sftfile) is False:
+                logging.info(
+                    "...no SFT file matching '{}' found. {}".format(sftfile, need_new)
+                )
+                return False
+        logging.info("...OK: file(s) found matching '{}'.".format(sftfile))
 
         if "injectionSources" in cl_mfd:
             if os.path.isfile(self.config_file_name):
-                if os.path.getmtime(self.sftfilepath) < os.path.getmtime(
-                    self.config_file_name
+                if np.any(
+                    [
+                        os.path.getmtime(sftfile)
+                        < os.path.getmtime(self.config_file_name)
+                        for sftfile in sftfiles
+                    ]
                 ):
                     logging.info(
                         (
-                            "The config file {} has been modified since the SFT file {} "
-                            + "was created. {}"
+                            "...the config file '{}' has been modified since"
+                            " creation of the SFT file(s) '{}'. {}"
                         ).format(self.config_file_name, self.sftfilepath, need_new)
                     )
                     return False
                 else:
                     logging.info(
-                        "OK: The config file {} is older than the SFT file {}".format(
-                            self.config_file_name, self.sftfilepath
-                        )
+                        "...OK: The config file '{}' is older than the SFT file(s)"
+                        " '{}'.".format(self.config_file_name, self.sftfilepath)
                     )
                     # NOTE: at this point we assume it's safe to re-use, since
-                    # check_if_cff_file_needs_rewritting()
+                    # check_if_cff_file_needs_rewriting()
                     # should have already been called before
             else:
                 raise RuntimeError(
@@ -441,26 +453,35 @@ class Writer(BaseSearchClass):
                     )
                 )
 
-        logging.info("Checking new commandline against existing SFT header...")
-        catalog = lalpulsar.SFTdataFind(self.sftfilepath, None)
-        cl_old = helper_functions.get_lalapps_commandline_from_SFTDescriptor(
-            catalog.data[0]
-        )
-        if len(cl_old) == 0:
-            logging.info(
-                "Could not obtain comparison commandline from old SFT header. "
-                + need_new
+        logging.info("...checking new commandline against existing SFT header(s)...")
+        # here we check one SFT header from each SFT file,
+        # assuming that any concatenated file has been sanely constructed with
+        # matching CLs
+        for sftfile in sftfiles:
+            catalog = lalpulsar.SFTdataFind(sftfile, None)
+            cl_old = helper_functions.get_lalapps_commandline_from_SFTDescriptor(
+                catalog.data[0]
             )
-            return False
-        if not helper_functions.match_commandlines(cl_old, cl_mfd):
-            logging.info("Commandlines unmatched. " + need_new)
-            return False
-        else:
-            logging.info("OK: Commandline matched with old SFT header.")
-        logging.info("Looks like cached data matches current options, will re-use it!")
+            if len(cl_old) == 0:
+                logging.info(
+                    "......could not obtain comparison commandline from first SFT"
+                    " header in old file '{}'. {}".format(sftfile, need_new)
+                )
+                return False
+            if not helper_functions.match_commandlines(cl_old, cl_mfd):
+                logging.info(
+                    "......commandlines unmatched for first SFT in old"
+                    " file '{}'. {}".format(sftfile, need_new)
+                )
+                return False
+        logging.info("......OK: Commandline matched with old SFT header(s).")
+        logging.info(
+            "...all data consistency checks passed: Looks like existing"
+            " SFT data matches current options, will re-use it!"
+        )
         return True
 
-    def check_if_cff_file_needs_rewritting(self, content):
+    def check_if_cff_file_needs_rewriting(self, content):
         """Check if the .cff file has changed
 
         Returns True if the file should be overwritten - where possible avoid
@@ -468,23 +489,25 @@ class Writer(BaseSearchClass):
         """
         logging.info("Checking if we can re-use injection config file...")
         if os.path.isfile(self.config_file_name) is False:
-            logging.info("No config file {} found.".format(self.config_file_name))
+            logging.info("...no config file {} found.".format(self.config_file_name))
             return True
         else:
-            logging.info("Config file {} already exists.".format(self.config_file_name))
+            logging.info(
+                "...OK: config file {} already exists.".format(self.config_file_name)
+            )
 
         with open(self.config_file_name, "r") as f:
             file_content = f.read()
             if file_content == content:
                 logging.info(
-                    "File contents match, no update of {} required.".format(
+                    "...OK: file contents match, no update of {} required.".format(
                         self.config_file_name
                     )
                 )
                 return False
             else:
                 logging.info(
-                    "File contents unmatched, updating {}.".format(
+                    "...file contents unmatched, updating {}.".format(
                         self.config_file_name
                     )
                 )
@@ -530,7 +553,11 @@ class Writer(BaseSearchClass):
                 )
             cl_mfd.append('--noiseSFTs="{}"'.format(self.noiseSFTs))
         else:
-            cl_mfd.append('--IFOs="{}"'.format(self.detectors))
+            cl_mfd.append(
+                "--IFOs={}".format(
+                    ",".join(['"{}"'.format(d) for d in self.detectors.split(",")])
+                )
+            )
         if self.sqrtSX:
             cl_mfd.append('--sqrtSX="{}"'.format(self.sqrtSX))
 
@@ -559,7 +586,7 @@ class Writer(BaseSearchClass):
         check_ok = self.check_cached_data_okay_to_use(cl_mfd)
         if check_ok is False:
             helper_functions.run_commandline(cl_mfd)
-        logging.info("Successfully wrote SFTs to: {}".format(self.sftfilepath))
+            logging.info("Successfully wrote SFTs to: {}".format(self.sftfilepath))
 
     def predict_fstat(self, assumeSqrtSX=None):
         """ Wrapper to lalapps_PredictFstat """
@@ -916,7 +943,7 @@ transientTau = {:10.0f}\n"""
             )
             logging.info(content)
 
-        if self.check_if_cff_file_needs_rewritting(content):
+        if self.check_if_cff_file_needs_rewriting(content):
             config_file = open(self.config_file_name, "w+")
             config_file.write(content)
             config_file.close()
