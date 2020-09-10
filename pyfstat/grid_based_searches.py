@@ -119,7 +119,7 @@ class GridSearch(BaseSearchClass):
         else:
             return None
 
-    def inititate_search_object(self):
+    def _initiate_search_object(self):
         logging.info("Setting up search object")
         search_ranges = self._get_search_ranges()
         if self.nsegs == 1:
@@ -304,7 +304,7 @@ class GridSearch(BaseSearchClass):
                 return
 
         if hasattr(self, "search") is False:
-            self.inititate_search_object()
+            self._initiate_search_object()
 
         data = []
         logging.info(
@@ -717,7 +717,7 @@ class TransientGridSearch(GridSearch):
                 " results to {}*.dat".format(self.tCWfilebase)
             )
 
-    def inititate_search_object(self):
+    def _initiate_search_object(self):
         logging.info("Setting up search object")
         search_ranges = self._get_search_ranges()
         self.search = ComputeFstat(
@@ -756,7 +756,7 @@ class TransientGridSearch(GridSearch):
             return
 
         if hasattr(self, "search") is False:
-            self.inititate_search_object()
+            self._initiate_search_object()
 
         data = []
         self.timingFstatMap = 0.0
@@ -975,7 +975,6 @@ class FrequencySlidingWindow(DefunctClass):
 
 class EarthTest(DefunctClass):
     last_supported_version = "1.9.0"
-
 
 class DMoff_NO_SPIN(DefunctClass):
     last_supported_version = "1.9.0"
