@@ -1693,16 +1693,7 @@ class TestTransientGridSearch(BaseForTestsWithData):
         self.assertTrue(
             np.all(max2F_point["twoF"] >= search.data[:, search.keys.index("twoF")])
         )
-        tCWfile = (
-            search.tCWfilebase
-            + "{:.16f}_{:.16f}_{:.16f}_{:.16g}_{:.16g}.dat".format(
-                max2F_point["F0"],
-                max2F_point["Alpha"],
-                max2F_point["Delta"],
-                max2F_point["F1"],
-                max2F_point["F2"],
-            )
-        )
+        tCWfile = search.get_transient_fstat_map_filename(max2F_point)
         tCW_out = pyfstat.helper_functions.read_txt_file_with_header(
             tCWfile, comments="#"
         )

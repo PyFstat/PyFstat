@@ -710,6 +710,12 @@ class TransientGridSearch(GridSearch):
         for k in self.search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
         self.output_file_header = self.get_output_file_header()
+        if self.outputTransientFstatMap:
+            self.tCWfilebase = os.path.splitext(self.out_file)[0] + "_tCW_"
+            logging.info(
+                "Will save per-Doppler Fstatmap"
+                " results to {}*.dat".format(self.tCWfilebase)
+            )
 
     def inititate_search_object(self):
         logging.info("Setting up search object")
@@ -753,12 +759,6 @@ class TransientGridSearch(GridSearch):
             self.inititate_search_object()
 
         data = []
-        if self.outputTransientFstatMap:
-            self.tCWfilebase = os.path.splitext(self.out_file)[0] + "_tCW_"
-            logging.info(
-                "Will save per-Doppler Fstatmap"
-                " results to {}*.dat".format(self.tCWfilebase)
-            )
         self.timingFstatMap = 0.0
         logging.info(
             "Running search over a total of {:d} grid points...".format(
@@ -777,18 +777,7 @@ class TransientGridSearch(GridSearch):
                 else:
                     F_mn = FstatMap.F_mn
                 if self.outputTransientFstatMap:
-                    # per-Doppler filename convention:
-                    # freq alpha delta f1dot f2dot
-                    tCWfile = (
-                        self.tCWfilebase
-                        + "{:.16f}_{:.16f}_{:.16f}_{:.16g}_{:.16g}.dat".format(
-                            vals[self.keys.index("F0")],
-                            vals[self.keys.index("Alpha")],
-                            vals[self.keys.index("Delta")],
-                            vals[self.keys.index("F1")],
-                            vals[self.keys.index("F2")],
-                        )
-                    )
+                    tCWfile = self.get_transient_fstat_map_filename(vals)
                     if self.tCWFstatMapVersion == "lal":
                         fo = lal.FileOpen(tCWfile, "w")
                         for hline in self.output_file_header:
@@ -823,6 +812,19 @@ class TransientGridSearch(GridSearch):
         else:
             self.save_array_to_disk(data)
             self.data = data
+
+    def get_transient_fstat_map_filename(self, param_point):
+        """per-Doppler filename convention: freq alpha delta f1dot f2dot"""
+        fmt_keys = ["F0", "Alpha", "Delta", "F1", "F2"]
+        fmt = "{:.16g}_{:.16g}_{:.16g}_{:.16g}_{:.16g}"
+        if isinstance(param_point, dict):
+            vals = [param_point[key] for key in fmt_keys]
+        elif isinstance(param_point, list) or isinstance(param_point, np.ndarray):
+            vals = [param_point[self.keys.index(key)] for key in fmt_keys]
+        else:
+            raise ValueError("param_point must be a dict, list or numpy array!")
+        f = self.tCWfilebase + fmt.format(*vals) + ".dat"
+        return f
 
     def get_savetxt_fmt(self):
         fmt = []
