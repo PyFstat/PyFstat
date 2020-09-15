@@ -1148,7 +1148,7 @@ class MCMCSearch(BaseSearchClass):
             prior = [prior_func(xi) for xi in x]  # may not be vectorized
 
             priorln = ax.plot(x, np.exp(prior), "C3", label="prior")
-            ax.set_xlabel(self.theta_symbols[i])
+            ax.set(xlabel=self.theta_symbols[i], yticks=[])
 
             s = self.samples[:, i]
             while len(s) > 10 ** 4:
@@ -1157,8 +1157,7 @@ class MCMCSearch(BaseSearchClass):
             kde = gaussian_kde(s)
             ax2 = ax.twinx()
             postln = ax2.plot(x, kde.pdf(x), "k", label="posterior")
-            ax2.set_yticklabels([])
-            ax.set_yticklabels([])
+            ax2.set(yticks=[], yticklabels=[])
 
             if injection_parameters is not None:
                 injection = ax.axvline(
