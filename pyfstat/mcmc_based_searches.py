@@ -1352,10 +1352,18 @@ class MCMCSearch(BaseSearchClass):
         labelpad=5,
     ):
         """ Plot all the chains from a sampler """
-        if injection_parameters is not None and not isinstance(
-            injection_parameters, dict
-        ):
-            raise ValueError("injection_parameters is not a dictionary")
+        if injection_parameters is not None:
+            if not isinstance(injection_parameters, dict):
+                raise ValueError("injection_parameters is not a dictionary")
+            else:
+                scaled_injection_parameters = {
+                    key: (
+                        injection_parameters[key]
+                        - self._get_rescale_subtractor_for_key(key)
+                    )
+                    * self._get_rescale_multiplier_for_key(key)
+                    for key in injection_parameters.keys()
+                }
 
         if symbols is None:
             symbols = self._get_labels()
@@ -1428,7 +1436,7 @@ class MCMCSearch(BaseSearchClass):
                     )
                     if injection_parameters is not None:
                         axes[i].axhline(
-                            injection_parameters[self.theta_keys[i]],
+                            scaled_injection_parameters[self.theta_keys[i]],
                             ls="--",
                             lw=2.0,
                             color="orange",
@@ -1452,7 +1460,7 @@ class MCMCSearch(BaseSearchClass):
                 )
                 if injection_parameters is not None:
                     axes[0].axhline(
-                        injection_parameters[self.theta_keys[0]],
+                        scaled_injection_parameters[self.theta_keys[0]],
                         ls="--",
                         lw=5.0,
                         color="orange",
