@@ -1146,11 +1146,8 @@ class MCMCSearch(BaseSearchClass):
             prior_func = self._generic_lnprior(**prior_dict)
             x = np.linspace(prior_bounds[key]["lower"], prior_bounds[key]["upper"], N)
             prior = [prior_func(xi) for xi in x]  # may not be vectorized
-            if prior_dict["type"] == "unif":
-                prior[0] = 0
-                prior[-1] = 0
 
-            priorln = ax.plot(x, prior, "C3", label="prior")
+            priorln = ax.plot(x, np.exp(prior), "C3", label="prior")
             ax.set_xlabel(self.theta_symbols[i])
 
             s = self.samples[:, i]
