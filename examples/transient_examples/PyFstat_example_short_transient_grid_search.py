@@ -45,13 +45,10 @@ search1 = pyfstat.GridSearch(
     Alphas=Alphas,
     Deltas=Deltas,
     tref=tref,
-    minStartTime=minStartTime,
-    maxStartTime=maxStartTime,
     BSGL=False,
 )
 search1.run()
 search1.print_max_twoF()
-search1.save_array_to_disk(search1.data)
 
 search1.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")
 
@@ -66,8 +63,6 @@ search2 = pyfstat.TransientGridSearch(
     Alphas=Alphas,
     Deltas=Deltas,
     tref=tref,
-    minStartTime=minStartTime,
-    maxStartTime=maxStartTime,
     transientWindowType="rect",
     t0Band=Tspan - 2 * Tsft,
     tauBand=Tspan,
@@ -77,6 +72,5 @@ search2 = pyfstat.TransientGridSearch(
 )
 search2.run()
 search2.print_max_twoF()
-search2.save_array_to_disk(search2.data)
 
 search2.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")

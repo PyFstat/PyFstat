@@ -284,28 +284,17 @@ class MCMCSearch(BaseSearchClass):
         return np.sum(H)
 
     def logl(self, theta, search):
+        in_theta = copy.copy(self.fixed_theta)
         for j, theta_i in enumerate(self.theta_idxs):
-            self.fixed_theta[theta_i] = theta[j]
-        twoF = search.get_fullycoherent_twoF(
-            self.minStartTime, self.maxStartTime, *self.fixed_theta
-        )
+            in_theta[theta_i] = theta[j]
+        twoF = search.get_fullycoherent_twoF(*in_theta)
         return twoF / 2.0 + self.likelihoodcoef
 
     def _unpack_input_theta(self):
-        full_theta_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
+        self.full_theta_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         if self.binary:
-            full_theta_keys += ["asini", "period", "ecc", "tp", "argp"]
-        full_theta_keys_copy = copy.copy(full_theta_keys)
-
-        full_theta_symbols = [
-            r"$f$",
-            r"$\dot{f}$",
-            r"$\ddot{f}$",
-            r"$\alpha$",
-            r"$\delta$",
-        ]
-        if self.binary:
-            full_theta_symbols += ["asini", "period", "ecc", "tp", "argp"]
+            self.full_theta_keys += ["asini", "period", "ecc", "tp", "argp"]
+        full_theta_keys_copy = copy.copy(self.full_theta_keys)
 
         self.theta_keys = []
         fixed_theta_dict = {}
@@ -328,9 +317,9 @@ class MCMCSearch(BaseSearchClass):
                 )
             )
 
-        self.fixed_theta = [fixed_theta_dict[key] for key in full_theta_keys]
-        self.theta_idxs = [full_theta_keys.index(k) for k in self.theta_keys]
-        self.theta_symbols = [full_theta_symbols[i] for i in self.theta_idxs]
+        self.fixed_theta = [fixed_theta_dict[key] for key in self.full_theta_keys]
+        self.theta_idxs = [self.full_theta_keys.index(k) for k in self.theta_keys]
+        self.theta_symbols = [self.symbol_dictionary[k] for k in self.theta_keys]
 
         idxs = np.argsort(self.theta_idxs)
         self.theta_idxs = [self.theta_idxs[i] for i in idxs]
@@ -1731,7 +1720,7 @@ class MCMCSearch(BaseSearchClass):
 
     def get_savetxt_fmt(self):
         fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
-        fmt += ["%.9g"]  # for detection statistic
+        fmt["twoF"] = "%.9g"
         return fmt
 
     def export_samples_to_disk(self):
@@ -1739,7 +1728,7 @@ class MCMCSearch(BaseSearchClass):
         logging.info("Exporting samples to {}".format(self.samples_file))
         header = "\n".join(self.output_file_header)
         header += "\n" + " ".join(self.theta_keys) + " twoF"
-        outfmt = self.get_savetxt_fmt()
+        outfmt = list(self.get_savetxt_fmt().values())
         twoF = np.atleast_2d(self._get_twoF_from_loglikelihood()).T
         samples_out = np.concatenate((self.samples, twoF), axis=1)
         Ncols = np.shape(samples_out)[1]
@@ -2194,10 +2183,13 @@ class MCMCGlitchSearch(MCMCSearch):
         F2=r"$\ddot{f}$",
         Alpha=r"$\alpha$",
         Delta=r"$\delta$",
+    )
+    glitch_symbol_dictionary = dict(
         delta_F0=r"$\delta f$",
         delta_F1=r"$\delta \dot{f}$",
         tglitch=r"$t_\mathrm{glitch}$",
     )
+    symbol_dictionary.update(glitch_symbol_dictionary)
     unit_dictionary = dict(
         F0=r"Hz",
         F1=r"Hz/s",
@@ -2322,6 +2314,7 @@ class MCMCGlitchSearch(MCMCSearch):
         return np.sum(H)
 
     def logl(self, theta, search):
+        in_theta = copy.copy(self.fixed_theta)
         if self.nglitch > 1:
             ts = (
                 [self.minStartTime] + list(theta[-self.nglitch :]) + [self.maxStartTime]
@@ -2330,11 +2323,12 @@ class MCMCGlitchSearch(MCMCSearch):
                 return -np.inf
 
         for j, theta_i in enumerate(self.theta_idxs):
-            self.fixed_theta[theta_i] = theta[j]
-        twoF = search.get_semicoherent_nglitch_twoF(*self.fixed_theta)
+            in_theta[theta_i] = theta[j]
+        twoF = search.get_semicoherent_nglitch_twoF(*in_theta)
         return twoF / 2.0 + self.likelihoodcoef
 
     def _unpack_input_theta(self):
+        base_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         glitch_keys = ["delta_F0", "delta_F1", "tglitch"]
         full_glitch_keys = list(
             np.array([[gk] * self.nglitch for gk in glitch_keys]).flatten()
@@ -2350,19 +2344,16 @@ class MCMCGlitchSearch(MCMCSearch):
             full_glitch_keys[-4 * self.nglitch : -2 * self.nglitch] = [
                 "delta_F0_{}".format(i) for i in range(self.nglitch)
             ]
-        full_theta_keys = ["F0", "F1", "F2", "Alpha", "Delta"] + full_glitch_keys
+        full_theta_keys = base_keys + full_glitch_keys
         full_theta_keys_copy = copy.copy(full_theta_keys)
 
-        glitch_symbols = [r"$\delta f$", r"$\delta \dot{f}$", r"$t_{glitch}$"]
         full_glitch_symbols = list(
-            np.array([[gs] * self.nglitch for gs in glitch_symbols]).flatten()
+            np.array(
+                [[gs] * self.nglitch for gs in self.glitch_symbol_dictionary]
+            ).flatten()
         )
         full_theta_symbols = [
-            r"$f$",
-            r"$\dot{f}$",
-            r"$\ddot{f}$",
-            r"$\alpha$",
-            r"$\delta$",
+            self.symbol_dictionary[key] for key in base_keys
         ] + full_glitch_symbols
         self.theta_keys = []
         fixed_theta_dict = {}
@@ -2494,10 +2485,14 @@ class MCMCGlitchSearch(MCMCSearch):
         fmt = helper_functions.get_doppler_params_output_format(
             [k.split("_")[1] for k in self.theta_keys if k.startswith("delta_F")]
         )
+        fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
         if "tglitch" in self.theta_keys:
-            fmt += ["%d"]
-        fmt += helper_functions.get_doppler_params_output_format(self.theta_keys)
-        fmt += ["%.9g"]  # for detection statistic
+            fmt["tglitch"] = "%d"
+        if "delta_F0" in self.theta_keys:
+            fmt["delta_F0"] = "%.16g"
+        if "delta_F1" in self.theta_keys:
+            fmt["delta_F1"] = "%.16g"
+        fmt["twoF"] = "%.9g"
         return fmt
 
 
@@ -2698,9 +2693,10 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         return np.sum(H)
 
     def logl(self, theta, search):
+        in_theta = copy.copy(self.fixed_theta)
         for j, theta_i in enumerate(self.theta_idxs):
-            self.fixed_theta[theta_i] = theta[j]
-        twoF = search.get_semicoherent_det_stat(*self.fixed_theta)
+            in_theta[theta_i] = theta[j]
+        twoF = search.get_semicoherent_det_stat(*in_theta)
         return twoF / 2.0 + self.likelihoodcoef
 
 
@@ -3322,40 +3318,41 @@ class MCMCTransientSearch(MCMCSearch):
             self.maxStartTime = self.search.maxStartTime
 
     def logl(self, theta, search):
-        for j, theta_i in enumerate(self.theta_idxs):
-            self.fixed_theta[theta_i] = theta[j]
-        in_theta = copy.copy(self.fixed_theta)
-        in_theta[1] = in_theta[0] + in_theta[1]
-        if in_theta[1] > self.maxStartTime:
+        in_theta = {
+            key: self.fixed_theta[k]
+            for k, key in enumerate(self.full_theta_keys)
+            if "transient" not in key
+        }
+        in_theta.update(
+            {
+                key: theta[k]
+                for k, key in enumerate(self.theta_keys)
+                if "transient" not in key
+            }
+        )
+        # FIXME: this can be simplified when changing all theta lists to dicts
+        if "transient_tstart" in self.theta_keys:
+            in_theta["tstart"] = theta[self.theta_keys.index("transient_tstart")]
+        else:
+            in_theta["tstart"] = self.fixed_theta[
+                self.full_theta_keys.index("transient_tstart")
+            ]
+        if "transient_duration" in self.theta_keys:
+            tau = theta[self.theta_keys.index("transient_duration")]
+        else:
+            tau = self.fixed_theta[self.full_theta_keys.index("transient_duration")]
+        in_theta["tend"] = in_theta["tstart"] + tau
+        if in_theta["tend"] > self.maxStartTime:
             return -np.inf
-        twoF = search.get_fullycoherent_twoF(*in_theta)
+        twoF = search.get_fullycoherent_twoF(**in_theta)
         return twoF / 2.0 + self.likelihoodcoef
 
     def _unpack_input_theta(self):
-        full_theta_keys = [
-            "transient_tstart",
-            "transient_duration",
-            "F0",
-            "F1",
-            "F2",
-            "Alpha",
-            "Delta",
-        ]
+        self.full_theta_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         if self.binary:
-            full_theta_keys += ["asini", "period", "ecc", "tp", "argp"]
-        full_theta_keys_copy = copy.copy(full_theta_keys)
-
-        full_theta_symbols = [
-            r"$t_{\rm start}$",
-            r"$\Delta T$",
-            r"$f$",
-            r"$\dot{f}$",
-            r"$\ddot{f}$",
-            r"$\alpha$",
-            r"$\delta$",
-        ]
-        if self.binary:
-            full_theta_symbols += ["asini", "period", "period", "ecc", "tp", "argp"]
+            self.full_theta_keys += ["asini", "period", "ecc", "tp", "argp"]
+        self.full_theta_keys += ["transient_tstart", "transient_duration"]
+        full_theta_keys_copy = copy.copy(self.full_theta_keys)
 
         self.theta_keys = []
         fixed_theta_dict = {}
@@ -3378,9 +3375,9 @@ class MCMCTransientSearch(MCMCSearch):
                 )
             )
 
-        self.fixed_theta = [fixed_theta_dict[key] for key in full_theta_keys]
-        self.theta_idxs = [full_theta_keys.index(k) for k in self.theta_keys]
-        self.theta_symbols = [full_theta_symbols[i] for i in self.theta_idxs]
+        self.fixed_theta = [fixed_theta_dict[key] for key in self.full_theta_keys]
+        self.theta_idxs = [self.full_theta_keys.index(k) for k in self.theta_keys]
+        self.theta_symbols = [self.symbol_dictionary[k] for k in self.theta_keys]
 
         idxs = np.argsort(self.theta_idxs)
         self.theta_idxs = [self.theta_idxs[i] for i in idxs]
@@ -3388,11 +3385,10 @@ class MCMCTransientSearch(MCMCSearch):
         self.theta_keys = [self.theta_keys[i] for i in idxs]
 
     def get_savetxt_fmt(self):
-        fmt = []
+        fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
         if "transient_tstart" in self.theta_keys:
-            fmt += ["%d"]
+            fmt["transient_tstart"] = "%d"
         if "transient_duration" in self.theta_keys:
-            fmt += ["%d"]
-        fmt += helper_functions.get_doppler_params_output_format(self.theta_keys)
-        fmt += ["%.9g"]  # for detection statistic
+            fmt["transient_duration"] = "%d"
+        fmt["twoF"] = "%.9g"
         return fmt

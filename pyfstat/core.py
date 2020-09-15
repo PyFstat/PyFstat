@@ -861,8 +861,6 @@ class ComputeFstat(BaseSearchClass):
 
     def get_fullycoherent_twoF(
         self,
-        tstart,
-        tend,
         F0,
         F1,
         F2,
@@ -873,6 +871,8 @@ class ComputeFstat(BaseSearchClass):
         ecc=None,
         tp=None,
         argp=None,
+        tstart=None,
+        tend=None,
     ):
         """ Returns twoF or ln(BSGL) fully-coherently at a single point """
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
@@ -903,6 +903,12 @@ class ComputeFstat(BaseSearchClass):
             log10_BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
             return log10_BSGL / np.log10(np.exp(1))
 
+        tstart = tstart or getattr(self, "minStartTime", None)
+        tend = tend or getattr(self, "maxStartTime", None)
+        if tstart is None or tend is None:
+            raise ValueError(
+                "Need tstart or self.minStartTime, and tend or self.maxStartTime!"
+            )
         self.windowRange.t0 = int(tstart)  # TYPE UINT4
         if self.windowRange.tauBand == 0:
             # true single-template search also in transient params:
@@ -1691,13 +1697,13 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
             ts, te = tboundaries[i], tboundaries[i + 1]
             if te - ts > 1800:
                 twoFVal = self.get_fullycoherent_twoF(
-                    ts,
-                    te,
-                    theta_i_at_tref[1],
-                    theta_i_at_tref[2],
-                    theta_i_at_tref[3],
-                    Alpha,
-                    Delta,
+                    F0=theta_i_at_tref[1],
+                    F1=theta_i_at_tref[2],
+                    F2=theta_i_at_tref[3],
+                    Alpha=Alpha,
+                    Delta=Delta,
+                    tstart=ts,
+                    tend=te,
                 )
                 twoFSum += twoFVal
 
@@ -1725,20 +1731,26 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         )
 
         twoFsegA = self.get_fullycoherent_twoF(
-            self.minStartTime, tglitch, theta[0], theta[1], theta[2], Alpha, Delta
+            F0=theta[0],
+            F1=theta[1],
+            F2=theta[2],
+            Alpha=Alpha,
+            Delta=Delta,
+            tstart=self.minStartTime,
+            tend=tglitch,
         )
 
         if tglitch == self.maxStartTime:
             return twoFsegA
 
         twoFsegB = self.get_fullycoherent_twoF(
-            tglitch,
-            self.maxStartTime,
-            theta_post_glitch[0],
-            theta_post_glitch[1],
-            theta_post_glitch[2],
-            Alpha,
-            Delta,
+            F0=theta_post_glitch[0],
+            F1=theta_post_glitch[1],
+            F2=theta_post_glitch[2],
+            Alpha=Alpha,
+            Delta=Delta,
+            tstart=tglitch,
+            tend=self.maxStartTime,
         )
 
         return twoFsegA + twoFsegB

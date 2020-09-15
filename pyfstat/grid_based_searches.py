@@ -101,14 +101,13 @@ class GridSearch(BaseSearchClass):
             os.mkdir(outdir)
         self.set_out_file()
         self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
-        self.input_keys = ["minStartTime", "maxStartTime"] + self.search_keys
-        self.keys = self.input_keys.copy()
+        self.output_keys = self.search_keys.copy()
         if self.BSGL:
             self.detstat = "BSGL"
-            self.keys += ["logBSGL"]
+            self.output_keys += ["logBSGL"]
         else:
             self.detstat = "twoF"
-            self.keys += ["twoF"]
+            self.output_keys += [self.detstat]
         for k in self.search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
         self.output_file_header = self.get_output_file_header()
@@ -157,11 +156,11 @@ class GridSearch(BaseSearchClass):
                 detectors=self.detectors,
                 injectSources=self.injectSources,
             )
-
-            def cut_out_tstart_tend(*vals):
-                return self.search.get_semicoherent_det_stat(*vals[2:])
-
-            self.search.get_det_stat = cut_out_tstart_tend
+            self.search.get_det_stat = self.search.get_semicoherent_det_stat
+        # make sure to overwrite the min/max starttime in case the user
+        # passed None and they were read from SFTs
+        self.minStartTime = self.search.minStartTime
+        self.maxStartTime = self.search.maxStartTime
 
     def get_array_from_tuple(self, x):
         if len(x) == 1:
@@ -184,7 +183,7 @@ class GridSearch(BaseSearchClass):
     def get_input_data_array(self):
         logging.info("Generating input data array")
         coord_arrays = []
-        for sl in self.input_keys:
+        for sl in self.search_keys:
             coord_arrays.append(
                 self.get_array_from_tuple(np.atleast_1d(getattr(self, sl)))
             )
@@ -195,7 +194,13 @@ class GridSearch(BaseSearchClass):
             input_data = []
             for vals in itertools.product(*coord_arrays):
                 input_data.append(vals)
-            self.input_data = np.array(input_data)
+            input_dtype = np.dtype(
+                {
+                    "names": self.search_keys,
+                    "formats": np.repeat(float, len(self.search_keys)),
+                }
+            )
+            self.input_data = np.array(input_data, dtype=input_dtype)
 
     def check_old_data_is_okay_to_use(self):
         if args.clean:
@@ -238,30 +243,27 @@ class GridSearch(BaseSearchClass):
             )
 
         logging.info("Loading old data from '{:s}'.".format(self.out_file))
-        old_data = np.atleast_2d(np.genfromtxt(self.out_file, delimiter=" "))
-        # need to convert any "None" entries in input_data array safely to 0s
-        # to make np.allclose() work reliably
-        new_data = np.nan_to_num(self.input_data.astype(np.float64))
-        if np.shape(old_data)[0] != np.shape(new_data)[0]:
+        old_data = helper_functions.read_txt_file_with_header(self.out_file, names=True)
+        if len(old_data) != len(self.input_data):
             logging.info(
                 "Old data found in '{:s}', but differs"
                 " in length ({:d} points in file, {:d} points requested);"
                 " continuing with grid search.".format(
-                    self.out_file, np.shape(old_data)[0], np.shape(new_data)[0]
+                    self.out_file, np.shape(old_data)[0], np.shape(self.input_data)[0]
                 )
             )
             return False
-        if np.shape(old_data)[1] < np.shape(new_data)[1]:
+        if len(old_data.dtype) < len(self.input_data.dtype):
             logging.info(
                 "Old data found in '{:s}', but has less columns ({:d})"
                 " than new input parameters grid ({:d});"
                 " continuing with grid search.".format(
-                    self.out_file, np.shape(old_data)[1], np.shape(new_data)[1]
+                    self.out_file, np.shape(old_data)[1], np.shape(self.input_data)[1]
                 )
             )
             return False
         # not yet explicitly testing the case of
-        # np.shape(old_data)[1] >= np.shape(new_data)[1]
+        # len(old_data.dtype) >= len(self.input_data.dtype)
         # because output file can have detstat and post-proc quantities
         # added and hence have different number of dimensions
         # (this could in principle be cleverly predicted at this point)
@@ -269,22 +271,24 @@ class GridSearch(BaseSearchClass):
         rtol, atol = self._get_tolerance_from_savetxt_fmt()
         column_matches = [
             np.allclose(
-                old_data[:, n],
-                new_data[:, n],
-                rtol=rtol[n],
-                atol=atol[n],
+                old_data[key],
+                self.input_data[key],
+                rtol=rtol[key],
+                atol=atol[key],
             )
-            for n in range(len(self.coord_arrays))
+            for key in self.search_keys
         ]
         if np.all(column_matches):
             logging.info(
                 "Old data found in '{:s}' with matching input parameters grid,"
-                " no search performed.".format(self.out_file)
+                " no search performed. Data grid size: {:d}x{:d}".format(
+                    self.out_file, len(old_data), len(old_data.dtype)
+                )
             )
             return old_data
         else:
             logging.info(
-                "Old data found in '{:s}', input parameters grid differs,h"
+                "Old data found in '{:s}', input parameters grid differs,"
                 "  continuing with grid search.".format(self.out_file)
             )
             return False
@@ -306,51 +310,54 @@ class GridSearch(BaseSearchClass):
         if hasattr(self, "search") is False:
             self._initiate_search_object()
 
-        data = []
         logging.info(
             "Running search over a total of {:d} grid points...".format(
                 np.shape(iterable)[0]
             )
         )
-        for vals in tqdm(iterable, total=getattr(self, "total_iterations", None)):
+        output_dtype = np.dtype(
+            {
+                "names": self.output_keys,
+                "formats": np.repeat(float, len(self.output_keys)),
+            }
+        )
+        data = np.zeros(len(self.input_data), dtype=output_dtype)
+        for n, vals in enumerate(
+            tqdm(iterable, total=getattr(self, "total_iterations", None))
+        ):
             detstat = self.search.get_det_stat(*vals)
             thisCand = list(vals) + [detstat]
-            data.append(thisCand)
+            for k, key in enumerate(self.output_keys):
+                data[key][n] = thisCand[k]
 
-        data = np.array(data, dtype=np.float)
         if return_data:
             return data
         else:
-            self.save_array_to_disk(data)
             self.data = data
+            self.save_array_to_disk()
 
     def get_savetxt_fmt(self):
-        fmt = []
-        if "minStartTime" in self.keys:
-            fmt += ["%d"]
-        if "maxStartTime" in self.keys:
-            fmt += ["%d"]
-        fmt += helper_functions.get_doppler_params_output_format(self.keys)
-        fmt += ["%.9g"]  # for detection statistic
+        fmt = helper_functions.get_doppler_params_output_format(self.output_keys)
+        fmt[self.detstat] = "%.9g"
         return fmt
 
     def _get_tolerance_from_savetxt_fmt(self):
         """ decide appropriate input grid comparison tolerance from fprintf formats """
         fmt = self.get_savetxt_fmt()
-        rtol = np.zeros(len(fmt))
-        atol = np.zeros(len(fmt))
-        for n, f in enumerate(fmt):
+        rtol = {}
+        atol = {}
+        for key, f in fmt.items():
             if f.endswith("d"):
-                rtol[n] = 0
-                atol[n] = 0
+                rtol[key] = 0
+                atol[key] = 0
             elif f.endswith("g"):
                 precision = int(re.findall(r"\d+", f)[-1])
-                rtol[n] = 10 ** (1 - precision)
-                atol[n] = 0
+                rtol[key] = 10 ** (1 - precision)
+                atol[key] = 0
             elif f.endswith("f"):
                 decimals = int(re.findall(r"\d+", f)[-1])
-                rtol[n] = 0
-                atol[n] = 10 ** -decimals
+                rtol[key] = 0
+                atol[key] = 10 ** -decimals
             else:
                 raise ValueError(
                     "Cannot parse fprintf format '{:s}' to obtain recommended tolerance.".format(
@@ -359,12 +366,12 @@ class GridSearch(BaseSearchClass):
                 )
         return rtol, atol
 
-    def save_array_to_disk(self, data):
+    def save_array_to_disk(self):
         logging.info("Saving data to {}".format(self.out_file))
         header = "\n".join(self.output_file_header)
-        header += "\n" + " ".join(self.keys)
-        outfmt = self.get_savetxt_fmt()
-        Ncols = np.shape(data)[1]
+        header += "\n" + " ".join(self.output_keys)
+        outfmt = list(self.get_savetxt_fmt().values())
+        Ncols = len(self.data.dtype)
         if len(outfmt) != Ncols:
             raise RuntimeError(
                 "Lengths of data rows ({:d})"
@@ -377,7 +384,7 @@ class GridSearch(BaseSearchClass):
             )
         np.savetxt(
             self.out_file,
-            np.nan_to_num(data),
+            np.nan_to_num(self.data),
             delimiter=" ",
             header=header,
             fmt=outfmt,
@@ -425,14 +432,12 @@ class GridSearch(BaseSearchClass):
             plt.rcParams["agg.path.chunksize"] = agg_chunksize
         if ax is None:
             fig, ax = plt.subplots()
-        xidx = self.keys.index(xkey)
-        # x = np.unique(self.data[:, xidx]) # this doesn't work for multi-dim searches!
-        x = self.data[:, xidx]
+        # x = np.unique(self.data[xkey]) # this doesn't work for multi-dim searches!
+        x = self.data[xkey]
         if x0:
             x = x - x0
         x = x * xrescale
-        zidx = self.keys.index(self.detstat)
-        z = self.data[:, zidx]
+        z = self.data[self.detstat]
         ax.plot(x, z)
         if xlabel:
             ax.set_xlabel(xlabel)
@@ -493,20 +498,17 @@ class GridSearch(BaseSearchClass):
         """
         if ax is None:
             fig, ax = plt.subplots()
-        xidx = self.input_keys.index(xkey)
-        yidx = self.input_keys.index(ykey)
-        flat_idxs = [self.input_keys.index(k) for k in flat_keys]
+        flat_idxs = [self.search_keys.index(k) for k in flat_keys]
 
-        x = np.unique(self.data[:, xidx])
+        x = np.unique(self.data[xkey])
         if x0:
             x = x - x0
-        y = np.unique(self.data[:, yidx])
+        y = np.unique(self.data[ykey])
         if y0:
             y = y - y0
         flat_vals = [np.unique(self.data[:, j]) for j in flat_idxs]
 
-        zidx = self.keys.index(self.detstat)
-        z = self.data[:, zidx]
+        z = self.data[self.detstat]
 
         Y, X = np.meshgrid(y, x)
         shape = [len(x), len(y)] + [len(v) for v in flat_vals]
@@ -580,8 +582,8 @@ class GridSearch(BaseSearchClass):
             'F2', 'Alpha', 'Delta' and 'twoF' of maximum
 
         """
-        idx = np.argmax(self.data[:, self.keys.index("twoF")])
-        d = OrderedDict([(key, self.data[idx, k]) for k, key in enumerate(self.keys)])
+        idx = np.argmax(self.data["twoF"])
+        d = OrderedDict([(key, self.data[key][idx]) for key in self.output_keys])
         return d
 
     def print_max_twoF(self):
@@ -697,16 +699,17 @@ class TransientGridSearch(GridSearch):
             os.mkdir(outdir)
         self.set_out_file()
         self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
-        self.input_keys = ["minStartTime", "maxStartTime"] + self.search_keys
-        self.keys = self.input_keys.copy()
+        self.output_keys = self.search_keys.copy()
         if self.BSGL:
             self.detstat = "BSGL"
-            self.keys += ["logBSGL"]
+            self.output_keys += ["logBSGL"]
         else:
             self.detstat = "twoF"
-            self.keys += ["twoF"]
+            self.output_keys += ["twoF"]
         # for consistency below, t0/tau must come after detstat
-        self.keys += ["t0", "tau"]
+        # they are not included in self.search_keys because the main Fstat
+        # code does not loop over them
+        self.output_keys += ["t0", "tau"]
         for k in self.search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
         self.output_file_header = self.get_output_file_header()
@@ -747,6 +750,10 @@ class TransientGridSearch(GridSearch):
             sun_ephem=self.sun_ephem,
         )
         self.search.get_det_stat = self.search.get_fullycoherent_twoF
+        # make sure to overwrite the min/max starttime in case the user
+        # passed None and they were read from SFTs
+        self.minStartTime = self.search.minStartTime
+        self.maxStartTime = self.search.maxStartTime
 
     def run(self, return_data=False):
         self.get_input_data_array()
@@ -758,14 +765,20 @@ class TransientGridSearch(GridSearch):
         if hasattr(self, "search") is False:
             self._initiate_search_object()
 
-        data = []
+        output_dtype = np.dtype(
+            {
+                "names": self.output_keys,
+                "formats": np.repeat(float, len(self.output_keys)),
+            }
+        )
+        data = np.zeros(len(self.input_data), dtype=output_dtype)
         self.timingFstatMap = 0.0
         logging.info(
             "Running search over a total of {:d} grid points...".format(
                 np.shape(self.input_data)[0]
             )
         )
-        for vals in tqdm(self.input_data):
+        for n, vals in enumerate(tqdm(self.input_data)):
             detstat = self.search.get_det_stat(*vals)
             windowRange = getattr(self.search, "windowRange", None)
             FstatMap = getattr(self.search, "FstatMap", None)
@@ -777,7 +790,7 @@ class TransientGridSearch(GridSearch):
                 else:
                     F_mn = FstatMap.F_mn
                 if self.outputTransientFstatMap:
-                    tCWfile = self.get_transient_fstat_map_filename(vals)
+                    tCWfile = self.get_transient_fstat_map_filename(thisCand)
                     if self.tCWFstatMapVersion == "lal":
                         fo = lal.FileOpen(tCWfile, "w")
                         for hline in self.output_file_header:
@@ -796,7 +809,8 @@ class TransientGridSearch(GridSearch):
                     windowRange.t0 + maxidx[0] * windowRange.dt0,
                     windowRange.tau + maxidx[1] * windowRange.dtau,
                 ]
-            data.append(thisCand)
+            for k, key in enumerate(self.output_keys):
+                data[key][n] = thisCand[k]
             if self.outputAtoms:
                 self.search.write_atoms_to_file(os.path.splitext(self.out_file)[0])
 
@@ -806,35 +820,32 @@ class TransientGridSearch(GridSearch):
             )
         )
 
-        data = np.array(data, dtype=np.float)
         if return_data:
             return data
         else:
-            self.save_array_to_disk(data)
             self.data = data
+            self.save_array_to_disk()
 
     def get_transient_fstat_map_filename(self, param_point):
         """per-Doppler filename convention: freq alpha delta f1dot f2dot"""
         fmt_keys = ["F0", "Alpha", "Delta", "F1", "F2"]
         fmt = "{:.16g}_{:.16g}_{:.16g}_{:.16g}_{:.16g}"
+        if isinstance(param_point, tuple) or isinstance(param_point, np.void):
+            param_point = list(param_point)
         if isinstance(param_point, dict):
             vals = [param_point[key] for key in fmt_keys]
         elif isinstance(param_point, list) or isinstance(param_point, np.ndarray):
-            vals = [param_point[self.keys.index(key)] for key in fmt_keys]
+            vals = [param_point[self.output_keys.index(key)] for key in fmt_keys]
         else:
-            raise ValueError("param_point must be a dict, list or numpy array!")
+            raise ValueError("param_point must be a dict, list, tuple or numpy array!")
         f = self.tCWfilebase + fmt.format(*vals) + ".dat"
         return f
 
     def get_savetxt_fmt(self):
-        fmt = []
-        if "minStartTime" in self.keys:
-            fmt += ["%d"]
-        if "maxStartTime" in self.keys:
-            fmt += ["%d"]
-        fmt += helper_functions.get_doppler_params_output_format(self.keys)
-        fmt += ["%.9g"]  # for detection statistic
-        fmt += ["%d", "%d"]  # for t0, tau
+        fmt = helper_functions.get_doppler_params_output_format(self.output_keys)
+        fmt[self.detstat] = "%.9g"
+        fmt["t0"] = "%d"
+        fmt["tau"] = "%d"
         return fmt
 
     def write_F_mn(self, tCWfile, F_mn, windowRange):
@@ -925,9 +936,9 @@ class GridGlitchSearch(GridSearch):
             "delta_F1",
             "tglitch",
         ]
-        self.input_keys = self.search_keys
-        self.keys = self.input_keys.copy()
-        self.keys += ["twoF"]
+        self.output_keys = self.search_keys.copy()
+        self.detstat = "twoF"
+        self.output_keys += [self.detstat]
         for k in self.search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
         search_ranges = self._get_search_ranges()
@@ -954,14 +965,11 @@ class GridGlitchSearch(GridSearch):
         self.output_file_header = self.get_output_file_header()
 
     def get_savetxt_fmt(self):
-        fmt = []
-        if "minStartTime" in self.keys:
-            fmt += ["%d"]
-        if "maxStartTime" in self.keys:
-            fmt += ["%d"]
-        fmt += helper_functions.get_doppler_params_output_format(self.keys)
-        fmt += ["%.16g", "%.16g", "%d"]  # for delta_F0, delta_F1, tglitch
-        fmt += ["%.9g"]  # for detection statistic
+        fmt = helper_functions.get_doppler_params_output_format(self.output_keys)
+        fmt["delta_F0"] = "%.16g"
+        fmt["delta_F1"] = "%.16g"
+        fmt["tglitch"] = "%d"
+        fmt[self.detstat] = "%.9g"
         return fmt
 
 
@@ -975,6 +983,7 @@ class FrequencySlidingWindow(DefunctClass):
 
 class EarthTest(DefunctClass):
     last_supported_version = "1.9.0"
+
 
 class DMoff_NO_SPIN(DefunctClass):
     last_supported_version = "1.9.0"

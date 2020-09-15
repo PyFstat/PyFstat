@@ -464,7 +464,6 @@ def get_version_string():
 def get_doppler_params_output_format(keys):
     # use same format for writing out search parameters
     # as write_FstatCandidate_to_fp() function of lalapps_CFSv2
-    fmt = []
     CFSv2_fmt = "%.16g"
     doppler_keys = [
         "F0",
@@ -478,14 +477,11 @@ def get_doppler_params_output_format(keys):
         "tp",
         "argp",
     ]
-
-    for k in keys:
-        if k in doppler_keys:
-            fmt += [CFSv2_fmt]
+    fmt = {k: CFSv2_fmt for k in keys if k in doppler_keys}
     return fmt
 
 
-def read_txt_file_with_header(f, comments="#"):
+def read_txt_file_with_header(f, names=True, comments="#"):
     # wrapper to np.genfromtxt with smarter header handling
     with open(f, "r") as f_opened:
         Nhead = 0
@@ -493,8 +489,9 @@ def read_txt_file_with_header(f, comments="#"):
             if not line.startswith(comments):
                 break
             Nhead += 1
-    data = np.genfromtxt(f, skip_header=Nhead - 1, names=True, comments=comments)
-
+    data = np.atleast_1d(
+        np.genfromtxt(f, skip_header=Nhead - 1, names=names, comments=comments)
+    )
     return data
 
 
