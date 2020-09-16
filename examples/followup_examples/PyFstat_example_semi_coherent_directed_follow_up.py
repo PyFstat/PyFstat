@@ -79,18 +79,22 @@ mcmc = pyfstat.MCMCFollowUpSearch(
 
 NstarMax = 1000
 Nsegs0 = 100
-fig, axes = plt.subplots(nrows=2, figsize=(3.4, 3.5))
+walkers_fig, walkers_axes = plt.subplots(nrows=2, figsize=(3.4, 3.5))
 mcmc.run(
     NstarMax=NstarMax,
     Nsegs0=Nsegs0,
+    plot_walkers=True,
     walker_plot_args={
         "labelpad": 0.01,
         "plot_det_stat": False,
-        "fig": fig,
-        "axes": axes,
+        "fig": walkers_fig,
+        "axes": walkers_axes,
+        "injection_parameters": signal_parameters,
     },
 )
+walkers_fig.savefig(os.path.join(outdir, label + "_walkers.png"))
+plt.close(walkers_fig)
 
-mcmc.plot_corner(add_prior=True)
-mcmc.plot_prior_posterior()
 mcmc.print_summary()
+mcmc.plot_corner(add_prior=True, truths=signal_parameters)
+mcmc.plot_prior_posterior(injection_parameters=signal_parameters)

@@ -83,7 +83,9 @@ mcmc.transform_dictionary = dict(
         subtractor=signal_parameters["F1"], symbol="$\\dot{f}-\\dot{f}^\\mathrm{s}$"
     ),
 )
-mcmc.run()
-mcmc.plot_corner(add_prior=True)
-mcmc.plot_prior_posterior()
+mcmc.run(
+    walker_plot_args={"plot_det_stat": True, "injection_parameters": signal_parameters}
+)
 mcmc.print_summary()
+mcmc.plot_corner(add_prior=True, truths=signal_parameters)
+mcmc.plot_prior_posterior(injection_parameters=signal_parameters)
