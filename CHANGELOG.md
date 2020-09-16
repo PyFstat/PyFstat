@@ -1,3 +1,18 @@
+## 1.7.1 [16/09/2020]
+
+ - LALSuite 6.76 now required
+ - predict_fstat() helper function made more flexible
+ - Writer: fixed check_cached_data_okay_to_use() for multiple IFOs
+ - MCMCSearch and derived classes now store sampler as an attribute
+ - fixes to MCMC plotting
+   - proper scaling of injection parameters in walker plots
+   - proper display of prior (not logprior) in prior_posterior comparisons
+ - consistently close figure objects after saving
+ - all classes now announce their creation to the logger
+ - flake8 compliance
+ - code style now complying to stricter black 20.8b standards
+ - improvements to examples
+
 ## 1.7.0 [31/08/2020]
 
  - Writer: fix binary tp handling and clean up injection parameter parsing
