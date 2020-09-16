@@ -1414,10 +1414,10 @@ class TestGridSearch(BaseForTestsWithData):
             self.outdir,
             self.Writer.sftfilepath,
             F0s=self.F0s,
-            F1s=[0],
-            F2s=[0],
-            Alphas=[0],
-            Deltas=[0],
+            F1s=[self.Writer.F1],
+            F2s=[self.Writer.F2],
+            Alphas=[self.Writer.Alpha],
+            Deltas=[self.Writer.Delta],
             tref=self.tref,
         )
         search.run()
@@ -1433,10 +1433,10 @@ class TestGridSearch(BaseForTestsWithData):
             self.outdir,
             self.Writer.sftfilepath,
             F0s=self.F0s,
-            F1s=[0],
-            F2s=[0],
-            Alphas=[0],
-            Deltas=[0],
+            F1s=[self.Writer.F1],
+            F2s=[self.Writer.F2],
+            Alphas=[self.Writer.Alpha],
+            Deltas=[self.Writer.Delta],
             tref=self.tref,
         )
         search.run()
@@ -1448,12 +1448,12 @@ class TestGridSearch(BaseForTestsWithData):
         CFSv2_loudest_file = os.path.join(self.outdir, "CFSv2_Fstat_loudest.txt")
         cl_CFSv2 = []
         cl_CFSv2.append("lalapps_ComputeFstatistic_v2")
-        cl_CFSv2.append("--Alpha 0 --Delta 0")
-        cl_CFSv2.append("--AlphaBand 0 --DeltaBand 0")
+        cl_CFSv2.append("--Alpha {} --AlphaBand 0".format(self.Alpha))
+        cl_CFSv2.append("--Delta {} --DeltaBand 0".format(self.Delta))
         cl_CFSv2.append("--Freq {}".format(self.F0s[0]))
-        cl_CFSv2.append("--f1dot 0 --f1dotBand 0 --df1dot 0")
         cl_CFSv2.append("--FreqBand {}".format(self.F0s[1] - self.F0s[0]))
         cl_CFSv2.append("--dFreq {}".format(self.F0s[2]))
+        cl_CFSv2.append("--f1dot {} --f1dotBand 0".format(self.F1))
         cl_CFSv2.append("--DataFiles " + self.Writer.sftfilepath)
         cl_CFSv2.append("--refTime {}".format(self.tref))
         earth_ephem, sun_ephem = pyfstat.helper_functions.get_ephemeris_files()
@@ -1488,10 +1488,10 @@ class TestGridSearch(BaseForTestsWithData):
             self.outdir,
             self.Writer.sftfilepath,
             F0s=self.F0s,
-            F1s=[0],
-            F2s=[0],
-            Alphas=[0],
-            Deltas=[0],
+            F1s=[self.Writer.F1],
+            F2s=[self.Writer.F2],
+            Alphas=[self.Writer.Alpha],
+            Deltas=[self.Writer.Delta],
             tref=self.tref,
             nsegs=2,
         )
@@ -1506,9 +1506,9 @@ class TestGridSearch(BaseForTestsWithData):
             self.Writer.sftfilepath,
             F0s=self.F0s,
             F1s=self.F1s,
-            F2s=[0.0],
-            Alphas=[0.0],
-            Deltas=[0.0],
+            F2s=[self.Writer.F2],
+            Alphas=[self.Writer.Alpha],
+            Deltas=[self.Writer.Delta],
             tref=self.tref,
             Lambda0=[30.0, 0.0, 0.0, 0.0],
         )
@@ -1522,9 +1522,9 @@ class TestGridSearch(BaseForTestsWithData):
             self.Writer.sftfilepath,
             F0s=self.F0s,
             F1s=self.F1s,
-            F2s=[0],
-            Alphas=[0],
-            Deltas=[0],
+            F2s=[self.Writer.F2],
+            Alphas=[self.Writer.Alpha],
+            Deltas=[self.Writer.Delta],
             tref=self.tref,
             tglitchs=[self.tref],
         )
@@ -1538,10 +1538,10 @@ class TestGridSearch(BaseForTestsWithData):
             self.outdir,
             self.Writer.sftfilepath,
             F0s=self.F0s,
-            F1=0,
-            F2=0,
-            Alpha=0,
-            Delta=0,
+            F1=self.Writer.F1,
+            F2=self.Writer.F2,
+            Alpha=self.Writer.Alpha,
+            Delta=self.Writer.Delta,
             tref=self.tref,
             minStartTime=self.Writer.tstart,
             maxStartTime=self.Writer.tend(),
@@ -1561,10 +1561,10 @@ class TestTransientGridSearch(BaseForTestsWithData):
             self.outdir,
             self.Writer.sftfilepath,
             F0s=self.F0s,
-            F1s=[0],
-            F2s=[0],
-            Alphas=[0],
-            Deltas=[0],
+            F1s=[self.Writer.F1],
+            F2s=[self.Writer.F2],
+            Alphas=[self.Writer.Alpha],
+            Deltas=[self.Writer.Delta],
             tref=self.tref,
             minStartTime=self.Writer.tstart,
             maxStartTime=self.Writer.tend(),
