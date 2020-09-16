@@ -274,6 +274,11 @@ class GridSearch(BaseSearchClass):
             self.inititate_search_object()
 
         data = []
+        logging.info(
+            "Running search over a total of {:d} grid points...".format(
+                np.shape(iterable)[0]
+            )
+        )
         for vals in tqdm(iterable, total=getattr(self, "total_iterations", None)):
             detstat = self.search.get_det_stat(*vals)
             thisCand = list(vals) + [detstat]
@@ -722,6 +727,11 @@ class TransientGridSearch(GridSearch):
                 " results to {}*.dat".format(self.tCWfilebase)
             )
         self.timingFstatMap = 0.0
+        logging.info(
+            "Running search over a total of {:d} grid points...".format(
+                np.shape(self.input_data)[0]
+            )
+        )
         for vals in tqdm(self.input_data):
             detstat = self.search.get_det_stat(*vals)
             windowRange = getattr(self.search, "windowRange", None)
