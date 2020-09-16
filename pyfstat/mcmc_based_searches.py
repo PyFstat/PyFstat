@@ -1143,15 +1143,12 @@ class MCMCSearch(BaseSearchClass):
         prior_bounds, _ = self._get_prior_bounds(normal_stds)
         for i, (ax, key) in enumerate(zip(axes, self.theta_keys)):
             prior_dict = self.theta_prior[key]
-            prior_func = self._generic_lnprior(**prior_dict)
+            ln_prior_func = self._generic_lnprior(**prior_dict)
             x = np.linspace(prior_bounds[key]["lower"], prior_bounds[key]["upper"], N)
-            prior = [prior_func(xi) for xi in x]  # may not be vectorized
-            if prior_dict["type"] == "unif":
-                prior[0] = 0
-                prior[-1] = 0
+            prior = np.exp([ln_prior_func(xi) for xi in x])  # may not be vectorized
 
             priorln = ax.plot(x, prior, "C3", label="prior")
-            ax.set_xlabel(self.theta_symbols[i])
+            ax.set(xlabel=self.theta_symbols[i], yticks=[])
 
             s = self.samples[:, i]
             while len(s) > 10 ** 4:
@@ -1160,8 +1157,7 @@ class MCMCSearch(BaseSearchClass):
             kde = gaussian_kde(s)
             ax2 = ax.twinx()
             postln = ax2.plot(x, kde.pdf(x), "k", label="posterior")
-            ax2.set_yticklabels([])
-            ax.set_yticklabels([])
+            ax2.set(yticks=[], yticklabels=[])
 
             if injection_parameters is not None:
                 injection = ax.axvline(
