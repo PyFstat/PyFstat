@@ -31,12 +31,6 @@ ordered_cases = {
         "short_transient_MCMC_search",
         "long_transient_MCMC_search",
     ],
-    "mcmc_vs_grid_simple_example": [
-        "make_data_for_simple_mcmc_vs_grid",
-        "simple_grid_search",
-        "simple_mcmc_search",
-        "plot_grid_vs_mcmc_comparison",
-    ],
 }
 
 Nscripts = 0
