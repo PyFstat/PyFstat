@@ -1143,11 +1143,11 @@ class MCMCSearch(BaseSearchClass):
         prior_bounds, _ = self._get_prior_bounds(normal_stds)
         for i, (ax, key) in enumerate(zip(axes, self.theta_keys)):
             prior_dict = self.theta_prior[key]
-            prior_func = self._generic_lnprior(**prior_dict)
+            ln_prior_func = self._generic_lnprior(**prior_dict)
             x = np.linspace(prior_bounds[key]["lower"], prior_bounds[key]["upper"], N)
-            prior = [prior_func(xi) for xi in x]  # may not be vectorized
+            prior = np.exp([ln_prior_func(xi) for xi in x])  # may not be vectorized
 
-            priorln = ax.plot(x, np.exp(prior), "C3", label="prior")
+            priorln = ax.plot(x, prior, "C3", label="prior")
             ax.set(xlabel=self.theta_symbols[i], yticks=[])
 
             s = self.samples[:, i]
