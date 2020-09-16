@@ -386,15 +386,11 @@ class Writer(BaseSearchClass):
         content = self.get_single_config_line(0)
 
         if verbose:
-            logging.info(
-                "Writing the following injection parameters"
-                " to config file {:s}:".format(self.config_file_name)
-            )
-            logging.info(content)
-        else:
-            logging.info("Writing config file {:s}...".format(self.config_file_name))
+            logging.info("Injection parameters:")
+            logging.info(content.rstrip("\n"))
 
         if self.check_if_cff_file_needs_rewriting(content):
+            logging.info("Writing config file: {:s}".format(self.config_file_name))
             config_file = open(self.config_file_name, "w+")
             config_file.write(content)
             config_file.close()
@@ -937,13 +933,11 @@ transientTau = {:10.0f}\n"""
             content += line
 
         if verbose:
-            logging.info(
-                "Writing the following injection parameters"
-                " to config file {:s}:".format(self.config_file_name)
-            )
-            logging.info(content)
+            logging.info("Injection parameters:")
+            logging.info(content.rstrip("\n"))
 
         if self.check_if_cff_file_needs_rewriting(content):
+            logging.info("Writing config file: {:s}".format(self.config_file_name))
             config_file = open(self.config_file_name, "w+")
             config_file.write(content)
             config_file.close()
