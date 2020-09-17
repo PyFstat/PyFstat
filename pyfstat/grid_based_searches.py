@@ -233,7 +233,7 @@ class GridSearch(BaseSearchClass):
         # need to convert any "None" entries in input_data array safely to 0s
         # to make np.allclose() work reliably
         new_data = np.nan_to_num(self.input_data.astype(np.float64))
-        if np.shape(old_data)[0] != np.shape(new_data)[1]:
+        if np.shape(old_data)[0] != np.shape(new_data)[0]:
             # only testing number of points, not number of dimensions, here
             # because output file can have detstat and post-proc quantities
             # added and hence have different number of dimensions
