@@ -233,6 +233,19 @@ class GridSearch(BaseSearchClass):
         # need to convert any "None" entries in input_data array safely to 0s
         # to make np.allclose() work reliably
         new_data = np.nan_to_num(self.input_data.astype(np.float64))
+        if np.shape(old_data)[0] != np.shape(new_data)[1]:
+            # only testing number of points, not number of dimensions, here
+            # because output file can have detstat and post-proc quantities
+            # added and hence have different number of dimensions
+            # (this could in principle be cleverly predicted at this point)
+            logging.info(
+                "Old data found in '{:s}', input parameters grid differs"
+                " in length ({:d} points in file, {:d} points requested);"
+                " continuing with grid search.".format(
+                    self.out_file, np.shape(old_data)[0], np.shape(new_data)[1]
+                )
+            )
+            return False
         rtol, atol = self._get_tolerance_from_savetxt_fmt()
         column_matches = [
             np.allclose(
