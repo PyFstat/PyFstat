@@ -298,8 +298,8 @@ if not os.path.isfile(mcmc_file):
 mcmc_res = pyfstat.helper_functions.read_txt_file_with_header(mcmc_file)
 
 zoom = {
-    "F0": [inj["F0"] - 20 * dF0, inj["F0"] + 20 * dF0],
-    "F1": [inj["F1"] - 10 * dF1, inj["F1"] + 10 * dF1],
+    "F0": [inj["F0"] - 10 * dF0, inj["F0"] + 10 * dF0],
+    "F1": [inj["F1"] - 5 * dF1, inj["F1"] + 5 * dF1],
 }
 
 # we'll use two local plotting functions to avoid code duplication in the sky case
