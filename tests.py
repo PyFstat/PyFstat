@@ -1404,9 +1404,12 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
 
 class TestGridSearch(BaseForTestsWithData):
     label = "TestGridSearch"
-    F0s = [29, 31, 0.1]
+    # Need to hand-pick values F0s here for the CFSv2 comparison:
+    # that code sometimes includes endpoints, sometimes not.
+    # For the F0s here, it happens to match our convention (include endpoint).
+    F0s = [29.999, 30.001, 1e-4]
     F1s = [-1e-10, 0, 1e-11]
-    Band = 2.5
+    Band = 0.5
 
     def test_grid_search(self):
         search = pyfstat.GridSearch(

@@ -167,9 +167,18 @@ class GridSearch(BaseSearchClass):
         if len(x) == 1:
             return np.array(x)
         elif len(x) == 3 and self.input_arrays is False:
-            return np.arange(x[0], x[1], x[2])
+            # This used to be
+            # return np.arange(x[0], x[1], x[2])
+            # but according to the numpy docs:
+            # "When using a non-integer step, such as 0.1,
+            # the results will often not be consistent.
+            # It is better to use numpy.linspace for these cases."
+            # and indeed it sometimes included the end point, sometimes didn't
+            return np.linspace(
+                x[0], x[1], num=int((x[1] - x[0]) / x[2]) + 1, endpoint=True
+            )
         else:
-            logging.info("Using tuple as is")
+            logging.info("Using tuple of length {:d} as is.".format(len(x)))
             return np.array(x)
 
     def get_input_data_array(self):
