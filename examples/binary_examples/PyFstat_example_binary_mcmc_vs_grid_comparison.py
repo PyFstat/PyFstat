@@ -8,7 +8,11 @@ import matplotlib.pyplot as plt
 # Set to false to include eccentricity
 circular_orbit = False
 
-label = os.path.splitext(os.path.basename(__file__))[0]
+label = (
+    os.path.splitext(os.path.basename(__file__))[0] + "_circular_orbit"
+    if circular_orbit
+    else ""
+)
 outdir = os.path.join("PyFstat_example_data", label)
 
 # Parameters to generate a data set
@@ -59,7 +63,7 @@ print("Performing Grid Search...")
 # grid_based_searches.GridSearch, so we do it by hand constructing
 # a grid and using core.ComputeFstat.
 half_points_per_dimension = 2
-search_keys = ["period", "asini", "tp"] + ["argp", "ecc"]
+search_keys = ["period", "asini", "tp", "argp", "ecc"]
 search_keys_label = [
     r"$P$ [s]",
     r"$a_p$ [s]",
@@ -67,6 +71,7 @@ search_keys_label = [
     r"$\omega$ [rad]",
     r"$e$",
 ]
+
 grid_arrays = np.meshgrid(
     *[
         signal_parameters[key]
