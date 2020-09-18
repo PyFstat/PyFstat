@@ -127,8 +127,7 @@ fig.savefig(os.path.join(outdir, "grid_twoF_per_dimension.pdf"))
 
 
 print("Performing MCMCSearch...")
-
-# Set up priors for the binary parameters
+# Fixed points in frequency and sky parameters
 theta_prior = {
     "F0": signal_parameters["F0"],
     "F1": signal_parameters["F1"],
@@ -137,6 +136,7 @@ theta_prior = {
     "Delta": signal_parameters["Delta"],
 }
 
+# Set up priors for the binary parameters
 for key in search_keys:
     theta_prior.update(
         {
