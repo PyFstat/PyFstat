@@ -1,3 +1,10 @@
+## 1.7.2 [18/09/2020]
+
+ - improved GridSearch.check_old_data_is_okay_to_use()
+ - minor logging improvements for Writer, GridSearch, TransientGridSearch
+ - new binary_mcmc_vs_grid example
+ - minor improvements to tests and other examples
+
 ## 1.7.1 [16/09/2020]
 
  - LALSuite 6.76 now required
