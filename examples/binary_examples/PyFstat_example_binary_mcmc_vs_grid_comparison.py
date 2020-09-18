@@ -55,6 +55,9 @@ print("")
 print("Performing Grid Search...")
 
 # Create ad-hoc grid and compute Fstatistic around injection point
+# There's no class supporting a binary search in the same way as
+# grid_based_searches.GridSearch, so we do it by hand constructing
+# a grid and using core.ComputeFstat.
 half_points_per_dimension = 2
 search_keys = ["period", "asini", "tp"] + ["argp", "ecc"]
 search_keys_label = [
@@ -194,7 +197,7 @@ print(
         max_grid_2F,
         ", ".join(
             [
-                "\n\t\t{1:s}: {0:.4e} ({2:.4g})%".format(
+                "\n\t\t{1:s}: {0:.4e} ({2:.4f}%)".format(
                     max_grid_parameters[search_keys.index(key)]
                     - signal_parameters[key],
                     key,
@@ -216,7 +219,7 @@ print(
         max_2F_mcmc,
         ", ".join(
             [
-                "\n\t\t{1:s}: {0:.4e} ({2:.4g})%".format(
+                "\n\t\t{1:s}: {0:.4e} ({2:.4f}%)".format(
                     max_dict_mcmc[key] - signal_parameters[key],
                     key,
                     100
@@ -235,7 +238,7 @@ print(
     "\n\tExpressed as fractions of 2sigma intervals: {:s}.".format(
         ", ".join(
             [
-                "\n\t\t{1:s}: {0:.4e} ({2:.4g})%".format(
+                "\n\t\t{1:s}: {0:.4e} ({2:.4f}%)".format(
                     stats_dict_mcmc[key]["mean"] - signal_parameters[key],
                     key,
                     100
@@ -247,7 +250,7 @@ print(
         ),
         ", ".join(
             [
-                "\n\t\t{1:s}: {0:.4e}".format(
+                "\n\t\t{1:s}: {0:.4f}%".format(
                     100
                     * np.abs(stats_dict_mcmc[key]["mean"] - signal_parameters[key])
                     / (2 * stats_dict_mcmc[key]["std"]),
@@ -263,7 +266,7 @@ print(
     "\n\tExpressed as fractions of 90% confidence intervals: {:s}.".format(
         ", ".join(
             [
-                "\n\t\t{1:s}: {0:.4e} ({2:.4g})%".format(
+                "\n\t\t{1:s}: {0:.4e} ({2:.4f}%)".format(
                     stats_dict_mcmc[key]["median"] - signal_parameters[key],
                     key,
                     100
@@ -275,7 +278,7 @@ print(
         ),
         ", ".join(
             [
-                "\n\t\t{1:s}: {0:.4e}".format(
+                "\n\t\t{1:s}: {0:.4f}%".format(
                     100
                     * np.abs(stats_dict_mcmc[key]["median"] - signal_parameters[key])
                     / (
