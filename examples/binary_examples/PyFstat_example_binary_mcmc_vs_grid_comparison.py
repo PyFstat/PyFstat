@@ -15,9 +15,9 @@ outdir = os.path.join("PyFstat_example_data", label)
 data_parameters = {
     "sqrtSX": 1e-22,
     "tstart": 1000000000,
-    "duration": 60 * 86400,
+    "duration": 90 * 86400,
     "detectors": "H1,L1",
-    "Tsft": 1800,
+    "Tsft": 3600,
     "Band": 4,
 }
 
@@ -27,13 +27,13 @@ mid_time = 0.5 * (data_parameters["tstart"] + tend)
 depth = 10.0
 signal_parameters = {
     "tref": data_parameters["tstart"],
-    "F0": 100.0,
+    "F0": 40.0,
     "F1": 0,
     "F2": 0,
     "Alpha": 0.5,
     "Delta": 0.5,
     "period": 5 * 24 * 3600.0,
-    "asini": 10.0,
+    "asini": 4.0,
     "tp": mid_time * 1.05,
     "argp": 0.0 if circular_orbit else 0.54,
     "ecc": 0.0 if circular_orbit else 0.7,
@@ -143,17 +143,12 @@ if circular_orbit:
     for key in ["ecc", "argp"]:
         theta_prior[key] = 0
         search_keys.remove(key)
-# theta_prior["tp"]["lower"] = signal_parameters["tp"] - 0.5 * signal_parameters["period"]
-# theta_prior["tp"]["upper"] = (
-#    signal_parameters["tp"]
-#    + 0.5 * (1 + signal_parameters["argp"] / np.pi) * signal_parameters["period"]
-# )
 
 # ptemcee sampler settings - in a real application we might want higher values
-ntemps = 3
+ntemps = 2
 log10beta_min = -1
 nwalkers = 100
-nsteps = [200, 200]  # [burnin,production]
+nsteps = [100, 100]  # [burnin,production]
 
 mcmcsearch = pyfstat.MCMCSearch(
     label="mcmc_search",
