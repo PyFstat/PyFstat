@@ -34,7 +34,7 @@ signal_parameters = {
     "F2": 0,
     "Alpha": 0.5,
     "Delta": 0.5,
-    "period": 5 * 24 * 3600.0,
+    "period": 85 * 24 * 3600.0,
     "asini": 4.0,
     "tp": mid_time * 1.05,
     "argp": 0.0 if circular_orbit else 0.54,
