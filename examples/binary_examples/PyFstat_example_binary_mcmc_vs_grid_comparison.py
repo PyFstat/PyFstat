@@ -8,10 +8,8 @@ import matplotlib.pyplot as plt
 # Set to false to include eccentricity
 circular_orbit = False
 
-label = (
-    os.path.splitext(os.path.basename(__file__))[0] + "_circular_orbit"
-    if circular_orbit
-    else ""
+label = os.path.splitext(os.path.basename(__file__))[0] + (
+    "_circular_orbit" if circular_orbit else ""
 )
 outdir = os.path.join("PyFstat_example_data", label)
 
@@ -123,7 +121,7 @@ for ind in range(dim):
     a.plot(grid_points[:, ind], twoF_values, "o")
     a.axvline(signal_parameters[search_keys[ind]], label="Injection", color="orange")
 plt.tight_layout()
-fig.savefig(os.path.join(outdir, "grid_twoF_per_dimension.pdf"))
+fig.savefig(os.path.join(outdir, "grid_twoF_per_dimension.png"))
 
 
 print("Performing MCMCSearch...")
