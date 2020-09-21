@@ -1045,7 +1045,7 @@ class ComputeFstat(BaseSearchClass):
         out = [
             helper_functions.predict_fstat(
                 minStartTime=self.minStartTime,
-                maxStartTime=t,
+                duration=t - self.minStartTime,
                 sftfilepattern=self.sftfilepattern,
                 IFO=IFO,
                 **pfs_input,
