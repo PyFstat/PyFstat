@@ -1,43 +1,38 @@
-import pyfstat
-import numpy as np
 import os
+import numpy as np
+import pyfstat
 
 label = os.path.splitext(os.path.basename(__file__))[0]
 outdir = os.path.join("PyFstat_example_data", label)
 
 # Properties of the GW data
-sqrtSX = 1e-23
-tstart = 1000000000
-duration = 100 * 86400
-tend = tstart + duration
+gw_data = {
+    "sqrtSX": 1e-23,
+    "tstart": 1000000000,
+    "duration": 100 * 86400,
+    "detectors": "H1,L1",
+    "Band": 4,
+    "Tsft": 1800,
+}
 
 # Properties of the signal
-F0 = 30.0
-F1 = -1e-10
-F2 = 0
-Alpha = np.radians(83.6292)
-Delta = np.radians(22.0144)
-tref = 0.5 * (tstart + tend)
-cosi = 0
-
 depth = 100
-h0 = sqrtSX / depth
+signal_parameters = {
+    "F0": 30.0,
+    "F1": -1e-10,
+    "F2": 0,
+    "Alpha": np.radians(83.6292),
+    "Delta": np.radians(22.0144),
+    "tref": gw_data["tstart"],
+    "cosi": 1,
+    "h0": gw_data["sqrtSX"] / depth,
+}
 
 data = pyfstat.Writer(
     label=label,
     outdir=outdir,
-    tref=tref,
-    tstart=tstart,
-    F0=F0,
-    F1=F1,
-    F2=F2,
-    duration=duration,
-    Alpha=Alpha,
-    Delta=Delta,
-    h0=h0,
-    cosi=cosi,
-    sqrtSX=sqrtSX,
-    detectors="H1,L1",
+    **gw_data,
+    **signal_parameters,
 )
 data.make_data()
 
@@ -45,41 +40,42 @@ data.make_data()
 twoF = data.predict_fstat()
 print("Predicted twoF value: {}\n".format(twoF))
 
-DeltaF0 = 1e-7
-DeltaF1 = 1e-13
-VF0 = (np.pi * duration * DeltaF0) ** 2 / 3.0
-VF1 = (np.pi * duration ** 2 * DeltaF1) ** 2 * 4 / 45.0
-print("\nV={:1.2e}, VF0={:1.2e}, VF1={:1.2e}\n".format(VF0 * VF1, VF0, VF1))
+ifo_constraints = ["L1", "H1", None]
+compute_fstat_per_ifo = [
+    pyfstat.ComputeFstat(
+        sftfilepattern=data.sftfilepath,
+        tref=signal_parameters["tref"],
+        binary=signal_parameters.get("asini", 0),
+        minCoverFreq=-0.5,
+        maxCoverFreq=-0.5,
+        detectors=ifo_constraint,
+    )
+    for ifo_constraint in ifo_constraints
+]
 
-theta_prior = {
-    "F0": {"type": "unif", "lower": F0 - DeltaF0 / 2.0, "upper": F0 + DeltaF0 / 2.0},
-    "F1": {"type": "unif", "lower": F1 - DeltaF1 / 2.0, "upper": F1 + DeltaF1 / 2.0},
-    "F2": F2,
-    "Alpha": Alpha,
-    "Delta": Delta,
+cumulative_f_stat_params = {
+    key: signal_parameters[key]
+    for key in signal_parameters
+    if key
+    in ["F0", "F1", "F2", "Alpha", "Delta", "asini", "period", "tp", "ecc", "argp"]
+}
+cumulative_f_stat_params.update(
+    {"tstart": gw_data["tstart"], "tend": gw_data["tstart"] + gw_data["duration"]}
+)
+
+predict_f_stat_params = {
+    key: signal_parameters.get(key, 0)
+    for key in ["F0", "Alpha", "Delta", "psi", "cosi", "h0"]
 }
 
-ntemps = 1
-log10beta_min = -1
-nwalkers = 100
-nsteps = [50, 50]
-
-mcmc = pyfstat.MCMCSearch(
-    label=label,
-    outdir=outdir,
-    sftfilepattern=os.path.join(outdir, "*" + label + "*sft"),
-    theta_prior=theta_prior,
-    tref=tref,
-    minStartTime=tstart,
-    maxStartTime=tend,
-    nsteps=nsteps,
-    nwalkers=nwalkers,
-    ntemps=ntemps,
-    log10beta_min=log10beta_min,
-)
-mcmc.run()
-mcmc.plot_corner(add_prior=True)
-mcmc.print_summary()
-
-mcmc.generate_loudest()
-mcmc.plot_cumulative_max(add_pfs=True)
+for ind, compute_f_stat in enumerate(compute_fstat_per_ifo):
+    taus, twoF = compute_f_stat.calculate_twoF_cumulative(**cumulative_f_stat_params)
+    compute_f_stat.plot_twoF_cumulative(
+        **cumulative_f_stat_params,
+        label=label + (f"_{ifo_constraints[ind]}" if ind < 2 else "_H1L1"),
+        outdir=outdir,
+        injection_parameters=predict_f_stat_params,
+        plot_label="Cumulative 2F"
+        + (f" {ifo_constraints[ind]}" if ind < 2 else " H1 + L1"),
+        custom_axis_kwargs={"title": "This is a custom title"},
+    )

@@ -602,7 +602,7 @@ class ComputeFstat(BaseSearchClass):
                 self.windowRange.tau = int(self.maxStartTime - self.minStartTime)
                 self.windowRange.tauBand = 0
             else:  # user-set bands and spacings
-                if self.t0Band is None:
+                if getattr(self, "t0Band", None) is None:
                     self.windowRange.t0Band = 0
                 else:
                     if not isinstance(self.t0Band, int):
@@ -615,7 +615,7 @@ class ComputeFstat(BaseSearchClass):
                     self.windowRange.t0Band = self.t0Band
                     if self.dt0:
                         self.windowRange.dt0 = self.dt0
-                if self.tauBand is None:
+                if getattr(self, "tauBand", None) is None:
                     self.windowRange.tauBand = 0
                 else:
                     if not isinstance(self.tauBand, int):
@@ -955,7 +955,7 @@ class ComputeFstat(BaseSearchClass):
         argp=None,
         tstart=None,
         tend=None,
-        npoints=1000,
+        cumulative_fstat_segments=1000,
     ):
         """Calculate the cumulative twoF along the obseration span
 
@@ -968,7 +968,7 @@ class ComputeFstat(BaseSearchClass):
         tstart, tend: int
             GPS times to restrict the range of data used - automatically
             truncated to the span of data available
-        npoints: int
+        cumulative_fstat_segments: int
             Number of points to compute twoF along the span
 
         Notes
@@ -983,12 +983,13 @@ class ComputeFstat(BaseSearchClass):
         tstart = np.max([SFTminStartTime, tstart])
         min_tau = np.max([SFTminStartTime - tstart, 0]) + 3600 * 6
         max_tau = SFTmaxStartTime - tstart
-        taus = np.linspace(min_tau, max_tau, npoints)
+        taus = np.linspace(min_tau, max_tau, cumulative_fstat_segments)
         twoFs = []
+
         if not self.transientWindowType:
-            # still call the transient-Fstat-map function, but using the full range
-            self.transientWindowType = "none"
+            self.transientWindowType = "rect"
             self.init_computefstatistic()
+
         for tau in taus:
             detstat = self.get_fullycoherent_twoF(
                 tstart=tstart,
@@ -1009,7 +1010,7 @@ class ComputeFstat(BaseSearchClass):
         return taus, np.array(twoFs)
 
     def _calculate_predict_fstat_cumulative(
-        self, N, label=None, outdir=None, IFO=None, pfs_input=None
+        self, N, label=None, outdir=None, pfs_input=None
     ):
         """Calculates the predicted 2F and standard deviation cumulatively
 
@@ -1017,12 +1018,14 @@ class ComputeFstat(BaseSearchClass):
         ----------
         N : int
             Number of timesteps to use between minStartTime and maxStartTime.
-        label, outdir : str, optional
-            The label and directory to read in the .loudest file from
-        IFO : str
         pfs_input : dict, optional
-            Input kwargs to predict_fstat (alternative to giving label and
-            outdir).
+            Input kwargs to predict_fstat. Each key should correspond to one
+            of the arguments required by PFS (h0, cosi, psi, Alpha, Delta, Freq).
+        label, outdir : str, optional
+            Alternative to pfs_input. The label and directory to read in the
+            .loudest file from. This assumes `loudest` file was created using the
+            PyFstat convention os.path.join(outdit, label + ".loudest").
+            Ignored if pfs_input is not None.
 
         Returns
         -------
@@ -1047,7 +1050,6 @@ class ComputeFstat(BaseSearchClass):
                 minStartTime=self.minStartTime,
                 duration=t - self.minStartTime,
                 sftfilepattern=self.sftfilepattern,
-                IFO=IFO,
                 **pfs_input,
             )
             for t in times
@@ -1059,15 +1061,12 @@ class ComputeFstat(BaseSearchClass):
         self,
         label,
         outdir,
-        add_pfs=False,
-        N=15,
-        injectSources=None,
-        ax=None,
-        c="k",
+        injection_parameters=None,
+        predict_fstat_segments=15,
+        custom_axis_kwargs=None,
+        plot_label=None,
         savefig=True,
-        title=None,
-        plt_label=None,
-        **kwargs,
+        **calculate_twoF_cumulative_kwargs,
     ):
         """Plot the twoF value cumulatively
 
@@ -1076,108 +1075,89 @@ class ComputeFstat(BaseSearchClass):
         label, outdir : str
         add_pfs : bool
             If true, plot the predicted 2F and standard deviation
-        N : int
-            Number of points to use
-        injectSources : dict
-            See `ComputeFstat`
-        ax : matplotlib.axes._subplots_AxesSubplot, optional
-            Axis to add the plot to.
-        c : str
-            Colour
+        injection_parameters: dict
+            Dictionary with injection parameters to predict Fstat.
+            At least (h0, cosi, psi, Alpha, Delta, F0) keys must be
+            present (any other key will simply be ignored).
+        predict_fstat_segments : int
+            Number of points to use for PredictFStat.
         savefig : bool
             If true, save the figure in outdir
-        title, plt_label: str
-            Figure title and label
 
         Returns
         -------
-        tauS, tauF : ndarray shape (N,)
+        tauS, tauF : ndarray shape (predict_fstat_segments,)
             If savefig, the times and twoF (cumulative) values
         ax : matplotlib.axes._subplots_AxesSubplot, optional
             If savefig is False
 
         """
-        if ax is None:
-            fig, ax = plt.subplots()
-        if injectSources:
-            pfs_input = dict(
-                h0=injectSources["h0"],
-                cosi=injectSources["cosi"],
-                psi=injectSources["psi"],
-                Alpha=injectSources["Alpha"],
-                Delta=injectSources["Delta"],
-                Freq=injectSources["fkdot"][0],
-            )
-        else:
-            pfs_input = None
 
-        taus, twoFs = self.calculate_twoF_cumulative(**kwargs)
-        ax.plot(taus / 86400.0, twoFs, label=plt_label, color=c)
-        if len(self.detector_names) > 1:
-            detector_names = self.detector_names
-            detectors = self.detectors
-            for d in self.detector_names:
-                self.detectors = d
-                self.init_computefstatistic()
-                taus, twoFs = self.calculate_twoF_cumulative(**kwargs)
-                ax.plot(
-                    taus / 86400.0,
-                    twoFs,
-                    label="{}".format(d),
-                    color=detector_colors[d.lower()],
+        taus, twoFs = self.calculate_twoF_cumulative(**calculate_twoF_cumulative_kwargs)
+        taus_days = taus / 86400.0
+
+        axis_kwargs = {
+            "xlabel": r"Days from $t_{{\rm start}}={:.0f}$".format(
+                calculate_twoF_cumulative_kwargs["tstart"]
+            ),
+            "ylabel": r"$\log_{10}(\mathrm{BSGL})_{\rm cumulative}$"
+            if self.BSGL
+            else r"$\widetilde{2\mathcal{F}}_{\rm cumulative}$",
+            "xlim": (0, taus_days[-1]),
+        }
+        for kwarg in "xlabel", "ylabel":
+            if kwarg in custom_axis_kwargs:
+                logging.warning(
+                    f"Be careful, overwriting {kwarg} {axis_kwargs[kwarg]}"
+                    " with {custom_axis_kwargs[kwarg]}: Check out the units!"
                 )
-            self.detectors = detectors
-            self.detector_names = detector_names
 
-        if add_pfs:
+        axis_kwargs.update(custom_axis_kwargs or {})
+
+        plot_label = plot_label or (
+            f"Cumulative 2F {taus.shape[0]} segments"
+            f"({taus_days[1] - taus_days[0]:.1f}) days per segent"
+        )
+
+        fig, ax = plt.subplots()
+        ax.grid()
+        ax.set(**axis_kwargs)
+
+        ax.plot(taus_days, twoFs, label=plot_label, color="k")
+
+        if injection_parameters:
+            logging.info(
+                f"Compute PFS using injection parameters {injection_parameters} and"
+                f" {predict_fstat_segments} segments"
+            )
+            pfs_input = dict(
+                h0=injection_parameters["h0"],
+                cosi=injection_parameters["cosi"],
+                psi=injection_parameters["psi"],
+                Alpha=injection_parameters["Alpha"],
+                Delta=injection_parameters["Delta"],
+                Freq=injection_parameters["F0"],
+            )
+
             times, pfs, pfs_sigma = self._calculate_predict_fstat_cumulative(
-                N=N, label=label, outdir=outdir, pfs_input=pfs_input
+                N=predict_fstat_segments,
+                label=label,
+                outdir=outdir,
+                pfs_input=pfs_input,
             )
             ax.fill_between(
                 (times - self.minStartTime) / 86400.0,
                 pfs - pfs_sigma,
                 pfs + pfs_sigma,
-                color=c,
+                color="cyan",
                 label=(
                     r"Predicted $\langle 2\mathcal{F} " r"\rangle\pm $ 1-$\sigma$ band"
                 ),
                 zorder=-10,
                 alpha=0.2,
             )
-            if len(self.detector_names) > 1:
-                for d in self.detector_names:
-                    out = self._calculate_predict_fstat_cumulative(
-                        N=N,
-                        label=label,
-                        outdir=outdir,
-                        IFO=d.upper(),
-                        pfs_input=pfs_input,
-                    )
-                    times, pfs, pfs_sigma = out
-                    ax.fill_between(
-                        (times - self.minStartTime) / 86400.0,
-                        pfs - pfs_sigma,
-                        pfs + pfs_sigma,
-                        color=detector_colors[d.lower()],
-                        alpha=0.5,
-                        label=(
-                            r"Predicted $2\mathcal{{F}}$ 1-$\sigma$ band ({})".format(
-                                d.upper()
-                            )
-                        ),
-                        zorder=-10,
-                    )
 
-        ax.set_xlabel(r"Days from $t_{{\rm start}}={:.0f}$".format(kwargs["tstart"]))
-        if self.BSGL:
-            ax.set_ylabel(r"$\log_{10}(\mathrm{BSGL})_{\rm cumulative}$")
-        else:
-            ax.set_ylabel(r"$\widetilde{2\mathcal{F}}_{\rm cumulative}$")
-        ax.set_xlim(0, taus[-1] / 86400)
-        if plt_label:
-            ax.legend(frameon=False, loc=2, fontsize=6)
-        if title:
-            ax.set_title(title)
+        ax.legend(loc="best")
         if savefig:
             plt.tight_layout()
             plt.savefig(os.path.join(outdir, label + "_twoFcumulative.png"))

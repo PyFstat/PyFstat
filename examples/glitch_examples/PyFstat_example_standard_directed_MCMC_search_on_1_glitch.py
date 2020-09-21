@@ -53,4 +53,5 @@ mcmc.transform_dictionary["F1"] = dict(
 
 mcmc.run()
 mcmc.plot_corner()
+mcmc.plot_cumulative_max()
 mcmc.print_summary()
