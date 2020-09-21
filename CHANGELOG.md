@@ -1,3 +1,11 @@
+## 1.7.3 [21/09/2020]
+
+ - GridSearch: will now always include the end point in each 1D parameter points array
+ - restored MCMCSearch.plot_chainconsumer() to a workable state
+   - optional dependency checked and documented more cleanly
+   - the injections parameter option for this is actually called "truth" not "truths
+ - fixed checks of injection parameter keys for other MCMC plotting functions
+
 ## 1.7.2 [18/09/2020]
 
  - improved GridSearch.check_old_data_is_okay_to_use()
