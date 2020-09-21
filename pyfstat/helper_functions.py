@@ -733,7 +733,6 @@ def predict_fstat(
     transientWindowType="none",
     transientStartTime=None,
     transientTau=None,
-    **kwargs
 ):
     """Wrapper to lalapps_PredictFstat
 
