@@ -23,6 +23,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install git+https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner
+        pip install chainconsumer
     - name: Set up ephemerides
       run: |
         export EPHEM_SRC=https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib

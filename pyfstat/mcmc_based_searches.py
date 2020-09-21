@@ -990,21 +990,40 @@ class MCMCSearch(BaseSearchClass):
             Passed to chainconsumer.plotter.plot
 
         """
-
-        if "truths" in kwargs and len(kwargs["truths"]) != self.ndim:
-            logging.warning("len(Truths) != ndim, Truths will be ignored")
-            kwargs["truths"] = None
+        try:
+            import chainconsumer
+        except ImportError:
+            logging.warning(
+                "Could not import 'chainconsumer' package, please install it to use this method."
+            )
+            return
 
         samples_plt = copy.copy(self.samples)
         labels = self._get_labels(newline_units=True)
 
         samples_plt = self._scale_samples(samples_plt, self.theta_keys)
-
-        import chainconsumer
+        if "truth" in kwargs:
+            if not isinstance(kwargs["truth"], dict):
+                raise ValueError("'truth' must be a dictionary.")
+            missing_keys = np.setdiff1d(self.theta_keys, list(kwargs["truth"].keys()))
+            if len(missing_keys) > 0:
+                logging.warning(
+                    "plot_chainconsumer(): Missing keys {} in 'truth' dictionary,"
+                    " argument will be ignored.".format(missing_keys)
+                )
+                kwargs["truth"] = None
+            else:
+                parameters_in_order = np.array(
+                    [kwargs["truth"][key] for key in self.theta_keys]
+                ).reshape((1, -1))
+                kwargs["truth"] = self._scale_samples(
+                    parameters_in_order, self.theta_keys
+                ).ravel()
 
         c = chainconsumer.ChainConsumer()
         c.add_chain(samples_plt, parameters=labels)
-        c.configure(smooth=0, summary=False, sigma2d=True)
+        # We set usetex=False to avoid dependency on 'kpsewhich' TeX tool
+        c.configure(smooth=0, summary=False, sigma2d=True, usetex=False)
         fig = c.plotter.plot(**kwargs)
 
         axes_list = fig.get_axes()
@@ -1029,7 +1048,10 @@ class MCMCSearch(BaseSearchClass):
             fig.subplots_adjust(hspace=0.05, wspace=0.05)
 
         if save_fig:
-            fig.savefig(os.path.join(self.outdir, self.label + "_corner.png"), dpi=dpi)
+            fig.savefig(
+                os.path.join(self.outdir, self.label + "_chainconsumer_corner.png"),
+                dpi=dpi,
+            )
             plt.close(fig)
         else:
             return fig, axes
