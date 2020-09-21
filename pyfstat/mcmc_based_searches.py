@@ -828,7 +828,7 @@ class MCMCSearch(BaseSearchClass):
         tglitch_ratio=False,
         fig_and_axes=None,
         save_fig=True,
-        **kwargs
+        **kwargs,
     ):
         """Generate a corner plot of the posterior
 
@@ -873,13 +873,18 @@ class MCMCSearch(BaseSearchClass):
 
         if "truths" in kwargs:
 
-            if isinstance(kwargs["truths"], dict):
-                kwargs["truths"] = [kwargs["truths"][key] for key in self.theta_keys]
+            if not isinstance(kwargs["truths"], dict):
+                raise ValueError("'truths' must be a dictionary.")
 
-            if len(kwargs["truths"]) != self.ndim:
-                logging.warning("len(Truths) != ndim, Truths will be ignored")
+            missing_keys = set(self.theta_keys) - kwargs["truths"].keys()
+            if missing_keys:
+                logging.warning(
+                    f"plot_corner(): Missing keys {missing_keys} in 'truths' dictionary,"
+                    " argument will be ignored."
+                )
                 kwargs["truths"] = None
             else:
+                kwargs["truths"] = [kwargs["truths"][key] for key in self.theta_keys]
                 kwargs["truths"] = self._scale_samples(
                     np.reshape(kwargs["truths"], (1, -1)), self.theta_keys
                 ).ravel()
@@ -944,7 +949,7 @@ class MCMCSearch(BaseSearchClass):
                 data_kwargs={"alpha": 0.1, "ms": 0.5},
                 range=_range,
                 hist_kwargs=hist_kwargs,
-                **kwargs
+                **kwargs,
             )
 
             axes_list = fig_triangle.get_axes()
@@ -1153,6 +1158,16 @@ class MCMCSearch(BaseSearchClass):
         save_fig=True,
     ):
         """ Plot the posterior in the context of the prior """
+
+        # Check injection parameters first
+        missing_keys = set(self.theta_keys) - injection_parameters.keys()
+        if missing_keys:
+            logging.warning(
+                f"plot_prior_posterior(): Missing keys {missing_keys} in 'injection_parameters',"
+                " argument will be ignored."
+            )
+            injection_parameters = None
+
         if fig_and_axes is None:
             fig, axes = plt.subplots(nrows=self.ndim, figsize=(8, 4 * self.ndim))
         else:
@@ -1229,7 +1244,7 @@ class MCMCSearch(BaseSearchClass):
                 Delta=d["Delta"],
                 tstart=self.minStartTime,
                 tend=self.maxStartTime,
-                **kwargs
+                **kwargs,
             )
         else:
             self.search.plot_twoF_cumulative(
@@ -1247,7 +1262,7 @@ class MCMCSearch(BaseSearchClass):
                 tp=d["argp"],
                 tstart=self.minStartTime,
                 tend=self.maxStartTime,
-                **kwargs
+                **kwargs,
             )
 
     def _generic_lnprior(self, **kwargs):
@@ -1373,6 +1388,14 @@ class MCMCSearch(BaseSearchClass):
         if injection_parameters is not None:
             if not isinstance(injection_parameters, dict):
                 raise ValueError("injection_parameters is not a dictionary")
+
+            missing_keys = set(self.theta_keys) - injection_parameters.keys()
+            if missing_keys:
+                logging.warning(
+                    f"plot_walkers(): Missing keys {missing_keys} in 'injection_parameters',"
+                    " argument will be ignored."
+                )
+                injection_parameters = None
             else:
                 scaled_injection_parameters = {
                     key: (
