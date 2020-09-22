@@ -43,12 +43,14 @@ print("Predicted twoF value: {}\n".format(twoF))
 ifo_constraints = ["L1", "H1", None]
 compute_fstat_per_ifo = [
     pyfstat.ComputeFstat(
-        sftfilepattern=data.sftfilepath,
+        sftfilepattern=os.path.join(
+            data.outdir,
+            (f"{ifo_constraint[0]}*.sft" if ifo_constraint is not None else "*.sft"),
+        ),
         tref=signal_parameters["tref"],
         binary=signal_parameters.get("asini", 0),
         minCoverFreq=-0.5,
         maxCoverFreq=-0.5,
-        detectors=ifo_constraint,
     )
     for ifo_constraint in ifo_constraints
 ]
