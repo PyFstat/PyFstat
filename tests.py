@@ -748,6 +748,44 @@ class TestComputeFstat(BaseForTestsWithData):
         )
         self.assertTrue(lnBSGL > 0)
 
+    def test_cumulative_twoF(self):
+
+        search = pyfstat.ComputeFstat(
+            tref=self.Writer.tref,
+            sftfilepattern=self.Writer.sftfilepath,
+            search_ranges=self.search_ranges,
+        )
+        taus, twoF_cumulative = search.calculate_twoF_cumulative(
+            self.Writer.F0,
+            self.Writer.F1,
+            self.Writer.F2,
+            self.Writer.Alpha,
+            self.Writer.Delta,
+            tstart=self.Writer.tstart,
+            tend=self.Writer.tend(),
+        )
+        twoF_cumulative = twoF_cumulative[-1]
+
+        twoF = search.get_fullycoherent_twoF(
+            self.Writer.tstart,
+            self.Writer.tstart + taus[-1],
+            self.Writer.F0,
+            self.Writer.F1,
+            self.Writer.F2,
+            self.Writer.Alpha,
+            self.Writer.Delta,
+        )
+
+        diff = np.abs(twoF_cumulative - twoF) / twoF
+        print(
+            (
+                "Computed twoF is {}"
+                " while recovered value using the cumulative method is {},"
+                " relative difference: {}".format(twoF, twoF_cumulative, diff)
+            )
+        )
+        self.assertTrue(diff < 0.01)
+
 
 class TestComputeFstatNoNoise(BaseForTestsWithData):
     # FIXME: should be possible to merge into TestComputeFstat with smart
