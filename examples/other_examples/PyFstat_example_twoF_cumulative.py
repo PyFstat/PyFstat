@@ -26,9 +26,14 @@ signal_parameters = {
     "tref": gw_data["tstart"],
     "cosi": 1,
     "h0": gw_data["sqrtSX"] / depth,
+    "asini": 10,
+    "period": 10 * 3600 * 24,
+    "tp": gw_data["tstart"] + gw_data["duration"] / 2.0,
+    "ecc": 0,
+    "argp": 0,
 }
 
-data = pyfstat.Writer(
+data = pyfstat.BinaryModulatedWriter(
     label=label,
     outdir=outdir,
     **gw_data,
