@@ -957,24 +957,37 @@ class ComputeFstat(BaseSearchClass):
         tend=None,
         cumulative_fstat_segments=1000,
     ):
-        """Calculate the cumulative twoF along the obseration span
+        """Calculate the cumulative twoF over subsets of the observation span.
+
+        This means that we consider sub-"segments" of the [tstart,tend] interval,
+        each starting at the overall tstart and with increasing durations,
+        and compute the 2F for each of these, which for a true CW signal should
+        increase roughly with sqrt(duration) towards the full value.
 
         Parameters
         ----------
         F0, F1, F2, Alpha, Delta: float
             Parameters at which to compute the cumulative twoF
         asini, period, ecc, tp, argp: float, optional
-            Binary parameters at which to compute the cumulative 2F
+            Optional: Binary parameters at which to compute the cumulative 2F
         tstart, tend: int
             GPS times to restrict the range of data used - automatically
             truncated to the span of data available
+            FIXME: tend currently unused
         cumulative_fstat_segments: int
-            Number of points to compute twoF along the span
+            Number of segments to split [tstart,tend] into
+
+        Returns
+        -------
+        taus : ndarray of shape (cumulative_fstat_segments,)
+            Offsets of each segment's tend from the overall tstart.
+        twoFs : ndarray of shape (cumulative_fstat_segments,)
+            Values of twoF computed over [[tstart,tstart+tau] for tau in taus].
 
         Notes
         -----
-        The minimum cumulatibe twoF is hard-coded to be computed over
-        the first 6 hours from either the first timestampe in the data (if
+        The minimum cumulative twoF is hard-coded to be computed over
+        the first 6 hours from either the first timestamp in the data (if
         tstart is smaller than it) or tstart.
 
         """
@@ -1012,7 +1025,11 @@ class ComputeFstat(BaseSearchClass):
     def _calculate_predict_fstat_cumulative(
         self, N, label=None, outdir=None, pfs_input=None
     ):
-        """Calculates the predicted 2F and standard deviation cumulatively
+        """Calculate expected 2F, with uncertainty, over subsets of the observation span.
+
+        This yields the expected behaviour that calculate_twoF_cumulative() can
+        be compared again: 2F for CW signals increases with sqrt(duration)
+        as we take longer and longer subsets of the total observation span.
 
         Parameters
         ----------
@@ -1021,15 +1038,21 @@ class ComputeFstat(BaseSearchClass):
         pfs_input : dict, optional
             Input kwargs to predict_fstat. Each key should correspond to one
             of the arguments required by PFS (h0, cosi, psi, Alpha, Delta, Freq).
+            If None, will try to read parameters from a file instead.
         label, outdir : str, optional
             Alternative to pfs_input. The label and directory to read in the
             .loudest file from. This assumes `loudest` file was created using the
-            PyFstat convention os.path.join(outdit, label + ".loudest").
+            PyFstat convention os.path.join(outdir, label + ".loudest").
             Ignored if pfs_input is not None.
 
         Returns
         -------
-        times, pfs, pfs_sigma : ndarray, size (N,)
+        times : ndarray of size (N,)
+            Endtimes of the sub-segments.
+        pfs : ndarray of size (N,)
+            Predicted 2F for each segment.
+        pfs_sigma : ndarray of size (N,)
+            Standard deviations of predicted 2F.
 
         """
 
@@ -1061,35 +1084,46 @@ class ComputeFstat(BaseSearchClass):
         self,
         label,
         outdir,
-        injection_parameters=None,
+        signal_parameters=None,
         predict_fstat_segments=15,
         custom_axis_kwargs=None,
         plot_label=None,
         savefig=True,
         **calculate_twoF_cumulative_kwargs,
     ):
-        """Plot the twoF value cumulatively
+        """Plot how 2F accumulates over time, and compare with expectation.
 
         Parameters
         ----------
         label, outdir : str
         add_pfs : bool
             If true, plot the predicted 2F and standard deviation
-        injection_parameters: dict
-            Dictionary with injection parameters to predict Fstat.
+        signal_parameters: dict
+            Dictionary with parameters at which to predict Fstat.
             At least (h0, cosi, psi, Alpha, Delta, F0) keys must be
             present (any other key will simply be ignored).
+            Alternatively, these can be read from a ".loudest" file,
+            see _calculate_predict_fstat_cumulative() for details.
         predict_fstat_segments : int
             Number of points to use for PredictFStat.
+        custom_axis_kwargs : dict
+            Optional axis formatting options.
+        plot_label : str
+            Legend label for the cumulative 2F values computed from data.
         savefig : bool
-            If true, save the figure in outdir
+            If true, save the figure in outdir and return taus, twoFs.
+            If false, return axes object.
+        calculate_twoF_cumulative_kwargs : dict
+            Will be passed on to calculate_twoF_cumulative().
 
         Returns
         -------
-        tauS, tauF : ndarray shape (predict_fstat_segments,)
-            If savefig, the times and twoF (cumulative) values
+        taus : ndarray of shape (predict_fstat_segments,)
+            If savefig, the times up to which the cumulative 2Fs are computed.
+        twoFs : ndarray of shape (predict_fstat_segments,)
+            If savefig, the cumulative 2F values computed.
         ax : matplotlib.axes._subplots_AxesSubplot, optional
-            If savefig is False
+            If savefig is False, the axes object containing the plot.
 
         """
 
@@ -1105,18 +1139,18 @@ class ComputeFstat(BaseSearchClass):
             else r"$\widetilde{2\mathcal{F}}_{\rm cumulative}$",
             "xlim": (0, taus_days[-1]),
         }
-        for kwarg in "xlabel", "ylabel":
-            if kwarg in custom_axis_kwargs:
-                logging.warning(
-                    f"Be careful, overwriting {kwarg} {axis_kwargs[kwarg]}"
-                    " with {custom_axis_kwargs[kwarg]}: Check out the units!"
-                )
-
-        axis_kwargs.update(custom_axis_kwargs or {})
+        if custom_axis_kwargs is not None:
+            for kwarg in "xlabel", "ylabel":
+                if kwarg in custom_axis_kwargs:
+                    logging.warning(
+                        f"Be careful, overwriting {kwarg} {axis_kwargs[kwarg]}"
+                        " with {custom_axis_kwargs[kwarg]}: Check out the units!"
+                    )
+            axis_kwargs.update(custom_axis_kwargs or {})
 
         plot_label = plot_label or (
-            f"Cumulative 2F {taus.shape[0]} segments"
-            f"({taus_days[1] - taus_days[0]:.1f}) days per segent"
+            f"Cumulative 2F {taus.shape[0]:d} segments"
+            f" ({(taus_days[1] - taus_days[0]):.2g} days per segment)"
         )
 
         fig, ax = plt.subplots()
@@ -1125,18 +1159,18 @@ class ComputeFstat(BaseSearchClass):
 
         ax.plot(taus_days, twoFs, label=plot_label, color="k")
 
-        if injection_parameters:
+        if signal_parameters:
             logging.info(
-                f"Compute PFS using injection parameters {injection_parameters} and"
+                f"Compute PFS using signal parameters {signal_parameters} and"
                 f" {predict_fstat_segments} segments"
             )
             pfs_input = dict(
-                h0=injection_parameters["h0"],
-                cosi=injection_parameters["cosi"],
-                psi=injection_parameters["psi"],
-                Alpha=injection_parameters["Alpha"],
-                Delta=injection_parameters["Delta"],
-                Freq=injection_parameters["F0"],
+                h0=signal_parameters["h0"],
+                cosi=signal_parameters["cosi"],
+                psi=signal_parameters["psi"],
+                Alpha=signal_parameters["Alpha"],
+                Delta=signal_parameters["Delta"],
+                Freq=signal_parameters["F0"],
             )
 
             times, pfs, pfs_sigma = self._calculate_predict_fstat_cumulative(
@@ -1161,6 +1195,7 @@ class ComputeFstat(BaseSearchClass):
         if savefig:
             plt.tight_layout()
             plt.savefig(os.path.join(outdir, label + "_twoFcumulative.png"))
+            plt.close()
             return taus, twoFs
         else:
             return ax

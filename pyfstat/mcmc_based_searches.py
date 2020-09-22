@@ -1218,9 +1218,9 @@ class MCMCSearch(BaseSearchClass):
             return fig, axes
 
     def plot_cumulative_max(self, **kwargs):
-        """Plot the cumulative twoF for the maximum posterior estimate
+        """Plot the cumulative twoF for the maximum posterior estimate.
 
-        See the pyfstat.core.plot_twoF_cumulative function for further details
+        See the pyfstat.core.plot_twoF_cumulative function for further details.
         """
         logging.info("Getting cumulative 2F")
         d, maxtwoF = self.get_max_twoF()
@@ -1233,6 +1233,10 @@ class MCMCSearch(BaseSearchClass):
 
         if hasattr(self, "search") is False:
             self._initiate_search_object()
+        # Predicted 2F values will be calculated for the parameter space point
+        # in the ".loudest" file generated above,
+        # while the parameters that are explicitly passed here are for the
+        # cumulative 2F calculation on the actual data.
         if self.binary is False:
             self.search.plot_twoF_cumulative(
                 self.label,

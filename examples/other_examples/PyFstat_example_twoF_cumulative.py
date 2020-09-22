@@ -76,13 +76,13 @@ predict_f_stat_params = {
 }
 
 for ind, compute_f_stat in enumerate(compute_fstat_per_ifo):
-    taus, twoF = compute_f_stat.calculate_twoF_cumulative(**cumulative_f_stat_params)
+    # taus, twoF = compute_f_stat.calculate_twoF_cumulative(**cumulative_f_stat_params)
     compute_f_stat.plot_twoF_cumulative(
-        **cumulative_f_stat_params,
         label=label + (f"_{ifo_constraints[ind]}" if ind < 2 else "_H1L1"),
         outdir=outdir,
-        injection_parameters=predict_f_stat_params,
+        signal_parameters=predict_f_stat_params,
+        custom_axis_kwargs={"title": "How does 2F accumulate over time?"},
         plot_label="Cumulative 2F"
         + (f" {ifo_constraints[ind]}" if ind < 2 else " H1 + L1"),
-        custom_axis_kwargs={"title": "This is a custom title"},
+        **cumulative_f_stat_params,
     )

@@ -762,7 +762,7 @@ class TestComputeFstat(BaseForTestsWithData):
             self.Writer.Alpha,
             self.Writer.Delta,
             tstart=self.Writer.tstart,
-            tend=self.Writer.tend(),
+            # tend=self.Writer.tend(),
         )
         twoF_cumulative = twoF_cumulative[-1]
 
