@@ -77,6 +77,8 @@ mcmc.transform_dictionary["tglitch"][
 t1 = time.time()
 mcmc.run(save_loudest=False)  # uses CFSv2 which doesn't support glitch parameters
 dT = time.time() - t1
+mcmc.print_summary()
+
 fig_and_axes = gridcorner._get_fig_and_axes(4, 2, 0.05)
 mcmc.plot_corner(
     label_offset=0.25,
@@ -87,7 +89,7 @@ mcmc.plot_corner(
     truth_color="C3",
 )
 
-mcmc.print_summary()
+mcmc.plot_cumulative_max()
 
 print(("Prior widths =", F0_width, F1_width))
 print(("Actual run time = {}".format(dT)))
