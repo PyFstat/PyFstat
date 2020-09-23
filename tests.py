@@ -37,6 +37,8 @@ default_signal_params = {
     "F2": 0,
     "h0": 5,
     "cosi": 0,
+    "psi": 0,
+    "phi0": 0,
     "Alpha": 5e-3,
     "Delta": 1.2,
 }
@@ -749,11 +751,17 @@ class TestComputeFstat(BaseForTestsWithData):
         self.assertTrue(lnBSGL > 0)
 
     def test_cumulative_twoF(self):
-
+        Nsft = 100
+        # not using any SFTs on disk
         search = pyfstat.ComputeFstat(
-            tref=self.Writer.tref,
-            sftfilepattern=self.Writer.sftfilepath,
-            search_ranges=self.search_ranges,
+            tref=self.tref,
+            minStartTime=self.tstart,
+            maxStartTime=self.tstart + Nsft * self.Tsft,
+            detectors=self.detectors,
+            injectSqrtSX=self.sqrtSX,
+            injectSources=default_signal_params,
+            minCoverFreq=self.F0 - 0.1,
+            maxCoverFreq=self.F0 + 0.1,
         )
         taus, twoF_cumulative = search.calculate_twoF_cumulative(
             self.Writer.F0,
@@ -761,11 +769,8 @@ class TestComputeFstat(BaseForTestsWithData):
             self.Writer.F2,
             self.Writer.Alpha,
             self.Writer.Delta,
-            tstart=self.Writer.tstart,
-            # tend=self.Writer.tend(),
+            cumulative_fstat_segments=Nsft + 1,
         )
-        twoF_cumulative = twoF_cumulative[-1]
-
         twoF = search.get_fullycoherent_twoF(
             self.Writer.tstart,
             self.Writer.tstart + taus[-1],
@@ -775,16 +780,30 @@ class TestComputeFstat(BaseForTestsWithData):
             self.Writer.Alpha,
             self.Writer.Delta,
         )
-
-        diff = np.abs(twoF_cumulative - twoF) / twoF
+        reldiff = np.abs(twoF_cumulative[-1] - twoF) / twoF
         print(
-            (
-                "Computed twoF is {}"
-                " while recovered value using the cumulative method is {},"
-                " relative difference: {}".format(twoF, twoF_cumulative, diff)
+            "2F from get_fullycoherent_twoF() is {:.4f}"
+            " while last value from calculate_twoF_cumulative() is {:.4f};"
+            " relative difference: {:g}".format(twoF, twoF_cumulative[-1], reldiff)
+        )
+        self.assertTrue(reldiff < 0.1)
+        idx = int(Nsft / 2)
+        partial_2F_expected = (taus[idx] / taus[-1]) * twoF
+        reldiff = (
+            np.abs(twoF_cumulative[idx] - partial_2F_expected) / partial_2F_expected
+        )
+        print(
+            "Middle 2F value from calculate_twoF_cumulative() is {:.4f}"
+            " while from duration ratio we'd expect {:.4f}*{:.4f}={:.4f};"
+            " relative difference: {:g}".format(
+                twoF_cumulative[idx],
+                taus[idx] / taus[-1],
+                twoF,
+                partial_2F_expected,
+                reldiff,
             )
         )
-        self.assertTrue(diff < 0.01)
+        self.assertTrue(reldiff < 0.1)
 
 
 class TestComputeFstatNoNoise(BaseForTestsWithData):

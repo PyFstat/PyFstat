@@ -970,10 +970,10 @@ class ComputeFstat(BaseSearchClass):
             Parameters at which to compute the cumulative twoF
         asini, period, ecc, tp, argp: float, optional
             Optional: Binary parameters at which to compute the cumulative 2F
-        tstart, tend: int
-            GPS times to restrict the range of data used - automatically
-            truncated to the span of data available
-            FIXME: tend currently unused
+        tstart, tend: int or None
+            GPS times to restrict the range of data used;
+            if None: falls back to self.minStartTime and self.maxStartTime;
+            if outside those: auto-truncated
         cumulative_fstat_segments: int
             Number of segments to split [tstart,tend] into
 
@@ -984,18 +984,11 @@ class ComputeFstat(BaseSearchClass):
         twoFs : ndarray of shape (cumulative_fstat_segments,)
             Values of twoF computed over [[tstart,tstart+tau] for tau in taus].
 
-        Notes
-        -----
-        The minimum cumulative twoF is hard-coded to be computed over
-        the first 6 hours from either the first timestamp in the data (if
-        tstart is smaller than it) or tstart.
-
         """
-        SFTminStartTime = self.SFT_timestamps[0]
-        SFTmaxStartTime = self.SFT_timestamps[-1]
-        tstart = np.max([SFTminStartTime, tstart])
-        min_tau = np.max([SFTminStartTime - tstart, 0]) + 3600 * 6
-        max_tau = SFTmaxStartTime - tstart
+        tstart = max(tstart, self.minStartTime) if tstart else self.minStartTime
+        tend = min(tend, self.maxStartTime) if tend else self.maxStartTime
+        min_tau = 2 * self.Tsft
+        max_tau = tend - tstart
         taus = np.linspace(min_tau, max_tau, cumulative_fstat_segments)
         twoFs = []
 
@@ -1130,10 +1123,9 @@ class ComputeFstat(BaseSearchClass):
         taus, twoFs = self.calculate_twoF_cumulative(**calculate_twoF_cumulative_kwargs)
         taus_days = taus / 86400.0
 
+        tstart = calculate_twoF_cumulative_kwargs.get("tstart", self.minStartTime)
         axis_kwargs = {
-            "xlabel": r"Days from $t_{{\rm start}}={:.0f}$".format(
-                calculate_twoF_cumulative_kwargs["tstart"]
-            ),
+            "xlabel": r"Days from $t_{{\rm start}}={:.0f}$".format(tstart),
             "ylabel": r"$\log_{10}(\mathrm{BSGL})_{\rm cumulative}$"
             if self.BSGL
             else r"$\widetilde{2\mathcal{F}}_{\rm cumulative}$",

@@ -1246,8 +1246,6 @@ class MCMCSearch(BaseSearchClass):
                 F2=d["F2"],
                 Alpha=d["Alpha"],
                 Delta=d["Delta"],
-                tstart=self.minStartTime,
-                tend=self.maxStartTime,
                 **kwargs,
             )
         else:
@@ -1264,8 +1262,6 @@ class MCMCSearch(BaseSearchClass):
                 ecc=d["ecc"],
                 argp=d["argp"],
                 tp=d["argp"],
-                tstart=self.minStartTime,
-                tend=self.maxStartTime,
                 **kwargs,
             )
 
