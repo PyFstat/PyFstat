@@ -1079,8 +1079,7 @@ class ComputeFstat(BaseSearchClass):
         outdir,
         signal_parameters=None,
         predict_fstat_segments=15,
-        custom_axis_kwargs=None,
-        plot_label=None,
+        custom_ax_kwargs=None,
         savefig=True,
         **calculate_twoF_cumulative_kwargs,
     ):
@@ -1099,7 +1098,7 @@ class ComputeFstat(BaseSearchClass):
             see _calculate_predict_fstat_cumulative() for details.
         predict_fstat_segments : int
             Number of points to use for PredictFStat.
-        custom_axis_kwargs : dict
+        custom_ax_kwargs : dict
             Optional axis formatting options.
         plot_label : str
             Legend label for the cumulative 2F values computed from data.
@@ -1124,6 +1123,15 @@ class ComputeFstat(BaseSearchClass):
         taus_days = taus / 86400.0
 
         tstart = calculate_twoF_cumulative_kwargs.get("tstart", self.minStartTime)
+
+        plot_label = custom_ax_kwargs.pop(
+            "label",
+            (
+                f"Cumulative 2F {taus.shape[0]:d} segments"
+                f" ({(taus_days[1] - taus_days[0]):.2g} days per segment)"
+            ),
+        )
+
         axis_kwargs = {
             "xlabel": r"Days from $t_{{\rm start}}={:.0f}$".format(tstart),
             "ylabel": r"$\log_{10}(\mathrm{BSGL})_{\rm cumulative}$"
@@ -1131,19 +1139,14 @@ class ComputeFstat(BaseSearchClass):
             else r"$\widetilde{2\mathcal{F}}_{\rm cumulative}$",
             "xlim": (0, taus_days[-1]),
         }
-        if custom_axis_kwargs is not None:
+        if custom_ax_kwargs is not None:
             for kwarg in "xlabel", "ylabel":
-                if kwarg in custom_axis_kwargs:
+                if kwarg in custom_ax_kwargs:
                     logging.warning(
                         f"Be careful, overwriting {kwarg} {axis_kwargs[kwarg]}"
-                        " with {custom_axis_kwargs[kwarg]}: Check out the units!"
+                        " with {custom_ax_kwargs[kwarg]}: Check out the units!"
                     )
-            axis_kwargs.update(custom_axis_kwargs or {})
-
-        plot_label = plot_label or (
-            f"Cumulative 2F {taus.shape[0]:d} segments"
-            f" ({(taus_days[1] - taus_days[0]):.2g} days per segment)"
-        )
+            axis_kwargs.update(custom_ax_kwargs or {})
 
         fig, ax = plt.subplots()
         ax.grid()
