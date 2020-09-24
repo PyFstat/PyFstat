@@ -1233,37 +1233,8 @@ class MCMCSearch(BaseSearchClass):
 
         if hasattr(self, "search") is False:
             self._initiate_search_object()
-        # Predicted 2F values will be calculated for the parameter space point
-        # in the ".loudest" file generated above,
-        # while the parameters that are explicitly passed here are for the
-        # cumulative 2F calculation on the actual data.
-        if self.binary is False:
-            self.search.plot_twoF_cumulative(
-                self.label,
-                self.outdir,
-                F0=d["F0"],
-                F1=d["F1"],
-                F2=d["F2"],
-                Alpha=d["Alpha"],
-                Delta=d["Delta"],
-                **kwargs,
-            )
-        else:
-            self.search.plot_twoF_cumulative(
-                self.label,
-                self.outdir,
-                F0=d["F0"],
-                F1=d["F1"],
-                F2=d["F2"],
-                Alpha=d["Alpha"],
-                Delta=d["Delta"],
-                asini=d["asini"],
-                period=d["period"],
-                ecc=d["ecc"],
-                argp=d["argp"],
-                tp=d["argp"],
-                **kwargs,
-            )
+
+        self.search.plot_twoF_cumulative(self.label, self.outdir, **d, **kwargs)
 
     def _generic_lnprior(self, **kwargs):
         """Return a lambda function of the pdf
