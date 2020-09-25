@@ -955,7 +955,7 @@ class ComputeFstat(BaseSearchClass):
         argp=None,
         tstart=None,
         tend=None,
-        cumulative_fstat_segments=1000,
+        num_segments=1000,
     ):
         """Calculate the cumulative twoF over subsets of the observation span.
 
@@ -974,14 +974,14 @@ class ComputeFstat(BaseSearchClass):
             GPS times to restrict the range of data used;
             if None: falls back to self.minStartTime and self.maxStartTime;
             if outside those: auto-truncated
-        cumulative_fstat_segments: int
+        num_segments: int
             Number of segments to split [tstart,tend] into
 
         Returns
         -------
-        taus : ndarray of shape (cumulative_fstat_segments,)
+        taus : ndarray of shape (num_segments,)
             Offsets of each segment's tend from the overall tstart.
-        twoFs : ndarray of shape (cumulative_fstat_segments,)
+        twoFs : ndarray of shape (num_segments,)
             Values of twoF computed over [[tstart,tstart+tau] for tau in taus].
 
         """
@@ -989,7 +989,7 @@ class ComputeFstat(BaseSearchClass):
         tend = min(tend, self.maxStartTime) if tend else self.maxStartTime
         min_tau = 2 * self.Tsft
         max_tau = tend - tstart
-        taus = np.linspace(min_tau, max_tau, cumulative_fstat_segments)
+        taus = np.linspace(min_tau, max_tau, num_segments)
         twoFs = []
 
         if not self.transientWindowType:
