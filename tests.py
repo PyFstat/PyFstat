@@ -752,7 +752,7 @@ class TestComputeFstat(BaseForTestsWithData):
 
     def test_cumulative_twoF(self):
         Nsft = 100
-        # FIXME: Do this in a consistent way using 
+        # FIXME: Do this in a consistent way using
         # BaseSearchClass's method
         lal_signal_params = default_signal_params.copy()
         lal_signal_params["phi0"] = lal_signal_params.pop("phi")
