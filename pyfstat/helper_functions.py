@@ -713,6 +713,29 @@ def get_dictionary_from_lines(lines, comments, raise_error):
                 pass
     return d
 
+def get_predict_fstat_parameters_from_dict(signal_parameters,  return_lal_keys=False):
+    """
+    Given a dictionary with arbitrary signal parameters,
+    return only those ones required by helper_functions.predict_fstat
+    (Freq, Alpha, Delta, h0, cosi, psi)
+
+    Parameters
+    ----------
+    signal_parameters: dict
+        Dictionary containing at least the signal parameters required by 
+        helper_functions.predict_fstat. This dictionary's keys must follow 
+        the PyFstat convention (F0 instead of Freq).
+    return_lal_keys: bool
+        If True, the returned dictionary will contain keys according to the
+        lal convention (Freq instead of F0).
+    """
+    predict_fstat_params = {
+            key: signal_parameters[key] for key in ["F0", "Alpha", "Delta", "h0", "cosi", "psi"]
+            }
+    if return_lal_keys:
+        # FIXME Use the actual function to do this
+        predict_fstat_params["Freq"] = predict_fstat_params["F0"]
+    return predict_fstat_params
 
 def predict_fstat(
     h0=None,
