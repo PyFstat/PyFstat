@@ -1107,70 +1107,70 @@ class ComputeFstat(BaseSearchClass):
 
     def plot_twoF_cumulative(
         self,
-        label,
-        outdir,
-        signal_parameters=None,
-        predict_fstat_segments=15,
+        CFS_input,
+        PFS_input=None,
+        tstart=None,
+        tend=None,
+        num_segments_CFS=1000,
+        num_segments_PFS=10,
         custom_ax_kwargs=None,
-        savefig=True,
-        **calculate_twoF_cumulative_kwargs,
+        savefig=False,
+        label=None,
+        outdir=None,
+        **PFS_kwargs,
     ):
         """Plot how 2F accumulates over time, and compare with expectation.
 
         Parameters
         ----------
-        label, outdir : str
-        add_pfs : bool
-            If true, plot the predicted 2F and standard deviation
-        signal_parameters: dict
-            Dictionary with parameters at which to predict Fstat.
-            At least (h0, cosi, psi, Alpha, Delta, F0) keys must be
-            present (any other key will simply be ignored).
-            Alternatively, these can be read from a ".loudest" file,
-            see _calculate_predict_fstat_cumulative() for details.
-        predict_fstat_segments : int
-            Number of points to use for PredictFStat.
+        CFS_input: dict
+            self.calculate_twoF_cumulative input arguments.
+        PFS_input: dict
+            self.predict_twoF_cumulative input arguments.
+        tstart, tend: int or None
+            GPS times to restrict the range of data used;
+            if None: falls back to self.minStartTime and self.maxStartTime;
+            if outside those: auto-truncated
+        num_segments_(CFS|PFS) : int
+            Number of time segments to (compute|predict) twoF.
         custom_ax_kwargs : dict
             Optional axis formatting options.
-        plot_label : str
-            Legend label for the cumulative 2F values computed from data.
         savefig : bool
             If true, save the figure in outdir and return taus, twoFs.
             If false, return axes object.
-        calculate_twoF_cumulative_kwargs : dict
-            Will be passed on to calculate_twoF_cumulative().
+        label: str
+            Output filename (ignored unless savefig is True).
+        outdir: str
+            Output folder (ignored unless savefig is True).
 
         Returns
         -------
-        taus : ndarray of shape (predict_fstat_segments,)
-            If savefig, the times up to which the cumulative 2Fs are computed.
-        twoFs : ndarray of shape (predict_fstat_segments,)
-            If savefig, the cumulative 2F values computed.
         ax : matplotlib.axes._subplots_AxesSubplot, optional
-            If savefig is False, the axes object containing the plot.
-
+            The axes object containing the plot.
         """
 
-        taus, twoFs = self.calculate_twoF_cumulative(**calculate_twoF_cumulative_kwargs)
-        taus_days = taus / 86400.0
-
-        tstart = calculate_twoF_cumulative_kwargs.get("tstart", self.minStartTime)
-
-        plot_label = custom_ax_kwargs.pop(
-            "label",
-            (
-                f"Cumulative 2F {taus.shape[0]:d} segments"
-                f" ({(taus_days[1] - taus_days[0]):.2g} days per segment)"
-            ),
+        # Compute cumulative twoF
+        actual_tstart_CFS, taus_CFS, twoFs = self.calculate_twoF_cumulative(
+            tstart=tstart,
+            tend=tend,
+            num_segments=num_segments_CFS,
+            **CFS_input,
         )
+        taus_CFS_days = taus_CFS / 86400.0
 
+        # Set up plot-realted objects
         axis_kwargs = {
-            "xlabel": r"Days from $t_{{\rm start}}={:.0f}$".format(tstart),
+            "xlabel": r"Days from $t_{{\rm start}}={:.0f}$".format(actual_tstart_CFS),
             "ylabel": r"$\log_{10}(\mathrm{BSGL})_{\rm cumulative}$"
             if self.BSGL
             else r"$\widetilde{2\mathcal{F}}_{\rm cumulative}$",
-            "xlim": (0, taus_days[-1]),
+            "xlim": (0, taus_CFS_days[-1]),
         }
+        plot_label = (
+            f"Cumulative 2F {num_segments_CFS:d} segments"
+            f" ({(taus_CFS_days[1] - taus_CFS_days[0]):.2g} days per segment)"
+        )
+
         if custom_ax_kwargs is not None:
             for kwarg in "xlabel", "ylabel":
                 if kwarg in custom_ax_kwargs:
@@ -1179,35 +1179,31 @@ class ComputeFstat(BaseSearchClass):
                         " with {custom_ax_kwargs[kwarg]}: Check out the units!"
                     )
             axis_kwargs.update(custom_ax_kwargs or {})
+            plot_label = custom_ax_kwargs.pop("label", plot_label)
 
         fig, ax = plt.subplots()
         ax.grid()
         ax.set(**axis_kwargs)
 
-        ax.plot(taus_days, twoFs, label=plot_label, color="k")
+        ax.plot(taus_CFS_days, twoFs, label=plot_label, color="k")
 
-        if signal_parameters:
-            logging.info(
-                f"Compute PFS using signal parameters {signal_parameters} and"
-                f" {predict_fstat_segments} segments"
+        # Predict cumulative twoF and plot if required
+        if PFS_input is not None:
+            actual_tstart_PFS, taus_PFS, pfs, pfs_sigma = self.predict_twoF_cumulative(
+                tstart=tstart,
+                tend=tend,
+                num_segments=num_segments_PFS,
+                **PFS_input,
+                **PFS_kwargs,
             )
-            pfs_input = dict(
-                h0=signal_parameters["h0"],
-                cosi=signal_parameters["cosi"],
-                psi=signal_parameters["psi"],
-                Alpha=signal_parameters["Alpha"],
-                Delta=signal_parameters["Delta"],
-                Freq=signal_parameters["F0"],
+            taus_PFS_days = taus_PFS / 86400.0
+            assert actual_tstart_CFS == actual_tstart_PFS, (
+                "CFS and PFS starting time differs: This shouldn't be the case. "
+                "Did you change conventions?"
             )
 
-            times, pfs, pfs_sigma = self._calculate_predict_fstat_cumulative(
-                N=predict_fstat_segments,
-                label=label,
-                outdir=outdir,
-                pfs_input=pfs_input,
-            )
             ax.fill_between(
-                (times - self.minStartTime) / 86400.0,
+                taus_PFS_days,
                 pfs - pfs_sigma,
                 pfs + pfs_sigma,
                 color="cyan",
@@ -1223,9 +1219,7 @@ class ComputeFstat(BaseSearchClass):
             plt.tight_layout()
             plt.savefig(os.path.join(outdir, label + "_twoFcumulative.png"))
             plt.close()
-            return taus, twoFs
-        else:
-            return ax
+        return ax
 
     def get_full_CFSv2_output(self, tstart, tend, F0, F1, F2, Alpha, Delta, tref):
         """ Basic wrapper around CFSv2 to get the full (h0..) output """
