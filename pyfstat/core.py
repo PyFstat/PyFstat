@@ -941,6 +941,33 @@ class ComputeFstat(BaseSearchClass):
 
         return log10_BSGL / np.log10(np.exp(1))
 
+    def _set_up_cumulative_times(self, tstart, tend, num_segments):
+        """Construct time arrays to be used in cumulative twoF computations.
+
+        This allows calculate_twoF_cumulative and predict_twoF_cumulative to use
+        the same convention (although the number of segments on use is generally
+        different due to the computing time required by predict_twoF_cumulative).
+
+        First segment is hardcoded to spann 2 * self.Tsft. Last segment embraces
+        the whole data stream.
+
+        Parameters
+        ----------
+        tstart, tend: int or None
+            GPS times to restrict the range of data used;
+            if None: falls back to self.minStartTime and self.maxStartTime;
+            if outside those: auto-truncated
+        num_segments: int
+            Number of segments to split [tstart,tend] into
+        """
+        tstart = max(tstart, self.minStartTime) if tstart else self.minStartTime
+        tend = min(tend, self.maxStartTime) if tend else self.maxStartTime
+        min_duration = 2 * self.Tsft
+        max_duration = tend - tstart
+        cumulative_durations = np.linspace(min_duration, max_duration, num_segments)
+
+        return tstart, tend, cumulative_durations
+
     def calculate_twoF_cumulative(
         self,
         F0,
