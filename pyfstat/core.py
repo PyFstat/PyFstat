@@ -1040,7 +1040,7 @@ class ComputeFstat(BaseSearchClass):
             for duration in cumulative_durations
         ]
 
-        return cumulative_durations, np.array(twoFs)
+        return tstart, cumulative_durations, np.array(twoFs)
 
     def predict_twoF_cumulative(
         self,
@@ -1103,7 +1103,7 @@ class ComputeFstat(BaseSearchClass):
             for duration in cumulative_durations
         ]
         pfs, pfs_sigma = np.array(out).T
-        return cumulative_durations, pfs, pfs_sigma
+        return tstart, cumulative_durations, pfs, pfs_sigma
 
     def plot_twoF_cumulative(
         self,
