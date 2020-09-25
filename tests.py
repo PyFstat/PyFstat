@@ -38,7 +38,7 @@ default_signal_params = {
     "h0": 5,
     "cosi": 0,
     "psi": 0,
-    "phi0": 0,
+    "phi": 0,
     "Alpha": 5e-3,
     "Delta": 1.2,
 }
@@ -369,7 +369,7 @@ class TestBinaryModulatedWriter(TestWriter):
         theta_prior = {
             key: value
             for key, value in default_signal_params.items()
-            if key not in ["h0", "cosi"]
+            if key not in ["h0", "cosi", "psi", "phi"]
         }
         theta_prior.update({key: value for key, value in default_binary_params.items()})
         theta_prior["tp"] = {
