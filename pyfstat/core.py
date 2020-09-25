@@ -989,7 +989,7 @@ class ComputeFstat(BaseSearchClass):
         This means that we consider sub-"segments" of the [tstart,tend] interval,
         each starting at the overall tstart and with increasing durations,
         and compute the 2F for each of these, which for a true CW signal should
-        increase roughly with sqrt(duration) towards the full value.
+        increase roughly with duration towards the full value.
 
         Parameters
         ----------
@@ -1006,27 +1006,26 @@ class ComputeFstat(BaseSearchClass):
 
         Returns
         -------
-        taus : ndarray of shape (num_segments,)
+        cumulative_durations : ndarray of shape (num_segments,)
             Offsets of each segment's tend from the overall tstart.
         twoFs : ndarray of shape (num_segments,)
-            Values of twoF computed over [[tstart,tstart+tau] for tau in taus].
+            Values of twoF computed over
+            [[tstart,tstart+duration] for duration in cumulative_durations].
 
         """
-        tstart = max(tstart, self.minStartTime) if tstart else self.minStartTime
-        tend = min(tend, self.maxStartTime) if tend else self.maxStartTime
-        min_tau = 2 * self.Tsft
-        max_tau = tend - tstart
-        taus = np.linspace(min_tau, max_tau, num_segments)
-        twoFs = []
-
         if not self.transientWindowType:
+            # FIXME: Can we move this elsewhere?
             self.transientWindowType = "rect"
             self.init_computefstatistic()
 
-        for tau in taus:
-            detstat = self.get_fullycoherent_twoF(
+        tstart, tend, cumulative_durations = self._set_up_cumulative_times(
+            tstart, tend, num_segments
+        )
+
+        twoFs = [
+            self.get_fullycoherent_twoF(
                 tstart=tstart,
-                tend=tstart + tau,
+                tend=tstart + duration,
                 F0=F0,
                 F1=F1,
                 F2=F2,
@@ -1038,67 +1037,73 @@ class ComputeFstat(BaseSearchClass):
                 tp=tp,
                 argp=argp,
             )
-            twoFs.append(detstat)
+            for duration in cumulative_durations
+        ]
 
-        return taus, np.array(twoFs)
+        return cumulative_durations, np.array(twoFs)
 
-    def _calculate_predict_fstat_cumulative(
-        self, N, label=None, outdir=None, pfs_input=None
+    def predict_twoF_cumulative(
+        self,
+        F0,
+        Alpha,
+        Delta,
+        h0,
+        cosi,
+        psi,
+        tstart=None,
+        tend=None,
+        num_segments=10,
+        **predict_fstat_kwargs,
     ):
         """Calculate expected 2F, with uncertainty, over subsets of the observation span.
 
         This yields the expected behaviour that calculate_twoF_cumulative() can
-        be compared again: 2F for CW signals increases with sqrt(duration)
+        be compared again: 2F for CW signals increases with duration
         as we take longer and longer subsets of the total observation span.
 
         Parameters
         ----------
-        N : int
-            Number of timesteps to use between minStartTime and maxStartTime.
-        pfs_input : dict, optional
-            Input kwargs to predict_fstat. Each key should correspond to one
-            of the arguments required by PFS (h0, cosi, psi, Alpha, Delta, Freq).
-            If None, will try to read parameters from a file instead.
-        label, outdir : str, optional
-            Alternative to pfs_input. The label and directory to read in the
-            .loudest file from. This assumes `loudest` file was created using the
-            PyFstat convention os.path.join(outdir, label + ".loudest").
-            Ignored if pfs_input is not None.
+        F0, Alpha, Delta, h0, cosi, psi: float
+            Parameters at which to compute the cumulative predicted twoF
+        tstart, tend: int or None
+            GPS times to restrict the range of data used;
+            if None: falls back to self.minStartTime and self.maxStartTime;
+            if outside those: auto-truncated
+        num_segments: int
+            Number of segments to split [tstart,tend] into
+        predict_fstat_kwargs:
+            Other kwargs to be passed to helper_functions.predict_fstat.
 
         Returns
         -------
-        times : ndarray of size (N,)
-            Endtimes of the sub-segments.
-        pfs : ndarray of size (N,)
+        cumulative_durations : ndarray of shape (num_segments,)
+            Offsets of each segment's tend from the overall tstart.
+        pfs : ndarray of size (num_segments,)
             Predicted 2F for each segment.
-        pfs_sigma : ndarray of size (N,)
+        pfs_sigma : ndarray of size (num_segments,)
             Standard deviations of predicted 2F.
 
         """
-
-        if pfs_input is None:
-            if os.path.isfile(os.path.join(outdir, label + ".loudest")) is False:
-                raise ValueError("Need a loudest file to add the predicted Fstat")
-            loudest = self.read_par(
-                label=label, outdir=outdir, suffix="loudest", raise_error=False
-            )
-            pfs_input = {
-                key: loudest[key]
-                for key in ["h0", "cosi", "psi", "Alpha", "Delta", "Freq"]
-            }
-        times = np.linspace(self.minStartTime, self.maxStartTime, N + 1)[1:]
-        times = np.insert(times, 0, self.minStartTime + 86400 / 2.0)
+        tstart, tend, cumulative_durations = self._set_up_cumulative_times(
+            tstart, tend, num_segments
+        )
         out = [
             helper_functions.predict_fstat(
-                minStartTime=self.minStartTime,
-                duration=t - self.minStartTime,
+                minStartTime=tstart,
+                duration=duration,
                 sftfilepattern=self.sftfilepattern,
-                **pfs_input,
+                h0=h0,
+                cosi=cosi,
+                psi=psi,
+                Alpha=Alpha,
+                Delta=Delta,
+                Freq=F0,
+                **predict_fstat_kwargs,
             )
-            for t in times
+            for duration in cumulative_durations
         ]
         pfs, pfs_sigma = np.array(out).T
-        return times, pfs, pfs_sigma
+        return cumulative_durations, pfs, pfs_sigma
 
     def plot_twoF_cumulative(
         self,
