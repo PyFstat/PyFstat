@@ -752,6 +752,10 @@ class TestComputeFstat(BaseForTestsWithData):
 
     def test_cumulative_twoF(self):
         Nsft = 100
+        # FIXME: Do this in a consistent way using 
+        # BaseSearchClass's method
+        lal_signal_params = default_signal_params.copy()
+        lal_signal_params["phi0"] = lal_signal_params.pop("phi")
         # not using any SFTs on disk
         search = pyfstat.ComputeFstat(
             tref=self.tref,
@@ -759,7 +763,7 @@ class TestComputeFstat(BaseForTestsWithData):
             maxStartTime=self.tstart + Nsft * self.Tsft,
             detectors=self.detectors,
             injectSqrtSX=self.sqrtSX,
-            injectSources=default_signal_params,
+            injectSources=lal_signal_params,
             minCoverFreq=self.F0 - 0.1,
             maxCoverFreq=self.F0 + 0.1,
         )
