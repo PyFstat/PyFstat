@@ -91,5 +91,6 @@ mcmc.plot_corner(add_prior=True, truths=signal_parameters)
 mcmc.plot_prior_posterior(injection_parameters=signal_parameters)
 mcmc.plot_chainconsumer(truth=signal_parameters)
 mcmc.plot_cumulative_max(
-        savefig=True, custom_ax_kwargs={"title": "Cumulative 2F for the best MCMC candidate"},
+    savefig=True,
+    custom_ax_kwargs={"title": "Cumulative 2F for the best MCMC candidate"},
 )
