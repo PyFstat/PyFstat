@@ -487,7 +487,7 @@ class ComputeFstat(BaseSearchClass):
                 PP.Amp.h0 = h0
                 PP.Amp.cosi = cosi
 
-            PP.Amp.phi0 = self.injectSources["phi0"]
+            PP.Amp.phi0 = self.injectSources["phi"]
             PP.Amp.psi = self.injectSources["psi"]
             PP.Doppler.Alpha = self.injectSources["Alpha"]
             PP.Doppler.Delta = self.injectSources["Delta"]
