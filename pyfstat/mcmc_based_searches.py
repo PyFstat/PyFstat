@@ -1234,7 +1234,7 @@ class MCMCSearch(BaseSearchClass):
         if hasattr(self, "search") is False:
             self._initiate_search_object()
 
-        self.search.plot_twoF_cumulative(self.label, self.outdir, **d, **kwargs)
+        self.search.plot_twoF_cumulative(CFS_input=d, label=self.label, outdir=self.outdir, **kwargs)
 
     def _generic_lnprior(self, **kwargs):
         """Return a lambda function of the pdf
