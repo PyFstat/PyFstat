@@ -243,6 +243,9 @@ echo 'export LALPULSAR_DATADIR=$VIRTUAL_ENV/share/lalpulsar' >> ${VIRTUAL_ENV}/b
 deactivate
 source path/to/venv/bin/activate
 ```
+An executable version of this snippet is readily accessible by **sourcing** `bin/get_and_export_ephemeris.sh`. 
+Mind that this script does **not** include an export command anywhere, so you will have to source it every time
+in order to properly set `LALPULSAR_DATADIR` variable.
 
 If instead you have built and installed lalsuite from source,
 and set your path up properly through something like
