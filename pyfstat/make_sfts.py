@@ -592,7 +592,7 @@ class Writer(BaseSearchClass):
             psi=self.psi,
             Alpha=self.Alpha,
             Delta=self.Delta,
-            Freq=self.F0,
+            F0=self.F0,
             sftfilepattern=self.sftfilepath,
             minStartTime=self.tstart,
             duration=self.duration,
