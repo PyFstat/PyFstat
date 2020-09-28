@@ -1228,9 +1228,6 @@ class MCMCSearch(BaseSearchClass):
             if key not in d:
                 d[key] = val
 
-        if "add_pfs" in kwargs and not hasattr(self, "search"):
-            self.generate_loudest()
-
         if hasattr(self, "search") is False:
             self._initiate_search_object()
 
