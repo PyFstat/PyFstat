@@ -1058,7 +1058,7 @@ class ComputeFstat(BaseSearchClass):
         """Calculate expected 2F, with uncertainty, over subsets of the observation span.
 
         This yields the expected behaviour that calculate_twoF_cumulative() can
-        be compared again: 2F for CW signals increases with duration
+        be compared against: 2F for CW signals increases with duration
         as we take longer and longer subsets of the total observation span.
 
         Parameters
