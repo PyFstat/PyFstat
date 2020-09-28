@@ -14,7 +14,7 @@ else
     echo "Output path: ${out_dir}"
 fi
 
-mkdir -p out_dir
+mkdir -p ${out_dir}
 wget -nc https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/earth00-40-DE405.dat.gz -P ${out_dir} 
 wget -nc https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/sun00-40-DE405.dat.gz -P ${out_dir}
 export LALPULSAR_DATADIR=${out_dir}
