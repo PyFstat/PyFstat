@@ -1103,7 +1103,7 @@ class ComputeFstat(BaseSearchClass):
                 psi=psi,
                 Alpha=Alpha,
                 Delta=Delta,
-                Freq=F0,
+                F0=F0,
                 **predict_fstat_kwargs,
             )
             for duration in cumulative_durations
