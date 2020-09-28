@@ -1224,8 +1224,8 @@ class TestMCMCSearch(BaseForMCMCSearchTests):
                 theta_prior=thetas[prior_choice],
                 tref=self.tref,
                 sftfilepattern=self.Writer.sftfilepath,
-                nsteps=[100, 100],
-                nwalkers=100,
+                nsteps=[20, 20],
+                nwalkers=20,
                 ntemps=2,
                 log10beta_min=-1,
             )
