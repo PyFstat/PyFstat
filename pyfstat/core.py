@@ -1013,8 +1013,10 @@ class ComputeFstat(BaseSearchClass):
             [[tstart,tstart+duration] for duration in cumulative_durations].
 
         """
+
+        reset_old_window = None
         if not self.transientWindowType:
-            # FIXME: Can we move this elsewhere?
+            reset_old_window = self.transientWindowType
             self.transientWindowType = "rect"
             self.init_computefstatistic()
 
@@ -1039,6 +1041,10 @@ class ComputeFstat(BaseSearchClass):
             )
             for duration in cumulative_durations
         ]
+
+        if reset_old_window is not None:
+            self.transientWindowType = reset_old_window
+            self.init_computefstatistic()
 
         return tstart, cumulative_durations, np.array(twoFs)
 
