@@ -1125,8 +1125,11 @@ class ComputeFstat(BaseSearchClass):
         ----------
         CFS_input: dict
             self.calculate_twoF_cumulative input arguments.
+            (besides [tstart, tend, num_segments]).
         PFS_input: dict
-            self.predict_twoF_cumulative input arguments.
+            self.predict_twoF_cumulative input arguments
+            (besides [tstart, tend, num_segments]).
+            if None: do not calculate predicted 2F
         tstart, tend: int or None
             GPS times to restrict the range of data used;
             if None: falls back to self.minStartTime and self.maxStartTime;
@@ -1136,8 +1139,7 @@ class ComputeFstat(BaseSearchClass):
         custom_ax_kwargs : dict
             Optional axis formatting options.
         savefig : bool
-            If true, save the figure in outdir and return taus, twoFs.
-            If false, return axes object.
+            If true, save the figure in outdir.
         label: str
             Output filename (ignored unless savefig is True).
         outdir: str
@@ -1158,7 +1160,7 @@ class ComputeFstat(BaseSearchClass):
         )
         taus_CFS_days = taus_CFS / 86400.0
 
-        # Set up plot-realted objects
+        # Set up plot-related objects
         axis_kwargs = {
             "xlabel": f"Days from $t_\\mathrm{{start}}={actual_tstart_CFS:.0f}$",
             "ylabel": "$\\log_{10}(\\mathrm{BSGL})_{\\mathrm{cumulative}$"
