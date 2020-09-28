@@ -767,13 +767,13 @@ class TestComputeFstat(BaseForTestsWithData):
             minCoverFreq=self.F0 - 0.1,
             maxCoverFreq=self.F0 + 0.1,
         )
-        taus, twoF_cumulative = search.calculate_twoF_cumulative(
+        start_time, taus, twoF_cumulative = search.calculate_twoF_cumulative(
             self.Writer.F0,
             self.Writer.F1,
             self.Writer.F2,
             self.Writer.Alpha,
             self.Writer.Delta,
-            cumulative_fstat_segments=Nsft + 1,
+            num_segments=Nsft + 1,
         )
         twoF = search.get_fullycoherent_twoF(
             self.Writer.tstart,
