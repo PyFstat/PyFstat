@@ -2451,7 +2451,7 @@ class MCMCGlitchSearch(MCMCSearch):
             if j < self.theta0_idx:
                 summed_deltaF0 = np.sum(delta_F0s[j : self.theta0_idx])
                 F0_j = d["F0"] - summed_deltaF0
-                taus, twoFs = self.search.calculate_twoF_cumulative(
+                actual_ts, taus, twoFs = self.search.calculate_twoF_cumulative(
                     F0_j,
                     F1=d["F1"],
                     F2=d["F2"],
@@ -2464,7 +2464,7 @@ class MCMCGlitchSearch(MCMCSearch):
             elif j >= self.theta0_idx:
                 summed_deltaF0 = np.sum(delta_F0s[self.theta0_idx : j + 1])
                 F0_j = d["F0"] + summed_deltaF0
-                taus, twoFs = self.search.calculate_twoF_cumulative(
+                actual_ts, taus, twoFs = self.search.calculate_twoF_cumulative(
                     F0_j,
                     F1=d["F1"],
                     F2=d["F2"],
@@ -2473,7 +2473,7 @@ class MCMCGlitchSearch(MCMCSearch):
                     tstart=ts,
                     tend=te,
                 )
-            ax.plot(ts + taus, twoFs)
+            ax.plot(actual_ts + taus, twoFs)
 
         ax.set_xlabel("GPS time")
         fig.savefig(os.path.join(self.outdir, self.label + "_twoFcumulative.png"))
