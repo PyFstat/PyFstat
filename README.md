@@ -13,6 +13,9 @@ and [citing](#citing-this-work) PyFstat.
 * We also have a number of
 [examples](https://github.com/PyFstat/PyFstat/tree/master/examples),
 demonstrating different use cases.
+* Developers or contributors are encouraged to have a look into
+[how to set up a development environment](#contributing-to-pyfstat)
+
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3967045.svg)](https://doi.org/10.5281/zenodo.3967045)
 [![PyPI version](https://badge.fury.io/py/PyFstat.svg)](https://badge.fury.io/py/PyFstat)
@@ -261,18 +264,7 @@ Paths set in this way will take precedence over the environment variable.
 Finally, you can manually specify ephemerides files when initialising
 each PyFstat search (as one of the arguments).
 
-## Contributors
-
-Maintainers:
-* Greg Ashton
-* David Keitel
-
-Other contributors:
-* Reinhard Prix
-* Rodrigo Tenorio
-* Karl Wette
-* Sylvia Zhu
-
+## Contributing to PyFstat
 This project is open to development, please feel free to contact us
 for advice or just jump in and submit an
 [issue](https://github.com/PyFstat/PyFstat/issues/new/choose) or
@@ -287,6 +279,23 @@ Here's what you need to know:
   `flake8 --count --statistics .` to find common coding errors and then fix them manually,
   and then
   `black --check --diff .` to show the required style changes, or `black .` to automatically apply them.
+* `bin/setup-dev-tools.sh` gets your virtual environment ready for you. After making sure you are 
+using a virtual environment, it install `pytest`, `black` and `flake8` and uses `pre-commit` to run
+the last two using a pre-commit hoook. In this way, you will be prompted by a warning whenver you 
+forget to run `black` or `flake8` befor commit :wink:.
+
+## Contributors
+
+Maintainers:
+* Greg Ashton
+* David Keitel
+
+Other contributors:
+* Reinhard Prix
+* Rodrigo Tenorio
+* Karl Wette
+* Sylvia Zhu
+
 
 ## Citing this work
 
