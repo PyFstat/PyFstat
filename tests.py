@@ -672,9 +672,10 @@ class TestComputeFstat(BaseForTestsWithData):
         self.assertTrue(np.abs(predicted_FS - FS_from_file) / FS_from_file < 0.3)
 
         injectSourcesdict = search.read_par(filename=injectSources)
-        injectSourcesdict["F0"] = injectSourcesdict["Freq"]
-        injectSourcesdict["F1"] = injectSourcesdict["f1dot"]
-        injectSourcesdict["F2"] = injectSourcesdict["f2dot"]
+        injectSourcesdict["F0"] = injectSourcesdict.pop("Freq")
+        injectSourcesdict["F1"] = injectSourcesdict.pop("f1dot")
+        injectSourcesdict["F2"] = injectSourcesdict.pop("f2dot")
+        injectSourcesdict["phi"] = injectSourcesdict.pop("phi0")
         search = pyfstat.ComputeFstat(
             tref=self.Writer.tref,
             assumeSqrtSX=1,
@@ -752,10 +753,6 @@ class TestComputeFstat(BaseForTestsWithData):
 
     def test_cumulative_twoF(self):
         Nsft = 100
-        # FIXME: Do this in a consistent way using
-        # BaseSearchClass's method
-        lal_signal_params = default_signal_params.copy()
-        lal_signal_params["phi0"] = lal_signal_params.pop("phi")
         # not using any SFTs on disk
         search = pyfstat.ComputeFstat(
             tref=self.tref,
@@ -763,7 +760,7 @@ class TestComputeFstat(BaseForTestsWithData):
             maxStartTime=self.tstart + Nsft * self.Tsft,
             detectors=self.detectors,
             injectSqrtSX=self.sqrtSX,
-            injectSources=lal_signal_params,
+            injectSources=default_signal_params,
             minCoverFreq=self.F0 - 0.1,
             maxCoverFreq=self.F0 + 0.1,
         )
