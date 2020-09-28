@@ -714,7 +714,7 @@ def get_dictionary_from_lines(lines, comments, raise_error):
     return d
 
 
-def get_predict_fstat_parameters_from_dict(signal_parameters, return_lal_keys=False):
+def get_predict_fstat_parameters_from_dict(signal_parameters):
     """
     Given a dictionary with arbitrary signal parameters,
     return only those ones required by helper_functions.predict_fstat
@@ -724,19 +724,12 @@ def get_predict_fstat_parameters_from_dict(signal_parameters, return_lal_keys=Fa
     ----------
     signal_parameters: dict
         Dictionary containing at least the signal parameters required by
-        helper_functions.predict_fstat. This dictionary's keys must follow
-        the PyFstat convention (F0 instead of Freq).
-    return_lal_keys: bool
-        If True, the returned dictionary will contain keys according to the
-        lal convention (Freq instead of F0).
+        helper_functions.predict_fstat.
     """
     predict_fstat_params = {
         key: signal_parameters[key]
         for key in ["F0", "Alpha", "Delta", "h0", "cosi", "psi"]
     }
-    if return_lal_keys:
-        # FIXME Use the actual function to do this
-        predict_fstat_params["Freq"] = predict_fstat_params["F0"]
     return predict_fstat_params
 
 
@@ -746,7 +739,7 @@ def predict_fstat(
     psi=None,
     Alpha=None,
     Delta=None,
-    Freq=None,
+    F0=None,
     sftfilepattern=None,
     timestampsFiles=None,
     minStartTime=None,
@@ -766,7 +759,7 @@ def predict_fstat(
     ----------
     h0, cosi, psi, Alpha, Delta : float
         Signal properties, see `lalapps_PredictFstat --help` for more info.
-    Freq: float or None
+    F0: float or None
         Only needed for noise floor estimation when given sftfilepattern
         but assumeSqrtSX is None.
     sftfilepattern : str or None
@@ -853,12 +846,12 @@ def predict_fstat(
             if duration is not None:
                 cl_pfs.append("--maxStartTime={}".format(minStartTime + duration))
         if assumeSqrtSX is None:
-            if Freq is None:
+            if F0 is None:
                 raise ValueError(
                     "With sftfilepattern but without assumeSqrtSX,"
-                    " we need Freq to estimate noise floor."
+                    " we need F0 to estimate noise floor."
                 )
-            cl_pfs.append("--Freq={}".format(Freq))
+            cl_pfs.append("--Freq={}".format(F0))
     if assumeSqrtSX is not None:
         if assumeSqrtSX <= 0:
             raise ValueError("assumeSqrtSX must be >0!")
