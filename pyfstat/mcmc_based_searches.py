@@ -1220,7 +1220,20 @@ class MCMCSearch(BaseSearchClass):
     def plot_cumulative_max(self, **kwargs):
         """Plot the cumulative twoF for the maximum posterior estimate.
 
-        See the pyfstat.core.plot_twoF_cumulative function for further details.
+        This method accepts the same arguments as `pyfstat.core.ComputeFstat.plot_twoF_cumulative`,
+        except for `CFS_input`, which is taken from the loudest candidate; and `label` and `outdir`,
+        which are taken from the instance of this class.
+
+        For example, one can pass signal arguments to predic_twoF_cumulative through `PFS_kwargs`, or
+        set the number of segments using `num_segments_(CFS|PFS)`. The same applies for other options
+        such as `tstart`, `tend` or `savefig`. Every single of these arguments will be passed to
+        `pyfstat.core.ComputeFstat.plot_twoF_cumulative` as they are, using their default argument
+        otherwise.
+
+        Keep in mind that one has to explicitely set `savefig=True` to output the figure!
+
+        See `pyfstat.core.ComputeFstat.plot_twoF_cumulative` for a comprehensive list of accepted
+        arguments and their default values.
         """
         logging.info("Getting cumulative 2F")
         d, maxtwoF = self.get_max_twoF()
