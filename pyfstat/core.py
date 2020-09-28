@@ -1160,10 +1160,10 @@ class ComputeFstat(BaseSearchClass):
 
         # Set up plot-realted objects
         axis_kwargs = {
-            "xlabel": r"Days from $t_{{\rm start}}={:.0f}$".format(actual_tstart_CFS),
-            "ylabel": r"$\log_{10}(\mathrm{BSGL})_{\rm cumulative}$"
+            "xlabel": f"Days from $t_\\mathrm{{start}}={actual_tstart_CFS:.0f}$",
+            "ylabel": "$\\log_{10}(\\mathrm{BSGL})_{\\mathrm{cumulative}$"
             if self.BSGL
-            else r"$\widetilde{2\mathcal{F}}_{\rm cumulative}$",
+            else "$\\widetilde{2\\mathcal{F}}_{\\mathrm{cumulative}}$",
             "xlim": (0, taus_CFS_days[-1]),
         }
         plot_label = (
@@ -1208,7 +1208,7 @@ class ComputeFstat(BaseSearchClass):
                 pfs + pfs_sigma,
                 color="cyan",
                 label=(
-                    r"Predicted $\langle 2\mathcal{F} " r"\rangle\pm $ 1-$\sigma$ band"
+                    "Predicted $\\langle 2\\mathcal{F} \\rangle \\pm 1\\sigma$ band"
                 ),
                 zorder=-10,
                 alpha=0.2,
