@@ -13,7 +13,7 @@ and [citing](#citing-this-work) PyFstat.
 * We also have a number of
 [examples](https://github.com/PyFstat/PyFstat/tree/master/examples),
 demonstrating different use cases.
-* Developers or contributors are encouraged to have a look into
+* New contributors are encouraged to have a look into
 [how to set up a development environment](#contributing-to-pyfstat)
 
 
@@ -281,8 +281,8 @@ Here's what you need to know:
   `black --check --diff .` to show the required style changes, or `black .` to automatically apply them.
 * `bin/setup-dev-tools.sh` gets your virtual environment ready for you. After making sure you are 
 using a virtual environment, it install `pytest`, `black` and `flake8` and uses `pre-commit` to run
-the last two using a pre-commit hoook. In this way, you will be prompted by a warning whenver you 
-forget to run `black` or `flake8` befor commit :wink:.
+the last two using a pre-commit hook. In this way, you will be prompted a warning whenever you 
+forget to run `black` or `flake8` before doing your commit :wink:.
 
 ## Contributors
 
