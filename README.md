@@ -283,7 +283,8 @@ Here's what you need to know:
   and then
   `black --check --diff .` to show the required style changes, or `black .` to automatically apply them.
 * `bin/setup-dev-tools.sh` gets your virtual environment ready for you. After making sure you are 
-using a virtual environment, it install `pytest`, `black` and `flake8` and uses `pre-commit` to run
+using a virtual environment (venv or conda),
+it installs `pytest`, `black` and `flake8` and uses `pre-commit` to run
 the last two using a pre-commit hook. In this way, you will be prompted a warning whenever you 
 forget to run `black` or `flake8` before doing your commit :wink:.
 
