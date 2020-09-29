@@ -1218,9 +1218,22 @@ class MCMCSearch(BaseSearchClass):
             return fig, axes
 
     def plot_cumulative_max(self, **kwargs):
-        """Plot the cumulative twoF for the maximum posterior estimate
+        """Plot the cumulative twoF for the maximum posterior estimate.
 
-        See the pyfstat.core.plot_twoF_cumulative function for further details
+        This method accepts the same arguments as `pyfstat.core.ComputeFstat.plot_twoF_cumulative`,
+        except for `CFS_input`, which is taken from the loudest candidate; and `label` and `outdir`,
+        which are taken from the instance of this class.
+
+        For example, one can pass signal arguments to predic_twoF_cumulative through `PFS_kwargs`, or
+        set the number of segments using `num_segments_(CFS|PFS)`. The same applies for other options
+        such as `tstart`, `tend` or `savefig`. Every single of these arguments will be passed to
+        `pyfstat.core.ComputeFstat.plot_twoF_cumulative` as they are, using their default argument
+        otherwise.
+
+        Keep in mind that one has to explicitely set `savefig=True` to output the figure!
+
+        See `pyfstat.core.ComputeFstat.plot_twoF_cumulative` for a comprehensive list of accepted
+        arguments and their default values.
         """
         logging.info("Getting cumulative 2F")
         d, maxtwoF = self.get_max_twoF()
@@ -1228,42 +1241,12 @@ class MCMCSearch(BaseSearchClass):
             if key not in d:
                 d[key] = val
 
-        if "add_pfs" in kwargs and not hasattr(self, "search"):
-            self.generate_loudest()
-
         if hasattr(self, "search") is False:
             self._initiate_search_object()
-        if self.binary is False:
-            self.search.plot_twoF_cumulative(
-                self.label,
-                self.outdir,
-                F0=d["F0"],
-                F1=d["F1"],
-                F2=d["F2"],
-                Alpha=d["Alpha"],
-                Delta=d["Delta"],
-                tstart=self.minStartTime,
-                tend=self.maxStartTime,
-                **kwargs,
-            )
-        else:
-            self.search.plot_twoF_cumulative(
-                self.label,
-                self.outdir,
-                F0=d["F0"],
-                F1=d["F1"],
-                F2=d["F2"],
-                Alpha=d["Alpha"],
-                Delta=d["Delta"],
-                asini=d["asini"],
-                period=d["period"],
-                ecc=d["ecc"],
-                argp=d["argp"],
-                tp=d["argp"],
-                tstart=self.minStartTime,
-                tend=self.maxStartTime,
-                **kwargs,
-            )
+
+        self.search.plot_twoF_cumulative(
+            CFS_input=d, label=self.label, outdir=self.outdir, **kwargs
+        )
 
     def _generic_lnprior(self, **kwargs):
         """Return a lambda function of the pdf
@@ -2478,7 +2461,7 @@ class MCMCGlitchSearch(MCMCSearch):
             if j < self.theta0_idx:
                 summed_deltaF0 = np.sum(delta_F0s[j : self.theta0_idx])
                 F0_j = d["F0"] - summed_deltaF0
-                taus, twoFs = self.search.calculate_twoF_cumulative(
+                actual_ts, taus, twoFs = self.search.calculate_twoF_cumulative(
                     F0_j,
                     F1=d["F1"],
                     F2=d["F2"],
@@ -2491,7 +2474,7 @@ class MCMCGlitchSearch(MCMCSearch):
             elif j >= self.theta0_idx:
                 summed_deltaF0 = np.sum(delta_F0s[self.theta0_idx : j + 1])
                 F0_j = d["F0"] + summed_deltaF0
-                taus, twoFs = self.search.calculate_twoF_cumulative(
+                actual_ts, taus, twoFs = self.search.calculate_twoF_cumulative(
                     F0_j,
                     F1=d["F1"],
                     F2=d["F2"],
@@ -2500,7 +2483,7 @@ class MCMCGlitchSearch(MCMCSearch):
                     tstart=ts,
                     tend=te,
                 )
-            ax.plot(ts + taus, twoFs)
+            ax.plot(actual_ts + taus, twoFs)
 
         ax.set_xlabel("GPS time")
         fig.savefig(os.path.join(self.outdir, self.label + "_twoFcumulative.png"))

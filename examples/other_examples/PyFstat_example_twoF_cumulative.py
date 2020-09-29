@@ -1,43 +1,57 @@
-import pyfstat
-import numpy as np
 import os
+import numpy as np
+import pyfstat
+
+from pyfstat.helper_functions import get_predict_fstat_parameters_from_dict
 
 label = os.path.splitext(os.path.basename(__file__))[0]
 outdir = os.path.join("PyFstat_example_data", label)
 
 # Properties of the GW data
-sqrtSX = 1e-23
-tstart = 1000000000
-duration = 100 * 86400
-tend = tstart + duration
+gw_data = {
+    "sqrtSX": 1e-23,
+    "tstart": 1000000000,
+    "duration": 100 * 86400,
+    "detectors": "H1,L1",
+    "Band": 4,
+    "Tsft": 1800,
+}
 
 # Properties of the signal
-F0 = 30.0
-F1 = -1e-10
-F2 = 0
-Alpha = np.radians(83.6292)
-Delta = np.radians(22.0144)
-tref = 0.5 * (tstart + tend)
-cosi = 0
-
 depth = 100
-h0 = sqrtSX / depth
+phase_parameters = {
+    "F0": 30.0,
+    "F1": -1e-10,
+    "F2": 0,
+    "Alpha": np.radians(83.6292),
+    "Delta": np.radians(22.0144),
+    "tref": gw_data["tstart"],
+    "asini": 10,
+    "period": 10 * 3600 * 24,
+    "tp": gw_data["tstart"] + gw_data["duration"] / 2.0,
+    "ecc": 0,
+    "argp": 0,
+}
+amplitude_parameters = {
+    "h0": gw_data["sqrtSX"] / depth,
+    "cosi": 1,
+    "phi": np.pi,
+    "psi": np.pi / 8,
+}
 
-data = pyfstat.Writer(
+PFS_input = get_predict_fstat_parameters_from_dict(
+    {**phase_parameters, **amplitude_parameters}
+)
+
+# Let me grab tref here, since it won't really be needed in phase_parameters
+tref = phase_parameters.pop("tref")
+data = pyfstat.BinaryModulatedWriter(
     label=label,
     outdir=outdir,
     tref=tref,
-    tstart=tstart,
-    F0=F0,
-    F1=F1,
-    F2=F2,
-    duration=duration,
-    Alpha=Alpha,
-    Delta=Delta,
-    h0=h0,
-    cosi=cosi,
-    sqrtSX=sqrtSX,
-    detectors="H1,L1",
+    **gw_data,
+    **phase_parameters,
+    **amplitude_parameters,
 )
 data.make_data()
 
@@ -45,41 +59,33 @@ data.make_data()
 twoF = data.predict_fstat()
 print("Predicted twoF value: {}\n".format(twoF))
 
-DeltaF0 = 1e-7
-DeltaF1 = 1e-13
-VF0 = (np.pi * duration * DeltaF0) ** 2 / 3.0
-VF1 = (np.pi * duration ** 2 * DeltaF1) ** 2 * 4 / 45.0
-print("\nV={:1.2e}, VF0={:1.2e}, VF1={:1.2e}\n".format(VF0 * VF1, VF0, VF1))
+# Create a search object for each of the possible SFT combinations
+# (H1 only, L1 only, H1 + L1).
+ifo_constraints = ["L1", "H1", None]
+compute_fstat_per_ifo = [
+    pyfstat.ComputeFstat(
+        sftfilepattern=os.path.join(
+            data.outdir,
+            (f"{ifo_constraint[0]}*.sft" if ifo_constraint is not None else "*.sft"),
+        ),
+        tref=data.tref,
+        binary=phase_parameters.get("asini", 0),
+        minCoverFreq=-0.5,
+        maxCoverFreq=-0.5,
+    )
+    for ifo_constraint in ifo_constraints
+]
 
-theta_prior = {
-    "F0": {"type": "unif", "lower": F0 - DeltaF0 / 2.0, "upper": F0 + DeltaF0 / 2.0},
-    "F1": {"type": "unif", "lower": F1 - DeltaF1 / 2.0, "upper": F1 + DeltaF1 / 2.0},
-    "F2": F2,
-    "Alpha": Alpha,
-    "Delta": Delta,
-}
-
-ntemps = 1
-log10beta_min = -1
-nwalkers = 100
-nsteps = [50, 50]
-
-mcmc = pyfstat.MCMCSearch(
-    label=label,
-    outdir=outdir,
-    sftfilepattern=os.path.join(outdir, "*" + label + "*sft"),
-    theta_prior=theta_prior,
-    tref=tref,
-    minStartTime=tstart,
-    maxStartTime=tend,
-    nsteps=nsteps,
-    nwalkers=nwalkers,
-    ntemps=ntemps,
-    log10beta_min=log10beta_min,
-)
-mcmc.run()
-mcmc.plot_corner(add_prior=True)
-mcmc.print_summary()
-
-mcmc.generate_loudest()
-mcmc.plot_cumulative_max(add_pfs=True)
+for ind, compute_f_stat in enumerate(compute_fstat_per_ifo):
+    compute_f_stat.plot_twoF_cumulative(
+        label=label + (f"_{ifo_constraints[ind]}" if ind < 2 else "_H1L1"),
+        outdir=outdir,
+        savefig=True,
+        CFS_input=phase_parameters,
+        PFS_input=PFS_input,
+        custom_ax_kwargs={
+            "title": "How does 2F accumulate over time?",
+            "label": "Cumulative 2F"
+            + (f" {ifo_constraints[ind]}" if ind < 2 else " H1 + L1"),
+        },
+    )
