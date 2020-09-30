@@ -1209,18 +1209,18 @@ class ComputeFstat(BaseSearchClass):
                 "CFS and PFS starting time differs: This shouldn't be the case. "
                 "Did you change conventions?"
             )
-
-            ax.fill_between(
-                taus_PFS_days,
-                pfs - pfs_sigma,
-                pfs + pfs_sigma,
-                color="cyan",
-                label=(
-                    "Predicted $\\langle 2\\mathcal{F} \\rangle \\pm 1\\sigma$ band"
-                ),
-                zorder=-10,
-                alpha=0.2,
-            )
+            for i in range(1, 4):
+                ax.fill_between(
+                    taus_PFS_days,
+                    pfs - i * pfs_sigma,
+                    pfs + i * pfs_sigma,
+                    color="cyan",
+                    label=(
+                        f"Predicted $\\langle 2\\mathcal{{F}} \\rangle \\pm {i}\\sigma$ band"
+                    ),
+                    zorder=-10,
+                    alpha=2.0 / (1 + 2.0 * i),
+                )
 
         ax.legend(loc="best")
         if savefig:
