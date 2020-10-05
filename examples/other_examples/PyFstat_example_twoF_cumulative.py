@@ -11,10 +11,10 @@ outdir = os.path.join("PyFstat_example_data", label)
 gw_data = {
     "sqrtSX": 1e-23,
     "tstart": 1000000000,
-    "duration": 100 * 86400,
+    "duration": 10 * 86400,
     "detectors": "H1,L1",
     "Band": 4,
-    "Tsft": 1800,
+    "Tsft": 1024,
 }
 
 # Properties of the signal
