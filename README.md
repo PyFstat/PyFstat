@@ -243,8 +243,8 @@ echo 'export LALPULSAR_DATADIR=$VIRTUAL_ENV/share/lalpulsar' >> ${VIRTUAL_ENV}/b
 deactivate
 source path/to/venv/bin/activate
 ```
-An executable version of this snippet is readily accessible by **sourcing** `bin/get_and_export_ephemeris.sh`. 
-Mind that this script does **not** include an export command anywhere, so you will have to source it every time
+An executable version of this snippet is readily accessible by **sourcing** `bin/get-and-export-ephemeris.sh`. 
+Mind that this script does **not** include an `export` command anywhere, so you will have to source it every time
 in order to properly set `LALPULSAR_DATADIR` variable.
 
 If instead you have built and installed lalsuite from source,
@@ -284,8 +284,8 @@ Here's what you need to know:
   `black --check --diff .` to show the required style changes, or `black .` to automatically apply them.
 * `bin/setup-dev-tools.sh` gets your virtual environment ready for you. After making sure you are 
 using a virtual environment (venv or conda),
-it installs `pytest`, `black` and `flake8` and uses `pre-commit` to run
-the last two using a pre-commit hook. In this way, you will be prompted a warning whenever you 
+it installs `black`, `flake8`, `pre-commit`, `pytest`, `wheel` via `pip` and uses `pre-commit` to run
+the `black` and `flake8` using a pre-commit hook. In this way, you will be prompted a warning whenever you
 forget to run `black` or `flake8` before doing your commit :wink:.
 
 ## Contributors
