@@ -589,12 +589,12 @@ class Writer(BaseSearchClass):
         check_ok = self.check_cached_data_okay_to_use(cl_mfd)
         if check_ok is False:
             helper_functions.run_commandline(cl_mfd)
-            if os.path.isfile(self.sftfilepath):
+            if np.all([os.path.isfile(f) for f in self.sftfilepath.split(";")]):
                 logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
             else:
-                logging.warning(
+                raise RuntimeError(
                     f"It seems we successfully ran {mfd},"
-                    f" but the expected path does not exist: {self.sftfilepath}."
+                    f" but did not get the expected SFT file path(s): {self.sftfilepath}."
                 )
 
     def predict_fstat(self, assumeSqrtSX=None):
