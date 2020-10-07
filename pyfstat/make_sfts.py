@@ -526,8 +526,8 @@ class Writer(BaseSearchClass):
         except OSError:
             pass
 
-        cl_mfd = []
-        cl_mfd.append("lalapps_Makefakedata_v5")
+        mfd = "lalapps_Makefakedata_v5"
+        cl_mfd = [mfd]
         cl_mfd.append("--outSingleSFT=TRUE")
         cl_mfd.append('--outSFTdir="{}"'.format(self.outdir))
         cl_mfd.append('--outLabel="{}"'.format(self.label))
@@ -584,7 +584,13 @@ class Writer(BaseSearchClass):
         check_ok = self.check_cached_data_okay_to_use(cl_mfd)
         if check_ok is False:
             helper_functions.run_commandline(cl_mfd)
-            logging.info("Successfully wrote SFTs to: {}".format(self.sftfilepath))
+            if os.path.isfile(self.sftfilepath):
+                logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
+            else:
+                logging.warning(
+                    f"It seems we successfully ran {mfd},"
+                    f" but the expected path does not exist: {self.sftfilepath}."
+                )
 
     def predict_fstat(self, assumeSqrtSX=None):
         """ Wrapper to lalapps_PredictFstat """
