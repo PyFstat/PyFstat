@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # This script is intended to set up a proper development
 # environment according to the PyFstat standad. 
 # As explained in the REAMDE, that includes:
