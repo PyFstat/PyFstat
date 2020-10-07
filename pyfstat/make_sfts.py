@@ -97,9 +97,10 @@ class Writer(BaseSearchClass):
             frequency evolution and amplitude parameters for injection
             if h0==None or h0==0, these are all ignored
             if h0>0, then Alpha, Delta, cosi need to be set explicitly
-        Tsft: float
-            the sft duration
-        noiseSFTs: str
+        Tsft: int
+            The SFT duration in seconds.
+            Will be ignored if noiseSFTs are given.
+        noiseSFTs: str or None
             SFT on top of which signals will be injected.
             If not None, additional constraints can be applied using the arguments
             tstart and duration.
@@ -154,16 +155,20 @@ class Writer(BaseSearchClass):
         self.duration = int(self.duration)
 
         IFOs = self.detectors.split(",")
-        numSFTs = len(IFOs) * [int(float(self.duration) / self.Tsft)]
+        # when duration is not a multiple of Tsft, to match MFDv5
+        # we need to round the number *up*
+        # and also include the overlapping bit at the end in the duration
+        numSFTs = int(np.ceil(float(self.duration) / self.Tsft))  # per IFO
+        effective_duration = numSFTs * self.Tsft
 
         self.sftfilenames = [
             lalpulsar.OfficialSFTFilename(
                 dets[0],
                 dets[1],
-                numSFTs[ind],
+                numSFTs,
                 self.Tsft,
                 self.tstart,
-                self.duration,
+                effective_duration,
                 self.label,
             )
             for ind, dets in enumerate(IFOs)
@@ -223,13 +228,13 @@ class Writer(BaseSearchClass):
         # Get the "overall" values of the search
         Tsft = np.unique(Tsft)
         if len(Tsft) != 1:
-            raise ValueError("SFTs contain different basetimes: {}".format(Tsft))
-        elif Tsft[0] != self.Tsft:
-            raise ValueError(
-                "SFT basetime {} differs from input base time {}".format(
-                    Tsft[0], self.Tsft
-                )
+            raise ValueError(f"SFTs contain different basetimes: {Tsft}")
+        if Tsft[0] != self.Tsft:
+            logging.warning(
+                f"Overwriting self.Tsft={self.Tsft}"
+                f" with value {Tsft[0]} read from noiseSFTs."
             )
+        self.Tsft = Tsft[0]
         self.tstart = min(tstart)
         self.duration = max(tend) - self.tstart
         self.detectors = ",".join(IFOs)
@@ -526,8 +531,8 @@ class Writer(BaseSearchClass):
         except OSError:
             pass
 
-        cl_mfd = []
-        cl_mfd.append("lalapps_Makefakedata_v5")
+        mfd = "lalapps_Makefakedata_v5"
+        cl_mfd = [mfd]
         cl_mfd.append("--outSingleSFT=TRUE")
         cl_mfd.append('--outSFTdir="{}"'.format(self.outdir))
         cl_mfd.append('--outLabel="{}"'.format(self.label))
@@ -584,7 +589,13 @@ class Writer(BaseSearchClass):
         check_ok = self.check_cached_data_okay_to_use(cl_mfd)
         if check_ok is False:
             helper_functions.run_commandline(cl_mfd)
-            logging.info("Successfully wrote SFTs to: {}".format(self.sftfilepath))
+            if np.all([os.path.isfile(f) for f in self.sftfilepath.split(";")]):
+                logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
+            else:
+                raise RuntimeError(
+                    f"It seems we successfully ran {mfd},"
+                    f" but did not get the expected SFT file path(s): {self.sftfilepath}."
+                )
 
     def predict_fstat(self, assumeSqrtSX=None):
         """ Wrapper to lalapps_PredictFstat """
