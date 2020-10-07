@@ -126,16 +126,17 @@ class TestWriter(BaseForTestsWithData):
 
     def test_run_makefakedata(self):
         self.Writer.make_data(verbose=True)
+        numSFTs = int(np.ceil(self.duration / self.Tsft))
         expected_outfile = os.path.join(
             self.Writer.outdir,
             "{:1s}-{:d}_{:2s}_{:d}SFT_{:s}-{:d}-{:d}.sft".format(
                 self.detectors[0],
-                int(self.duration / self.Tsft),
+                numSFTs,
                 self.detectors,
                 self.Tsft,
                 self.Writer.label,
                 self.Writer.tstart,
-                self.Writer.duration,
+                numSFTs * self.Tsft,
             ),
         )
         self.assertTrue(os.path.isfile(expected_outfile))
@@ -191,7 +192,7 @@ class TestWriter(BaseForTestsWithData):
         )
         max_values_noise_and_signal = np.max(data, axis=0)
         max_freqs_noise_and_signal = freqs[np.argmax(data, axis=0)]
-        self.assertTrue(len(times) == self.duration / self.Tsft)
+        self.assertTrue(len(times) == int(np.ceil(self.duration / self.Tsft)))
         # with signal: all SFTs should peak at same freq
         self.assertTrue(len(np.unique(max_freqs_noise_and_signal)) == 1)
 
@@ -352,6 +353,12 @@ class TestWriter(BaseForTestsWithData):
             ),
         )
         self.assertTrue(os.path.isfile(expected_SFT_filepath))
+
+
+class TestWriterOtherTsft(TestWriter):
+    label = "TestWriterOtherTsft"
+    writer_class_to_test = pyfstat.Writer
+    Tsft = 1024
 
 
 class TestBinaryModulatedWriter(TestWriter):
