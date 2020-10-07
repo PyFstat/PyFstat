@@ -776,9 +776,12 @@ def predict_fstat(
         Comma-separated list of detectors.
         Ignored if sftfilepattern is given,
         required if it is not.
-    assumeSqrtSX : float or str or None
+    assumeSqrtSX : float or str
         Assume stationary per-detector noise-floor instead of estimating from SFTs.
-        For multiple detectors: comma-separated list
+        Single float or str value: use same for all IFOs.
+        Comma-separated string: must match len(detectors)
+        and/or the data in sftfilepattern.
+        Detectors will be paired to list elements following alphabetical order.
         Required if sftfilepattern is not given,
         optional if it is.
     tempory_filename : str
@@ -854,7 +857,7 @@ def predict_fstat(
                 )
             cl_pfs.append("--Freq={}".format(F0))
     if assumeSqrtSX is not None:
-        if assumeSqrtSX <= 0:
+        if np.any([s <= 0 for s in parse_list_of_numbers(assumeSqrtSX)]):
             raise ValueError("assumeSqrtSX must be >0!")
         cl_pfs.append("--assumeSqrtSX={}".format(assumeSqrtSX))
 
@@ -880,3 +883,21 @@ def predict_fstat(
     twoF_sigma = float(d["twoF_sigma"])
     os.remove(tempory_filename)
     return twoF_expected, twoF_sigma
+
+
+def parse_list_of_numbers(val):
+    """Convert a number, list of numbers or comma-separated str into a list of numbers.
+
+    This is useful e.g. for sqrtSX inputs where the user can be expected
+    to try either type of input.
+    """
+    try:
+        out = list(
+            map(float, val.split(",") if hasattr(val, "split") else np.atleast_1d(val))
+        )
+    except Exception as e:
+        raise ValueError(
+            f"Could not parse '{val}' as a number or list of numbers."
+            f" Got exception: {e}."
+        )
+    return out

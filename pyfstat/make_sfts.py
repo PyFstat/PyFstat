@@ -539,7 +539,9 @@ class Writer(BaseSearchClass):
                 "to produce noiseSFTs."
             )
         elif self.noiseSFTs is not None:
-            if self.sqrtSX and self.sqrtSX > 0.0:
+            if self.sqrtSX and np.any(
+                [s > 0 for s in helper_functions.parse_list_of_numbers(self.sqrtSX)]
+            ):
                 logging.warning(
                     "In addition to using noiseSFTs, you are adding "
                     "Gaussian noise with sqrtSX={} "

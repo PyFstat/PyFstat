@@ -76,8 +76,9 @@ class MCMCSearch(BaseSearchClass):
     injectSources: dict, optional
         If given, inject these properties into the SFT files before running
         the search
-    assumeSqrtSX: float, optional
-        Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}
+    assumeSqrtSX: float or list or str
+        Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}.
+        See `core.ComputeFstat`.
     transientWindowType: str
         If 'rect' or 'exp',
         compute atoms so that a transient (t0,tau) map can later be computed.
@@ -2555,8 +2556,9 @@ class MCMCSemiCoherentSearch(MCMCSearch):
     injectSources: dict, optional
         If given, inject these properties into the SFT files before running
         the search
-    assumeSqrtSX: float, optional
-        Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}
+    assumeSqrtSX: float or list or str, optional
+        Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}.
+        See `core.ComputeFstat`.
     nsegs: int
         The number of segments
 
