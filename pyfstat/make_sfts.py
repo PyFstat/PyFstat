@@ -154,16 +154,20 @@ class Writer(BaseSearchClass):
         self.duration = int(self.duration)
 
         IFOs = self.detectors.split(",")
-        numSFTs = len(IFOs) * [int(float(self.duration) / self.Tsft)]
+        # when duration is not a multiple of Tsft, to match MFDv5
+        # we need to round the number *up*
+        # and also include the overlapping bit at the end in the duration
+        numSFTs = int(np.ceil(float(self.duration) / self.Tsft))  # per IFO
+        effective_duration = numSFTs * self.Tsft
 
         self.sftfilenames = [
             lalpulsar.OfficialSFTFilename(
                 dets[0],
                 dets[1],
-                numSFTs[ind],
+                numSFTs,
                 self.Tsft,
                 self.tstart,
-                self.duration,
+                effective_duration,
                 self.label,
             )
             for ind, dets in enumerate(IFOs)
