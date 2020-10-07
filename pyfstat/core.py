@@ -286,12 +286,19 @@ class ComputeFstat(BaseSearchClass):
         injectSources : dict or str
             Either a dictionary of the values to inject, or a string pointing
             to the .cff file to inject
-        injectSqrtSX :
-            Per-IFO single-sided PSD values for generating fake Gaussian noise on the fly
-        assumeSqrtSX : float
-            Don't estimate noise-floors but assume (stationary) per-IFO
-            sqrt{SX} (if single value: use for all IFOs). If signal only,
-            set sqrtSX=1
+        injectSqrtSX : float or list or str
+            Single-sided PSD values for generating fake Gaussian noise on the fly.
+            Single float or str value: use same for all IFOs.
+            List or comma-separated string: must match len(detectors)
+            and/or the data in sftfilepattern.
+            Detectors will be paired to list elements following alphabetical order.
+        assumeSqrtSX : float or list or str
+            Don't estimate noise-floors but assume this (stationary) single-sided PSD.
+            Single float or str value: use same for all IFOs.
+            List or comma-separated string: must match len(detectors)
+            and/or the data in sftfilepattern.
+            Detectors will be paired to list elements following alphabetical order.
+            If working with signal-only data, please set assumeSqrtSX=1 .
         SSBprec : int
             Flag to set the SSB calculation: 0=Newtonian, 1=relativistic,
             2=relativisitic optimised, 3=DMoff, 4=NO_SPIN
@@ -466,7 +473,7 @@ class ComputeFstat(BaseSearchClass):
             FstatOAs.assumeSqrtSX = lalpulsar.FstatOptionalArgsDefaults.assumeSqrtSX
         else:
             mnf = lalpulsar.MultiNoiseFloor()
-            assumeSqrtSX = np.atleast_1d(self.assumeSqrtSX)
+            assumeSqrtSX = helper_functions.parse_list_of_numbers(self.assumeSqrtSX)
             mnf.sqrtSn[: len(assumeSqrtSX)] = assumeSqrtSX
             mnf.length = len(assumeSqrtSX)
             FstatOAs.assumeSqrtSX = mnf
@@ -511,7 +518,9 @@ class ComputeFstat(BaseSearchClass):
         else:
             FstatOAs.injectSources = lalpulsar.FstatOptionalArgsDefaults.injectSources
         if hasattr(self, "injectSqrtSX") and self.injectSqrtSX is not None:
-            self.injectSqrtSX = np.atleast_1d(self.injectSqrtSX)
+            self.injectSqrtSX = helper_functions.parse_list_of_numbers(
+                self.injectSqrtSX
+            )
             if len(self.injectSqrtSX) != len(self.detector_names):
                 raise ValueError(
                     "injectSqrtSX must be of same length as detector_names ({}!={})".format(
