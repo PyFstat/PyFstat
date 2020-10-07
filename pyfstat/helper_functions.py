@@ -724,7 +724,8 @@ def get_predict_fstat_parameters_from_dict(signal_parameters):
     ----------
     signal_parameters: dict
         Dictionary containing at least the signal parameters required by
-        helper_functions.predict_fstat.
+        helper_functions.predict_fstat. This dictionary's keys must follow
+        the PyFstat convention (F0 instead of Freq).
     """
     predict_fstat_params = {
         key: signal_parameters[key]
