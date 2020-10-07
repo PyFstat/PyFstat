@@ -150,7 +150,8 @@ class BaseSearchClass:
         )
         return params_dict
 
-    def translate_keys_to_lal(self, dictionary):
+    @staticmethod
+    def translate_keys_to_lal(dictionary):
         """Convert input keys into lal input keys
 
         Input keys are F0, F1, F2, ..., while LAL functions
