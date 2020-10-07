@@ -97,9 +97,10 @@ class Writer(BaseSearchClass):
             frequency evolution and amplitude parameters for injection
             if h0==None or h0==0, these are all ignored
             if h0>0, then Alpha, Delta, cosi need to be set explicitly
-        Tsft: float
-            the sft duration
-        noiseSFTs: str
+        Tsft: int
+            The SFT duration in seconds.
+            Will be ignored if noiseSFTs are given.
+        noiseSFTs: str or None
             SFT on top of which signals will be injected.
             If not None, additional constraints can be applied using the arguments
             tstart and duration.
@@ -227,13 +228,13 @@ class Writer(BaseSearchClass):
         # Get the "overall" values of the search
         Tsft = np.unique(Tsft)
         if len(Tsft) != 1:
-            raise ValueError("SFTs contain different basetimes: {}".format(Tsft))
-        elif Tsft[0] != self.Tsft:
-            raise ValueError(
-                "SFT basetime {} differs from input base time {}".format(
-                    Tsft[0], self.Tsft
-                )
+            raise ValueError(f"SFTs contain different basetimes: {Tsft}")
+        if Tsft[0] != self.Tsft:
+            logging.warning(
+                f"Overwriting self.Tsft={self.Tsft}"
+                f" with value {Tsft[0]} read from noiseSFTs."
             )
+        self.Tsft = Tsft[0]
         self.tstart = min(tstart)
         self.duration = max(tend) - self.tstart
         self.detectors = ",".join(IFOs)
