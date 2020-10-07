@@ -1,3 +1,4 @@
+#!/bin/sh
 # Get ephemeris files and export env variable to access them.
 # Output path is accepted as an input; otherwise, falls back
 # to ../.ephemeris.
