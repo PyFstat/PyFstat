@@ -150,7 +150,8 @@ class BaseSearchClass:
         )
         return params_dict
 
-    def translate_keys_to_lal(self, dictionary):
+    @staticmethod
+    def translate_keys_to_lal(dictionary):
         """Convert input keys into lal input keys
 
         Input keys are F0, F1, F2, ..., while LAL functions
@@ -487,7 +488,7 @@ class ComputeFstat(BaseSearchClass):
                 PP.Amp.h0 = h0
                 PP.Amp.cosi = cosi
 
-            PP.Amp.phi0 = self.injectSources["phi0"]
+            PP.Amp.phi0 = self.injectSources["phi"]
             PP.Amp.psi = self.injectSources["psi"]
             PP.Doppler.Alpha = self.injectSources["Alpha"]
             PP.Doppler.Delta = self.injectSources["Delta"]
@@ -1103,7 +1104,7 @@ class ComputeFstat(BaseSearchClass):
                 psi=psi,
                 Alpha=Alpha,
                 Delta=Delta,
-                Freq=F0,
+                F0=F0,
                 **predict_fstat_kwargs,
             )
             for duration in cumulative_durations
