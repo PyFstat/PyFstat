@@ -31,6 +31,19 @@ class BaseForTestsWithOutdir(unittest.TestCase):
                 logging.warning("{} not removed after tests".format(self.outdir))
 
 
+default_Writer_params = {
+    "label": "test",
+    "sqrtSX": 1,
+    "Tsft": 1800,
+    "tstart": 700000000,
+    "duration": 4 * 1800,
+    "detectors": "H1",
+    "SFTWindowType": "tukey",
+    "SFTWindowBeta": 0.001,
+    "randSeed": 42,
+    "Band": None,
+}
+
 default_signal_params = {
     "F0": 30,
     "F1": -1e-10,
@@ -43,19 +56,6 @@ default_signal_params = {
     "Delta": 1.2,
 }
 
-default_Writer_params = {
-    "label": "test",
-    "sqrtSX": 1,
-    "Tsft": 1800,
-    "tstart": 700000000,
-    "duration": 4 * 1800,
-    "detectors": "H1",
-    "SFTWindowType": "tukey",
-    "SFTWindowBeta": 0.001,
-    "randSeed": 42,
-    "Band": None,
-    **default_signal_params,
-}
 
 default_binary_params = {
     "period": 45 * 24 * 3600.0,
@@ -84,7 +84,7 @@ class BaseForTestsWithData(BaseForTestsWithOutdir):
         # if we directly set any options as self.xy = 1 here,
         # then values set for derived classes may get overwritten,
         # so use a default dict and only insert if no value previous set
-        for key, val in default_Writer_params.items():
+        for key, val in {**default_Writer_params, **default_signal_params}.items():
             if not hasattr(self, key):
                 setattr(self, key, val)
         self.tref = self.tstart
@@ -117,6 +117,7 @@ class BaseForTestsWithData(BaseForTestsWithOutdir):
 class TestWriter(BaseForTestsWithData):
     label = "TestWriter"
     writer_class_to_test = pyfstat.Writer
+    signal_parameters = default_signal_params
 
     def test_make_cff(self):
         self.Writer.make_cff(verbose=True)
@@ -182,7 +183,7 @@ class TestWriter(BaseForTestsWithData):
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
             sqrtSX=self.sqrtSX,
-            **default_signal_params,
+            **self.signal_parameters,
         )
         noise_and_signal_writer.make_data(verbose=True)
         # FIXME: here and everywhere below,
@@ -233,7 +234,7 @@ class TestWriter(BaseForTestsWithData):
             SFTWindowBeta=self.SFTWindowBeta,
             sqrtSX=0,
             noiseSFTs=noise_writer.sftfilepath,
-            **default_signal_params,
+            **self.signal_parameters,
         )
         add_signal_writer.make_data(verbose=True)
         times, freqs, data = pyfstat.helper_functions.get_sft_array(
@@ -262,7 +263,7 @@ class TestWriter(BaseForTestsWithData):
             SFTWindowBeta=self.SFTWindowBeta,
             sqrtSX=0,
             noiseSFTs=noise_writer.sftfilepath,
-            **default_signal_params,
+            **self.signal_parameters,
         )
         add_signal_writer_constr.make_data(verbose=True)
         times, freqs, data = pyfstat.helper_functions.get_sft_array(
@@ -364,12 +365,11 @@ class TestWriterOtherTsft(TestWriter):
 class TestBinaryModulatedWriter(TestWriter):
     label = "TestBinaryModulatedWriter"
     writer_class_to_test = pyfstat.BinaryModulatedWriter
+    signal_parameters = {**default_signal_params, **default_binary_params}
 
     def test_tp_parsing(self):
         this_writer = self.writer_class_to_test(
-            outdir=self.outdir,
-            **default_Writer_params,
-            **default_binary_params,
+            outdir=self.outdir, **default_Writer_params, **self.signal_parameters
         )
         this_writer.make_data()
 
