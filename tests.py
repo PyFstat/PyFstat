@@ -196,7 +196,8 @@ class TestWriter(BaseForTestsWithData):
         max_values_noise_and_signal = np.max(data, axis=0)
         max_freqs_noise_and_signal = freqs[np.argmax(data, axis=0)]
         self.assertTrue(len(times) == int(np.ceil(self.duration / self.Tsft)))
-        # with signal: all SFTs should peak at same freq
+        # FIXME: CW signals don't have to peak at the same frequency, but there
+        # are some consistency criteria which may be useful to implement here.
         # self.assertTrue(len(np.unique(max_freqs_noise_and_signal)) == 1)
 
         # create noise-only SFTs
