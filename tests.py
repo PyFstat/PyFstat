@@ -169,7 +169,7 @@ class TestWriter(BaseForTestsWithData):
 
     def test_noise_sfts(self):
         randSeed = 69420
-        detectors = "L1,H1"
+        detectors = "H1,L1"
 
         # create SFTs with both noise and a signal in them
         noise_and_signal_writer = self.writer_class_to_test(
@@ -183,6 +183,7 @@ class TestWriter(BaseForTestsWithData):
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
             sqrtSX=self.sqrtSX,
+            Band=0.5,
             **self.signal_parameters,
         )
         noise_and_signal_writer.make_data(verbose=True)
@@ -191,6 +192,7 @@ class TestWriter(BaseForTestsWithData):
         times, freqs, data = pyfstat.helper_functions.get_sft_array(
             noise_and_signal_writer.sftfilepath
         )
+        # Store the maximum SFT values for later comparison
         max_values_noise_and_signal = np.max(data, axis=0)
         max_freqs_noise_and_signal = freqs[np.argmax(data, axis=0)]
         self.assertTrue(len(times) == int(np.ceil(self.duration / self.Tsft)))
@@ -209,8 +211,8 @@ class TestWriter(BaseForTestsWithData):
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
             sqrtSX=self.sqrtSX,
-            h0=0,
-            F0=self.F0,
+            Band=0.5,
+            F0=self.signal_parameters["F0"],
         )
         noise_writer.make_data(verbose=True)
         times, freqs, data = pyfstat.helper_functions.get_sft_array(
@@ -227,12 +229,8 @@ class TestWriter(BaseForTestsWithData):
         add_signal_writer = self.writer_class_to_test(
             label="test_noiseSFTs_add_signal",
             outdir=self.outdir,
-            duration=None,
-            Tsft=self.Tsft,
-            tstart=None,
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
-            sqrtSX=0,
             noiseSFTs=noise_writer.sftfilepath,
             **self.signal_parameters,
         )
@@ -246,11 +244,11 @@ class TestWriter(BaseForTestsWithData):
         # peak freqs expected exactly equal to first case,
         # peak values can have a bit of numerical diff
         self.assertTrue(np.all(max_freqs_added_signal == max_freqs_noise_and_signal))
-        # self.assertTrue(
-        #    np.allclose(
-        #        max_values_added_signal, max_values_noise_and_signal, rtol=1e-6, atol=0
-        #    )
-        # )
+        self.assertTrue(
+            np.allclose(
+                max_values_added_signal, max_values_noise_and_signal, rtol=1e-6, atol=0
+            )
+        )
 
         # same again but with explicit (tstart,duration) to build constraints
         add_signal_writer_constr = self.writer_class_to_test(
