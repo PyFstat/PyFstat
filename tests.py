@@ -48,11 +48,11 @@ default_signal_params = {
     "F0": 30,
     "F1": -1e-10,
     "F2": 0,
-    "h0": 5,
+    "h0": 5.0,
     "cosi": 0,
     "psi": 0,
     "phi": 0,
-    "Alpha": 5e-3,
+    "Alpha": 5e-1,
     "Delta": 1.2,
 }
 
