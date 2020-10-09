@@ -358,7 +358,11 @@ class TestWriter(BaseForTestsWithData):
 class TestWriterOtherTsft(TestWriter):
     label = "TestWriterOtherTsft"
     writer_class_to_test = pyfstat.Writer
-    Tsft = 1024
+
+    @classmethod
+    def setUpClass(self):
+        self.Tsft = 1024
+        super().setUpClass()
 
 
 class TestBinaryModulatedWriter(TestWriter):
