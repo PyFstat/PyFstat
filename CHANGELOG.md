@@ -1,3 +1,15 @@
+## 1.8.0 [13/10/2020]
+
+ - big overhaul of cumulative twoF calculations and plotting
+ - Writer: fix expected sftfilepattern in multi-IFO and custom-TSFT cases
+ - fixed internal consistency of parameter names:
+   - Freq->F0 and phi0->phi for all PyFstat classes/functions
+   - consistent conversion to lalappas arguments
+ - fixed parsing of injectSqrtSX and assumeSqrtSX arguments
+ - helper_functions.predict_fstat() no longer takes `**kwargs`
+ - new instructions and helpful scripts for setting up developer environments (venv or conda)
+ - various improvements to test suite
+
 ## 1.7.3 [21/09/2020]
 
  - GridSearch: will now always include the end point in each 1D parameter points array
