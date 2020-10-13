@@ -315,14 +315,14 @@ or use directly the following BibTeX entry:
 @misc{pyfstat,
   author       = {Ashton, Gregory and
                   Keitel, David and
-                  Prix, Reinhard,
+                  Prix, Reinhard
                   and Tenorio, Rodrigo},
   title        = {PyFstat},
   month        = jul,
   year         = 2020,
   publisher    = {Zenodo},
   doi          = {10.5281/zenodo.3967045},
-  url          = {https://doi.org/10.5281/zenodo.3967045}
+  url          = {https://doi.org/10.5281/zenodo.3967045},
   note         = {\url{https://doi.org/10.5281/zenodo.3967045}}
 }
 ```
