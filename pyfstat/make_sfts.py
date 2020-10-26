@@ -29,16 +29,13 @@ class InjectionParametersGenerator:
     them in the proper format.
     """
 
-    def __init__(self, parameter_priors=None):
+    def __init__(self, parameter_priors=None, seed=None):
         """
         parameter_priors: dict
             Each key refers to one of the signal's parameters (following the PyFstat convetion).
         """
         self.parameter_priors = parameter_priors
-
-        self._rng = np.random.default_rng()
-
-        self.injection_parameters = None
+        self._rng = np.random.default_rng(seed)
 
     @property
     def parameter_priors(self):
@@ -68,8 +65,11 @@ class InjectionParametersGenerator:
         )
 
     def return_injection_parameters(self):
-        for parameter_name in self.parameter_priors:
-            pass
+        injection_parameters = {
+            parameter_name: parameter_prior()
+            for parameter_name, parameter_prior in self.parameter_priors.items()
+        }
+        return injection_parameters
 
 
 class Writer(BaseSearchClass):
