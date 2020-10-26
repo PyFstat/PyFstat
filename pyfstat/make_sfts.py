@@ -29,18 +29,11 @@ class InjectionParametersGenerator:
     them in the proper format.
     """
 
-    def __init__(self, label=None, outdir=None, parameter_priors=None):
+    def __init__(self, parameter_priors=None):
         """
-        label: str
-            Name of the output file. Will be suffixed with .parameters
-        outdir: str
-            Name of the output folder.
         parameter_priors: dict
             Each key refers to one of the signal's parameters (following the PyFstat convetion).
-            number generators of numpy and its values as kwargs.
         """
-        self.outdir = outdir
-        self.label = label
         self.parameter_priors = parameter_priors
 
         self._rng = np.random.default_rng()
@@ -48,64 +41,17 @@ class InjectionParametersGenerator:
         self.injection_parameters = None
 
     @property
-    def outdir(self):
-        return self._outdir
-
-    @property
-    def label(self):
-        return self._label
-
-    @property
     def parameter_priors(self):
         return self._parameter_priors
-
-    def check_out_files(self):
-        """
-        Check if output files already exist to prevent
-        accidental overwritting
-        """
-        # Provisional
-        if os.path.isfile(self.outdir + self.label):
-            raise FileExistsError(
-                "Injection file {} already exists in {}".format(self.label, self.outdir)
-            )
-
-    @outdir.setter
-    def outdir(self, new_outdir):
-        """Set output dir name.
-
-        Output dir(s) will not be created until needed.
-
-        Parameters
-        ----------
-        new_outdir: str
-            Output directory name. Trailing slash is irrelevant, as
-            os.path.join will be used to construct the actual filenames.
-        """
-        self._outdir = new_outdir
-
-    @label.setter
-    def label(self, new_label):
-        """Set injection set's label
-
-        A warning wil be raised if there exists a file in the same folder with
-        the same name.
-        """
-        self._label = new_label
 
     @parameter_priors.setter
     def parameter_priors(self, new_parameter_priors):
         """Set priors to drawn parameter space points from """
 
         current_priors = getattr(self, "parameter_priors", {})
-        prior_keys = []
-
         for parameter_name, parameter_prior in new_parameter_priors.items():
-            # Currenlty two input formats are supported
             if callable(parameter_prior):
-                trial_output = parameter_prior()
-                assert len(trial_output) == len(parameter_name)
-                current_priors.update({parameter_name, parameter_prior})
+                current_priors.update({parameter_name: parameter_prior})
             else:
                 rng_function_name = next(iter(parameter_prior))
                 rng_function = getattr(self._rng, rng_function_name)
@@ -114,27 +60,16 @@ class InjectionParametersGenerator:
                     {parameter_name: (lambda: rng_function(**rng_kwargs))}
                 )
 
-            prior_keys.extend(parameter_name)
-
         self._parameter_priors = current_priors
-        self._prior_keys = prior_keys
 
         logging.info(
             "Updated parameters: "
             + " ".join(["{}".format(key) for key in new_parameter_priors.keys()])
         )
 
-    def generate_injection_parameters(self, number_of_injections):
-        """The important thing"""
-
-        injection_parameters = []
-        for injection_index in number_of_injections:
-
-            this_parameters = {key: prior() for key, prior in self._parameter_priors}
-
-        injection_parameters.append(this_parameters)
-
-        self.injection_parameters = injection_parameters
+    def return_injection_parameters(self):
+        for parameter_name in self.parameter_priors:
+            pass
 
 
 class Writer(BaseSearchClass):
