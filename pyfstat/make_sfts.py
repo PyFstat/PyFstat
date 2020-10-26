@@ -98,11 +98,7 @@ class InjectionParametersGenerator:
         """Set priors to drawn parameter space points from """
 
         current_priors = getattr(self, "parameter_priors", {})
-
-        logging.info(
-            "Updating parameters: "
-            + " ".join(["{}".format(key) for key in new_parameter_priors.keys()])
-        )
+        prior_keys = []
 
         for parameter_name, parameter_prior in new_parameter_priors.items():
             # Currenlty two input formats are supported
@@ -118,20 +114,26 @@ class InjectionParametersGenerator:
                     {parameter_name, lambda: rng_function(**rng_kwargs)}
                 )
 
+            prior_keys.extend(parameter_name)
+
         self._parameter_priors = current_priors
+        self._prior_keys = prior_keys
+
+        logging.info(
+            "Updated parameters: "
+            + " ".join(["{}".format(key) for key in new_parameter_priors.keys()])
+        )
 
     def generate_injection_parameters(self, number_of_injections):
         """The important thing"""
-        injection_parameters = {}
 
-        for parameters_name, parameters_info in self.parameter_priors.items():
-            rng_name = next(iter(parameters_info))
-            rng_function = getattr(self._rng, rng_name)
-            rng_kwargs = parameters_info[rng_name]
+        injection_parameters = []
+        for injection_index in number_of_injections:
 
-            injection_parameters[parameters_name] = rng_function(
-                **rng_kwargs, size=number_of_injections
-            )
+            this_parameters = {key: prior() for key, prior in self._parameter_priors}
+
+        injection_parameters.append(this_parameters)
+
         self.injection_parameters = injection_parameters
 
 
