@@ -72,7 +72,7 @@ class InjectionParametersGenerator:
         return injection_parameters
 
     def __call__(self):
-        self.return_injection_parameters()
+        return self.return_injection_parameters()
 
 
 class Writer(BaseSearchClass):
