@@ -29,15 +29,14 @@ class InjectionParametersGenerator:
     them in the proper format.
     """
 
-    def __init__(self, label, outdir, parameter_priors):
+    def __init__(self, label=None, outdir=None, parameter_priors=None):
         """
         label: str
             Name of the output file. Will be suffixed with .parameters
         outdir: str
             Name of the output folder.
         parameter_priors: dict
-            Each key refers to one of the signal's parameters (following the PyFstat convetion),
-            while each value must contain a dictionary with its key as one of the available random
+            Each key refers to one of the signal's parameters (following the PyFstat convetion).
             number generators of numpy and its values as kwargs.
         """
         self.outdir = outdir
@@ -98,20 +97,28 @@ class InjectionParametersGenerator:
     def parameter_priors(self, new_parameter_priors):
         """Set priors to drawn parameter space points from """
 
-        # Check parameter_priors' format
-        for parameter in new_parameter_priors.keys():
-            if len(new_parameter_priors[parameter].keys()) != 1:
-                raise ValueError(
-                    "Some paramer ranges contain more than one"
-                    "random number generator per parameter."
-                    "Please, check your parameter ranges dict."
-                )
+        current_priors = getattr(self, "parameter_priors", {})
 
-        self._parameter_priors = new_parameter_priors
         logging.info(
             "Updating parameters: "
             + " ".join(["{}".format(key) for key in new_parameter_priors.keys()])
         )
+
+        for parameter_name, parameter_prior in new_parameter_priors.items():
+            # Currenlty two input formats are supported
+            if callable(parameter_prior):
+                trial_output = parameter_prior()
+                assert len(trial_output) == len(parameter_name)
+                current_priors.update({parameter_name, parameter_prior})
+            else:
+                rng_function_name = next(iter(parameter_prior))
+                rng_function = getattr(self._rng, rng_function_name)
+                rng_kwargs = parameter_prior[rng_function_name]
+                current_priors.update(
+                    {parameter_name, lambda: rng_function(**rng_kwargs)}
+                )
+
+        self._parameter_priors = current_priors
 
     def generate_injection_parameters(self, number_of_injections):
         """The important thing"""
