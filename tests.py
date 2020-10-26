@@ -114,6 +114,22 @@ class BaseForTestsWithData(BaseForTestsWithOutdir):
         self.search_ranges = {key: [getattr(self, key)] for key in self.search_keys}
 
 
+class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
+    label = "TestInjectionParametersGenerator"
+
+    def test_numpy_priors(self):
+        pass
+
+    def test_callable_priors(self):
+        pass
+
+    def test_multiple_output_priors(self):
+        pass
+
+    def test_output(self):
+        pass
+
+
 class TestWriter(BaseForTestsWithData):
     label = "TestWriter"
     writer_class_to_test = pyfstat.Writer
