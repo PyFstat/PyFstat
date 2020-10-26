@@ -40,45 +40,77 @@ class InjectionParametersGenerator:
             while each value must contain a dictionary with its key as one of the available random
             number generators of numpy and its values as kwargs.
         """
-        self.set_outdir(outdir)
-        self.set_label(label)
-        self.set_parameter_priors(parameter_priors)
+        self.outdir = outdir
+        self.label = label
+        self.parameter_priors = parameter_priors
 
         self._rng = np.random.default_rng()
 
         self.injection_parameters = None
 
-    def set_outdir(self, outdir):
-        """Create output folder"""
-        self.outdir = outdir + ("/" if outdir[-1] != "/" else "")
-        os.makedirs(outdir, exist_ok=True)
+    @property
+    def outdir(self):
+        return self._outdir
 
-    def set_label(self, label):
+    @property
+    def label(self):
+        return self._label
+
+    @property
+    def parameter_priors(self):
+        return self._parameter_priors
+
+    def check_out_files(self):
+        """
+        Check if output files already exist to prevent
+        accidental overwritting
+        """
+        pass
+
+    @outdir.setter
+    def outdir(self, new_outdir):
+        """Set output dir name.
+
+        Output dir(s) will not be created until needed.
+
+        Parameters
+        ----------
+        new_outdir: str
+            Output directory name. Trailing slash is irrelevant, as
+            os.path.join will be used to construct the actual filenames.
+        """
+        self._outdir = new_outdir
+
+    @label.setter
+    def label(self, new_label):
         """Set injection set's label
 
         A warning wil be raised if there exists a file in the same folder with
         the same name.
         """
-        self.label = label + ".mdfparameters"
+        self._label = new_label
         if os.path.isfile(self.outdir + self.label):
             raise FileExistsError(
                 "Injection file {} already exists in {}".format(self.label, self.outdir)
             )
 
-    def set_parameter_priors(self, parameter_priors):
-        """Check parameter_priors' format"""
-        for parameter in parameter_priors.keys():
-            if len(parameter_priors[parameter].keys()) != 1:
+    @parameter_priors.setter
+    def parameter_priors(self, new_parameter_priors):
+        """Set priors to drawn parameter space points from """
+
+        # Check parameter_priors' format
+        for parameter in new_parameter_priors.keys():
+            if len(new_parameter_priors[parameter].keys()) != 1:
                 raise ValueError(
                     "Some paramer ranges contain more than one"
                     "random number generator per parameter."
                     "Please, check your parameter ranges dict."
                 )
 
-        self.parameter_priors = parameter_priors
+        self._parameter_priors = new_parameter_priors
         logging.info(
             "Updating parameters: "
-            + " ".join(["{}".format(key) for key in parameter_priors.keys()])
+            + " ".join(["{}".format(key) for key in new_parameter_priors.keys()])
         )
 
     def generate_injection_parameters(self, number_of_injections):
