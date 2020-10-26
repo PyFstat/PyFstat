@@ -6,6 +6,7 @@ from .core import (
     SemiCoherentGlitchSearch,
 )
 from .make_sfts import (
+    InjectionParametersGenerator,
     Writer,
     BinaryModulatedWriter,
     GlitchWriter,

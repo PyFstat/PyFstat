@@ -118,16 +118,35 @@ class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
     label = "TestInjectionParametersGenerator"
 
     def test_numpy_priors(self):
-        pass
+        numpy_priors = {
+            "ParameterA": {"uniform": {"low": 0.0, "high": 0.0}},
+            "ParameterB": {"uniform": {"low": 1.0, "high": 1.0}},
+        }
+        self.InjectionGenerator = pyfstat.InjectionParametersGenerator(numpy_priors)
+
+        parameters = self.InjectionGenerator.return_injection_parameters()
+        print(parameters)
+        self.assertTrue(parameters["ParameterA"] == 0.0)
+        self.assertTrue(parameters["ParameterB"] == 1.0)
 
     def test_callable_priors(self):
-        pass
+        callable_priors = {"ParameterA": lambda: 0.0, "ParameterB": lambda: 1.0}
+        self.InjectionGenerator = pyfstat.InjectionParametersGenerator(callable_priors)
 
-    def test_multiple_output_priors(self):
-        pass
+        parameters = self.InjectionGenerator.return_injection_parameters()
+        self.assertTrue(parameters["ParameterA"] == 0.0)
+        self.assertTrue(parameters["ParameterB"] == 1.0)
 
-    def test_output(self):
-        pass
+    def test_rng_generation(self):
+        self.InjectionGenerator = pyfstat.InjectionParametersGenerator(
+            parameter_priors={"ParameterA": {"normal": {"loc": 0, "scale": 0.01}}}
+        )
+        samples = [
+            self.InjectionGenerator.return_injection_parameters()["ParameterA"]
+            for i in range(100)
+        ]
+        mean = np.mean(samples)
+        self.assertTrue(np.abs(mean) < 0.1)
 
 
 class TestWriter(BaseForTestsWithData):
