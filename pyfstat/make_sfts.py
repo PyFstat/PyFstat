@@ -23,6 +23,79 @@ class KeyboardInterruptError(Exception):
     pass
 
 
+class InjectionParametersGenerator:
+    """
+    Draw injection parameter samples from the specified priors and return
+    them in the proper format.
+    """
+
+    def __init__(self, label, outdir, parameter_priors):
+        """
+        label: str
+            Name of the output file. Will be suffixed with .parameters
+        outdir: str
+            Name of the output folder.
+        parameter_priors: dict
+            Each key refers to one of the signal's parameters (following the PyFstat convetion),
+            while each value must contain a dictionary with its key as one of the available random
+            number generators of numpy and its values as kwargs.
+        """
+        self.set_outdir(outdir)
+        self.set_label(label)
+        self.set_parameter_priors(parameter_priors)
+
+        self._rng = np.random.default_rng()
+
+        self.injection_parameters = None
+
+    def set_outdir(self, outdir):
+        """Create output folder"""
+        self.outdir = outdir + ("/" if outdir[-1] != "/" else "")
+        os.makedirs(outdir, exist_ok=True)
+
+    def set_label(self, label):
+        """Set injection set's label
+
+        A warning wil be raised if there exists a file in the same folder with
+        the same name.
+        """
+        self.label = label + ".mdfparameters"
+        if os.path.isfile(self.outdir + self.label):
+            raise FileExistsError(
+                "Injection file {} already exists in {}".format(self.label, self.outdir)
+            )
+
+    def set_parameter_priors(self, parameter_priors):
+        """Check parameter_priors' format"""
+        for parameter in parameter_priors.keys():
+            if len(parameter_priors[parameter].keys()) != 1:
+                raise ValueError(
+                    "Some paramer ranges contain more than one"
+                    "random number generator per parameter."
+                    "Please, check your parameter ranges dict."
+                )
+
+        self.parameter_priors = parameter_priors
+        logging.info(
+            "Updating parameters: "
+            + " ".join(["{}".format(key) for key in parameter_priors.keys()])
+        )
+
+    def generate_injection_parameters(self, number_of_injections):
+        """The important thing"""
+        injection_parameters = {}
+
+        for parameters_name, parameters_info in self.parameter_priors.items():
+            rng_name = next(iter(parameters_info))
+            rng_function = getattr(self._rng, rng_name)
+            rng_kwargs = parameters_info[rng_name]
+
+            injection_parameters[parameters_name] = rng_function(
+                **rng_kwargs, size=number_of_injections
+            )
+        self.injection_parameters = injection_parameters
+
+
 class Writer(BaseSearchClass):
     """ Instance object for generating SFTs """
 
