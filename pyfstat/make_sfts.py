@@ -38,8 +38,17 @@ class InjectionParametersGenerator:
         self.parameter_priors = parameter_priors
 
     @property
+    def seed(self):
+        return self._seed
+
+    @property
     def parameter_priors(self):
         return self._parameter_priors
+
+    @seed.setter
+    def seed(self, new_seed):
+        self._seed = new_seed
+        self._rng = np.random.default_rng(self._seed)
 
     @parameter_priors.setter
     def parameter_priors(self, new_parameter_priors):
