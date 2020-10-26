@@ -65,7 +65,11 @@ class InjectionParametersGenerator:
         Check if output files already exist to prevent
         accidental overwritting
         """
-        pass
+        # Provisional
+        if os.path.isfile(self.outdir + self.label):
+            raise FileExistsError(
+                "Injection file {} already exists in {}".format(self.label, self.outdir)
+            )
 
     @outdir.setter
     def outdir(self, new_outdir):
@@ -89,10 +93,6 @@ class InjectionParametersGenerator:
         the same name.
         """
         self._label = new_label
-        if os.path.isfile(self.outdir + self.label):
-            raise FileExistsError(
-                "Injection file {} already exists in {}".format(self.label, self.outdir)
-            )
 
     @parameter_priors.setter
     def parameter_priors(self, new_parameter_priors):
