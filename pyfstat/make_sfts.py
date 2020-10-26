@@ -34,8 +34,8 @@ class InjectionParametersGenerator:
         parameter_priors: dict
             Each key refers to one of the signal's parameters (following the PyFstat convetion).
         """
-        self.parameter_priors = parameter_priors
         self._rng = np.random.default_rng(seed)
+        self.parameter_priors = parameter_priors
 
     @property
     def parameter_priors(self):
