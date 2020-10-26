@@ -111,7 +111,7 @@ class InjectionParametersGenerator:
                 rng_function = getattr(self._rng, rng_function_name)
                 rng_kwargs = parameter_prior[rng_function_name]
                 current_priors.update(
-                    {parameter_name, lambda: rng_function(**rng_kwargs)}
+                    {parameter_name: (lambda: rng_function(**rng_kwargs))}
                 )
 
             prior_keys.extend(parameter_name)
