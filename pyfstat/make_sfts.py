@@ -60,12 +60,16 @@ class InjectionParametersGenerator:
         for parameter_name, parameter_prior in new_parameter_priors.items():
             if callable(parameter_prior):
                 current_priors.update({parameter_name: parameter_prior})
-            else:
+            elif isinstance(parameter_prior, dict):
                 rng_function_name = next(iter(parameter_prior))
                 rng_function = getattr(self._rng, rng_function_name)
                 rng_kwargs = parameter_prior[rng_function_name]
                 current_priors.update(
                     {parameter_name: functools.partial(rng_function, **rng_kwargs)}
+                )
+            else:  # Assume it is something to be returned as is
+                current_priors.update(
+                    {parameter_name: functools.partial(lambda x: x, parameter_prior)}
                 )
 
         self._parameter_priors = current_priors
