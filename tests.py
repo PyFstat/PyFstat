@@ -149,6 +149,23 @@ class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
         self.assertTrue(np.abs(mean) < 0.1)
 
 
+class TestAllSkyInjectionParametersGenerator(BaseForTestsWithOutdir):
+    label = "TestAllInjectionParametersGenerator"
+
+    def test_rng_generation(self):
+        self.InjectionGenerator = pyfstat.AllSkyInjectionParametersGenerator()
+        ra_samples = [
+            self.InjectionGenerator.return_injection_parameters()["Alpha"] / np.pi - 1.0
+            for i in range(500)
+        ]
+        dec_samples = [
+            self.InjectionGenerator.return_injection_parameters()["Delta"] * 2.0 / np.pi
+            for i in range(500)
+        ]
+        self.assertTrue(np.abs(np.mean(ra_samples)) < 0.1)
+        self.assertTrue(np.abs(np.mean(dec_samples)) < 0.1)
+
+
 class TestWriter(BaseForTestsWithData):
     label = "TestWriter"
     writer_class_to_test = pyfstat.Writer

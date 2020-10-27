@@ -36,7 +36,8 @@ class InjectionParametersGenerator:
             Each key refers to one of the signal's parameters (following the PyFstat convetion).
         """
         self._rng = np.random.default_rng(seed)
-        self.parameter_priors = parameter_priors
+        if parameter_priors is not None:
+            self.parameter_priors = parameter_priors
 
     @property
     def seed(self):
@@ -83,6 +84,36 @@ class InjectionParametersGenerator:
 
     def __call__(self):
         return self.return_injection_parameters()
+
+
+class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
+    """Like InjectionParametersGenerator, but with hardcoded priors to perform
+    all sky searches. It assumes 1) PyFstat notation and 2) Ecuatorial coordinates"""
+
+    restricted_priors = {
+        "Alpha": lambda: np.random.uniform(low=0.0, high=2 * np.pi),
+        "Delta": lambda: 2 * np.arcsin(np.random.uniform(low=-1.0, high=1.0)),
+    }
+
+    def __init__(self, parameter_priors=None, seed=None):
+        InjectionParametersGenerator.parameter_priors.fset(self, self.restricted_priors)
+        super().__init__(parameter_priors, seed)
+
+    def _check_if_updating_sky_priors(self, new_parameter_priors):
+        if any(
+            restricted_key in new_parameter_priors
+            for restricted_key in self.restricted_priors.keys()
+        ):
+            raise ValueError(
+                "New parameter priors would overwrite sky priors (Alpha, Delta)."
+                "This class is explicitiely coded to prevent that from happening. Please, restore "
+                "to InjectionParametersGenerator if that's really what you want to do"
+            )
+
+    @InjectionParametersGenerator.parameter_priors.setter
+    def parameter_priors(self, new_parameter_priors):
+        self._check_if_updating_sky_priors(new_parameter_priors)
+        InjectionParametersGenerator.parameter_priors.fset(self, new_parameter_priors)
 
 
 class Writer(BaseSearchClass):
