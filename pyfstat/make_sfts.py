@@ -2,6 +2,7 @@
 
 
 import numpy as np
+import functools
 import logging
 import os
 import glob
@@ -52,7 +53,7 @@ class InjectionParametersGenerator:
 
     @parameter_priors.setter
     def parameter_priors(self, new_parameter_priors):
-        """Set priors to drawn parameter space points from """
+        """Set priors to draw parameter space points from """
 
         current_priors = getattr(self, "parameter_priors", {})
         for parameter_name, parameter_prior in new_parameter_priors.items():
@@ -63,7 +64,7 @@ class InjectionParametersGenerator:
                 rng_function = getattr(self._rng, rng_function_name)
                 rng_kwargs = parameter_prior[rng_function_name]
                 current_priors.update(
-                    {parameter_name: (lambda: rng_function(**rng_kwargs))}
+                    {parameter_name: functools.partial(rng_function, **rng_kwargs)}
                 )
 
         self._parameter_priors = current_priors
@@ -76,7 +77,7 @@ class InjectionParametersGenerator:
     def return_injection_parameters(self):
         injection_parameters = {
             parameter_name: parameter_prior()
-            for parameter_name, parameter_prior in self.parameter_priors.items()
+            for parameter_name, parameter_prior in self._parameter_priors.items()
         }
         return injection_parameters
 
