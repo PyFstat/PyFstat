@@ -38,7 +38,7 @@ class InjectionParametersGenerator:
                 1) Callable without required arguments
                     {"ParameterA": np.random.uniform}
                 2) Dict containing numpy.random distribution as key and kwargs in a dict as value
-                    {"ParameterA": {"uniform": {low: 0, high:1}}}
+                    {"ParameterA": {"uniform": {"low": 0, "high":1}}}
                 3) Constant value to be returned as is
                     {"ParameterA": 1.0}
         seed:
