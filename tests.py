@@ -123,26 +123,26 @@ class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
             "ParameterA": {"uniform": {"low": 0.0, "high": 0.0}},
             "ParameterB": {"uniform": {"low": 1.0, "high": 1.0}},
         }
-        self.InjectionGenerator = self.class_to_test(numpy_priors)
+        InjectionGenerator = self.class_to_test(numpy_priors)
 
-        parameters = self.InjectionGenerator.draw()
+        parameters = InjectionGenerator.draw()
         print(parameters)
         self.assertTrue(parameters["ParameterA"] == 0.0)
         self.assertTrue(parameters["ParameterB"] == 1.0)
 
     def test_callable_priors(self):
         callable_priors = {"ParameterA": lambda: 0.0, "ParameterB": lambda: 1.0}
-        self.InjectionGenerator = self.class_to_test(callable_priors)
+        InjectionGenerator = self.class_to_test(callable_priors)
 
-        parameters = self.InjectionGenerator.draw()
+        parameters = InjectionGenerator.draw()
         self.assertTrue(parameters["ParameterA"] == 0.0)
         self.assertTrue(parameters["ParameterB"] == 1.0)
 
     def test_constant_priors(self):
         constant_priors = {"ParameterA": 0.0, "ParameterB": 1.0}
-        self.InjectionGenerator = self.class_to_test(constant_priors)
+        InjectionGenerator = self.class_to_test(constant_priors)
 
-        parameters = self.InjectionGenerator.draw()
+        parameters = InjectionGenerator.draw()
         self.assertTrue(parameters["ParameterA"] == 0.0)
         self.assertTrue(parameters["ParameterB"] == 1.0)
 
@@ -151,17 +151,17 @@ class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
 
         samples = []
         for i in range(2):
-            self.InjectionGenerator = self.class_to_test(
+            InjectionGenerator = self.class_to_test(
                 priors={"ParameterA": {"normal": {"loc": 0, "scale": 1}}}, seed=a_seed
             )
-            samples.append(self.InjectionGenerator.draw())
+            samples.append(InjectionGenerator.draw())
         self.assertTrue(samples[0]["ParameterA"] == samples[1]["ParameterA"])
 
     def test_rng_generation(self):
-        self.InjectionGenerator = self.class_to_test(
+        InjectionGenerator = self.class_to_test(
             priors={"ParameterA": {"normal": {"loc": 0, "scale": 0.01}}}
         )
-        samples = [self.InjectionGenerator.draw()["ParameterA"] for i in range(100)]
+        samples = [InjectionGenerator.draw()["ParameterA"] for i in range(100)]
         mean = np.mean(samples)
         self.assertTrue(np.abs(mean) < 0.1)
 
@@ -176,18 +176,18 @@ class TestAllSkyInjectionParametersGenerator(TestInjectionParametersGenerator):
 
         samples = []
         for i in range(2):
-            self.InjectionGenerator = self.class_to_test(seed=a_seed)
-            samples.append(self.InjectionGenerator.draw())
+            InjectionGenerator = self.class_to_test(seed=a_seed)
+            samples.append(InjectionGenerator.draw())
         self.assertTrue(samples[0]["Alpha"] == samples[1]["Alpha"])
         self.assertTrue(samples[0]["Delta"] == samples[1]["Delta"])
 
     def test_rng_generation(self):
-        self.InjectionGenerator = self.class_to_test()
+        InjectionGenerator = self.class_to_test()
         ra_samples = [
-            self.InjectionGenerator.draw()["Alpha"] / np.pi - 1.0 for i in range(500)
+            InjectionGenerator.draw()["Alpha"] / np.pi - 1.0 for i in range(500)
         ]
         dec_samples = [
-            self.InjectionGenerator.draw()["Delta"] * 2.0 / np.pi for i in range(500)
+            InjectionGenerator.draw()["Delta"] * 2.0 / np.pi for i in range(500)
         ]
         self.assertTrue(np.abs(np.mean(ra_samples)) < 0.1)
         self.assertTrue(np.abs(np.mean(dec_samples)) < 0.1)
