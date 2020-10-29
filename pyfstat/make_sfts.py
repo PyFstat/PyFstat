@@ -93,7 +93,7 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
         self._update_priors(self.restricted_priors)
 
     def set_seed(self, seed):
-        super().set_seed
+        super().set_seed(seed)
         self.restricted_priors = {
             # This whole shenanigan is required because numpy has no arcsin distro
             "Alpha": lambda: self._rng.uniform(low=0.0, high=2 * np.pi),
@@ -113,7 +113,7 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
 
     def set_priors(self, new_priors):
         self._check_if_updating_sky_priors(new_priors)
-        super().set_priors(self, {**new_priors, **self.restricted_priors})
+        super().set_priors({**new_priors, **self.restricted_priors})
 
 
 class Writer(BaseSearchClass):
