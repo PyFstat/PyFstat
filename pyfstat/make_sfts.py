@@ -30,34 +30,43 @@ class InjectionParametersGenerator:
     them in the proper format.
     """
 
-    def __init__(self, parameter_priors=None, seed=None):
+    def __init__(self, priors=None, seed=None):
         """
-        parameter_priors: dict
-            Each key refers to one of the signal's parameters (following the PyFstat convetion).
+        priors: dict
+            Each key refers to one of the signal's parameters (following the PyFstat convention).
+            Priors can be given as values in three formats (by order of evaluation):
+                1) Callable without required arguments
+                    {"ParameterA": np.random.uniform}
+                2) Dict containing numpy.random distribution as key and kwargs in a dict as value
+                    {"ParameterA": {"uniform": {low: 0, high:1}}}
+                3) Constant value to be returned as is
+                    {"ParameterA": 1.0}
+        seed:
+            `seed` argument to be feed to numpy.random.default_rng.
         """
         self._rng = np.random.default_rng(seed)
-        if parameter_priors is not None:
-            self.parameter_priors = parameter_priors
+        if priors is not None:
+            self.priors = priors
 
     @property
     def seed(self):
         return self._seed
 
     @property
-    def parameter_priors(self):
-        return self._parameter_priors
+    def priors(self):
+        return self._priors
 
     @seed.setter
     def seed(self, new_seed):
         self._seed = new_seed
         self._rng = np.random.default_rng(self._seed)
 
-    @parameter_priors.setter
-    def parameter_priors(self, new_parameter_priors):
+    @priors.setter
+    def priors(self, new_priors):
         """Set priors to draw parameter space points from """
 
-        current_priors = getattr(self, "parameter_priors", {})
-        for parameter_name, parameter_prior in new_parameter_priors.items():
+        current_priors = getattr(self, "priors", {})
+        for parameter_name, parameter_prior in new_priors.items():
             if callable(parameter_prior):
                 current_priors.update({parameter_name: parameter_prior})
             elif isinstance(parameter_prior, dict):
@@ -72,17 +81,17 @@ class InjectionParametersGenerator:
                     {parameter_name: functools.partial(lambda x: x, parameter_prior)}
                 )
 
-        self._parameter_priors = current_priors
+        self._priors = current_priors
 
         logging.info(
             "Updated parameters: "
-            + " ".join(["{}".format(key) for key in new_parameter_priors.keys()])
+            + " ".join(["{}".format(key) for key in new_priors.keys()])
         )
 
     def return_injection_parameters(self):
         injection_parameters = {
             parameter_name: parameter_prior()
-            for parameter_name, parameter_prior in self._parameter_priors.items()
+            for parameter_name, parameter_prior in self._priors.items()
         }
         return injection_parameters
 
@@ -99,13 +108,13 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
         "Delta": lambda: 2 * np.arcsin(np.random.uniform(low=-1.0, high=1.0)),
     }
 
-    def __init__(self, parameter_priors=None, seed=None):
-        InjectionParametersGenerator.parameter_priors.fset(self, self.restricted_priors)
-        super().__init__(parameter_priors, seed)
+    def __init__(self, priors=None, seed=None):
+        InjectionParametersGenerator.priors.fset(self, self.restricted_priors)
+        super().__init__(priors, seed)
 
-    def _check_if_updating_sky_priors(self, new_parameter_priors):
+    def _check_if_updating_sky_priors(self, new_priors):
         if any(
-            restricted_key in new_parameter_priors
+            restricted_key in new_priors
             for restricted_key in self.restricted_priors.keys()
         ):
             raise ValueError(
@@ -114,10 +123,10 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
                 "to InjectionParametersGenerator if that's really what you want to do"
             )
 
-    @InjectionParametersGenerator.parameter_priors.setter
-    def parameter_priors(self, new_parameter_priors):
-        self._check_if_updating_sky_priors(new_parameter_priors)
-        InjectionParametersGenerator.parameter_priors.fset(self, new_parameter_priors)
+    @InjectionParametersGenerator.priors.setter
+    def priors(self, new_priors):
+        self._check_if_updating_sky_priors(new_priors)
+        InjectionParametersGenerator.priors.fset(self, new_priors)
 
 
 class Writer(BaseSearchClass):
