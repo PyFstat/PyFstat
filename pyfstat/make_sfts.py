@@ -101,7 +101,7 @@ class InjectionParametersGenerator:
 
 class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
     """Like InjectionParametersGenerator, but with hardcoded priors to perform
-    all sky searches. It assumes 1) PyFstat notation and 2) Ecuatorial coordinates"""
+    all sky searches. It assumes 1) PyFstat notation and 2) Equatorial coordinates"""
 
     restricted_priors = {
         "Alpha": lambda: np.random.uniform(low=0.0, high=2 * np.pi),
@@ -119,7 +119,7 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
         ):
             raise ValueError(
                 "New parameter priors would overwrite sky priors (Alpha, Delta)."
-                "This class is explicitiely coded to prevent that from happening. Please, restore "
+                "This class is explicitly coded to prevent that from happening. Please, restore "
                 "to InjectionParametersGenerator if that's really what you want to do"
             )
 
