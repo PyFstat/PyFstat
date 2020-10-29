@@ -126,7 +126,6 @@ class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
         InjectionGenerator = self.class_to_test(numpy_priors)
 
         parameters = InjectionGenerator.draw()
-        print(parameters)
         self.assertTrue(parameters["ParameterA"] == 0.0)
         self.assertTrue(parameters["ParameterB"] == 1.0)
 
