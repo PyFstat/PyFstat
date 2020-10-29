@@ -49,6 +49,13 @@ class InjectionParametersGenerator:
 
     def set_priors(self, new_priors):
         """Set priors to draw parameter space points from """
+        if type(new_priors) is not dict:
+            raise ValueError(
+                "new_priors is not a dict type.\nPlease, check "
+                "this class' docstring to learn about the expected format: "
+                f"{self.__init__.__doc__}"
+            )
+
         self.priors = {}
         self._update_priors(new_priors)
 
