@@ -103,17 +103,18 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
     """Like InjectionParametersGenerator, but with hardcoded priors to perform
     all sky searches. It assumes 1) PyFstat notation and 2) Equatorial coordinates"""
 
-    restricted_priors = {
-        "Alpha": lambda: np.random.uniform(low=0.0, high=2 * np.pi),
-        "Delta": lambda: 2 * np.arcsin(np.random.uniform(low=-1.0, high=1.0)),
-    }
-
     def __init__(self, priors=None, seed=None):
+
+        self.restricted_priors_set = False
+        super().__init__(None, seed)
+        self.restricted_priors = {
+            "Alpha": lambda: self._rng.uniform(low=0.0, high=2 * np.pi),
+            "Delta": lambda: 2 * np.arcsin(self._rng.uniform(low=-1.0, high=1.0)),
+        }
         InjectionParametersGenerator.priors.fset(self, self.restricted_priors)
-        super().__init__(priors, seed)
 
     def _check_if_updating_sky_priors(self, new_priors):
-        if any(
+        if self.restricted_priors_set and any(
             restricted_key in new_priors
             for restricted_key in self.restricted_priors.keys()
         ):

@@ -171,6 +171,16 @@ class TestAllSkyInjectionParametersGenerator(TestInjectionParametersGenerator):
 
     class_to_test = pyfstat.AllSkyInjectionParametersGenerator
 
+    def test_rng_seed(self):
+        a_seed = 420
+
+        samples = []
+        for i in range(2):
+            self.InjectionGenerator = self.class_to_test(seed=a_seed)
+            samples.append(self.InjectionGenerator.draw())
+        self.assertTrue(samples[0]["Alpha"] == samples[1]["Alpha"])
+        self.assertTrue(samples[0]["Delta"] == samples[1]["Delta"])
+
     def test_rng_generation(self):
         self.InjectionGenerator = self.class_to_test()
         ra_samples = [
