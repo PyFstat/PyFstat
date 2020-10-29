@@ -45,7 +45,7 @@ class InjectionParametersGenerator:
             `seed` argument to be feed to numpy.random.default_rng.
         """
         self.set_seed(seed)
-        self.priors = priors or {}
+        self.set_priors(priors or {})
 
     def set_seed(self, seed):
         self.seed = seed
