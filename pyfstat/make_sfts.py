@@ -51,6 +51,11 @@ class InjectionParametersGenerator:
         self.seed = seed
         self._rng = np.random.default_rng(self.seed)
 
+    def set_priors(self, new_priors):
+        """Set priors to draw parameter space points from """
+        self.priors = {}
+        self._update_priors(new_priors)
+
     def _update_priors(self, new_priors):
         for parameter_name, parameter_prior in new_priors.items():
             if callable(parameter_prior):
@@ -66,15 +71,6 @@ class InjectionParametersGenerator:
                 self.priors[parameter_name] = functools.partial(
                     lambda x: x, parameter_prior
                 )
-
-    def set_priors(self, new_priors):
-        """Set priors to draw parameter space points from """
-        self.priors = {}
-        self._update_priors(new_priors)
-        logging.info(
-            "Updated parameters: "
-            + " ".join(["{}".format(key) for key in new_priors.keys()])
-        )
 
     def draw(self):
         injection_parameters = {
@@ -92,33 +88,32 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
     all sky searches. It assumes 1) PyFstat notation and 2) Equatorial coordinates"""
 
     def __init__(self, priors=None, seed=None):
+        super().__init__(None, seed)
+        self.set_priors(priors or {})
+        self._update_priors(self.restricted_priors)
 
+    def set_seed(self, seed):
+        super().set_seed
         self.restricted_priors = {
+            # This whole shenanigan is required because numpy has no arcsin distro
             "Alpha": lambda: self._rng.uniform(low=0.0, high=2 * np.pi),
             "Delta": lambda: 2 * np.arcsin(self._rng.uniform(low=-1.0, high=1.0)),
         }
-        self.restricted_priors_set = False
-
-        super().__init__(None, seed)
-        self.priors = (priors or {}).copy()
-        self.priors.update(self.restricted_priors)
-        self.restricted_priors_set = True
 
     def _check_if_updating_sky_priors(self, new_priors):
-        if self.restricted_priors_set and any(
+        if any(
             restricted_key in new_priors
             for restricted_key in self.restricted_priors.keys()
         ):
-            raise ValueError(
-                "New parameter priors would overwrite sky priors (Alpha, Delta)."
+            logging.warning(
+                "Ignoring specified sky priors (Alpha, Delta)."
                 "This class is explicitly coded to prevent that from happening. Please, restore "
-                "to InjectionParametersGenerator if that's really what you want to do"
+                "to InjectionParametersGenerator if that's really what you want to do."
             )
 
-    @InjectionParametersGenerator.priors.setter
-    def priors(self, new_priors):
+    def set_priors(self, new_priors):
         self._check_if_updating_sky_priors(new_priors)
-        InjectionParametersGenerator.priors.fset(self, new_priors)
+        super().set_priors(self, {**new_priors, **self.restricted_priors})
 
 
 class Writer(BaseSearchClass):
