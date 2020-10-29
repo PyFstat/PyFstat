@@ -75,7 +75,7 @@ class InjectionParametersGenerator:
     def draw(self):
         injection_parameters = {
             parameter_name: parameter_prior()
-            for parameter_name, parameter_prior in self._priors.items()
+            for parameter_name, parameter_prior in self.priors.items()
         }
         return injection_parameters
 
