@@ -105,13 +105,16 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
 
     def __init__(self, priors=None, seed=None):
 
-        self.restricted_priors_set = False
-        super().__init__(None, seed)
         self.restricted_priors = {
             "Alpha": lambda: self._rng.uniform(low=0.0, high=2 * np.pi),
             "Delta": lambda: 2 * np.arcsin(self._rng.uniform(low=-1.0, high=1.0)),
         }
-        InjectionParametersGenerator.priors.fset(self, self.restricted_priors)
+        self.restricted_priors_set = False
+
+        super().__init__(None, seed)
+        self.priors = (priors or {}).copy()
+        self.priors.update(self.restricted_priors)
+        self.restricted_priors_set = True
 
     def _check_if_updating_sky_priors(self, new_priors):
         if self.restricted_priors_set and any(
