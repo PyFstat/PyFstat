@@ -124,7 +124,7 @@ class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
         }
         self.InjectionGenerator = pyfstat.InjectionParametersGenerator(numpy_priors)
 
-        parameters = self.InjectionGenerator.return_injection_parameters()
+        parameters = self.InjectionGenerator.draw()
         print(parameters)
         self.assertTrue(parameters["ParameterA"] == 0.0)
         self.assertTrue(parameters["ParameterB"] == 1.0)
@@ -133,7 +133,7 @@ class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
         callable_priors = {"ParameterA": lambda: 0.0, "ParameterB": lambda: 1.0}
         self.InjectionGenerator = pyfstat.InjectionParametersGenerator(callable_priors)
 
-        parameters = self.InjectionGenerator.return_injection_parameters()
+        parameters = self.InjectionGenerator.draw()
         self.assertTrue(parameters["ParameterA"] == 0.0)
         self.assertTrue(parameters["ParameterB"] == 1.0)
 
@@ -141,18 +141,23 @@ class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
         constant_priors = {"ParameterA": 0.0, "ParameterB": 1.0}
         self.InjectionGenerator = pyfstat.InjectionParametersGenerator(constant_priors)
 
-        parameters = self.InjectionGenerator.return_injection_parameters()
+        parameters = self.InjectionGenerator.draw()
         self.assertTrue(parameters["ParameterA"] == 0.0)
         self.assertTrue(parameters["ParameterB"] == 1.0)
+
+    def test_rng_key(self):
+        self.InjectionGenerator = pyfstat.InjectionParametersGenerator(
+            priors={"ParameterA": {"normal": {"loc": 0, "scale": 0.01}}},
+        )
+        samples = [self.InjectionGenerator.draw()["ParameterA"] for i in range(100)]
+        mean = np.mean(samples)
+        self.assertTrue(np.abs(mean) < 0.1)
 
     def test_rng_generation(self):
         self.InjectionGenerator = pyfstat.InjectionParametersGenerator(
             priors={"ParameterA": {"normal": {"loc": 0, "scale": 0.01}}}
         )
-        samples = [
-            self.InjectionGenerator.return_injection_parameters()["ParameterA"]
-            for i in range(100)
-        ]
+        samples = [self.InjectionGenerator.draw()["ParameterA"] for i in range(100)]
         mean = np.mean(samples)
         self.assertTrue(np.abs(mean) < 0.1)
 
@@ -163,12 +168,10 @@ class TestAllSkyInjectionParametersGenerator(BaseForTestsWithOutdir):
     def test_rng_generation(self):
         self.InjectionGenerator = pyfstat.AllSkyInjectionParametersGenerator()
         ra_samples = [
-            self.InjectionGenerator.return_injection_parameters()["Alpha"] / np.pi - 1.0
-            for i in range(500)
+            self.InjectionGenerator.draw()["Alpha"] / np.pi - 1.0 for i in range(500)
         ]
         dec_samples = [
-            self.InjectionGenerator.return_injection_parameters()["Delta"] * 2.0 / np.pi
-            for i in range(500)
+            self.InjectionGenerator.draw()["Delta"] * 2.0 / np.pi for i in range(500)
         ]
         self.assertTrue(np.abs(np.mean(ra_samples)) < 0.1)
         self.assertTrue(np.abs(np.mean(dec_samples)) < 0.1)

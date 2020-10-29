@@ -88,7 +88,7 @@ class InjectionParametersGenerator:
             + " ".join(["{}".format(key) for key in new_priors.keys()])
         )
 
-    def return_injection_parameters(self):
+    def draw(self):
         injection_parameters = {
             parameter_name: parameter_prior()
             for parameter_name, parameter_prior in self._priors.items()
@@ -96,7 +96,7 @@ class InjectionParametersGenerator:
         return injection_parameters
 
     def __call__(self):
-        return self.return_injection_parameters()
+        return self.draw()
 
 
 class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
