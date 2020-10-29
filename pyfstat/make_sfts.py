@@ -44,9 +44,9 @@ class InjectionParametersGenerator:
         seed:
             `seed` argument to be feed to numpy.random.default_rng.
         """
-        self._rng = np.random.default_rng(seed)
-        if priors is not None:
-            self.priors = priors
+        self.seed = seed
+        self._rng = np.random.default_rng(self.seed)
+        self.priors = priors or {}
 
     @property
     def seed(self):
