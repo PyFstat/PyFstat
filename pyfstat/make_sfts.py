@@ -44,45 +44,33 @@ class InjectionParametersGenerator:
         seed:
             `seed` argument to be feed to numpy.random.default_rng.
         """
-        self.seed = seed
-        self._rng = np.random.default_rng(self.seed)
+        self.set_seed(seed)
         self.priors = priors or {}
 
-    @property
-    def seed(self):
-        return self._seed
+    def set_seed(self, seed):
+        self.seed = seed
+        self._rng = np.random.default_rng(self.seed)
 
-    @property
-    def priors(self):
-        return self._priors
-
-    @seed.setter
-    def seed(self, new_seed):
-        self._seed = new_seed
-        self._rng = np.random.default_rng(self._seed)
-
-    @priors.setter
-    def priors(self, new_priors):
-        """Set priors to draw parameter space points from """
-
-        current_priors = getattr(self, "priors", {})
+    def _update_priors(self, new_priors):
         for parameter_name, parameter_prior in new_priors.items():
             if callable(parameter_prior):
-                current_priors[parameter_name] = parameter_prior
+                self.priors[parameter_name] = parameter_prior
             elif isinstance(parameter_prior, dict):
                 rng_function_name = next(iter(parameter_prior))
                 rng_function = getattr(self._rng, rng_function_name)
                 rng_kwargs = parameter_prior[rng_function_name]
-                current_priors[parameter_name] = functools.partial(
+                self.priors[parameter_name] = functools.partial(
                     rng_function, **rng_kwargs
                 )
             else:  # Assume it is something to be returned as is
-                current_priors[parameter_name] = functools.partial(
+                self.priors[parameter_name] = functools.partial(
                     lambda x: x, parameter_prior
                 )
 
-        self._priors = current_priors
-
+    def set_priors(self, new_priors):
+        """Set priors to draw parameter space points from """
+        self.priors = {}
+        self._update_priors(new_priors)
         logging.info(
             "Updated parameters: "
             + " ".join(["{}".format(key) for key in new_priors.keys()])
