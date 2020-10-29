@@ -147,7 +147,7 @@ class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
 
     def test_rng_generation(self):
         self.InjectionGenerator = pyfstat.InjectionParametersGenerator(
-            parameter_priors={"ParameterA": {"normal": {"loc": 0, "scale": 0.01}}}
+            priors={"ParameterA": {"normal": {"loc": 0, "scale": 0.01}}}
         )
         samples = [
             self.InjectionGenerator.return_injection_parameters()["ParameterA"]
