@@ -47,14 +47,14 @@ class InjectionParametersGenerator:
         self.set_seed(seed)
         self.set_priors(priors or {})
 
-    def set_seed(self, seed):
-        self.seed = seed
-        self._rng = np.random.default_rng(self.seed)
-
     def set_priors(self, new_priors):
         """Set priors to draw parameter space points from """
         self.priors = {}
         self._update_priors(new_priors)
+
+    def set_seed(self, seed):
+        self.seed = seed
+        self._rng = np.random.default_rng(self.seed)
 
     def _update_priors(self, new_priors):
         for parameter_name, parameter_prior in new_priors.items():
@@ -87,15 +87,14 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
     """Like InjectionParametersGenerator, but with hardcoded priors to perform
     all sky searches. It assumes 1) PyFstat notation and 2) Equatorial coordinates"""
 
-    def __init__(self, priors=None, seed=None):
-        super().__init__(None, seed)
-        self.set_priors(priors or {})
-        self._update_priors(self.restricted_priors)
+    def set_priors(self, new_priors):
+        self._check_if_updating_sky_priors(new_priors)
+        super().set_priors({**new_priors, **self.restricted_priors})
 
     def set_seed(self, seed):
         super().set_seed(seed)
         self.restricted_priors = {
-            # This whole shenanigan is required because numpy has no arcsin distro
+            # This is required because numpy has no arcsin distro
             "Alpha": lambda: self._rng.uniform(low=0.0, high=2 * np.pi),
             "Delta": lambda: 2 * np.arcsin(self._rng.uniform(low=-1.0, high=1.0)),
         }
@@ -110,10 +109,6 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
                 "This class is explicitly coded to prevent that from happening. Please, restore "
                 "to InjectionParametersGenerator if that's really what you want to do."
             )
-
-    def set_priors(self, new_priors):
-        self._check_if_updating_sky_priors(new_priors)
-        super().set_priors({**new_priors, **self.restricted_priors})
 
 
 class Writer(BaseSearchClass):
