@@ -145,13 +145,16 @@ class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
         self.assertTrue(parameters["ParameterA"] == 0.0)
         self.assertTrue(parameters["ParameterB"] == 1.0)
 
-    def test_rng_key(self):
-        self.InjectionGenerator = pyfstat.InjectionParametersGenerator(
-            priors={"ParameterA": {"normal": {"loc": 0, "scale": 0.01}}},
-        )
-        samples = [self.InjectionGenerator.draw()["ParameterA"] for i in range(100)]
-        mean = np.mean(samples)
-        self.assertTrue(np.abs(mean) < 0.1)
+    def test_rng_seed(self):
+        a_seed = 420
+
+        samples = []
+        for i in range(2):
+            self.InjectionGenerator = pyfstat.InjectionParametersGenerator(
+                priors={"ParameterA": {"normal": {"loc": 0, "scale": 1}}}, seed=a_seed
+            )
+            samples.append(self.InjectionGenerator.draw())
+        self.assertTrue(samples[0]["ParameterA"] == samples[1]["ParameterA"])
 
     def test_rng_generation(self):
         self.InjectionGenerator = pyfstat.InjectionParametersGenerator(
