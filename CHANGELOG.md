@@ -1,3 +1,19 @@
+## 1.9.0 [30/10/2020]
+
+ - new class `InjectionParametersGenerator`
+   - draws dicts of parameters from arbitrary priors
+   - can then be directly passed e.g. to Writer as `**params`
+   - and derived `AllSkyInjectionParametersGenerator`
+ - deprecate various grid-based specialist classes:
+   - these were all more or less unmaintained since a long time
+     - SliceGridSearch
+     - GridUniformPriorSearch
+     - SlidingWindow
+     - FrequencySlidingWindow
+     - EarthTest
+     - DMoff_NO_SPIN
+   - will be removed in next version unless users speak up
+
 ## 1.8.0 [13/10/2020]
 
  - big overhaul of cumulative twoF calculations and plotting
