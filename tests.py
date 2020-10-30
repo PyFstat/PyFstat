@@ -904,7 +904,6 @@ class TestComputeFstatNoNoise(BaseForTestsWithData):
     def test_run_computefstatistic_single_point_no_noise(self):
 
         predicted_FS = self.Writer.predict_fstat(assumeSqrtSX=1)
-        shutil.copy(self.Writer.sftfilepath, ".")
         search = pyfstat.ComputeFstat(
             tref=self.Writer.tref,
             assumeSqrtSX=1,
