@@ -20,6 +20,7 @@ from pyfstat.core import (
     SemiCoherentSearch,
     tqdm,
     args,
+    DeprecatedClass,
 )
 import lalpulsar
 import lal
@@ -853,7 +854,7 @@ class TransientGridSearch(GridSearch):
             self.search.__del__()
 
 
-class SliceGridSearch(GridSearch):
+class SliceGridSearch(GridSearch, DeprecatedClass):
     """ Slice gridded search using ComputeFstat """
 
     @helper_functions.initializer
@@ -1026,7 +1027,7 @@ class SliceGridSearch(GridSearch):
             return fig, axes
 
 
-class GridUniformPriorSearch:
+class GridUniformPriorSearch(DeprecatedClass):
     @helper_functions.initializer
     def __init__(
         self,
@@ -1186,7 +1187,7 @@ class GridGlitchSearch(GridSearch):
         return fmt
 
 
-class SlidingWindow(GridSearch):
+class SlidingWindow(GridSearch, DeprecatedClass):
     @helper_functions.initializer
     def __init__(
         self,
@@ -1324,7 +1325,7 @@ class SlidingWindow(GridSearch):
             return ax
 
 
-class FrequencySlidingWindow(GridSearch):
+class FrequencySlidingWindow(GridSearch, DeprecatedClass):
     """ A sliding-window search over the Frequency """
 
     @helper_functions.initializer
@@ -1485,7 +1486,7 @@ class FrequencySlidingWindow(GridSearch):
             return ax
 
 
-class EarthTest(GridSearch):
+class EarthTest(GridSearch, DeprecatedClass):
     """ """
 
     tex_labels = {
@@ -1738,7 +1739,7 @@ class EarthTest(GridSearch):
         plt.close(fig)
 
 
-class DMoff_NO_SPIN(GridSearch):
+class DMoff_NO_SPIN(GridSearch, DeprecatedClass):
     """ DMoff test using SSBPREC_NO_SPIN """
 
     @helper_functions.initializer
