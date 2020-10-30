@@ -103,7 +103,7 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
         self.restricted_priors = {
             # This is required because numpy has no arcsin distro
             "Alpha": lambda: self._rng.uniform(low=0.0, high=2 * np.pi),
-            "Delta": lambda: 2 * np.arcsin(self._rng.uniform(low=-1.0, high=1.0)),
+            "Delta": lambda: np.arcsin(self._rng.uniform(low=-1.0, high=1.0)),
         }
 
     def _check_if_updating_sky_priors(self, new_priors):
