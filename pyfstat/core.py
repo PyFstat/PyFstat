@@ -1742,3 +1742,30 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         )
 
         return twoFsegA + twoFsegB
+
+
+class DeprecatedClass:
+    def __new__(cls, *args, **kwargs):
+        logging.warning(
+            f"The {cls.__name__} class is no longer maintained"
+            " and will be removed in an upcoming release of PyFstat!"
+            " If you rely on this class and/or are interested in taking over"
+            " maintenance, please report an issue at:"
+            " https://github.com/PyFstat/PyFstat/issues",
+        )
+        return super().__new__(cls, *args, **kwargs)
+
+
+class DefunctClass:
+    last_supported_version = None
+    pr_welcome = True
+
+    def __new__(cls, *args, **kwargs):
+        defunct_message = f"The {cls.__name__} class is no longer included in PyFstat!"
+        if cls.last_supported_version:
+            defunct_message += (
+                f" Last supported version was {cls.last_supported_version}."
+            )
+        if cls.pr_welcome:
+            defunct_message += " Pull requests to reinstate the class are welcome."
+        raise NotImplementedError(defunct_message)
