@@ -1229,14 +1229,14 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
                 "transient_duration": self.Writer.transientTau,
             }
 
-        for k in inj.keys():
+        for k in self.max_dict.keys():
             reldiff = np.abs((self.max_dict[k] - inj[k]) / inj[k])
             print("max2F  {:s} reldiff: {:.2e}".format(k, reldiff))
             reldiff = np.abs((summary_stats[k]["mean"] - inj[k]) / inj[k])
             print("mean   {:s} reldiff: {:.2e}".format(k, reldiff))
             reldiff = np.abs((summary_stats[k]["median"] - inj[k]) / inj[k])
             print("median {:s} reldiff: {:.2e}".format(k, reldiff))
-        for k in inj.keys():
+        for k in self.max_dict.keys():
             lower = summary_stats[k]["mean"] - nsigmas * summary_stats[k]["std"]
             upper = summary_stats[k]["mean"] + nsigmas * summary_stats[k]["std"]
             within = (inj[k] >= lower) and (inj[k] <= upper)
@@ -1471,8 +1471,8 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
 
     def setup_method(self, method):
         self.transientWindowType = "rect"
-        self.transientStartTime = self.tstart + 0.25 * self.duration
-        self.transientTau = 0.5 * self.duration
+        self.transientStartTime = int(self.tstart + 0.25 * self.duration)
+        self.transientTau = int(0.5 * self.duration)
         self.Writer = pyfstat.Writer(
             label=self.label,
             tstart=self.tstart,
@@ -1491,15 +1491,74 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
             transientTau=self.transientTau,
         )
         self.Writer.make_data(verbose=True)
-
-    def test_transient_MCMC(self):
-
-        theta = {
+        self.basic_theta = {
             "F0": self.F0,
             "F1": self.F1,
             "F2": self.F2,
             "Alpha": self.Alpha,
             "Delta": self.Delta,
+        }
+        self.MCMC_params = {
+            "nsteps": [50, 50],
+            "nwalkers": 50,
+            "ntemps": 2,
+            "log10beta_min": -1,
+        }
+
+    def test_transient_MCMC_t0only(self):
+
+        theta = {
+            **self.basic_theta,
+            "transient_tstart": {
+                "type": "unif",
+                "lower": self.Writer.tstart,
+                "upper": self.Writer.tend() - 2 * self.Writer.Tsft,
+            },
+            "transient_duration": self.transientTau,
+        }
+        self.search = pyfstat.MCMCTransientSearch(
+            label=self.label,
+            outdir=self.outdir,
+            theta_prior=theta,
+            tref=self.tref,
+            sftfilepattern=self.Writer.sftfilepath,
+            **self.MCMC_params,
+            transientWindowType=self.transientWindowType,
+        )
+        self.search.run(plot_walkers=False)
+        self.search.print_summary()
+        self._check_twoF_predicted()
+        self._check_mcmc_quantiles(transient=True)
+
+    def test_transient_MCMC_tauonly(self):
+
+        theta = {
+            **self.basic_theta,
+            "transient_tstart": self.transientStartTime,
+            "transient_duration": {
+                "type": "unif",
+                "lower": 2 * self.Writer.Tsft,
+                "upper": self.Writer.duration - 2 * self.Writer.Tsft,
+            },
+        }
+        self.search = pyfstat.MCMCTransientSearch(
+            label=self.label,
+            outdir=self.outdir,
+            theta_prior=theta,
+            tref=self.tref,
+            sftfilepattern=self.Writer.sftfilepath,
+            **self.MCMC_params,
+            transientWindowType=self.transientWindowType,
+        )
+        self.search.run(plot_walkers=False)
+        self.search.print_summary()
+        self._check_twoF_predicted()
+        self._check_mcmc_quantiles(transient=True)
+
+    def test_transient_MCMC_t0_tau(self):
+
+        theta = {
+            **self.basic_theta,
             "transient_tstart": {
                 "type": "unif",
                 "lower": self.Writer.tstart,
@@ -1517,10 +1576,7 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
             theta_prior=theta,
             tref=self.tref,
             sftfilepattern=self.Writer.sftfilepath,
-            nsteps=[100, 100],
-            nwalkers=100,
-            ntemps=2,
-            log10beta_min=-1,
+            **self.MCMC_params,
             transientWindowType=self.transientWindowType,
         )
         self.search.run(plot_walkers=False)
