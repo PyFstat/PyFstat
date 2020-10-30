@@ -11,7 +11,7 @@ outdir = "PyFstat_example_data"
 # make sure we start from a clean output directory
 # and scripts don't just recycle old output
 if os.path.isdir(outdir):
-    print("Removing old output directory {}...".format(outdir))
+    print(f"Removing old output directory {outdir}...")
     shutil.rmtree(outdir)
 
 # In some examples directories, scripts must be executed in a certain order.
@@ -40,24 +40,20 @@ for case in os.listdir(basedir):
     if os.path.isdir(exdir):
         if case in ordered_cases:
             scripts = [
-                os.path.join(exdir, "PyFstat_example_" + step + ".py")
+                os.path.join(exdir, f"PyFstat_example_{step}.py")
                 for step in ordered_cases[case]
             ]
         else:
             scripts = sorted(glob(os.path.join(exdir, "*")))
-        print(
-            "\n\nExecuting {:d} script(s) in example directory {}...".format(
-                len(scripts), exdir
-            )
-        )
+        print(f"Executing {len(scripts)} script(s) in example directory {exdir}...")
         for script in scripts:
             Nscripts += 1
             cl = "python " + script
-            print("Running: ", script)
+            print(f"Running: {script}")
             try:
                 run_commandline(cl, return_output=False)
             except Exception as e:
-                print("FAILED to run {}".format(script))
+                print(f"FAILED to run {script}")
                 failures.append(script)
                 if exit_on_first_failure:
                     print("Exception was:")
@@ -66,14 +62,13 @@ for case in os.listdir(basedir):
                 else:
                     print("\n")
             else:
-                print("Successfully ran: {}\n".format(script))
+                print(f"Successfully ran: {script}\n")
+        print("")
 
-print("\n")
 if len(failures) > 0:
     raise RuntimeError(
-        "\nFailed to run {:d}/{:d} example scripts: {}".format(
-            len(failures), Nscripts, failures
-        )
+        f"Failed to run {len(failures)}/{Nscripts} example scripts:\n"
+        + "\n".join(failures)
     )
 else:
-    print("Successfully ran {:d} example scripts.".format(Nscripts))
+    print(f"Successfully ran {Nscripts} example scripts.")
