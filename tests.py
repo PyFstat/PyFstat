@@ -1646,23 +1646,6 @@ class TestGridSearch(BaseForTestsWithData):
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
 
-    def test_slice_grid_search(self):
-        # FIXME this one doesn't check the results at all yet
-        search = pyfstat.SliceGridSearch(
-            "slice_grid_search",
-            self.outdir,
-            self.Writer.sftfilepath,
-            F0s=self.F0s,
-            F1s=self.F1s,
-            F2s=[self.Writer.F2],
-            Alphas=[self.Writer.Alpha],
-            Deltas=[self.Writer.Delta],
-            tref=self.tref,
-            Lambda0=[30.0, 0.0, 0.0, 0.0],
-        )
-        fig, axes = search.run(save=False)
-        self.assertTrue(fig is not None)
-
     def test_glitch_grid_search(self):
         search = pyfstat.GridGlitchSearch(
             "grid_grid_search",
@@ -1675,24 +1658,6 @@ class TestGridSearch(BaseForTestsWithData):
             Deltas=[self.Writer.Delta],
             tref=self.tref,
             tglitchs=[self.tref],
-        )
-        search.run()
-        self.assertTrue(os.path.isfile(search.out_file))
-
-    def test_sliding_window(self):
-        # FIXME this one doesn't check the results at all yet
-        search = pyfstat.FrequencySlidingWindow(
-            "grid_grid_search",
-            self.outdir,
-            self.Writer.sftfilepath,
-            F0s=self.F0s,
-            F1=self.Writer.F1,
-            F2=self.Writer.F2,
-            Alpha=self.Writer.Alpha,
-            Delta=self.Writer.Delta,
-            tref=self.tref,
-            minStartTime=self.Writer.tstart,
-            maxStartTime=self.Writer.tend(),
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
