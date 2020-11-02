@@ -30,14 +30,14 @@ is also available (only maintained from v1.2 onwards).
 PyFstat releases can be installed in a variety of ways, including
 [Docker/Singularity images](#docker-container),
 [`pip install` from PyPi](#pip-install-from-PyPi),
+[conda](#conda-installation)
 and [from source releases on Zenodo](#install-pyfstat-from-source-zenodo-or-git-clone).
 Latest development versions can
 [also be installed with pip](#pip-install-from-github)
 or [from a local git clone](#install-pyfstat-from-source-zenodo-or-git-clone).
 
-If you don't have a recent `python` installation (`3.6+`) on your system or
-prefer `conda` environments over system-wide installation / venvs, please
-start with the [conda installation](#conda-installation) section.
+If you don't have a recent `python` installation (`3.6+`) on your system,
+then Docker or conda are the easiest paths.
 
 In either case, be sure to also check out the notes on
 [dependencies](#dependencies),
@@ -45,9 +45,22 @@ In either case, be sure to also check out the notes on
 and [citing this work](#citing-this-work).
 
 ### Docker container
+
 Ready-to-use PyFstat containers are available at the [Packages](https://github.com/PyFstat/PyFstat/packages)
 page. A git-hub account together with a personal access token is required. [Go to the wiki page](https://github.com/PyFstat/PyFstat/wiki/Containers) to learn how to pull them from the git-hub
 registry using Docker or Singularity.
+
+### conda installation
+
+See [this wiki page](https://github.com/PyFstat/PyFstat/wiki/conda-environments)
+for installing conda itself and for a minimal .yml recipe to set up a PyFstat-specific environment.
+
+To install into an existing conda environment, all you need to do is
+```
+conda install -c conda-forge pyfstat 
+```
+
+If getting PyFstat from conda-forge, it already includes the required ephemerides files.
 
 ### pip install from PyPi
 
@@ -70,48 +83,7 @@ If you are not installing into a [venv](https://docs.python.org/3/library/venv.h
 or [conda environment](#conda-installation),
 on many systems you may need to use the `--user` flag.
 
-### conda installation
-
-`PyFstat` requires `python3.6+`.
-While many systems come with a system-wide python installation,
-it may not be sufficiently recent for this package;
-anyway, it can often be easier to manage a user-specific python installation
-(this way one does not require root access to install or remove modules).
-One method to do this is to use the `conda` system, either through
-the stripped down [`Miniconda`](https://conda.pydata.org/miniconda.html)
-installation, or the full-featured
-[`Anaconda`](https://www.anaconda.com/products/individual#Downloads)
-(these are essentially the
-same, but the `Anaconda` version installs a variety of useful packages such as
-`numpy` and `scipy` by default).
-The fastest/easiest method is to follow your OS instructions
-[here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/)
-which will install `Miniconda`.
-
-After you have installed a version of `conda` and
-[set up an environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html), 
-`pip` can also be used to install modules into this environment.
-(There is no direct `conda` release of `PyFstat` at the moment.)
-This can be installed with
-```
-conda install pip
-```
-and then you can continue with the `pip` instructions,
-either [a release version from PyPi](#pip-install-from-PyPi)
-as described above
-or [the latest development version directly from github](#pip-install-from-github)
-as described below.
-
-A simple way to get started with an otherwise clean environment
-is to use a minimal .yml recipe file
-[as explained here](https://github.com/PyFstat/PyFstat/wiki/conda-environments).
-
-Alternatively, you may consider starting from an
-[`igwn` environment](https://computing.docs.ligo.org/conda/),
-which contains most packages relevant to gravitational waves,
-instead of doing it from scratch,
-and just adding `PyFstat` to it through pip as described above.
-But be advised that the downloads for the `igwn` environments are huge.
+Note that, if using pip, you **need to [install phemerides files](#ephemerides-installation) manually**.
 
 ### pip install from github
 
@@ -126,6 +98,44 @@ or, if you have an ssh key installed in github:
 pip install git+ssh://git@github.com/PyFstat/PyFstat
 ```
 
+In this case, you also **need to [install phemerides files](#ephemerides-installation) manually**.
+
+### install PyFstat from source (Zenodo or git clone)
+
+You can download a source release tarball from [Zenodo](https://doi.org/10.5281/zenodo.3967045)
+and extract to an arbitrary temporary directory.
+Alternatively, clone this repository:
+
+```
+git clone https://github.com/PyFstat/PyFstat.git
+```
+
+The module and associated scripts can be installed system wide
+(or to the currently active venv),
+assuming you are in the (extracted or cloned) source directory, via
+```
+python setup.py install
+```
+As a developer, alternatively
+```
+python setup.py develop
+```
+or
+```
+pip install -e /path/to/PyFstat
+```
+can be useful so you can directly see any changes you make in action.
+Alternatively (not recommended!), add the source directory directly to your python path.
+
+To check that the installation
+was successful, run
+```
+python -c 'import pyfstat'
+```
+if no error message is output, then you have installed `pyfstat`. Note that
+the module will be installed to whichever python executable you call it from.
+
+In this case, you also **need to [install phemerides files](#ephemerides-installation) manually**.
 
 ### Dependencies
 
@@ -181,42 +191,6 @@ A minimal configuration line to use would be e.g.:
 ```
 ./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpulsar --enable-lalapps --enable-swig
 ```
-
-
-### install PyFstat from source (Zenodo or git clone)
-
-You can download a source release tarball from [Zenodo](https://doi.org/10.5281/zenodo.3967045)
-and extract to an arbitrary temporary directory.
-Alternatively, clone this repository:
-
-```
-git clone https://github.com/PyFstat/PyFstat.git
-```
-
-The module and associated scripts can be installed system wide
-(or to the currently active venv),
-assuming you are in the (extracted or cloned) source directory, via
-```
-python setup.py install
-```
-As a developer, alternatively
-```
-python setup.py develop
-```
-or
-```
-pip install -e /path/to/PyFstat
-```
-can be useful so you can directly see any changes you make in action.
-Alternatively (not recommended!), add the source directory directly to your python path.
-
-To check that the installation
-was successful, run
-```
-python -c 'import pyfstat'
-```
-if no error message is output, then you have installed `pyfstat`. Note that
-the module will be installed to whichever python executable you call it from.
 
 ### Ephemerides installation
 
