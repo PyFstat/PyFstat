@@ -326,6 +326,9 @@ class MCMCSearch(BaseSearchClass):
         self.theta_symbols = [self.theta_symbols[i] for i in idxs]
         self.theta_keys = [self.theta_keys[i] for i in idxs]
 
+        self.output_keys = self.theta_keys.copy()
+        self.output_keys += ["logBSGL" if self.BSGL else "twoF"]
+
     def _evaluate_logpost(self, p0vec):
         init_logp = np.array(
             [
@@ -1718,17 +1721,27 @@ class MCMCSearch(BaseSearchClass):
                     logging.info(key)
             return False
 
-    def get_savetxt_fmt(self):
-        fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
-        fmt["twoF"] = "%.9g"
-        return fmt
+    def get_savetxt_fmt_dict(self):
+        fmt_dict = helper_functions.get_doppler_params_output_format(self.theta_keys)
+        fmt_dict["twoF"] = "%.9g"
+        return fmt_dict
+
+    def get_savetxt_fmt_list(self):
+        """Returns a list of output format specifiers, ordered like the samples
+
+        This is required because the output of get_savetxt_fmt_dict()
+        will depend on the order in which those entries have been coded up.
+        """
+        fmt_dict = self.get_savetxt_fmt_dict()
+        fmt_list = [fmt_dict[key] for key in self.output_keys]
+        return fmt_list
 
     def export_samples_to_disk(self):
         self.samples_file = os.path.join(self.outdir, self.label + "_samples.dat")
         logging.info("Exporting samples to {}".format(self.samples_file))
         header = "\n".join(self.output_file_header)
-        header += "\n" + " ".join(self.theta_keys) + " twoF"
-        outfmt = list(self.get_savetxt_fmt().values())
+        header += "\n" + " ".join(self.output_keys)
+        outfmt = self.get_savetxt_fmt_list()
         twoF = np.atleast_2d(self._get_twoF_from_loglikelihood()).T
         samples_out = np.concatenate((self.samples, twoF), axis=1)
         Ncols = np.shape(samples_out)[1]
@@ -1739,7 +1752,7 @@ class MCMCSearch(BaseSearchClass):
                 " do not match."
                 " If your search class uses different"
                 " keys than the base MCMCSearch class,"
-                " override the get_savetxt_fmt"
+                " override the get_savetxt_fmt_dict"
                 " method.".format(Ncols, len(outfmt))
             )
         np.savetxt(
@@ -2400,6 +2413,9 @@ class MCMCGlitchSearch(MCMCSearch):
                 if idx in self.theta_idxs[:i]:
                     self.theta_idxs[i] += 1
 
+        self.output_keys = self.theta_keys.copy()
+        self.output_keys += ["logBSGL" if self.BSGL else "twoF"]
+
     def _get_data_dictionary_to_save(self):
         d = dict(
             nsteps=self.nsteps,
@@ -2481,10 +2497,7 @@ class MCMCGlitchSearch(MCMCSearch):
         fig.savefig(os.path.join(self.outdir, self.label + "_twoFcumulative.png"))
         plt.close(fig)
 
-    def get_savetxt_fmt(self):
-        fmt = helper_functions.get_doppler_params_output_format(
-            [k.split("_")[1] for k in self.theta_keys if k.startswith("delta_F")]
-        )
+    def get_savetxt_fmt_dict(self):
         fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
         if "tglitch" in self.theta_keys:
             fmt["tglitch"] = "%d"
@@ -3384,7 +3397,10 @@ class MCMCTransientSearch(MCMCSearch):
         self.theta_symbols = [self.theta_symbols[i] for i in idxs]
         self.theta_keys = [self.theta_keys[i] for i in idxs]
 
-    def get_savetxt_fmt(self):
+        self.output_keys = self.theta_keys.copy()
+        self.output_keys += ["logBSGL" if self.BSGL else "twoF"]
+
+    def get_savetxt_fmt_dict(self):
         fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
         if "transient_tstart" in self.theta_keys:
             fmt["transient_tstart"] = "%d"
