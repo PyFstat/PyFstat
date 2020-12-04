@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 
 import matplotlib.pyplot as plt
@@ -6,6 +7,7 @@ import matplotlib.pyplot as plt
 import pyfstat
 
 plt.rcParams["font.family"] = "serif"
+plt.rcParams["font.size"] = 18
 plt.rcParams["text.usetex"] = True
 
 label = "track_example"
@@ -48,8 +50,11 @@ ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]", ylim=(99.98, 100.02))
 c = ax.pcolormesh(
     (times - times[0]) / 86400,
     freqs,
-    sft_data / data_parameters["sqrtSX"],
+    (sft_data / data_parameters["sqrtSX"])[:-1, :-1],
     cmap="inferno_r",
 )
 fig.colorbar(c, label="Normalized Power")
-fig.savefig("spectrogram_example.pdf")
+plt.tight_layout()
+fig.savefig("spectrogram_example.png")
+
+shutil.rmtree(outdir)
