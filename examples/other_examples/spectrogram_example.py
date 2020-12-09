@@ -31,7 +31,7 @@ signal_parameters = {
     "Delta": 0.5,
     "tp": data_parameters["tstart"],
     "asini": 25.0,
-    "period": 45 * 86400,
+    "period": 50 * 86400,
     "tref": data_parameters["tstart"],
     "h0": data_parameters["sqrtSX"] / depth,
     "cosi": 1.0,
@@ -44,7 +44,7 @@ data.make_data()
 
 times, freqs, sft_data = pyfstat.helper_functions.get_sft_array(data.sftfilepath)
 
-fig, ax = plt.subplots(figsize=(0.5 * 16, 0.5 * 9))
+fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))
 ax.grid(which="both")
 ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]", ylim=(99.98, 100.02))
 c = ax.pcolormesh(
