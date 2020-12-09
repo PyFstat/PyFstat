@@ -555,8 +555,8 @@ class TestGlitchWriter(TestWriter):
         max_freq_noglitch = freqs_noglitch[np.argmax(data_noglitch, axis=0)]
         max_freq_glitch = freqs_glitch[np.argmax(data_glitch, axis=0)]
         print([max_freq_vanilla, max_freq_noglitch, max_freq_glitch])
-        self.assertEqual(times_noglitch, times_vanilla)
-        self.assertEqual(times_glitch, times_vanilla)
+        self.assertTrue(np.allclose(times_noglitch, times_vanilla))
+        self.assertTrue(np.allclose(times_glitch, times_vanilla))
         self.assertEqual(len(np.unique(max_freq_vanilla)), 1)
         self.assertEqual(len(np.unique(max_freq_noglitch)), 1)
         self.assertEqual(len(np.unique(max_freq_glitch)), 2)
