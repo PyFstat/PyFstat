@@ -1,5 +1,4 @@
-import os
-import sys
+import tempfile
 
 import matplotlib.pyplot as plt
 
@@ -38,9 +37,9 @@ with tempfile.TemporaryDirectory() as tmpdir:
     data = pyfstat.BinaryModulatedWriter(
         label=label, outdir=tmpdir, **data_parameters, **signal_parameters
     )
-   data.make_data()
+data.make_data()
 
-   times, freqs, sft_data = pyfstat.helper_functions.get_sft_array(data.sftfilepath)
+times, freqs, sft_data = pyfstat.helper_functions.get_sft_array(data.sftfilepath)
 
 fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))
 ax.grid(which="both")
