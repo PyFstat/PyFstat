@@ -1,5 +1,4 @@
 import os
-import shutil
 import sys
 
 import matplotlib.pyplot as plt
@@ -11,7 +10,6 @@ plt.rcParams["font.size"] = 18
 plt.rcParams["text.usetex"] = True
 
 label = "track_example"
-outdir = os.path.join(sys.path[0], "tmp")
 
 depth = 1
 
@@ -36,13 +34,13 @@ signal_parameters = {
     "h0": data_parameters["sqrtSX"] / depth,
     "cosi": 1.0,
 }
+with tempfile.TemporaryDirectory() as tmpdir:
+    data = pyfstat.BinaryModulatedWriter(
+        label=label, outdir=tmpdir, **data_parameters, **signal_parameters
+    )
+   data.make_data()
 
-data = pyfstat.BinaryModulatedWriter(
-    label=label, outdir=outdir, **data_parameters, **signal_parameters
-)
-data.make_data()
-
-times, freqs, sft_data = pyfstat.helper_functions.get_sft_array(data.sftfilepath)
+   times, freqs, sft_data = pyfstat.helper_functions.get_sft_array(data.sftfilepath)
 
 fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))
 ax.grid(which="both")
@@ -56,5 +54,3 @@ c = ax.pcolormesh(
 fig.colorbar(c, label="Normalized Power")
 plt.tight_layout()
 fig.savefig("spectrogram_example.png")
-
-shutil.rmtree(outdir)
