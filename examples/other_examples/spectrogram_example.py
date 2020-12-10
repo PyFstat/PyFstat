@@ -10,7 +10,7 @@ plt.rcParams["text.usetex"] = True
 
 label = "track_example"
 
-depth = 1
+depth = 5
 
 data_parameters = {
     "sqrtSX": 1e-23,
@@ -37,9 +37,12 @@ with tempfile.TemporaryDirectory() as tmpdir:
     data = pyfstat.BinaryModulatedWriter(
         label=label, outdir=tmpdir, **data_parameters, **signal_parameters
     )
-data.make_data()
+    data.make_data()
+    times, freqs, sft_data = pyfstat.helper_functions.get_sft_array(data.sftfilepath)
 
-times, freqs, sft_data = pyfstat.helper_functions.get_sft_array(data.sftfilepath)
+normalized_power = (
+    2 * sft_data ** 2 / (data_parameters["Tsft"] * data_parameters["sqrtSX"] ** 2)
+)
 
 fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))
 ax.grid(which="both")
@@ -47,8 +50,9 @@ ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]", ylim=(99.98, 100.02))
 c = ax.pcolormesh(
     (times - times[0]) / 86400,
     freqs,
-    (sft_data / data_parameters["sqrtSX"])[:-1, :-1],
+    normalized_power,
     cmap="inferno_r",
+    shading="nearest",
 )
 fig.colorbar(c, label="Normalized Power")
 plt.tight_layout()
