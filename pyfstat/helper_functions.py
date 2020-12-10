@@ -357,7 +357,7 @@ def get_sft_array(sftfilepattern, data_duration=None, F0=None, dF0=None):
         )
 
     SFTs = MultiSFTs.data[0]
-    times = [sft.epoch.gpsSeconds for sft in SFTs.data]
+    times = np.array([sft.epoch.gpsSeconds for sft in SFTs.data])
     data = [np.abs(sft.data.data) for sft in SFTs.data]
     data = np.array(data).T
     nbins, nsfts = data.shape
