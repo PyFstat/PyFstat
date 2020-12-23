@@ -336,14 +336,23 @@ class GridSearch(BaseSearchClass):
             self.data = data
             self.save_array_to_disk()
 
-    def get_savetxt_fmt(self):
-        fmt = helper_functions.get_doppler_params_output_format(self.output_keys)
-        fmt[self.detstat] = "%.9g"
-        return fmt
+    def get_savetxt_fmt_dict(self):
+        fmt_dict = helper_functions.get_doppler_params_output_format(self.output_keys)
+        fmt_dict[self.detstat] = "%.9g"
+        return fmt_dict
+
+    def get_savetxt_fmt_list(self):
+        """Returns a list of output format specifiers, ordered like the data.
+        This is required because the output of get_savetxt_fmt_dict()
+        will depend on the order in which those entries have been coded up.
+        """
+        fmt_dict = self.get_savetxt_fmt_dict()
+        fmt_list = [fmt_dict[key] for key in self.output_keys]
+        return fmt_list
 
     def _get_tolerance_from_savetxt_fmt(self):
         """ decide appropriate input grid comparison tolerance from fprintf formats """
-        fmt = self.get_savetxt_fmt()
+        fmt = self.get_savetxt_fmt_dict()
         rtol = {}
         atol = {}
         for key, f in fmt.items():
@@ -370,7 +379,7 @@ class GridSearch(BaseSearchClass):
         logging.info("Saving data to {}".format(self.out_file))
         header = "\n".join(self.output_file_header)
         header += "\n" + " ".join(self.output_keys)
-        outfmt = list(self.get_savetxt_fmt().values())
+        outfmt = self.get_savetxt_fmt_list()
         Ncols = len(self.data.dtype)
         if len(outfmt) != Ncols:
             raise RuntimeError(
@@ -379,7 +388,7 @@ class GridSearch(BaseSearchClass):
                 " do not match."
                 " If your search class uses different"
                 " keys than the base GridSearch class,"
-                " override the get_savetxt_fmt"
+                " override the get_savetxt_fmt_dict"
                 " method.".format(Ncols, len(outfmt))
             )
         np.savetxt(
@@ -841,12 +850,12 @@ class TransientGridSearch(GridSearch):
         f = self.tCWfilebase + fmt.format(*vals) + ".dat"
         return f
 
-    def get_savetxt_fmt(self):
-        fmt = helper_functions.get_doppler_params_output_format(self.output_keys)
-        fmt[self.detstat] = "%.9g"
-        fmt["t0"] = "%d"
-        fmt["tau"] = "%d"
-        return fmt
+    def get_savetxt_fmt_dict(self):
+        fmt_dict = helper_functions.get_doppler_params_output_format(self.output_keys)
+        fmt_dict[self.detstat] = "%.9g"
+        fmt_dict["t0"] = "%d"
+        fmt_dict["tau"] = "%d"
+        return fmt_dict
 
     def write_F_mn(self, tCWfile, F_mn, windowRange):
         with open(tCWfile, "w") as tfp:
@@ -964,13 +973,13 @@ class GridGlitchSearch(GridSearch):
         self.set_out_file()
         self.output_file_header = self.get_output_file_header()
 
-    def get_savetxt_fmt(self):
-        fmt = helper_functions.get_doppler_params_output_format(self.output_keys)
-        fmt["delta_F0"] = "%.16g"
-        fmt["delta_F1"] = "%.16g"
-        fmt["tglitch"] = "%d"
-        fmt[self.detstat] = "%.9g"
-        return fmt
+    def get_savetxt_fmt_dict(self):
+        fmt_dict = helper_functions.get_doppler_params_output_format(self.output_keys)
+        fmt_dict["delta_F0"] = "%.16g"
+        fmt_dict["delta_F1"] = "%.16g"
+        fmt_dict["tglitch"] = "%d"
+        fmt_dict[self.detstat] = "%.9g"
+        return fmt_dict
 
 
 class SlidingWindow(DefunctClass):
