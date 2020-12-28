@@ -1,7 +1,8 @@
 # PyFstat
 
 This is a python package providing an interface to perform F-statistic based
-continuous gravitational wave (CW) searches.
+continuous gravitational wave (CW) searches,
+built on top of the [LALSuite](https://doi.org/10.7935/GT1W-FZ16) library.
 
 Getting started:
 * This README provides information on
@@ -305,6 +306,11 @@ You can also obtain DOIs for individual versioned releases
 from the right sidebar at [Zenodo](https://doi.org/10.5281/zenodo.3967045).
 
 Alternatively, if you've used PyFstat up to version 1.4.x in your works,
-the DOIs for those version can be found from the sidebar at
+the DOIs for those versions can be found from the sidebar at
 [this older Zenodo record](https://doi.org/10.5281/zenodo.1243930)
 and please amend the BibTeX entry accordingly.
+
+PyFstat makes generous use of functionality from the [LALSuite](https://doi.org/10.7935/GT1W-FZ16) library
+and it will usually be appropriate to also cite that project
+(see [here](https://git.ligo.org/lscsoft/lalsuite/#acknowledgment) for a recommended bibtex entry)
+and also [Wette 2020](https://doi.org/10.1016/j.softx.2020.100634) ([inspire](https://inspirehep.net/literature/1837108) / [ADS](https://ui.adsabs.harvard.edu/abs/2020SoftX..1200634W/abstract)) for the C-to-python [SWIG](http://www.swig.org) bindings.
