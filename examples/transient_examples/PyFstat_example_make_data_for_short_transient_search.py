@@ -1,6 +1,8 @@
 #!/usr/bin/env python
-
-""" An example to generate data with a short transient signal.
+"""
+Title
+=====
+An example to generate data with a short transient signal.
 
 This can be run either stand-alone (will just generate SFT files and nothing else);
 or it is also being imported from
