@@ -42,6 +42,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinx_gallery.gen_gallery",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -69,6 +70,14 @@ html_static_path = ["_static"]
 # what content will be inserted into the main body of an autoclass directive
 # both: the class’ and the __init__ method’s docstring are concatenated and inserted.
 autoclass_content = "both"
-
 # how to sort automatically documented members
 autodoc_member_order = "bysource"
+
+# -- Options for gallery -----------------------------------
+
+sphinx_gallery_conf = {
+    "examples_dirs": "../../examples/transient_examples",
+    "gallery_dirs": "auto_examples",
+    "filename_pattern": "/PyFstat_example_",
+    "ignore_pattern": ".*long.*",
+}

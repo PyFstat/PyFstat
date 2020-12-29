@@ -10,6 +10,8 @@ and is not guaranteed to be complete.
 
    modules
 
+   auto_examples/index.rst
+
 
 
 Indices and tables
@@ -18,3 +20,4 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
