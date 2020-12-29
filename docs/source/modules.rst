@@ -9,4 +9,5 @@ PyFstat
    :maxdepth: 4
 
    pyfstat
+   examples
    tests

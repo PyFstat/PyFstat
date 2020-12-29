@@ -1,5 +1,14 @@
 #!/usr/bin/env python
 
+""" An example to generate data with a short transient signal.
+
+This can be run either stand-alone (will just generate SFT files and nothing else);
+or it is also being imported from
+PyFstat_example_short_transient_grid_search.py
+and
+PyFstat_example_short_transient_MCMC_search.py
+"""
+
 import pyfstat
 import os
 
@@ -25,25 +34,27 @@ detectors = "H1,L1"
 
 Tsft = 1800
 
-transient = pyfstat.Writer(
-    label="simulated_transient_signal",
-    outdir=outdir,
-    tref=tref,
-    tstart=tstart,
-    duration=duration,
-    F0=F0,
-    F1=F1,
-    F2=F2,
-    Alpha=Alpha,
-    Delta=Delta,
-    h0=h0,
-    cosi=cosi,
-    detectors=detectors,
-    sqrtSX=sqrtSX,
-    transientStartTime=transient_tstart,
-    transientTau=transient_duration,
-    transientWindowType="rect",
-    Tsft=Tsft,
-    Band=0.1,
-)
-transient.make_data()
+if __name__ == "__main__":
+
+    transient = pyfstat.Writer(
+        label="simulated_transient_signal",
+        outdir=outdir,
+        tref=tref,
+        tstart=tstart,
+        duration=duration,
+        F0=F0,
+        F1=F1,
+        F2=F2,
+        Alpha=Alpha,
+        Delta=Delta,
+        h0=h0,
+        cosi=cosi,
+        detectors=detectors,
+        sqrtSX=sqrtSX,
+        transientStartTime=transient_tstart,
+        transientTau=transient_duration,
+        transientWindowType="rect",
+        Tsft=Tsft,
+        Band=0.1,
+    )
+    transient.make_data()

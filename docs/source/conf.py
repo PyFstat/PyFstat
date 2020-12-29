@@ -15,6 +15,11 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../../"))
 sys.path.insert(0, os.path.abspath("../../pyfstat/"))
+examples_basedir = "../../examples/"
+for case in os.listdir(examples_basedir):
+    exdir = os.path.abspath(os.path.join(examples_basedir, case))
+    if os.path.isdir(exdir):
+        sys.path.insert(0, exdir)
 
 
 # -- Project information -----------------------------------------------------
