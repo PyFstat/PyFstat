@@ -5,14 +5,6 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-try:
-    from gridcorner import gridcorner
-except ImportError:
-    raise ImportError(
-        "Python module 'gridcorner' not found, please install from "
-        "https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner"
-    )
-
 # flip this switch for a more expensive 4D (F0,F1,Alpha,Delta) run
 # instead of just (F0,F1)
 # (still only a few minutes on current laptops)
@@ -132,7 +124,7 @@ if sky:
     corner_labels.append("$\\alpha - \\alpha_0$")
     corner_labels.append("$\\delta - \\delta_0$")
 corner_labels.append(labels["2F"])
-gridcorner_fig, gridcorner_axes = gridcorner(
+gridcorner_fig, gridcorner_axes = pyfstat.gridcorner(
     twoF, vals, projection="log_mean", labels=corner_labels, whspace=0.1, factor=1.8
 )
 gridcorner_fig.savefig(os.path.join(outdir, gridsearch.label + "_corner.png"))

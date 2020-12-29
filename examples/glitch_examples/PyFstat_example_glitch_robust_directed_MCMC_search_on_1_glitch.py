@@ -1,6 +1,5 @@
 import numpy as np
 import pyfstat
-import gridcorner
 import time
 from PyFstat_example_make_data_for_search_on_1_glitch import (
     tstart,
@@ -79,11 +78,10 @@ mcmc.run(save_loudest=False)  # uses CFSv2 which doesn't support glitch paramete
 dT = time.time() - t1
 mcmc.print_summary()
 
-fig_and_axes = gridcorner._get_fig_and_axes(4, 2, 0.05)
+print("Making corner plot...")
 mcmc.plot_corner(
     label_offset=0.25,
     truths={"F0": F0, "F1": F1, "delta_F0": delta_F0, "tglitch": tstart + dtglitch},
-    fig_and_axes=fig_and_axes,
     quantiles=(0.16, 0.84),
     hist_kwargs=dict(lw=1.5, zorder=-1),
     truth_color="C3",

@@ -30,6 +30,7 @@ from .grid_based_searches import (
     SliceGridSearch,
     TransientGridSearch,
 )
+from .gridcorner import gridcorner
 
 from ._version import get_versions
 

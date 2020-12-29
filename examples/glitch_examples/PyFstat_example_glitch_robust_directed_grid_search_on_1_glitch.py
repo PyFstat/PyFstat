@@ -16,14 +16,6 @@ from PyFstat_example_make_data_for_search_on_1_glitch import (
 import time
 import os
 
-try:
-    from gridcorner import gridcorner
-except ImportError:
-    raise ImportError(
-        "Python module 'gridcorner' not found, please install from "
-        "https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner"
-    )
-
 label = "semicoherent_glitch_robust_directed_grid_search_on_1_glitch"
 
 Nstar = 1000
@@ -68,6 +60,7 @@ delta_F0s_vals = np.unique(search.data[:, 5]) - delta_F0
 tglitch_vals = np.unique(search.data[:, 7])
 tglitch_vals_days = (tglitch_vals - tstart) / 86400.0 - dtglitch / 86400.0
 
+print("Making gridcorner plot...")
 twoF = search.data[:, -1].reshape(
     (len(F0_vals), len(F1_vals), len(delta_F0s_vals), len(tglitch_vals))
 )
@@ -80,7 +73,7 @@ labels = [
     "$t^\\mathrm{g} - t^\\mathrm{g}_\\mathrm{s}$\n[d]",
     "$\\widehat{2\\mathcal{F}}$",
 ]
-fig, axes = gridcorner(
+fig, axes = pyfstat.gridcorner(
     twoF,
     xyz,
     projection="log_mean",

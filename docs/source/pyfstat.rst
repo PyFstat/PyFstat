@@ -20,6 +20,14 @@ pyfstat.grid\_based\_searches module
    :undoc-members:
    :show-inheritance:
 
+pyfstat.gridcorner module
+-------------------------
+
+.. automodule:: pyfstat.gridcorner
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pyfstat.helper\_functions module
 --------------------------------
 

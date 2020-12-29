@@ -178,13 +178,11 @@ For a general introduction to installing modules, see
   and [black](https://black.readthedocs.io) style checker
   locally,
   as these checks are required to pass by the online integration pipeline.
-* Some optional plotting methods depend on two additional packages,
-  and some of the [examples](./examples) require these to run:
- [gridcorner](https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner) 
-  and [chainconsumer](https://github.com/Samreay/ChainConsumer);
-for `pip` users this is most conveniently installed by
+* Some optional plotting methods depend on the additional package
+  [chainconsumer](https://github.com/Samreay/ChainConsumer)
+  and some of the [examples](./examples) require this to run.
+  Gor `pip` users, this is most conveniently installed by
 ```
-pip install git+https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner
 pip install chainconsumer
 ```
 * If you prefer to make your own LALSuite installation
