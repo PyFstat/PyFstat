@@ -9,6 +9,7 @@ Getting started:
 installation,
 [contributing](#contributors) to 
 and [citing](#citing-this-work) PyFstat.
+* The classes provided by PyFstat and the full API are documented at [pyfstat.readthedocs.io](https://pyfstat.readthedocs.io/) (work in progress)
 * Additional usage documentation will be added to the
 [project wiki](https://github.com/PyFstat/PyFstat/wiki) (work in progress).
 * We also have a number of
@@ -17,12 +18,12 @@ demonstrating different use cases.
 * New contributors are encouraged to have a look into
 [how to set up a development environment](#contributing-to-pyfstat)
 
-
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3967045.svg)](https://doi.org/10.5281/zenodo.3967045)
 [![PyPI version](https://badge.fury.io/py/PyFstat.svg)](https://badge.fury.io/py/PyFstat)
 ![Conda version](https://anaconda.org/conda-forge/pyfstat/badges/version.svg)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3967045.svg)](https://doi.org/10.5281/zenodo.3967045)
 ![Integration Tests](https://github.com/PyFstat/PyFstat/workflows/Integration%20Tests/badge.svg)
 ![Docker](https://github.com/PyFstat/PyFstat/workflows/Docker/badge.svg)
+[![Documentation Status](https://readthedocs.org/projects/pyfstat/badge/?version=latest)](https://pyfstat.readthedocs.io/en/latest/?badge=latest)
 
 A [changelog](https://github.com/PyFstat/PyFstat/blob/master/CHANGELOG.md)
 is also available (only maintained from v1.2 onwards).
