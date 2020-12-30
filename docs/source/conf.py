@@ -92,7 +92,7 @@ sphinx_gallery_conf = {
     "examples_dirs": [os.path.join(examples_basedir, case) for case in example_names],
     "gallery_dirs": example_names,
     "filename_pattern": "/PyFstat_example_",
-    "ignore_pattern": "run_all_*",
+    "ignore_pattern": "run_all_.|.transient.|.glitch.",
     "plot_gallery": "False",
     "line_numbers": True,
 }
