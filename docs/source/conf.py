@@ -76,10 +76,9 @@ autodoc_member_order = "bysource"
 # -- Options for gallery -----------------------------------
 min_reported_time = 0
 sphinx_gallery_conf = {
-    "examples_dirs": "../../examples/",
-    "gallery_dirs": "auto_examples",
-    "filename_pattern": "/binary_examples/PyFstat_example_",
-    "ignore_pattern": "",
+    "examples_dirs": [os.path.join(examples_basedir, "binary_examples")],
+    "gallery_dirs": ["auto_examples"],
+    "filename_pattern": "/PyFstat_example_",
     "plot_gallery": "False",
     "line_numbers": True,
 }

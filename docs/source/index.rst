@@ -9,10 +9,10 @@ and is not guaranteed to be complete.
    :caption: Contents:
 
    modules
+   auto_examples/index
 
-   auto_examples/index.rst
-
-
+.. include::
+    
 
 Indices and tables
 ==================
