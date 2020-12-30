@@ -64,3 +64,6 @@ html_static_path = ["_static"]
 # what content will be inserted into the main body of an autoclass directive
 # both: the class’ and the __init__ method’s docstring are concatenated and inserted.
 autoclass_content = "both"
+
+# how to sort automatically documented members
+autodoc_member_order = "bysource"
