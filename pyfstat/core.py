@@ -1381,7 +1381,22 @@ class ComputeFstat(BaseSearchClass):
 
 
 class SemiCoherentSearch(ComputeFstat):
-    """ A semi-coherent search """
+    """A simple semi-coherent search class.
+
+    This will split the data set into multiple segments,
+    run a coherent F-stat search over each,
+    and produce a final semi-coherent detection statistic as the sum over segments.
+
+    This does not include any concept of refinement between the two steps,
+    as some grid-based semi-coherent search algorithms do;
+    both the per-segment coherent F-statistics and the incoherent sum
+    are done at the same parameter space point.
+
+    The implementation is based on a simple trick using the transient F-stat map
+    functionality: basic F-stat atoms are computed only once over the full data set,
+    then the transient code with rectangular 'windows' is used to compute the
+    per-segment F-stats, and these are summed to get the semi-coherent result.
+    """
 
     @helper_functions.initializer
     def __init__(
@@ -1408,26 +1423,29 @@ class SemiCoherentSearch(ComputeFstat):
         sun_ephem=None,
     ):
         """
+        Only parameters with a special meaning for SemiCoherentSearch itself
+        are explicitly documented here.
+        For all other parameters inherited from pyfstat.ComputeFStat
+        see the documentation of that class.
+
         Parameters
         ----------
         label, outdir: str
             A label and directory to read/write data from/to.
         tref: int
             GPS seconds of the reference time.
+        nsegs: int
+            The (fixed) number of segments to split the data set into.
+        sftfilepattern: str
+            Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
+            multiple patterns can be given separated by colons.
         minStartTime, maxStartTime : int
             Only use SFTs with timestamps starting from this range,
             following the XLALCWGPSinRange convention:
             half-open intervals [minStartTime,maxStartTime].
             Also used to set up segment boundaries, i.e.
-            maxStartTime-minStartTime will be divided by nsegs
-            to obtain the per-segment coherence time Tcoh.
-        nsegs: int
-            The (fixed) number of segments
-        sftfilepattern: str
-            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
-            multiple patterns can be given separated by colons.
-
-        For all other parameters, see pyfstat.ComputeFStat.
+            `maxStartTime-minStartTime` will be divided by `nsegs`
+            to obtain the per-segment coherence time `Tcoh`.
         """
 
         self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
@@ -1462,6 +1480,15 @@ class SemiCoherentSearch(ComputeFstat):
         self.semicoherentWindowRange.dtau = int(1)  # Irrelevant
 
     def init_semicoherent_parameters(self):
+        """Set up a list of equal-length segments and the corresponding transient windows.
+
+        For a requested number of segments `self.nsegs`,
+        `self.tboundaries` will have `self.nsegs+1` entries
+        covering `[self.minStartTime,self.maxStartTime]`
+        and `self.Tcoh` will be the total duration divided by `self.nsegs`.
+
+        Each segment is required to be at least two SFTs long.
+        """
         logging.info(
             (
                 "Initialising semicoherent parameters from"
@@ -1519,7 +1546,23 @@ class SemiCoherentSearch(ComputeFstat):
         argp=None,
         record_segments=False,
     ):
-        """ Returns twoF or ln(BSGL) semi-coherently at a single point """
+        """Computes the detection statistic (twoF or lnBSGL) semi-coherently at a single point.
+
+        Parameters
+        ----------
+        F0, F1, F2, Alpha, Delta: float
+            Parameters at which to compute the statistic.
+        asini, period, ecc, tp, argp: float, optional
+            Optional: Binary parameters at which to compute the statistic.
+        record_segments: boolean
+            If True, store the per-segment F-stat values as `self.twoF_per_segment`.
+
+        Returns
+        -------
+        stat: float
+            A single value of the detection statistic (semi-coherent twoF or lnBSGL)
+            at the input parameter values.
+        """
 
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
         self.PulsarDopplerParams.Alpha = float(Alpha)
