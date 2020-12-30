@@ -6,7 +6,7 @@ likely contains many formatting issues,
 and is not guaranteed to be complete.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    modules
