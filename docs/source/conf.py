@@ -93,6 +93,6 @@ sphinx_gallery_conf = {
     "gallery_dirs": example_names,
     "filename_pattern": "/PyFstat_example_",
     "ignore_pattern": ".run_all_.",
-    "plot_gallery": "False",
+    "plot_gallery": "False",  # our examples are slow, so we can't generate plots every time the docs are built
     "line_numbers": True,
 }
