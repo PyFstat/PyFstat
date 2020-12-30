@@ -181,7 +181,7 @@ For a general introduction to installing modules, see
 * Some optional plotting methods depend on the additional package
   [chainconsumer](https://github.com/Samreay/ChainConsumer)
   and some of the [examples](./examples) require this to run.
-  Gor `pip` users, this is most conveniently installed by
+  For `pip` users, this is most conveniently installed by
 ```
 pip install chainconsumer
 ```
