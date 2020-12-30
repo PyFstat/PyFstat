@@ -1,3 +1,24 @@
+## 1.10.0 [tbd]
+
+ - documentation now available from https://pyfstat.readthedocs.io
+   - still being improved
+ - removed the specialist grid-based classes which were deprecated in 1.9.0
+ - big internal changes to search classes
+   - should ideally not change anything for standard CW use cases
+   - but fix some corner cases and make for more robustness
+   - made tstart,tend optional in `get_fullycoherent_twoF()`
+   - adapted most high-level search classes to this change
+   - grid searches now internally use named-column ndarrays
+   - some cleanup to keys storage in MCMC classes
+   - changed `helper_functions.get_doppler_params_output_format()` to return dict
+   - fixed sorting of output fmt specifiers for both MCMC and grid classes
+   - changed `GridSearch.inititate_search_object()` to internal method `_initiate_search_object()`
+ - `MCMCSearch.run()`: initiate search object before checking for old data
+ - `MCMCGlitchSearch.plot_cumulative_max()`: add savefig option (defaults to false)
+ - removed unused `ComputeFstat.remove get_full_CFSv2_output()`
+ - new example `other_examples/PyFstat_example_spectrogram.py`
+ - some improvements to tests and examples
+
 ## 1.9.0 [30/10/2020]
 
  - new class `InjectionParametersGenerator`
