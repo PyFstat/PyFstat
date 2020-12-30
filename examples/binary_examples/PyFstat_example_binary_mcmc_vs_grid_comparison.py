@@ -1,5 +1,14 @@
 #!/usr/bin/env python
 
+"""
+Binary CW example: Comparison between MCMC and grid search
+==========================================================
+
+Comparison of the semicoherent F-statistic MCMC search algorithm
+to a simple grid search accross the parameter space corresponding
+to a CW source in a binary system.
+"""
+
 import pyfstat
 import os
 import numpy as np

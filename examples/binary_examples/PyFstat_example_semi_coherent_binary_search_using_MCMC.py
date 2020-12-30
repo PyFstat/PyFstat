@@ -1,3 +1,11 @@
+"""
+Binary CW example: Semicoherent MCMC search
+==========================================================
+
+MCMC search of a CW signal produced by a source in a binary
+system using the semicoherent F-statistic.
+"""
+
 import pyfstat
 import numpy as np
 import os
