@@ -1,5 +1,9 @@
 # PyFstat
 
+# FIXME
+Provisional [binder](https://mybinder.org/v2/gh/PyFstat/PyFstat/sphinx-binder)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PyFstat/PyFstat/sphinx-binder)
+
 This is a python package providing an interface to perform F-statistic based
 continuous gravitational wave (CW) searches,
 built on top of the [LALSuite](https://doi.org/10.7935/GT1W-FZ16) library.
