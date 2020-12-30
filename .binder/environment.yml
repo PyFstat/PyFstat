@@ -4,3 +4,6 @@ channels:
 dependencies:
   - pyfstat
   - sphinx-gallery
+  - pip:
+      ipynbname
+

@@ -21,5 +21,5 @@ cp -r $TMP_DIR/* $NOTEBOOKS_SCRIPTS_DIR
 ## Here, exclude whatever must be excluded
 find $NOTEBOOKS_SCRIPTS_DIR -name '*.py' ! -name '*run_all*' ! -name '*transient*' ! -name '*glitch*' -exec sphx_glr_python_to_jupyter.py '{}' +
 
-mkdir -p notebooks/PyFstat-examples
+mkdir notebooks
 ln -s ../$NOTEBOOKS_SCRIPTS_DIR notebooks/auto_examples
