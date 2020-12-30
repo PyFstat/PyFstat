@@ -65,19 +65,19 @@ log10beta_min = -1
 nwalkers = 100
 nsteps = [200, 200]
 
-    mcmc = pyfstat.MCMCTransientSearch(
-        label="transient_search",
-        outdir=data.outdir,
-        sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
-        theta_prior=theta_prior,
-        tref=inj["tref"],
-        nsteps=nsteps,
-        nwalkers=nwalkers,
-        ntemps=ntemps,
-        log10beta_min=log10beta_min,
-        transientWindowType="rect",
-    )
-    mcmc.run(walker_plot_args={"plot_det_stat": True, "injection_parameters": inj})
-    mcmc.print_summary()
-    mcmc.plot_corner(add_prior=True, truths=inj)
-    mcmc.plot_prior_posterior(injection_parameters=inj)
+mcmc = pyfstat.MCMCTransientSearch(
+    label="transient_search",
+    outdir=data.outdir,
+    sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
+    theta_prior=theta_prior,
+    tref=inj["tref"],
+    nsteps=nsteps,
+    nwalkers=nwalkers,
+    ntemps=ntemps,
+    log10beta_min=log10beta_min,
+    transientWindowType="rect",
+)
+mcmc.run(walker_plot_args={"plot_det_stat": True, "injection_parameters": inj})
+mcmc.print_summary()
+mcmc.plot_corner(add_prior=True, truths=inj)
+mcmc.plot_prior_posterior(injection_parameters=inj)
