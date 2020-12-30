@@ -1,0 +1,6 @@
+name: pyfstat-binder
+channels:
+  - conda-forge
+dependencies:
+  - pyfstat
+  - sphinx-gallery
