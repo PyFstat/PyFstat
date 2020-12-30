@@ -1,3 +1,10 @@
+"""
+Follow up example
+=================
+
+Multi-stage MCMC follow up of a CW signal produced by an isolated
+source using a ladder of coherent times.
+"""
 import pyfstat
 import numpy as np
 import matplotlib.pyplot as plt
