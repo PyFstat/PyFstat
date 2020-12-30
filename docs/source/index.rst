@@ -10,8 +10,6 @@ and is not guaranteed to be complete.
 
    modules
    auto_examples/index
-
-.. include::
     
 
 Indices and tables
