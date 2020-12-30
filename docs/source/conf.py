@@ -81,8 +81,8 @@ example_names = [
     for case in os.listdir(examples_basedir)
     if case
     not in [
-        "transient_examples",
-        "glitch_examples",
+        "transient_examples", # FIXME
+        "glitch_examples", # FIXME
         "run_all_examples.py",
         "README.rst",
     ]
