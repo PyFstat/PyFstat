@@ -621,6 +621,8 @@ class MCMCSearch(BaseSearchClass):
 
         """
 
+        self._initiate_search_object()
+
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
         if self.old_data_is_okay_to_use is True:
             logging.warning("Using saved data from {}".format(self.pickle_path))
@@ -632,7 +634,6 @@ class MCMCSearch(BaseSearchClass):
             self.chain = d["chain"]
             return
 
-        self._initiate_search_object()
         self._estimate_run_time()
 
         walker_plot_args = walker_plot_args or {}
@@ -1242,9 +1243,6 @@ class MCMCSearch(BaseSearchClass):
             if key not in d:
                 d[key] = val
 
-        if hasattr(self, "search") is False:
-            self._initiate_search_object()
-
         self.search.plot_twoF_cumulative(
             CFS_input=d, label=self.label, outdir=self.outdir, **kwargs
         )
@@ -1775,6 +1773,10 @@ class MCMCSearch(BaseSearchClass):
         twoF within `threshold` (relative) to the max twoF
 
         """
+        if not hasattr(self, "search"):
+            raise RuntimeError(
+                "Object has no self.lnlikes attribute, please execute .run() first."
+            )
         if any(np.isposinf(self.lnlikes)):
             logging.info("lnlike values contain positive infinite values")
         if any(np.isneginf(self.lnlikes)):
