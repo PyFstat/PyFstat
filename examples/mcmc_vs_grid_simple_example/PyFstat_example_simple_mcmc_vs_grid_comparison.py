@@ -1,6 +1,10 @@
 #!/usr/bin/env python
+"""
+MCMC search v.s. grid search
+============================
 
-""" An example to compare MCMCSearch and GridSearch on the same data. """
+An example to compare MCMCSearch and GridSearch on the same data.
+"""
 
 import pyfstat
 import os
