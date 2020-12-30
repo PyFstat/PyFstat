@@ -10,15 +10,15 @@ fi
 
 TMP_DIR=/tmp/pyfstat
 mkdir -p $TMP_DIR
-cp -r --parents examples/*transient*/*short* .binder $TMP_DIR
+cp -r --parents examples .binder $TMP_DIR
 find . -delete
 
 # Generate notebooks and remove other files from examples folder
 NOTEBOOKS_SCRIPTS_DIR=.generated-notebooks
 cp -r $TMP_DIR/examples $NOTEBOOKS_SCRIPTS_DIR
 
-# Here, exclude whatever must be excluded
+## Here, exclude whatever must be excluded
 find $NOTEBOOKS_SCRIPTS_DIR -name '*.py' -exec sphx_glr_python_to_jupyter.py '{}' +
 
 mkdir notebooks
-ln -s ../$NOTEBOOKS_SCRIPTS_DIR notebooks/auto_examples
+ln -s ../$NOTEBOOKS_SCRIPTS_DIR notebooks
