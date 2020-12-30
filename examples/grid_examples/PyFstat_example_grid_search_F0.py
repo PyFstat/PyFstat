@@ -1,3 +1,10 @@
+"""
+Targeted grid search: Monochromatic source
+==========================================
+
+Search for a monochromatic (no spindown) signal using
+a parameter space grid (i.e. no MCMC).
+"""
 import pyfstat
 import numpy as np
 import matplotlib.pyplot as plt

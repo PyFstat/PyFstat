@@ -1,3 +1,10 @@
+"""
+Targeted grid search: Linear spindown
+==========================================
+
+Search for CW signal including one spindown parameter
+using a parameter space grid (i.e. no MCMC).
+"""
 import pyfstat
 import numpy as np
 import os
