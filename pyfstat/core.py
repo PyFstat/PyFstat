@@ -38,7 +38,12 @@ detector_colors = {"h1": "C0", "l1": "C1"}
 
 
 class BaseSearchClass:
-    """ The base search class providing parent methods to other searches """
+    """The base class providing parent methods to other PyFstat classes.
+
+    This does not actually have any 'search' functionality,
+    which needs to be added by child classes
+    along with full initialization and any other custom methods.
+    """
 
     def __new__(cls, *args, **kwargs):
         logging.info(f"Creating {cls.__name__} object...")
@@ -72,21 +77,19 @@ class BaseSearchClass:
             raise IOError("No sfts found matching {}".format(self.sftfilepattern))
 
     def set_ephemeris_files(self, earth_ephem=None, sun_ephem=None):
-        """Set the ephemeris files to use for the Earth and Sun
+        """Set the ephemeris files to use for the Earth and Sun.
+
+        NOTE: If not given explicit arguments,
+        default values from helper_functions.get_ephemeris_files()
+        are used (looking in ~/.pyfstat or $LALPULSAR_DATADIR)
 
         Parameters
         ----------
         earth_ephem, sun_ephem: str
             Paths of the two files containing positions of Earth and Sun,
             respectively at evenly spaced times, as passed to CreateFstatInput
-
-        Note: If not manually set, default values from get_ephemeris_files()
-              are used (looking in ~/.pyfstat or $LALPULSAR_DATADIR)
-
         """
-
         earth_ephem_default, sun_ephem_default = helper_functions.get_ephemeris_files()
-
         if earth_ephem is None:
             self.earth_ephem = earth_ephem_default
         else:
@@ -97,18 +100,21 @@ class BaseSearchClass:
             self.sun_ephem = sun_ephem
 
     def _set_init_params_dict(self, argsdict):
+        """ Store the initial input arguments, e.g. for logging output. """
         argsdict.pop("self")
         self.init_params_dict = argsdict
 
     def pprint_init_params_dict(self):
-        """
-        Pretty-print a parameters dictionary for output file headers.
+        """Pretty-print a parameters dictionary for output file headers.
 
-        Returns a list of lines to be printed,
-        including opening/closing "{" and "}",
-        consistent indentation,
-        as well as end-of-line commas,
-        but no comment markers at start of lines.
+        Returns
+        -------
+        pretty_init_parameters: list
+            A list of lines to be printed,
+            including opening/closing "{" and "}",
+            consistent indentation,
+            as well as end-of-line commas,
+            but no comment markers at start of lines.
         """
         pretty_init_parameters = pformat(
             self.init_params_dict, indent=2, width=74
@@ -123,6 +129,19 @@ class BaseSearchClass:
         return pretty_init_parameters
 
     def get_output_file_header(self):
+        """Constructs a meta-information header for text output files.
+
+        This will include
+        PyFstat and LALSuite versioning,
+        information about when/where/how the code was run,
+        and input parameters of the instantiated class.
+
+        Returns
+        -------
+        header: list
+            A list of formatted header lines.
+
+        """
         header = [
             "date: {}".format(str(datetime.now())),
             "user: {}".format(getpass.getuser()),
@@ -141,6 +160,24 @@ class BaseSearchClass:
     def read_par(
         self, filename=None, label=None, outdir=None, suffix="par", raise_error=True
     ):
+        """Read a `key=val` file and return a dictionary.
+
+        Parameters
+        ----------
+        filename: str or None
+            Filename (path) containing rows of `key=val` data to read in.
+        label, outdir, suffix : str or None
+            If filename is None, form the file to read as `outdir/label.suffix`.
+        raise_error : bool
+            If True, raise an error for lines which are not comments,
+            but cannot be read.
+
+        Returns
+        -------
+        params_dict: dict
+            A dictionary of the parsed `key=val` pairs.
+
+        """
         params_dict = helper_functions.read_par(
             filename=filename,
             label=label or getattr(self, "label", None),
@@ -152,25 +189,25 @@ class BaseSearchClass:
 
     @staticmethod
     def translate_keys_to_lal(dictionary):
-        """Convert input keys into lal input keys
+        """Convert input keys into lalpulsar convention.
 
-        Input keys are F0, F1, F2, ..., while LAL functions
-        prefer to use Freq, f1dot, f2dot, ....
+        In PyFstat's convention, input keys (search parameter names)
+        are F0, F1, F2, ...,
+        while lalpulsar functions prefer to use Freq, f1dot, f2dot, ....
 
-        Since lal keys are only used to call for lal routines,
-        it makes sense to have this function defined this way
-        so it can be called on the fly.
+        Since lalpulsar keys are only used internally to call lalpulsar routines,
+        this function is provided so the keys can be translated on the fly.
 
         Parameters
         ----------
         dictionary: dict
-            Dictionary to translate. A copy will be made (an returned)
+            Dictionary to translate. A copy will be made (and returned)
             before translation takes place.
 
         Returns
         -------
         translated_dict: dict
-            Copy of "dictionary" with new keys according to lal.
+            Copy of "dictionary" with new keys according to lalpulsar convention.
         """
 
         translation = {
