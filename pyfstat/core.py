@@ -1162,6 +1162,7 @@ class ComputeFstat(BaseSearchClass):
             Optional axis formatting options.
         savefig : bool
             If true, save the figure in outdir.
+            If false, return an axis object.
         label: str
             Output filename (ignored unless savefig is True).
         outdir: str

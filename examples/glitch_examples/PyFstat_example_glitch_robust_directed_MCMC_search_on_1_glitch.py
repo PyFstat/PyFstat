@@ -89,7 +89,7 @@ mcmc.plot_corner(
     truth_color="C3",
 )
 
-mcmc.plot_cumulative_max()
+mcmc.plot_cumulative_max(savefig=True)
 
 print(("Prior widths =", F0_width, F1_width))
 print(("Actual run time = {}".format(dT)))

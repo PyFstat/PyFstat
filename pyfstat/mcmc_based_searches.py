@@ -613,6 +613,8 @@ class MCMCSearch(BaseSearchClass):
 
         """
 
+        self._initiate_search_object()
+
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
         if self.old_data_is_okay_to_use is True:
             logging.warning("Using saved data from {}".format(self.pickle_path))
@@ -624,7 +626,6 @@ class MCMCSearch(BaseSearchClass):
             self.chain = d["chain"]
             return
 
-        self._initiate_search_object()
         self._estimate_run_time()
 
         walker_plot_args = walker_plot_args or {}
@@ -1234,9 +1235,6 @@ class MCMCSearch(BaseSearchClass):
             if key not in d:
                 d[key] = val
 
-        if hasattr(self, "search") is False:
-            self._initiate_search_object()
-
         self.search.plot_twoF_cumulative(
             CFS_input=d, label=self.label, outdir=self.outdir, **kwargs
         )
@@ -1777,6 +1775,10 @@ class MCMCSearch(BaseSearchClass):
         twoF within `threshold` (relative) to the max twoF
 
         """
+        if not hasattr(self, "search"):
+            raise RuntimeError(
+                "Object has no self.lnlikes attribute, please execute .run() first."
+            )
         if any(np.isposinf(self.lnlikes)):
             logging.info("lnlike values contain positive infinite values")
         if any(np.isneginf(self.lnlikes)):
@@ -2437,7 +2439,17 @@ class MCMCGlitchSearch(MCMCSearch):
             p0[:, :, -self.nglitch :] = np.sort(p0[:, :, -self.nglitch :], axis=2)
         return p0
 
-    def plot_cumulative_max(self):
+    def plot_cumulative_max(self, savefig=False):
+        """Here we override the standard version to deal with the split at glitches.
+
+        Parameters
+        ----------
+        savefig: boolean
+            included for consistency with core plot_twoF_cumulative() function.
+            If true, save the figure in outdir.
+            If false, return an axis object.
+        """
+
         logging.info("Getting cumulative 2F")
         fig, ax = plt.subplots()
         d, maxtwoF = self.get_max_twoF()
@@ -2494,8 +2506,10 @@ class MCMCGlitchSearch(MCMCSearch):
             ax.plot(actual_ts + taus, twoFs)
 
         ax.set_xlabel("GPS time")
-        fig.savefig(os.path.join(self.outdir, self.label + "_twoFcumulative.png"))
-        plt.close(fig)
+        if savefig:
+            fig.savefig(os.path.join(self.outdir, self.label + "_twoFcumulative.png"))
+            plt.close(fig)
+        return ax
 
     def get_savetxt_fmt_dict(self):
         fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
