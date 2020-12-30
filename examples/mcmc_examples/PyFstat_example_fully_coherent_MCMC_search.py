@@ -1,3 +1,12 @@
+"""
+MCMC search: Fully coherent F-statistic
+=======================================
+
+Targeted MCMC search for an isolated CW signal using the
+fully coherent F-statistic. This is functionaly equivalent
+to a semicoherent F-statistic search using a single segment.
+"""
+
 import pyfstat
 import numpy as np
 import os

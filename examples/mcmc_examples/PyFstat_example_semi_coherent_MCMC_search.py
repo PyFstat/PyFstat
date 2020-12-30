@@ -1,3 +1,10 @@
+"""
+MCMC search: Semicoherent F-statistic
+=======================================
+
+Targeted MCMC search for an isolated CW signal using the
+semicoherent F-statistic.
+"""
 import pyfstat
 import numpy as np
 import os

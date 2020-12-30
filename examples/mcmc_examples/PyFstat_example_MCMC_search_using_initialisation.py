@@ -1,3 +1,11 @@
+"""
+MCMC search: Semicoherent F-statistic with initialisation
+=========================================================
+
+Targeted MCMC search for an isolated CW signal using the
+semicoherent F-statistic. Prior to the burn-in stage, walkers
+are initialized with a certain scattering factor.
+"""
 import pyfstat
 import numpy as np
 import os
