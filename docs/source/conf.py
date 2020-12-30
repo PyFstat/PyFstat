@@ -75,9 +75,22 @@ autodoc_member_order = "bysource"
 
 # -- Options for gallery -----------------------------------
 min_reported_time = 0
+
+example_names = [
+    case
+    for case in os.listdir(examples_basedir)
+    if case
+    not in [
+        "transient_examples",
+        "glitch_examples",
+        "run_all_examples.py",
+        "README.rst",
+    ]
+]
+
 sphinx_gallery_conf = {
-    "examples_dirs": examples_basedir,
-    "gallery_dirs": "auto_examples",
+    "examples_dirs": [os.path.join(examples_basedir, case) for case in example_names],
+    "gallery_dirs": example_names,
     "filename_pattern": "/PyFstat_example_",
     "ignore_pattern": "run_all_*",
     "plot_gallery": "False",

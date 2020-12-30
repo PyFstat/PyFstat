@@ -6,12 +6,11 @@ likely contains many formatting issues,
 and is not guaranteed to be complete.
 
 .. toctree::
+   :maxdepth: 2
    :caption: Contents:
 
    modules
-   auto_examples/index
-    
-
+   examples
 Indices and tables
 ==================
 
