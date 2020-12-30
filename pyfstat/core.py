@@ -1487,7 +1487,7 @@ class SemiCoherentSearch(ComputeFstat):
         covering `[self.minStartTime,self.maxStartTime]`
         and `self.Tcoh` will be the total duration divided by `self.nsegs`.
 
-        Each segment is required to be at least two SFTs long.
+        Each segment is required to be at least two SFTs long.f
         """
         logging.info(
             (
@@ -1633,7 +1633,11 @@ class SemiCoherentSearch(ComputeFstat):
 
 
 class SearchForSignalWithJumps(BaseSearchClass):
-    """ A class which just adds some useful methods for glitches or timing noise """
+    """Internal helper class with some useful methods for glitches or timing noise.
+
+    Users should never need to interact with this class,
+    just with the derived search classes.
+    """
 
     def _shift_matrix(self, n, dT):
         """Generate the shift matrix
@@ -1740,12 +1744,12 @@ class SearchForSignalWithJumps(BaseSearchClass):
 
 
 class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
-    """A semi-coherent glitch search
+    """A semi-coherent search for CW signals from sources with timing glitches.
 
-    This implements a basic `semi-coherent glitch F-stat in which the data
-    is divided into segments either side of the proposed glitches and the
+    This implements a basic semi-coherent F-stat search in which the data
+    is divided into segments either side of the proposed glitch epochs and the
     fully-coherent F-stat in each segment is summed to give the semi-coherent
-    F-stat
+    F-stat.
     """
 
     @helper_functions.initializer
@@ -1773,6 +1777,11 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         sun_ephem=None,
     ):
         """
+        Only parameters with a special meaning for SemiCoherentGlitchSearch itself
+        are explicitly documented here.
+        For all other parameters inherited from pyfstat.ComputeFStat
+        see the documentation of that class.
+
         Parameters
         ----------
         label, outdir: str
@@ -1780,17 +1789,17 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         tref, minStartTime, maxStartTime: int
             GPS seconds of the reference time, and start and end of the data.
         nglitch: int
-            The (fixed) number of glitches; this can zero, but occasionally
-            this causes issue (in which case just use ComputeFstat).
+            The (fixed) number of glitches.
+            This is also allowed to be zero, but occasionally this causes issues,
+            in which case please use the basic ComputeFstat class instead.
         sftfilepattern: str
-            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
-            mutiple patterns can be given separated by colons.
-        theta0_idx, int
-            Index (zero-based) of which segment the theta refers to - uyseful
-            if providing a tight prior on theta to allow the signal to jump
-            too theta (and not just from)
-
-        For all other parameters, see pyfstat.ComputeFStat.
+            Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
+            multiple patterns can be given separated by colons.
+        theta0_idx: int
+            Index (zero-based) of which segment the theta (searched parameters)
+            refer to.
+            This is useful if providing a tight prior on theta to allow the
+            signal to jump to theta (and not just from).
         """
 
         self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
@@ -1804,7 +1813,22 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         self.init_computefstatistic()
 
     def get_semicoherent_nglitch_twoF(self, F0, F1, F2, Alpha, Delta, *args):
-        """ Returns the semi-coherent glitch summed twoF """
+        """Returns the semi-coherent glitch summed twoF.
+
+        Parameters
+        ----------
+        F0, F1, F2, Alpha, Delta: float
+            Parameters at which to compute the statistic.
+        args: dict
+            Additional arguments for the glitch parameters;
+            see the source code for full details.
+
+        Returns
+        -------
+        twoFSum: float
+            A single value of the semi-coherent summed detection statistic
+            at the input parameter values.
+        """
 
         args = list(args)
         tboundaries = [self.minStartTime] + args[-self.nglitch :] + [self.maxStartTime]
@@ -1844,9 +1868,9 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
     def compute_glitch_fstat_single(
         self, F0, F1, F2, Alpha, Delta, delta_F0, delta_F1, tglitch
     ):
-        """Returns the semi-coherent glitch summed twoF for nglitch=1
+        """Returns the semi-coherent glitch summed twoF for nglitch=1.
 
-        Note: OBSOLETE, used only for testing
+        NOTE: OBSOLETE, used only for testing.
         """
 
         theta = [F0, F1, F2]
@@ -1886,6 +1910,8 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
 
 
 class DeprecatedClass:
+    """Outdated classes are marked for future removal by inheriting from this."""
+
     def __new__(cls, *args, **kwargs):
         logging.warning(
             f"The {cls.__name__} class is no longer maintained"
@@ -1898,6 +1924,8 @@ class DeprecatedClass:
 
 
 class DefunctClass:
+    """Removed classes are retained for a while but marked by inheriting from this."""
+
     last_supported_version = None
     pr_welcome = True
 
