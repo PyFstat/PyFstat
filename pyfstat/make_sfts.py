@@ -753,12 +753,6 @@ class Writer(BaseSearchClass):
         and else runs the actual generation code.
         """
 
-        # Remove old data:
-        try:
-            os.unlink(os.path.join(self.outdir, "*" + self.label + "*.sft"))
-        except OSError:
-            pass
-
         mfd = "lalapps_Makefakedata_v5"
         cl_mfd = [mfd]
         cl_mfd.append("--outSingleSFT=TRUE")
