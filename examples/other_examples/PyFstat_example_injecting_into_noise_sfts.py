@@ -1,3 +1,13 @@
+"""
+Software injections using real data
+===================================
+
+Add a software injection into a set of SFTs.
+
+In this case, the set of SFTs is generated using Makefakedata_v5,
+but the same procedure can be applied to any other set of SFTs.
+"""
+
 import os
 import numpy as np
 import pyfstat

@@ -1,3 +1,11 @@
+"""
+Cumulative coherent 2F
+======================
+
+Compute the cumulative coherent F-statistic of a signal candidate.
+"""
+
+
 import os
 import numpy as np
 import pyfstat

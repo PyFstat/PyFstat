@@ -1,3 +1,11 @@
+"""
+Compute a spectrogram
+==========================
+
+Compute the spectrogram of a set of SFTs. This is useful to produce
+visualizations of the Doppler modulation of a CW signal.
+"""
+
 import tempfile
 
 import matplotlib.pyplot as plt

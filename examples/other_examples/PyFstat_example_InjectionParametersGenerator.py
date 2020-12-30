@@ -1,3 +1,10 @@
+"""
+Randomly sampling parameter space points
+========================================
+
+Application of dedicated classes to sample software injection
+parameters according to the specified parameter space priors.
+"""
 import os
 import numpy as np
 import matplotlib.pyplot as plt
