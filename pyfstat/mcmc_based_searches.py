@@ -2432,7 +2432,17 @@ class MCMCGlitchSearch(MCMCSearch):
             p0[:, :, -self.nglitch :] = np.sort(p0[:, :, -self.nglitch :], axis=2)
         return p0
 
-    def plot_cumulative_max(self):
+    def plot_cumulative_max(self, savefig=False):
+        """Here we override the standard version to deal with the split at glitches.
+
+        Parameters
+        ----------
+        savefig: boolean
+            included for consistency with core plot_twoF_cumulative() function.
+            If true, save the figure in outdir.
+            If false, return an axis object.
+        """
+
         logging.info("Getting cumulative 2F")
         fig, ax = plt.subplots()
         d, maxtwoF = self.get_max_twoF()
@@ -2489,8 +2499,10 @@ class MCMCGlitchSearch(MCMCSearch):
             ax.plot(actual_ts + taus, twoFs)
 
         ax.set_xlabel("GPS time")
-        fig.savefig(os.path.join(self.outdir, self.label + "_twoFcumulative.png"))
-        plt.close(fig)
+        if savefig:
+            fig.savefig(os.path.join(self.outdir, self.label + "_twoFcumulative.png"))
+            plt.close(fig)
+        return ax
 
     def get_savetxt_fmt(self):
         fmt = helper_functions.get_doppler_params_output_format(
