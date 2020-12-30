@@ -110,7 +110,6 @@ gridsearch = pyfstat.GridSearch(
 )
 gridsearch.run()
 gridsearch.print_max_twoF()
-gridsearch.save_array_to_disk(gridsearch.data)
 
 # do some plots of the GridSearch results
 if not sky:  # this plotter can't currently deal with too large result arrays
@@ -119,11 +118,8 @@ if not sky:  # this plotter can't currently deal with too large result arrays
         gridsearch.plot_1D(xkey=key, xlabel=labels[key], ylabel=labels["2F"])
 
 print("Making GridSearch {:s} corner plot...".format("-".join(search_keys)))
-vals = [
-    np.unique(gridsearch.data[:, gridsearch.keys.index(key)]) - inj[key]
-    for key in search_keys
-]
-twoF = gridsearch.data[:, -1].reshape([len(kval) for kval in vals])
+vals = [np.unique(gridsearch.data[key]) - inj[key] for key in search_keys]
+twoF = gridsearch.data["twoF"].reshape([len(kval) for kval in vals])
 corner_labels = [
     "$f - f_0$ [Hz]",
     "$\\dot{f} - \\dot{f}_0$ [Hz/s]",
@@ -290,11 +286,17 @@ print()
 print("Loading grid and MCMC search results for custom comparison plots...")
 gridfile = os.path.join(outdir, gridsearch.label + "_NA_GridSearch.txt")
 if not os.path.isfile(gridfile):
-    raise RuntimeError("Please first run PyFstat_example_simple_grid_search.py !")
+    raise RuntimeError(
+        "Failed to load GridSearch results from file '{:s}',"
+        " something must have gone wrong!".format(gridfile)
+    )
 grid_res = pyfstat.helper_functions.read_txt_file_with_header(gridfile)
 mcmc_file = os.path.join(outdir, mcmcsearch.label + "_samples.dat")
 if not os.path.isfile(mcmc_file):
-    raise RuntimeError("Please first run PyFstat_example_simple_mcmc_search.py !")
+    raise RuntimeError(
+        "Failed to load MCMCSearch results from file '{:s}',"
+        " something must have gone wrong!".format(mcmc_file)
+    )
 mcmc_res = pyfstat.helper_functions.read_txt_file_with_header(mcmc_file)
 
 zoom = {

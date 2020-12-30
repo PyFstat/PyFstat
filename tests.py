@@ -663,8 +663,6 @@ class TestComputeFstat(BaseForTestsWithData):
             maxCoverFreq=self.F0 + 0.1,
         )
         FS = search.get_fullycoherent_twoF(
-            tstart=self.tstart,
-            tend=self.tstart + self.duration,
             F0=self.F0,
             F1=self.F1,
             F2=self.F2,
@@ -683,13 +681,11 @@ class TestComputeFstat(BaseForTestsWithData):
             search_ranges=self.search_ranges,
         )
         twoF = search.get_fullycoherent_twoF(
-            self.Writer.tstart,
-            self.Writer.tend(),
-            self.Writer.F0,
-            self.Writer.F1,
-            self.Writer.F2,
-            self.Writer.Alpha,
-            self.Writer.Delta,
+            F0=self.Writer.F0,
+            F1=self.Writer.F1,
+            F2=self.Writer.F2,
+            Alpha=self.Writer.Alpha,
+            Delta=self.Writer.Delta,
         )
         diff = np.abs(twoF - twoF_predicted) / twoF_predicted
         print(
@@ -713,13 +709,11 @@ class TestComputeFstat(BaseForTestsWithData):
             search_ranges=self.search_ranges,
         )
         twoF2 = search.get_fullycoherent_twoF(
-            self.Writer.tstart,
-            self.Writer.tend(),
-            self.Writer.F0,
-            self.Writer.F1,
-            self.Writer.F2,
-            self.Writer.Alpha,
-            self.Writer.Delta,
+            F0=self.Writer.F0,
+            F1=self.Writer.F1,
+            F2=self.Writer.F2,
+            Alpha=self.Writer.Alpha,
+            Delta=self.Writer.Delta,
         )
         diff = np.abs(twoF2 - twoF_predicted) / twoF_predicted
         print(
@@ -749,13 +743,11 @@ class TestComputeFstat(BaseForTestsWithData):
             detectors=self.Writer.detectors,
         )
         FS_from_file = search.get_fullycoherent_twoF(
-            self.Writer.tstart,
-            self.Writer.tend(),
-            self.Writer.F0,
-            self.Writer.F1,
-            self.Writer.F2,
-            self.Writer.Alpha,
-            self.Writer.Delta,
+            F0=self.Writer.F0,
+            F1=self.Writer.F1,
+            F2=self.Writer.F2,
+            Alpha=self.Writer.Alpha,
+            Delta=self.Writer.Delta,
         )
         self.assertTrue(np.abs(predicted_FS - FS_from_file) / FS_from_file < 0.3)
 
@@ -775,13 +767,11 @@ class TestComputeFstat(BaseForTestsWithData):
             detectors=self.Writer.detectors,
         )
         FS_from_dict = search.get_fullycoherent_twoF(
-            self.Writer.tstart,
-            self.Writer.tend(),
-            self.Writer.F0,
-            self.Writer.F1,
-            self.Writer.F2,
-            self.Writer.Alpha,
-            self.Writer.Delta,
+            F0=self.Writer.F0,
+            F1=self.Writer.F1,
+            F2=self.Writer.F2,
+            Alpha=self.Writer.Alpha,
+            Delta=self.Writer.Delta,
         )
         self.assertTrue(FS_from_dict == FS_from_file)
 
@@ -798,8 +788,6 @@ class TestComputeFstat(BaseForTestsWithData):
             BSGL=True,
         )
         lnBSGL = search_H1L1.get_fullycoherent_twoF(
-            tstart=self.tstart,
-            tend=self.tstart + self.duration,
             F0=self.F0,
             F1=self.F1,
             F2=self.F2,
@@ -829,8 +817,6 @@ class TestComputeFstat(BaseForTestsWithData):
             BSGL=True,
         )
         lnBSGL = search_H1L1.get_fullycoherent_twoF(
-            tstart=self.tstart,
-            tend=self.tstart + self.duration,
             F0=self.F0,
             F1=self.F1,
             F2=self.F2,
@@ -861,13 +847,13 @@ class TestComputeFstat(BaseForTestsWithData):
             num_segments=Nsft + 1,
         )
         twoF = search.get_fullycoherent_twoF(
-            self.Writer.tstart,
-            self.Writer.tstart + taus[-1],
-            self.Writer.F0,
-            self.Writer.F1,
-            self.Writer.F2,
-            self.Writer.Alpha,
-            self.Writer.Delta,
+            F0=self.Writer.F0,
+            F1=self.Writer.F1,
+            F2=self.Writer.F2,
+            Alpha=self.Writer.Alpha,
+            Delta=self.Writer.Delta,
+            tstart=self.Writer.tstart,
+            tend=self.Writer.tstart + taus[-1],
         )
         reldiff = np.abs(twoF_cumulative[-1] - twoF) / twoF
         print(
@@ -911,13 +897,11 @@ class TestComputeFstatNoNoise(BaseForTestsWithData):
             search_ranges=self.search_ranges,
         )
         FS = search.get_fullycoherent_twoF(
-            self.Writer.tstart,
-            self.Writer.tend(),
-            self.Writer.F0,
-            self.Writer.F1,
-            self.Writer.F2,
-            self.Writer.Alpha,
-            self.Writer.Delta,
+            F0=self.Writer.F0,
+            F1=self.Writer.F1,
+            F2=self.Writer.F2,
+            Alpha=self.Writer.Alpha,
+            Delta=self.Writer.Delta,
         )
         self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
 
@@ -941,13 +925,11 @@ class TestComputeFstatNoNoise(BaseForTestsWithData):
             search_ranges=self.search_ranges,
         )
         FS = search.get_fullycoherent_twoF(
-            self.Writer.tstart,
-            self.Writer.tend(),
-            self.Writer.F0,
-            self.Writer.F1,
-            self.Writer.F2,
-            self.Writer.Alpha,
-            self.Writer.Delta,
+            F0=self.Writer.F0,
+            F1=self.Writer.F1,
+            F2=self.Writer.F2,
+            Alpha=self.Writer.Alpha,
+            Delta=self.Writer.Delta,
         )
         self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
 
@@ -1247,14 +1229,14 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
                 "transient_duration": self.Writer.transientTau,
             }
 
-        for k in inj.keys():
+        for k in self.max_dict.keys():
             reldiff = np.abs((self.max_dict[k] - inj[k]) / inj[k])
             print("max2F  {:s} reldiff: {:.2e}".format(k, reldiff))
             reldiff = np.abs((summary_stats[k]["mean"] - inj[k]) / inj[k])
             print("mean   {:s} reldiff: {:.2e}".format(k, reldiff))
             reldiff = np.abs((summary_stats[k]["median"] - inj[k]) / inj[k])
             print("median {:s} reldiff: {:.2e}".format(k, reldiff))
-        for k in inj.keys():
+        for k in self.max_dict.keys():
             lower = summary_stats[k]["mean"] - nsigmas * summary_stats[k]["std"]
             upper = summary_stats[k]["mean"] + nsigmas * summary_stats[k]["std"]
             within = (inj[k] >= lower) and (inj[k] <= upper)
@@ -1489,8 +1471,8 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
 
     def setup_method(self, method):
         self.transientWindowType = "rect"
-        self.transientStartTime = self.tstart + 0.25 * self.duration
-        self.transientTau = 0.5 * self.duration
+        self.transientStartTime = int(self.tstart + 0.25 * self.duration)
+        self.transientTau = int(0.5 * self.duration)
         self.Writer = pyfstat.Writer(
             label=self.label,
             tstart=self.tstart,
@@ -1509,15 +1491,74 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
             transientTau=self.transientTau,
         )
         self.Writer.make_data(verbose=True)
-
-    def test_transient_MCMC(self):
-
-        theta = {
+        self.basic_theta = {
             "F0": self.F0,
             "F1": self.F1,
             "F2": self.F2,
             "Alpha": self.Alpha,
             "Delta": self.Delta,
+        }
+        self.MCMC_params = {
+            "nsteps": [50, 50],
+            "nwalkers": 50,
+            "ntemps": 2,
+            "log10beta_min": -1,
+        }
+
+    def test_transient_MCMC_t0only(self):
+
+        theta = {
+            **self.basic_theta,
+            "transient_tstart": {
+                "type": "unif",
+                "lower": self.Writer.tstart,
+                "upper": self.Writer.tend() - 2 * self.Writer.Tsft,
+            },
+            "transient_duration": self.transientTau,
+        }
+        self.search = pyfstat.MCMCTransientSearch(
+            label=self.label,
+            outdir=self.outdir,
+            theta_prior=theta,
+            tref=self.tref,
+            sftfilepattern=self.Writer.sftfilepath,
+            **self.MCMC_params,
+            transientWindowType=self.transientWindowType,
+        )
+        self.search.run(plot_walkers=False)
+        self.search.print_summary()
+        self._check_twoF_predicted()
+        self._check_mcmc_quantiles(transient=True)
+
+    def test_transient_MCMC_tauonly(self):
+
+        theta = {
+            **self.basic_theta,
+            "transient_tstart": self.transientStartTime,
+            "transient_duration": {
+                "type": "unif",
+                "lower": 2 * self.Writer.Tsft,
+                "upper": self.Writer.duration - 2 * self.Writer.Tsft,
+            },
+        }
+        self.search = pyfstat.MCMCTransientSearch(
+            label=self.label,
+            outdir=self.outdir,
+            theta_prior=theta,
+            tref=self.tref,
+            sftfilepattern=self.Writer.sftfilepath,
+            **self.MCMC_params,
+            transientWindowType=self.transientWindowType,
+        )
+        self.search.run(plot_walkers=False)
+        self.search.print_summary()
+        self._check_twoF_predicted()
+        self._check_mcmc_quantiles(transient=True)
+
+    def test_transient_MCMC_t0_tau(self):
+
+        theta = {
+            **self.basic_theta,
             "transient_tstart": {
                 "type": "unif",
                 "lower": self.Writer.tstart,
@@ -1535,10 +1576,7 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
             theta_prior=theta,
             tref=self.tref,
             sftfilepattern=self.Writer.sftfilepath,
-            nsteps=[100, 100],
-            nwalkers=100,
-            ntemps=2,
-            log10beta_min=-1,
+            **self.MCMC_params,
             transientWindowType=self.transientWindowType,
         )
         self.search.run(plot_walkers=False)
@@ -1571,9 +1609,7 @@ class TestGridSearch(BaseForTestsWithData):
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
         max2F_point = search.get_max_twoF()
-        self.assertTrue(
-            np.all(max2F_point["twoF"] >= search.data[:, search.keys.index("twoF")])
-        )
+        self.assertTrue(np.all(max2F_point["twoF"] >= search.data["twoF"]))
 
     def test_grid_search_against_CFSv2(self):
         search = pyfstat.GridSearch(
@@ -1690,19 +1726,8 @@ class TestTransientGridSearch(BaseForTestsWithData):
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
         max2F_point = search.get_max_twoF()
-        self.assertTrue(
-            np.all(max2F_point["twoF"] >= search.data[:, search.keys.index("twoF")])
-        )
-        tCWfile = (
-            search.tCWfilebase
-            + "{:.16f}_{:.16f}_{:.16f}_{:.16g}_{:.16g}.dat".format(
-                max2F_point["F0"],
-                max2F_point["Alpha"],
-                max2F_point["Delta"],
-                max2F_point["F1"],
-                max2F_point["F2"],
-            )
-        )
+        self.assertTrue(np.all(max2F_point["twoF"] >= search.data["twoF"]))
+        tCWfile = search.get_transient_fstat_map_filename(max2F_point)
         tCW_out = pyfstat.helper_functions.read_txt_file_with_header(
             tCWfile, comments="#"
         )

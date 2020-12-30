@@ -69,11 +69,10 @@ search = pyfstat.GridSearch(
 )
 search.run()
 
+print("Plotting 2F(F0)...")
 fig, ax = plt.subplots()
-xidx = search.keys.index("F0")
-frequencies = np.unique(search.data[:, xidx])
-twoF = search.data[:, -1]
-
+frequencies = search.data["F0"]
+twoF = search.data["twoF"]
 # mismatch = np.sign(x-F0)*(duration * np.pi * (x - F0))**2 / 12.0
 ax.plot(frequencies, twoF, "k", lw=1)
 DeltaF = frequencies - F0
