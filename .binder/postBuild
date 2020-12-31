@@ -8,26 +8,21 @@ if [[ ! -f /.dockerenv ]]; then
     exit 1
 fi
 
-# Get the example scripts from the latest tagged release 
+# Install the latest version of PyFstat
+pip install .
+
+# Get the example scripts and clean up files
 TMP_DIR=/tmp/pyfstat
-PIP_DIR=/tmp/pip_download
 mkdir -p ${TMP_DIR}
-mkdir -p ${PIP_DIR}
-
-pip download --no-deps --no-binary pyfstat pyfstat --dest ${PIP_DIR}
-tar -xvzf ${PIP_DIR}/*.tar.gz -C ${PIP_DIR} --wildcards *examples 
-cp -r ${PIP_DIR}/*/examples*/*.py .binder $TMP_DIR
-
+cp -r examples/*/*.py .binder ${TMP_DIR}
 find . -delete
 
 # Generate notebooks from the python scripts
 NOTEBOOKS_SCRIPTS_DIR=.generated-notebooks
-mkdir -p $NOTEBOOKS_SCRIPTS_DIR
-
-cp -r $TMP_DIR/* $NOTEBOOKS_SCRIPTS_DIR
-
-find $NOTEBOOKS_SCRIPTS_DIR -name '*.py' ! -name '*run_all*' ! -name '*transient*' ! -name '*glitch*' -exec sphx_glr_python_to_jupyter.py '{}' +
+mkdir -p ${NOTEBOOKS_SCRIPTS_DIR}
+cp -r ${TMP_DIR}/* ${NOTEBOOKS_SCRIPTS_DIR}
+find ${NOTEBOOKS_SCRIPTS_DIR} -name '*.py' ! -name '*run_all*' -exec sphx_glr_python_to_jupyter.py '{}' +
 
 # This symlink is required
 mkdir notebooks
-ln -s ../$NOTEBOOKS_SCRIPTS_DIR notebooks/auto_examples
+ln -s ../${NOTEBOOKS_SCRIPTS_DIR} notebooks/auto_examples
