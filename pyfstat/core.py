@@ -299,7 +299,7 @@ class ComputeFstat(BaseSearchClass):
         binary : bool
             If true, search over binary parameters.
         BSGL : bool
-            If true, compute the BSGL statistic rather than the twoF value.
+            If true, compute the log10BSGL statistic rather than the twoF value.
         transientWindowType: str
             If `rect` or `exp`,
             allow for the Fstat to be computed over a transient range.
@@ -948,7 +948,7 @@ class ComputeFstat(BaseSearchClass):
         tstart=None,
         tend=None,
     ):
-        """Computes the detection statistic (twoF or lnBSGL) fully-coherently at a single point.
+        """Computes the detection statistic (twoF or log10BSGL) fully-coherently at a single point.
 
         If transient parameters are enabled, the transient-F-stat map will also be computed here
         (but stored in `self.FstatMap`, not returned).
@@ -967,7 +967,7 @@ class ComputeFstat(BaseSearchClass):
         Returns
         -------
         stat: float
-            A single value of the detection statistic (twoF or lnBSGL)
+            A single value of the detection statistic (twoF or log10BSGL)
             at the input parameter values.
         """
         self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
@@ -995,8 +995,8 @@ class ComputeFstat(BaseSearchClass):
             twoF = np.float(self.FstatResults.twoF[0])
             self.twoFX[0] = self.FstatResults.twoFPerDet(0)
             self.twoFX[1] = self.FstatResults.twoFPerDet(1)
-            log10_BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
-            return log10_BSGL / np.log10(np.exp(1))
+            log10BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
+            return log10BSGL
 
         tstart = tstart or getattr(self, "minStartTime", None)
         tend = tend or getattr(self, "maxStartTime", None)
@@ -1048,9 +1048,9 @@ class ComputeFstat(BaseSearchClass):
 
         self.twoFX[0] = 2 * FS0.F_mn.data[idx_maxTwoF]
         self.twoFX[1] = 2 * FS1.F_mn.data[idx_maxTwoF]
-        log10_BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
+        log10BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
 
-        return log10_BSGL / np.log10(np.exp(1))
+        return log10BSGL
 
     def _set_up_cumulative_times(self, tstart, tend, num_segments):
         """Construct time arrays to be used in cumulative twoF computations.
@@ -1546,7 +1546,7 @@ class SemiCoherentSearch(ComputeFstat):
         argp=None,
         record_segments=False,
     ):
-        """Computes the detection statistic (twoF or lnBSGL) semi-coherently at a single point.
+        """Computes the detection statistic (twoF or log10BSGL) semi-coherently at a single point.
 
         Parameters
         ----------
@@ -1560,7 +1560,7 @@ class SemiCoherentSearch(ComputeFstat):
         Returns
         -------
         stat: float
-            A single value of the detection statistic (semi-coherent twoF or lnBSGL)
+            A single value of the detection statistic (semi-coherent twoF or log10BSGL)
             at the input parameter values.
         """
 
@@ -1617,12 +1617,11 @@ class SemiCoherentSearch(ComputeFstat):
                     )
                     twoFX_per_segment = np.nan_to_num(twoFX_per_segment, nan=0.0)
                     self.twoFX[X] = twoFX_per_segment.sum()
-            log10_BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
-            ln_BSGL = log10_BSGL * np.log(10.0)
-            if np.isnan(ln_BSGL):
-                logging.debug("NaNs in semi-coherent ln(BSGL) treated as zero")
-                ln_BSGL = 0.0
-            return ln_BSGL
+            log10BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
+            if np.isnan(log10BSGL):
+                logging.debug("NaNs in semi-coherent log10BSGL treated as zero")
+                log10BSGL = 0.0
+            return log10BSGL
 
     def _get_per_segment_twoF(self):
         Fmap = lalpulsar.ComputeTransientFstatMap(

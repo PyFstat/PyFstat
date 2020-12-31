@@ -35,7 +35,7 @@ class GridSearch(BaseSearchClass):
         "Alpha": r"$\alpha$",
         "Delta": r"$\delta$",
         "twoF": r"$\widetilde{2\mathcal{F}}$",
-        "BSGL": r"$\log_{10}{\mathcal{B}_{\mathrm{SGL}}$",
+        "log10BSGL": r"$\log_{10}\mathcal{B}_{\mathrm{SGL}}$",
     }
     tex_labels0 = {
         "F0": r"$-f_0$",
@@ -103,11 +103,10 @@ class GridSearch(BaseSearchClass):
         self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         self.output_keys = self.search_keys.copy()
         if self.BSGL:
-            self.detstat = "BSGL"
-            self.output_keys += ["logBSGL"]
+            self.detstat = "log10BSGL"
         else:
             self.detstat = "twoF"
-            self.output_keys += [self.detstat]
+        self.output_keys.append(self.detstat)
         for k in self.search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
         self.output_file_header = self.get_output_file_header()
@@ -710,11 +709,10 @@ class TransientGridSearch(GridSearch):
         self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         self.output_keys = self.search_keys.copy()
         if self.BSGL:
-            self.detstat = "BSGL"
-            self.output_keys += ["logBSGL"]
+            self.detstat = "log10BSGL"
         else:
             self.detstat = "twoF"
-            self.output_keys += ["twoF"]
+        self.output_keys.append(self.detstat)
         # for consistency below, t0/tau must come after detstat
         # they are not included in self.search_keys because the main Fstat
         # code does not loop over them

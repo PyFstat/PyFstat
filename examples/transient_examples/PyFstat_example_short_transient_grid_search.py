@@ -45,7 +45,6 @@ search1 = pyfstat.GridSearch(
     Alphas=Alphas,
     Deltas=Deltas,
     tref=tref,
-    BSGL=False,
 )
 search1.run()
 search1.print_max_twoF()
@@ -66,7 +65,6 @@ search2 = pyfstat.TransientGridSearch(
     transientWindowType="rect",
     t0Band=Tspan - 2 * Tsft,
     tauBand=Tspan,
-    BSGL=False,
     outputTransientFstatMap=True,
     tCWFstatMapVersion="lal",
 )

@@ -776,7 +776,7 @@ class TestComputeFstat(BaseForTestsWithData):
         self.assertTrue(FS_from_dict == FS_from_file)
 
     def test_get_fully_coherent_BSGL(self):
-        # first pure noise, expect lnBSGL<0
+        # first pure noise, expect log10BSGL<0
         search_H1L1 = pyfstat.ComputeFstat(
             tref=self.tref,
             minStartTime=self.tstart,
@@ -787,15 +787,15 @@ class TestComputeFstat(BaseForTestsWithData):
             maxCoverFreq=self.F0 + 0.1,
             BSGL=True,
         )
-        lnBSGL = search_H1L1.get_fullycoherent_twoF(
+        log10BSGL = search_H1L1.get_fullycoherent_twoF(
             F0=self.F0,
             F1=self.F1,
             F2=self.F2,
             Alpha=self.Alpha,
             Delta=self.Delta,
         )
-        self.assertTrue(lnBSGL < 0)
-        # now with an added signal, expect lnBSGL>0
+        self.assertTrue(log10BSGL < 0)
+        # now with an added signal, expect log10BSGL>0
         search_H1L1 = pyfstat.ComputeFstat(
             tref=self.tref,
             minStartTime=self.tstart,
@@ -816,14 +816,14 @@ class TestComputeFstat(BaseForTestsWithData):
             maxCoverFreq=self.F0 + 0.1,
             BSGL=True,
         )
-        lnBSGL = search_H1L1.get_fullycoherent_twoF(
+        log10BSGL = search_H1L1.get_fullycoherent_twoF(
             F0=self.F0,
             F1=self.F1,
             F2=self.F2,
             Alpha=self.Alpha,
             Delta=self.Delta,
         )
-        self.assertTrue(lnBSGL > 0)
+        self.assertTrue(log10BSGL > 0)
 
     def test_cumulative_twoF(self):
         Nsft = 100
