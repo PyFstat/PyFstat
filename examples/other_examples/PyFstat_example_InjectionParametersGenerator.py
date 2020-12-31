@@ -14,7 +14,7 @@ from pyfstat import (
     Writer,
 )
 
-label = "InjectionParametersGenerator"
+label = "PyFstat_example_InjectionParametersGenerator"
 outdir = os.path.join("PyFstat_example_data", label)
 
 # Properties of the GW data

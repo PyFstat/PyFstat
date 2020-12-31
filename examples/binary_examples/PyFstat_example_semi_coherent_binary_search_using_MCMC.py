@@ -15,7 +15,7 @@ directed_search = True
 # If False, ecc and argp priors are used
 known_eccentricity = True
 
-label = "semi_coherent_binary_search_using_MCMC"
+label = "PyFstat_example_semi_coherent_binary_search_using_MCMC"
 outdir = os.path.join("PyFstat_example_data", label)
 
 # Properties of the GW data

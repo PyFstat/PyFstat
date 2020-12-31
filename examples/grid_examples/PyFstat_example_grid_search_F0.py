@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-label = "grid_search_F0"
+label = "PyFstat_example_grid_search_F0"
 outdir = os.path.join("PyFstat_example_data", label)
 
 F0 = 30.0

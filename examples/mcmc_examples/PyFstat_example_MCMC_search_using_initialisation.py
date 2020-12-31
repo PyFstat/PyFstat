@@ -10,7 +10,7 @@ import pyfstat
 import numpy as np
 import os
 
-label = "MCMC_search_using_initialisation"
+label = "PyFstat_example_MCMC_search_using_initialisation"
 outdir = os.path.join("PyFstat_example_data", label)
 
 # Properties of the GW data

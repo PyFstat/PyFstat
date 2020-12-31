@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 sky = False
 
 outdir = os.path.join(
-    "PyFstat_example_data", "PyFstat_example_simple_mcmc_vs_grid_F0F1"
+    "PyFstat_example_data", "PyFstat_example_simple_mcmc_vs_grid_comparison"
 )
 if sky:
     outdir += "AlphaDelta"

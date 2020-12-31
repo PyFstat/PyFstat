@@ -12,7 +12,7 @@ import pyfstat
 
 from pyfstat.helper_functions import get_predict_fstat_parameters_from_dict
 
-label = "twoF_cumulative"
+label = "PyFstat_example_twoF_cumulative"
 outdir = os.path.join("PyFstat_example_data", label)
 
 # Properties of the GW data

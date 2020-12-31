@@ -9,7 +9,7 @@ import pyfstat
 import numpy as np
 import os
 
-label = "semi_coherent_MCMC_search"
+label = "PyFstat_example_semi_coherent_MCMC_search"
 outdir = os.path.join("PyFstat_example_data", label)
 
 # Properties of the GW data

@@ -16,7 +16,7 @@ plt.rcParams["font.family"] = "serif"
 plt.rcParams["font.size"] = 18
 plt.rcParams["text.usetex"] = True
 
-label = "spectrogram"
+label = "PyFstat_example_spectrogram"
 
 depth = 5
 

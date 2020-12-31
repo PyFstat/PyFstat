@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-label = "semi_coherent_directed_follow_up"
+label = "PyFstat_example_semi_coherent_directed_follow_up"
 outdir = os.path.join("PyFstat_example_data", label)
 
 # Properties of the GW data

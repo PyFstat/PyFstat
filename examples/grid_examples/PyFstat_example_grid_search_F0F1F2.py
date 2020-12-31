@@ -9,7 +9,7 @@ import pyfstat
 import numpy as np
 import os
 
-label = "example_grid_search_F0F1F2"
+label = "PyFstat_example_grid_search_F0F1F2"
 outdir = os.path.join("PyFstat_example_data", label)
 
 F0 = 30.0

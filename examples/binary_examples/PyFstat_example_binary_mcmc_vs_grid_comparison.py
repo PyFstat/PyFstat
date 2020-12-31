@@ -17,7 +17,9 @@ import matplotlib.pyplot as plt
 # Set to false to include eccentricity
 circular_orbit = False
 
-label = "binary_mcmc_vs_grid_comparison" + ("_circular_orbit" if circular_orbit else "")
+label = "PyFstat_example_binary_mcmc_vs_grid_comparison" + (
+    "_circular_orbit" if circular_orbit else ""
+)
 outdir = os.path.join("PyFstat_example_data", label)
 
 # Parameters to generate a data set
