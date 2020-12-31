@@ -16,7 +16,7 @@ plt.rcParams["font.family"] = "serif"
 plt.rcParams["font.size"] = 18
 plt.rcParams["text.usetex"] = True
 
-label = "track_example"
+label = "spectrogram"
 
 depth = 5
 

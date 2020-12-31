@@ -5,6 +5,3 @@ dependencies:
   - pyfstat
   - pip
   - sphinx-gallery
-  - pip:
-      - ipynbname
-

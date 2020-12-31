@@ -12,7 +12,7 @@ import os
 import numpy as np
 import pyfstat
 
-label = os.path.splitext(os.path.basename(__file__))[0]
+label = "injection_into_noise_sfts"
 outdir = os.path.join("PyFstat_example_data", label)
 
 tstart = 1269734418
