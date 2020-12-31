@@ -77,7 +77,6 @@ example_names = [
     if case
     not in [
         "transient_examples",  # FIXME
-        "glitch_examples",  # FIXME
         "run_all_examples.py",
         "README.rst",
     ]

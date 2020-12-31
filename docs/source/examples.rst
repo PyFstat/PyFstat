@@ -9,6 +9,7 @@ Here is a list of use cases to wander around.
 .. toctree::
     binary_examples/index
     followup_examples/index
+    glitch_examples/index
     grid_examples/index
     mcmc_examples/index
     mcmc_vs_grid_simple_example/index

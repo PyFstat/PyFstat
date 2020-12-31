@@ -1,3 +1,12 @@
+"""
+Glitch robust MCMC search
+=========================
+
+MCMC search employing a signal hypothesis allowing for a glitch to
+be present in the data. The setup corresponds to a targeted search,
+and the simulated signal contains a single glitch.
+"""
+
 import numpy as np
 import pyfstat
 import time

@@ -1,3 +1,10 @@
+"""
+Glitch examples: Make data
+==========================
+
+Generate the data to run examples on glitch-robust searches.
+"""
+
 from pyfstat import Writer, GlitchWriter
 import numpy as np
 import os
