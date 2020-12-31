@@ -76,9 +76,7 @@ example_names = [
     for case in os.listdir(examples_basedir)
     if case
     not in [
-        "transient_examples",  # FIXME
         "run_all_examples.py",
-        "README.rst",
     ]
 ]
 

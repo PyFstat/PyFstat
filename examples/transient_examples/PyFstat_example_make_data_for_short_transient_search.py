@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """
-Title
-=====
+Short transient search examples: Make data
+==========================================
+
 An example to generate data with a short transient signal.
 
 This can be run either stand-alone (will just generate SFT files and nothing else);

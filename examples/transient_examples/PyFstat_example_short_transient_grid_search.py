@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 """
-Title
-=====
-An example grid-based search for a short transient signal. """
+Short transient grid search
+===========================
+
+An example grid-based search for a short transient signal.
+"""
 
 import pyfstat
 import os

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-
 """
-Title
-=====
-An example MCMC-based search for a short transient signal.
+Short transient MCMC search
+===========================
+
+MCMC search for a Short transient CW signal.
 """
 
 import pyfstat

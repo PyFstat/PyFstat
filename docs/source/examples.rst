@@ -14,4 +14,5 @@ Here is a list of use cases to wander around.
     mcmc_examples/index
     mcmc_vs_grid_simple_example/index
     other_examples/index
+    transient_examples/index
 
