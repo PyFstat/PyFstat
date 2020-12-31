@@ -15,12 +15,6 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../../"))
 sys.path.insert(0, os.path.abspath("../../pyfstat/"))
-examples_basedir = "../../examples/"
-for case in os.listdir(examples_basedir):
-    exdir = os.path.abspath(os.path.join(examples_basedir, case))
-    if os.path.isdir(exdir):
-        sys.path.insert(0, exdir)
-
 
 # -- Project information -----------------------------------------------------
 
@@ -76,6 +70,7 @@ autodoc_member_order = "bysource"
 # -- Options for gallery -----------------------------------
 min_reported_time = 0
 
+examples_basedir = "../../examples/"
 example_names = [
     case
     for case in os.listdir(examples_basedir)
@@ -92,7 +87,7 @@ sphinx_gallery_conf = {
     "examples_dirs": [os.path.join(examples_basedir, case) for case in example_names],
     "gallery_dirs": example_names,
     "filename_pattern": "/PyFstat_example_",
-    "ignore_pattern": ".run_all_.",
+    "ignore_pattern": ".run_all_.",  # FIXME
     "plot_gallery": "False",  # our examples are slow, so we can't generate plots every time the docs are built
     "line_numbers": True,
 }
