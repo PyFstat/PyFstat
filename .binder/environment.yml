@@ -3,7 +3,8 @@ channels:
   - conda-forge
 dependencies:
   - pyfstat
+  - pip
   - sphinx-gallery
   - pip:
-      ipynbname
+      - ipynbname
 
