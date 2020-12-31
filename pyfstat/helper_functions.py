@@ -11,7 +11,6 @@ import inspect
 import peakutils
 import shutil
 from functools import wraps
-from scipy.stats.distributions import ncx2
 import numpy as np
 import lal
 import lalpulsar
