@@ -1103,7 +1103,15 @@ class GridUniformPriorSearch(DefunctClass):
 
 
 class GridGlitchSearch(GridSearch):
-    """ Grid search using the SemiCoherentGlitchSearch """
+    """A grid search using the `SemiCoherentGlitchSearch` class.
+
+    This implements a basic semi-coherent F-stat search in which the data
+    is divided into segments either side of the proposed glitch epochs and the
+    fully-coherent F-stat in each segment is summed to give the semi-coherent
+    F-stat.
+
+    This class currently only works for a single glitch in the observing time.
+    """
 
     @helper_functions.initializer
     def __init__(
@@ -1129,23 +1137,22 @@ class GridGlitchSearch(GridSearch):
         sun_ephem=None,
     ):
         """
-        Run a single-glitch grid search
+        Most parameters are the same as for `GridSearch`
+        and the `core.SemiCoherentGlitchSearch` class,
+        only the additional ones are documented here:
 
         Parameters
         ----------
-        label, outdir: str
-            A label and directory to read/write data from/to
-        sftfilepattern: str
-            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
-            mutiple patterns can be given separated by colons.
-        F0s, F1s, F2s, delta_F0s, delta_F1s, tglitchs, Alphas, Deltas: tuple
-            Length 3 tuple describing the grid for each parameter, e.g
-            [F0min, F0max, dF0], for a fixed value simply give [F0]. Note that
-            tglitchs is referenced to zero at minStartTime.
-        tref, minStartTime, maxStartTime: int
-            GPS seconds of the reference time, start time and end time
-
-        For all other parameters, see pyfstat.ComputeFStat.
+        delta_F0s: tuple
+            A length 3 tuple describing the grid of frequency jumps,
+            or just `[delta_F0]` for a fixed value.
+        delta_F1s: tuple
+            A length 3 tuple describing the grid of spindown parameter jumps,
+            or just `[delta_F1]` for a fixed value.
+        tglitchs: tuple
+            A length 3 tuple describing the grid of glitch epochs,
+            or just `[tglitch]` for a fixed value.
+            These are relative time offsets, referenced to zero at `minStartTime`.
         """
 
         self._set_init_params_dict(locals())
