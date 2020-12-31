@@ -1,4 +1,4 @@
-PyFstat use case examples
+Examples
 =========================
 
 Several methods are contained within PyFstat. Some of them differ in targeted
