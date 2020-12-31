@@ -106,7 +106,6 @@ gridsearch = pyfstat.GridSearch(
     Alphas=Alphas,
     Deltas=Deltas,
     tref=inj["tref"],
-    BSGL=False,
 )
 gridsearch.run()
 gridsearch.print_max_twoF()

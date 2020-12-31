@@ -327,7 +327,7 @@ class MCMCSearch(BaseSearchClass):
         self.theta_keys = [self.theta_keys[i] for i in idxs]
 
         self.output_keys = self.theta_keys.copy()
-        self.output_keys += ["logBSGL" if self.BSGL else "twoF"]
+        self.output_keys += ["log10BSGL" if self.BSGL else "twoF"]
 
     def _evaluate_logpost(self, p0vec):
         init_logp = np.array(
@@ -1516,7 +1516,7 @@ class MCMCSearch(BaseSearchClass):
                     )
                     pass
                 if self.BSGL:
-                    axes[-1].set_xlabel(r"$\mathcal{B}_\mathrm{S/GL}$")
+                    axes[-1].set_xlabel(r"$\log_{10}\mathcal{B}_\mathrm{S/GL}$")
                 else:
                     axes[-1].set_xlabel(r"$\widetilde{2\mathcal{F}}$")
                 axes[-1].set_ylabel(r"$\mathrm{Counts}$")
@@ -2416,7 +2416,7 @@ class MCMCGlitchSearch(MCMCSearch):
                     self.theta_idxs[i] += 1
 
         self.output_keys = self.theta_keys.copy()
-        self.output_keys += ["logBSGL" if self.BSGL else "twoF"]
+        self.output_keys += ["log10BSGL" if self.BSGL else "twoF"]
 
     def _get_data_dictionary_to_save(self):
         d = dict(
@@ -3412,7 +3412,7 @@ class MCMCTransientSearch(MCMCSearch):
         self.theta_keys = [self.theta_keys[i] for i in idxs]
 
         self.output_keys = self.theta_keys.copy()
-        self.output_keys += ["logBSGL" if self.BSGL else "twoF"]
+        self.output_keys += ["log10BSGL" if self.BSGL else "twoF"]
 
     def get_savetxt_fmt_dict(self):
         fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)

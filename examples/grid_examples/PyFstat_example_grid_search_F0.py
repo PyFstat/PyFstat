@@ -65,7 +65,6 @@ search = pyfstat.GridSearch(
     tref,
     tstart,
     tend,
-    BSGL=False,
 )
 search.run()
 
