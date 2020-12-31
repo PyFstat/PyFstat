@@ -244,42 +244,6 @@ def get_comb_values(F0, frequencies, twoF, period, N=4):
     return comb_frequencies, twoF[comb_idxs], freq_err * np.ones(len(comb_idxs))
 
 
-def compute_P_twoFstarcheck(twoFstarcheck, twoFcheck, M0, plot=False):
-    """ Returns the unnormalised pdf of twoFstarcheck given twoFcheck """
-    upper = 4 + twoFstarcheck + 0.5 * (2 * (4 * M0 + 2 * twoFcheck))
-    rho2starcheck = np.linspace(1e-1, upper, 500)
-    integrand = ncx2.pdf(twoFstarcheck, 4 * M0, rho2starcheck) * ncx2.pdf(
-        twoFcheck, 4, rho2starcheck
-    )
-    if plot:
-        fig, ax = plt.subplots()
-        ax.plot(rho2starcheck, integrand)
-        fig.savefig("test")
-    return np.trapz(integrand, rho2starcheck)
-
-
-def compute_pstar(twoFcheck_obs, twoFstarcheck_obs, m0, plot=False):
-    M0 = 2 * m0 + 1
-    upper = 4 + twoFcheck_obs + (2 * (4 * M0 + 2 * twoFcheck_obs))
-    twoFstarcheck_vals = np.linspace(1e-1, upper, 500)
-    P_twoFstarcheck = np.array(
-        [
-            compute_P_twoFstarcheck(twoFstarcheck, twoFcheck_obs, M0)
-            for twoFstarcheck in twoFstarcheck_vals
-        ]
-    )
-    C = np.trapz(P_twoFstarcheck, twoFstarcheck_vals)
-    idx = np.argmin(np.abs(twoFstarcheck_vals - twoFstarcheck_obs))
-    if plot:
-        fig, ax = plt.subplots()
-        ax.plot(twoFstarcheck_vals, P_twoFstarcheck)
-        ax.fill_between(twoFstarcheck_vals[: idx + 1], 0, P_twoFstarcheck[: idx + 1])
-        ax.axvline(twoFstarcheck_vals[idx])
-        fig.savefig("test")
-    pstar_l = np.trapz(P_twoFstarcheck[: idx + 1] / C, twoFstarcheck_vals[: idx + 1])
-    return 2 * np.min([pstar_l, 1 - pstar_l])
-
-
 def run_commandline(cl, log_level=20, raise_error=True, return_output=True):
     """Run a string cmd as a subprocess, check for errors and return output.
 
