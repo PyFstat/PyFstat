@@ -32,8 +32,6 @@ duration = 100 * 86400
 tend = tstart + duration
 tref = 0.5 * (tstart + tend)
 
-example_name = os.path.splitext(os.path.basename(__file__))[0]
-
 data = pyfstat.Writer(
     label=label,
     outdir=outdir,
@@ -61,7 +59,7 @@ F2s = [F2]
 Alphas = [Alpha]
 Deltas = [Delta]
 search = pyfstat.GridSearch(
-    example_name,
+    label,
     outdir,
     os.path.join(outdir, "*" + label + "*sft"),
     F0s,
