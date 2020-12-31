@@ -774,7 +774,31 @@ class GridSearch(BaseSearchClass):
 
 
 class TransientGridSearch(GridSearch):
-    """ Gridded transient-continous search using ComputeFstat """
+    """A search for transient CW-like signals using the F-statistic.
+
+    This is based on the transient signal model and transient-F-stat algorithm
+    from Prix, Giampanis & Messenger (PRD 84, 023007, 2011):
+    https://arxiv.org/abs/1104.1704
+
+    The frequency evolution parameters are searched over in a grid just like
+    in the normal `GridSearch`, then at each point the time-dependent 'atoms'
+    are used to evaluate partial sums of the F-statistic over a 2D array
+    in transient start times `t0` and duration parameters `tau`.
+
+    The signal templates are modulated by a 'transient window function' which can be
+
+    1. `none` (standard, persistent CW signal)
+
+    2. `rect` (rectangular: constant amplitude within `[t0,t0+tau]`, zero outside)
+
+    3. `exp` (exponential decay over `[t0,t0+3*tau]`, zero outside)
+
+    This class currently only supports fully-coherent searches (`nsegs=1` is hardcoded).
+
+    Most parameters are the same as for `GridSearch`
+    and the `core.ComputeFstat` class,
+    only the additional ones are documented here:
+    """
 
     @helper_functions.initializer
     def __init__(
@@ -815,44 +839,40 @@ class TransientGridSearch(GridSearch):
         """
         Parameters
         ----------
-        label, outdir: str
-            A label and directory to read/write data from/to
-        sftfilepattern: str
-            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
-            mutiple patterns can be given separated by colons.
-        F0s, F1s, F2s, Alphas, Deltas: tuple
-            Length 3 tuple describing the grid for each parameter, e.g
-            [F0min, F0max, dF0], for a fixed value simply give [F0]. Unless
-            input_arrays == True, then these are the values to search at.
-        tref, minStartTime, maxStartTime: int
-            GPS seconds of the reference time, start time and end time
-        input_arrays: bool
-            if true, use the F0s, F1s, etc as is
         transientWindowType: str
-            If 'rect' or 'exp', compute atoms so that a transient (t0,tau) map
-            can later be computed.  ('none' instead of None explicitly calls
-            the transient-window function, but with the full range, for
-            debugging). Currently only supported for nsegs=1.
+            If `rect` or `exp`,
+            allow for the Fstat to be computed over a transient range.
+            (`none` instead of `None` explicitly calls the transient-window
+            function, but with the full range, for debugging.)
         t0Band, tauBand: int
-            if >0, search t0 in (minStartTime,minStartTime+t0Band)
-                   and tau in (tauMin,2*Tsft+tauBand).
-            if =0, only compute CW Fstat with t0=minStartTime,
-                   tau=maxStartTime-minStartTime.
+            Search ranges for transient start-time t0 and duration tau.
+            If >0, search `t0` in `(minStartTime,minStartTime+t0Band)`
+            and tau in `(tauMin,2*Tsft+tauBand)`.
+            If =0, only compute the continuous-wave F-stat with `t0=minStartTime`,
+            `tau=maxStartTime-minStartTime`.
         tauMin: int
-            defaults to 2*Tsft
-        dt0, dtau: int
-            grid resolutions in transient start-time and duration,
-            both default to Tsft
+            Minimum transient duration to cover,
+            defaults to `2*Tsft`.
+        dt0: int
+            Grid resolution in transient start-time,
+            defaults to `Tsft`.
+        dtau: int
+            Grid resolution in transient duration,
+            defaults to `Tsft`.
         outputTransientFstatMap: bool
-            if true, write output files for (t0,tau) Fstat maps
-            (one file for each doppler grid point!)
+            If true, write additional output files for `(t0,tau)` F-stat maps.
+            (One file for each grid point!)
+        outputAtoms: bool
+            If true, write additional output files for the F-stat `atoms`.
+            (One file for each grid point!)
         tCWFstatMapVersion: str
-            Choose between standard 'lal' implementation,
-            'pycuda' for gpu, and some others for devel/debug.
+            Choose between implementations of the transient F-statistic funcionality:
+            standard `lal` implementation,
+            `pycuda` for GPU version,
+            and some others only for devel/debug.
         cudaDeviceName: str
-            GPU name to be matched against drv.Device output.
-
-        For all other parameters, see `pyfstat.ComputeFStat` for details
+            GPU name to be matched against drv.Device output,
+            only for `tCWFstatMapVersion=pycuda`.
         """
 
         self._set_init_params_dict(locals())
@@ -917,6 +937,28 @@ class TransientGridSearch(GridSearch):
         self.maxStartTime = self.search.maxStartTime
 
     def run(self, return_data=False):
+        """Execute the actual search over the full grid.
+
+        This iterates over all points in the multi-dimensional product grid
+        and the end result is either returned as a numpy array or saved to disk.
+
+        If the `outputTransientFstatMap` or `outputAtoms` options have been set
+        when initiating the search,
+        additional files are written for each
+        frequency-evolution parameter-space point ('Doppler' point).
+
+        Parameters
+        ----------
+        return_data: boolean
+            If true, the final inputs+outputs data set is returned as a numpy array.
+            If false, it is saved to disk and nothing is returned.
+
+        Returns
+        -------
+        data: np.ndarray
+            The final inputs+outputs data set.
+            Only if `return_data=true`.
+        """
         self._get_input_data_array()
         old_data = self.check_old_data_is_okay_to_use()
         if old_data is not False:
@@ -988,7 +1030,20 @@ class TransientGridSearch(GridSearch):
             self.save_array_to_disk()
 
     def get_transient_fstat_map_filename(self, param_point):
-        """per-Doppler filename convention: freq alpha delta f1dot f2dot"""
+        """Filename convention for given grid point: freq_alpha_delta_f1dot_f2dot
+
+        Parameters
+        ----------
+        param_point: tuple, dict, list, np.void or np.ndarray
+            A multi-dimensional parameter point.
+            If not a type with named fields (e.g. a plain tuple or list),
+            the order must match that of `self.output_keys`.
+
+        Returns
+        -------
+        f: str
+            The constructed filename.
+        """
         fmt_keys = ["F0", "Alpha", "Delta", "F1", "F2"]
         fmt = "{:.16g}_{:.16g}_{:.16g}_{:.16g}_{:.16g}"
         if isinstance(param_point, tuple) or isinstance(param_point, np.void):
@@ -1011,6 +1066,17 @@ class TransientGridSearch(GridSearch):
         return fmt_dict
 
     def write_F_mn(self, tCWfile, F_mn, windowRange):
+        """Helper function to format a transient-F-stat matrix over `(t0,tau)`.
+
+        Parameters
+        ----------
+        tCWfile: str
+            Name of the file to write to.
+        F_mn: np.ndarray
+            The 2D matrix of transient twoF-stat values.
+        windowRange: lalpulsar.transientWindowRange_t
+            A lalpulsar structure containing the transient parameters.
+        """
         with open(tCWfile, "w") as tfp:
             for hline in self.output_file_header:
                 tfp.write("# {:s}\n".format(hline))
