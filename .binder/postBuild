@@ -8,18 +8,24 @@ if [[ ! -f /.dockerenv ]]; then
     exit 1
 fi
 
+# Get the example scripts from the latest tagged release 
 TMP_DIR=/tmp/pyfstat
 mkdir -p $TMP_DIR
+
+latest_release=$(git describe --tags --abbrev=0)
+git checkout ${latest_release}
 cp -r examples/*/*.py .binder $TMP_DIR
+
 find . -delete
 
-# Generate notebooks and remove other files from examples folder
+# Generate notebooks from the python scripts
 NOTEBOOKS_SCRIPTS_DIR=.generated-notebooks
 mkdir -p $NOTEBOOKS_SCRIPTS_DIR
+
 cp -r $TMP_DIR/* $NOTEBOOKS_SCRIPTS_DIR
 
-## Here, exclude whatever must be excluded
 find $NOTEBOOKS_SCRIPTS_DIR -name '*.py' ! -name '*run_all*' ! -name '*transient*' ! -name '*glitch*' -exec sphx_glr_python_to_jupyter.py '{}' +
 
+# This symlink is required
 mkdir notebooks
 ln -s ../$NOTEBOOKS_SCRIPTS_DIR notebooks/auto_examples
