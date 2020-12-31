@@ -10,11 +10,13 @@ fi
 
 # Get the example scripts from the latest tagged release 
 TMP_DIR=/tmp/pyfstat
-mkdir -p $TMP_DIR
+PIP_DIR=/tmp/pip_download
+mkdir -p ${TMP_DIR}
+mkdir -p ${PIP_DIR}
 
-latest_release=$(git describe --tags --abbrev=0)
-git checkout ${latest_release}
-cp -r examples/*/*.py .binder $TMP_DIR
+pip download --no-deps --no-binary pyfstat pyfstat --dest ${PIP_DIR}
+tar -xvzf ${PIP_DIR}/*.tar.gz -C ${PIP_DIR} --wildcards *examples 
+cp -r ${PIP_DIR}/*/examples*/*.py .binder $TMP_DIR
 
 find . -delete
 
