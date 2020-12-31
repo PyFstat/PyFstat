@@ -13,9 +13,18 @@
    - changed `helper_functions.get_doppler_params_output_format()` to return dict
    - fixed sorting of output fmt specifiers for both MCMC and grid classes
    - changed `GridSearch.inititate_search_object()` to internal method `_initiate_search_object()`
+ - line-robust statistics are now always stored and returned as log10BSGL
+   (for consistency with LALSuite)
+ - made various class methods private that had no obvious end-user use case
  - `MCMCSearch.run()`: initiate search object before checking for old data
  - `MCMCGlitchSearch.plot_cumulative_max()`: add savefig option (defaults to false)
- - removed unused `ComputeFstat.remove get_full_CFSv2_output()`
+ - `GridSearch.plot_2D()`: renamend `save` option to `savefig`
+   for consistency with other plotting functions
+ - removed unused `ComputeFstat.get_full_CFSv2_output()`
+ - removed unused helper functions:
+   - `compute_P_twoFstarcheck()`
+   - `compute_pstar()`
+   - `twoFDMoffThreshold()`
  - new example `other_examples/PyFstat_example_spectrogram.py`
  - some improvements to tests and examples
 
