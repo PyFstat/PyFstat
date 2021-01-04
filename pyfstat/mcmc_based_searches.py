@@ -386,11 +386,13 @@ class MCMCSearch(BaseSearchClass):
         Parameters
         ----------
         nburn0: int
-            Number of initialisation steps to take
+            Number of initialisation steps to take.
         scatter_val: float
             Relative number to scatter walkers around the maximum likelihood
-            position after the initialisation step
-
+            position after the initialisation step. If the maximum likelihood
+            point is located at `p`, the new walkers are randomly drawn from a
+            multivariate gaussian distribution centered at `p` with standard
+            deviation `diag(scatter_val * p)`.
         """
 
         logging.info(
