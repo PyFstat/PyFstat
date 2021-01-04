@@ -2122,17 +2122,6 @@ class MCMCGlitchSearch(MCMCSearch):
     See parent MCMCSearch for a list of all additional parameters, here we list
     only the additional init parameters of this class.
 
-    Parameters
-    ----------
-    nglitch: int
-        The number of glitches to allow
-    dtglitchmin: int
-        The minimum duration (in seconds) of a segment between two glitches
-        or a glitch and the start/end of the data
-    theta0_idx, int
-        Index (zero-based) of which segment the theta refers to - useful
-        if providing a tight prior on theta to allow the signal to jump
-        too theta (and not just from)
 
     """
 
@@ -2199,7 +2188,19 @@ class MCMCGlitchSearch(MCMCSearch):
         earth_ephem=None,
         sun_ephem=None,
     ):
-
+        """
+        Parameters
+        ----------
+        nglitch: int
+            The number of glitches to allow
+        dtglitchmin: int
+            The minimum duration (in seconds) of a segment between two glitches
+            or a glitch and the start/end of the data
+        theta0_idx, int
+            Index (zero-based) of which segment the theta refers to - useful
+            if providing a tight prior on theta to allow the signal to jump
+            too theta (and not just from)
+        """
         self._set_init_params_dict(locals())
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -2384,7 +2385,9 @@ class MCMCGlitchSearch(MCMCSearch):
         return p0
 
     def plot_cumulative_max(self, savefig=False):
-        """Here we override the standard version to deal with the split at glitches.
+        """
+        Override MCMCSearch.plot_cumulative_max implementation to dea with the
+        split at gltiches.
 
         Parameters
         ----------
