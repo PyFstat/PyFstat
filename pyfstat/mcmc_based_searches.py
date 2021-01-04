@@ -2745,7 +2745,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         )
         return d
 
-    def update_search_object(self):
+    def _update_search_object(self):
         logging.info("Update search object")
         self.search.init_computefstatistic()
 
@@ -3032,7 +3032,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             self.nsegs = nseg
             self._set_likelihoodcoef()
             self.search.nsegs = nseg
-            self.update_search_object()
+            self._update_search_object()
             self.search.init_semicoherent_parameters()
             self.sampler = PTSampler(
                 ntemps=self.ntemps,
