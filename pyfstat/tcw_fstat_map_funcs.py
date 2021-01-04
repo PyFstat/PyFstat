@@ -1,4 +1,12 @@
-""" Additional helper functions dealing with transient-CW F(t0,tau) maps """
+"""Additional helper functions dealing with transient-CW F(t0,tau) maps.
+
+See Prix, Giampanis & Messenger (PRD 84, 023007, 2011):
+https://arxiv.org/abs/1104.1704
+for the algorithm in general
+and Keitel & Ashton (CQG 35, 205003, 2018):
+https://arxiv.org/abs/1805.05652
+for a detailed discussion of the GPU implementation.
+"""
 
 import numpy as np
 import os
@@ -39,17 +47,43 @@ def _optional_import(modulename, shorthand=None):
 
 class pyTransientFstatMap:
     """
-    simplified object class for a F(t0,tau) F-stat map (not 2F!)
-    based on LALSuite's transientFstatMap_t type
-    replacing the gsl matrix with a numpy array
+    Simplified object class for a F(t0,tau) F-stat map.
 
-    F_mn:   2D array of 2F values
-    maxF:   maximum of F (not 2F!)
-    t0_ML:  maximum likelihood transient start time t0 estimate
-    tau_ML: maximum likelihood transient duration tau estimate
+    This is based on LALSuite's transientFstatMap_t type,
+    replacing the gsl matrix with a numpy array.
+
+    Here, `t0` is a transient start time,
+    `tau` is a transient duration parameter,
+    and `F(t0,tau)` is the F-statistic (not 2F)! evaluated
+    for a signal with those parameters
+    (and an implicit window function, which is not stored inside this object).
+
+    The 'map' covers a range of different `(t0,tau)` pairs.
+
+    Attributes
+    ----------
+    F_mn: np.ndarray
+        2D array of F values (not 2F!).
+    maxF: float
+        Maximum of F (not 2F!) over the array.
+    t0_ML: float
+        Maximum likelihood estimate of the transient start time `t0`.
+    tau_ML: float
+        Maximum likelihood estimate of the transient duration `tau`.
     """
 
     def __init__(self, N_t0Range, N_tauRange):
+        """
+        The class can be initialized with the following:
+
+        Parameters
+        ----------
+        N_t0Range: int
+            Number of `t0` values covered.
+        N_tauRange: int
+            Number of `tau` values covered.
+        """
+
         self.F_mn = np.zeros((N_t0Range, N_tauRange), dtype=np.float32)
         # Initializing maxF to a negative value ensures
         # that we always update at least once and hence return
@@ -60,8 +94,6 @@ class pyTransientFstatMap:
         self.tau_ML = float(0.0)
 
 
-# dictionary of the actual callable F-stat map functions we support,
-# if the corresponding modules are available.
 fstatmap_versions = {
     "lal": lambda multiFstatAtoms, windowRange: getattr(
         lalpulsar, "ComputeTransientFstatMap"
@@ -70,15 +102,42 @@ fstatmap_versions = {
         multiFstatAtoms, windowRange
     ),
 }
+"""Dictionary of the actual callable transient F-stat map functions this module supports.
+
+Actual runtime variability depends on the corresponding external modules
+being available.
+"""
 
 
 def init_transient_fstat_map_features(wantCuda=False, cudaDeviceName=None):
-    """
-    Initialization of available modules (or "features") for F-stat maps.
+    """Initialization of available modules (or 'features') for computing transient F-stat maps.
 
-    Returns a dictionary of method names, to match fstatmap_versions
-    each key's value set to True only if
-    all required modules are importable on this system.
+    Currently, two implementations are supported and checked for
+    through the `_optional_import()` method:
+
+    1. `lal`: requires both `lal` and `lalpulsar` packages to be importable.
+
+    2. `pycuda`: requires the `pycuda` package to be importable
+    along with its modules
+    `driver`, `gpuarray`, `tools` and `compiler`.
+
+    Parameters
+    ----------
+    wantCuda: bool
+        Only if this is True and it was possible to import pycuda,
+        a CUDA device context is created and returned.
+    cudaDeviceName: str or None
+        Request a CUDA device with this name.
+        Partial matches are allowed.
+
+    Returns
+    -------
+    features: dict
+        A dictionary of available method names, to match `fstatmap_versions`.
+        Each key's value is set to `True` only if
+        all required modules are importable on this system.
+    gpu_context: pycuda.driver.Context or None
+        A CUDA device context object, if assigned.
     """
 
     features = {}
@@ -201,8 +260,34 @@ def init_transient_fstat_map_features(wantCuda=False, cudaDeviceName=None):
 def call_compute_transient_fstat_map(
     version, features, multiFstatAtoms=None, windowRange=None
 ):
-    """Choose which version of the ComputeTransientFstatMap function to call."""
+    """Call a version of the ComputeTransientFstatMap function.
 
+    This checks if the requested `version` is available,
+    and if so, executes the computation of a transient F-statistic map
+    over the `windowRange`.
+
+    Parameters
+    ----------
+    version: str
+        Name of the method to call
+        (currently supported: 'lal' or 'pycuda').
+    features: dict
+        Dictionary of available features,
+        as obtained from `init_transient_fstat_map_features()`.
+    multiFstatAtoms: lalpulsar.MultiFstatAtomVector or None
+        The time-dependent F-stat atoms previously computed by `ComputeFstat`.
+    windowRange: lalpulsar.transientWindowRange_t or None
+        The structure defining the transient parameters.
+
+    Returns
+    -------
+    FstatMap: pyTransientFstatMap or lalpulsar.transientFstatMap_t
+        The output of the called function,
+        including the evaluated transient F-statistic map
+        over the windowRange.
+    timingFstatMap: float
+        Execution time of the called function.
+    """
     if version in fstatmap_versions:
         if features[version]:
             time0 = time()
@@ -221,13 +306,20 @@ def call_compute_transient_fstat_map(
 
 
 def reshape_FstatAtomsVector(atomsVector):
-    """
-    Make a dictionary of ndarrays out of a atoms "vector" structure.
+    """Make a dictionary of ndarrays out of an F-stat atoms 'vector' structure.
 
-    The input is a "vector"-like structure with times as the higher hierarchical
-    level and a set of "atoms" quantities defined at each timestamp.
-    The output is a dictionary with an entry for each quantity,
-    which is a 1D ndarray over timestamps for that one quantity.
+    Parameters
+    ----------
+    atomsVector: lalpulsar.FstatAtomVector
+        The atoms in a 'vector'-like structure:
+        iterating over timestamps as the higher hierarchical level,
+        with a set of 'atoms' quantities defined at each timestamp.
+
+    Returns
+    -------
+    atomsDict: dict
+        A dictionary with an entry for each quantity,
+        which then is a 1D ndarray over timestamps for that one quantity.
     """
 
     numAtoms = atomsVector.length
@@ -271,18 +363,37 @@ def _print_GPU_memory_MB(key):
 
 
 def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange):
-    """
-    GPU version of the function to compute transient-window "F-statistic map"
-    over start-time and timescale {t0, tau}.
-    Based on XLALComputeTransientFstatMap from LALSuite,
-    (C) 2009 Reinhard Prix, licensed under GPL
+    """GPU version of computing a transient F-statistic map.
 
-    Returns a 2D matrix F_mn,
-    with m = index over start-times t0,
-    and  n = index over timescales tau,
-    in steps of dt0  in [t0,  t0+t0Band],
-    and         dtau in [tau, tau+tauBand]
-    as defined in windowRange input.
+    This is based on XLALComputeTransientFstatMap from LALSuite,
+    (C) 2009 Reinhard Prix, licensed under GPL.
+
+    The 'map' consists of F-statistics evaluated over
+    a range of different `(t0,tau)` pairs
+    (transient start-times and duration parameters).
+
+    This is a high-level wrapper function;
+    the actual CUDA computations are performed in one of the functions
+    `pycuda_compute_transient_fstat_map_rect()`
+    or `pycuda_compute_transient_fstat_map_exp()`,
+    depending on the window functon defined in `windowRange`.
+
+    Parameters
+    ----------
+    multiFstatAtoms: lalpulsar.MultiFstatAtomVector
+        The time-dependent F-stat atoms previously computed by `ComputeFstat`.
+    windowRange: lalpulsar.transientWindowRange_t
+        The structure defining the transient parameters.
+
+    Returns
+    -------
+    FstatMap: pyTransientFstatMap
+        A 2D matrix `F_mn`,
+        with `m` an index over start-times `t0`,
+        and  `n` an index over duration parameters `tau`,
+        in steps of `dt0`  in `[t0,  t0+t0Band]`,
+        and `dtau` in `[tau, tau+tauBand]`
+        as defined in the `windowRange` input.
     """
 
     if windowRange.type >= lalpulsar.TRANSIENT_LAST:
@@ -422,9 +533,28 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange):
 
 
 def pycuda_compute_transient_fstat_map_rect(atomsInputMatrix, windowRange, tCWparams):
-    """
-    only GPU-parallizing outer loop,
-    keeping partial sums with memory in kernel
+    """GPU computation of the transient F-stat map for rectangular windows.
+
+    As discussed in Keitel & Ashton (CQG 35, 205003, 2018):
+    https://arxiv.org/abs/1805.05652
+    this version only does GPU parallization for the outer loop,
+    keeping the partial sums of the inner loop local to each individual kernel
+    using the 'memory trick'.
+
+    Parameters
+    ----------
+    atomsInputMatrix: np.ndarray
+        A 2D array of stacked named columns containing the F-stat atoms.
+    windowRange: lalpulsar.transientWindowRange_t
+        The structure defining the transient parameters.
+    tCWparams: dict
+        A dictionary of miscellaneous parameters.
+
+    Returns
+    -------
+    F_mn: np.ndarray
+        A 2D array of the computed transient F-stat map over the
+        `[t0,tau]` range.
     """
 
     # gpu data setup and transfer
@@ -485,7 +615,28 @@ def pycuda_compute_transient_fstat_map_rect(atomsInputMatrix, windowRange, tCWpa
 
 
 def pycuda_compute_transient_fstat_map_exp(atomsInputMatrix, windowRange, tCWparams):
-    """exponential window, inner and outer loop GPU-parallelized"""
+    """GPU computation of the transient F-stat map for exponential windows.
+
+    As discussed in Keitel & Ashton (CQG 35, 205003, 2018):
+    https://arxiv.org/abs/1805.05652
+    this version does full GPU parallization
+    of both the inner and outer loop.
+
+    Parameters
+    ----------
+    atomsInputMatrix: np.ndarray
+        A 2D array of stacked named columns containing the F-stat atoms.
+    windowRange: lalpulsar.transientWindowRange_t
+        The structure defining the transient parameters.
+    tCWparams: dict
+        A dictionary of miscellaneous parameters.
+
+    Returns
+    -------
+    F_mn: np.ndarray
+        A 2D array of the computed transient F-stat map over the
+        `[t0,tau]` range.
+    """
 
     # gpu data setup and transfer
     _print_GPU_memory_MB("Initial")

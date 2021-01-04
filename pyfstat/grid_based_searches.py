@@ -795,6 +795,10 @@ class TransientGridSearch(GridSearch):
 
     This class currently only supports fully-coherent searches (`nsegs=1` is hardcoded).
 
+    Also see Keitel & Ashton (CQG 35, 205003, 2018):
+    https://arxiv.org/abs/1805.05652
+    for a detailed discussion of the GPU implementation.
+
     Most parameters are the same as for `GridSearch`
     and the `core.ComputeFstat` class,
     only the additional ones are documented here:
