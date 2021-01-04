@@ -2004,8 +2004,16 @@ class MCMCSearch(BaseSearchClass):
         pdf = self._pdf_twoFhat(twoFhats, self.nglitch, ntrials)
         return np.trapz(pdf, twoFhats)
 
-    def get_p_value(self, delta_F0, time_trials=0):
-        """ Get's the p-value for the maximum twoFhat value """
+    def get_p_value(self, delta_F0=0, time_trials=0):
+        """Get's the p-value for the maximum twoFhat value assuming Gaussian noise
+
+        Parameters
+        ----------
+        delta_F0: float
+            Frequency variation due to a glitch.
+        time_trials: int, optional
+            Number of trials in each glitch + 1.
+        """
         d, max_twoF = self.get_max_twoF()
         if self.nglitch == 1:
             tglitches = [d["tglitch"]]
@@ -2078,6 +2086,13 @@ class MCMCSearch(BaseSearchClass):
 
     @staticmethod
     def read_evidence_file_to_dict(evidence_file_name="Evidences.txt"):
+        """Read evidence file and put it into an OrderedDict
+
+        Parameters
+        ----------
+        evidence_file_name: str
+            Filename to read.
+        """
         EvidenceDict = OrderedDict()
         if os.path.isfile(evidence_file_name):
             with open(evidence_file_name, "r") as f:
@@ -2087,6 +2102,15 @@ class MCMCSearch(BaseSearchClass):
         return EvidenceDict
 
     def write_evidence_file_from_dict(self, EvidenceDict, evidence_file_name):
+        """Write evidence dict to a file
+
+        Parameters
+        ----------
+        EvidenceDict: dict
+            Dictionary to dump into a file.
+        evidence_file_name: str
+            File name to dump dict into.
+        """
         with open(evidence_file_name, "w+") as f:
             for key, val in EvidenceDict.items():
                 f.write("{} {} {}\n".format(key, val[0], val[1]))
