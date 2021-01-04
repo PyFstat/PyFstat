@@ -1,4 +1,14 @@
-""" PyFstat search & follow-up classes using MCMC-based methods """
+"""PyFstat search & follow-up classes using MCMC-based methods
+
+The general approach is described in
+Ashton & Prix (PRD 97, 103020, 2018):
+https://arxiv.org/abs/1802.05450
+and we use the `ptemcee` sampler
+described in Vousden et al. (MNRAS 455, 1919-1937, 2016):
+https://arxiv.org/abs/1501.05823
+and based on Foreman-Mackey et al. (PASP 125, 306, 2013):
+https://arxiv.org/abs/1202.3665
+"""
 
 import sys
 import os
@@ -24,7 +34,7 @@ class MCMCSearch(BaseSearchClass):
     """
     MCMC search using ComputeFstat.
 
-    Evalutates the coherent F-statistic across a parameter space region
+    Evaluates the coherent F-statistic across a parameter space region
     corresponding to an isolated/binary-modulated CW signal.
 
     Attributes
@@ -2005,7 +2015,7 @@ class MCMCSearch(BaseSearchClass):
         return np.trapz(pdf, twoFhats)
 
     def get_p_value(self, delta_F0=0, time_trials=0):
-        """Get's the p-value for the maximum twoFhat value assuming Gaussian noise
+        """Gets the p-value for the maximum twoFhat value assuming Gaussian noise
 
         Parameters
         ----------
@@ -2631,7 +2641,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
     Executes MCMC runs with increasing coherence times in order to follow up a parameter space
     region. The main idea is to use an MCMC run to identify an interesting parameter space region
     to then zoom-in said region using a finer "effective resolution" by increasing the coherence time.
-    See G. Ashton, R. Prix (2018) arXiv:1802.05450 [astro-ph.IM].
+    See Ashton & Prix (PRD 97, 103020, 2018): https://arxiv.org/abs/1802.05450
 
     See MCMCSemiCoherentSearch for a list of additional parameters, here we list only the additional
     init parameters of this class.
