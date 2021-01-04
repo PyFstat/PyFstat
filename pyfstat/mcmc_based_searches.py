@@ -495,9 +495,9 @@ class MCMCSearch(BaseSearchClass):
         save_pickle: bool
             If true, save a pickle file of the full sampler state.
         export_samples: bool
-            If true, save ASCII samples file to disk.
+            If true, save ASCII samples file to disk. See `MCMCSearch.export_samples_to_disk`.
         save_loudest: bool
-            If true, save a CFSv2 .loudest file to disk.
+            If true, save a CFSv2 .loudest file to disk. See `MCMCSearch.generate_loudest`.
         plot_walkers: bool
             If true, save trace plots of the walkers.
         walker_plot_args:
