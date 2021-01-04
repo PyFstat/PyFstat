@@ -36,19 +36,6 @@ class MCMCSearch(BaseSearchClass):
 
     Evaluates the coherent F-statistic across a parameter space region
     corresponding to an isolated/binary-modulated CW signal.
-
-    Attributes
-    ----------
-    symbol_dictionary: dict
-        Key, val pairs of the parameters (i.e. `F0`, `F1`), to Latex math
-        symbols for plots
-    unit_dictionary: dict
-        Key, val pairs of the parameters (i.e. `F0`, `F1`), and the
-        units (i.e. `Hz`)
-    transform_dictionary: dict
-        Key, val pairs of the parameters (i.e. `F0`, `F1`), where the key is
-        itself a dictionary which can item `multiplier`, `subtractor`, or
-        `unit` by which to transform by and update the units.
     """
 
     symbol_dictionary = dict(
@@ -63,6 +50,11 @@ class MCMCSearch(BaseSearchClass):
         tp=r"tp",
         argp=r"argp",
     )
+    """
+    symbol_dictionary: dict
+        Key, val pairs of the parameters (i.e. `F0`, `F1`), to Latex math
+        symbols for plots
+    """
     unit_dictionary = dict(
         F0=r"Hz",
         F1=r"Hz/s",
@@ -75,7 +67,18 @@ class MCMCSearch(BaseSearchClass):
         tp="",
         argp="",
     )
+    """
+    unit_dictionary: dict
+        Key, val pairs of the parameters (i.e. `F0`, `F1`), and the
+        units (i.e. `Hz`)
+    """
     transform_dictionary = {}
+    """
+    transform_dictionary: dict
+        Key, val pairs of the parameters (i.e. `F0`, `F1`), where the key is
+        itself a dictionary which can item `multiplier`, `subtractor`, or
+        `unit` by which to transform by and update the units.
+    """
 
     def __init__(
         self,
