@@ -1725,7 +1725,11 @@ class MCMCSearch(BaseSearchClass):
         return d, maxtwoF
 
     def get_summary_stats(self):
-        """ Returns a dict of point estimates for all production samples """
+        """Returns a dict of point estimates for all production samples.
+
+        Point estimates are computed on the MCMC samples using `numpy.mean`,
+        `numpy.std` and `numpy.quantiles` with q=[0.005, 0.05, 0.25, 0.5, 0.75, 0.95, 0.995].
+        """
         d = OrderedDict()
         repeats = []  # taken from old get_median_stds(), not sure why necessary
         for s, k in zip(self.samples.T, self.theta_keys):
@@ -1791,7 +1795,13 @@ class MCMCSearch(BaseSearchClass):
         return return_flag
 
     def write_par(self, method="median"):
-        """ Writes a .par of the best-fit params with an estimated std """
+        """Writes a .par of the best-fit params with an estimated std
+
+        Parameters
+        ----------
+        method: str
+            How to select the `best-fit` params. Available methods: "median", "mean", "twoFmax".
+        """
 
         if method == "med":
             method = "median"
