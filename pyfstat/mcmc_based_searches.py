@@ -1683,14 +1683,8 @@ class MCMCSearch(BaseSearchClass):
         else:
             return (self.lnlikes[idx] - self.likelihoodcoef) * 2
 
-    def get_max_twoF(self, threshold=0.05):
-        """Returns the max likelihood sample and the corresponding 2F value
-
-        Note: the sample is returned as a dictionary along with an estimate of
-        the standard deviation calculated from the std of all samples with a
-        twoF within `threshold` (relative) to the max twoF
-
-        """
+    def get_max_twoF(self):
+        """Returns the max likelihood sample and the corresponding 2F value"""
         if not hasattr(self, "search"):
             raise RuntimeError(
                 "Object has no self.lnlikes attribute, please execute .run() first."
