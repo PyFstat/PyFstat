@@ -300,7 +300,7 @@ class MCMCSearch(BaseSearchClass):
         in_theta = copy.copy(self.fixed_theta)
         for j, theta_i in enumerate(self.theta_idxs):
             in_theta[theta_i] = theta[j]
-        twoF = search.get_fullycoherent_twoF(*in_theta)
+        twoF = search.get_fullycoherent_detstat(*in_theta)
         return twoF / 2.0 + self.likelihoodcoef
 
     def _unpack_input_theta(self):
@@ -3290,7 +3290,7 @@ class MCMCTransientSearch(MCMCSearch):
         in_theta["tend"] = in_theta["tstart"] + tau
         if in_theta["tend"] > self.maxStartTime:
             return -np.inf
-        twoF = search.get_fullycoherent_twoF(**in_theta)
+        twoF = search.get_fullycoherent_detstat(**in_theta)
         return twoF / 2.0 + self.likelihoodcoef
 
     def _unpack_input_theta(self):

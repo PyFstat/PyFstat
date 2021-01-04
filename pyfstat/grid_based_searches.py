@@ -155,7 +155,7 @@ class GridSearch(BaseSearchClass):
                 earth_ephem=self.earth_ephem,
                 sun_ephem=self.sun_ephem,
             )
-            self.search.get_det_stat = self.search.get_fullycoherent_twoF
+            self.search.get_det_stat = self.search.get_fullycoherent_detstat
         else:
             self.search = SemiCoherentSearch(
                 label=self.label,
@@ -940,7 +940,7 @@ class TransientGridSearch(GridSearch):
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
         )
-        self.search.get_det_stat = self.search.get_fullycoherent_twoF
+        self.search.get_det_stat = self.search.get_fullycoherent_detstat
         # make sure to overwrite the min/max starttime in case the user
         # passed None and they were read from SFTs
         self.minStartTime = self.search.minStartTime

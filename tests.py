@@ -787,7 +787,7 @@ class TestComputeFstat(BaseForTestsWithData):
             maxCoverFreq=self.F0 + 0.1,
             BSGL=True,
         )
-        log10BSGL = search_H1L1.get_fullycoherent_twoF(
+        log10BSGL = search_H1L1.get_fullycoherent_detstat(
             F0=self.F0,
             F1=self.F1,
             F2=self.F2,
@@ -816,7 +816,7 @@ class TestComputeFstat(BaseForTestsWithData):
             maxCoverFreq=self.F0 + 0.1,
             BSGL=True,
         )
-        log10BSGL = search_H1L1.get_fullycoherent_twoF(
+        log10BSGL = search_H1L1.get_fullycoherent_detstat(
             F0=self.F0,
             F1=self.F1,
             F2=self.F2,
@@ -846,7 +846,7 @@ class TestComputeFstat(BaseForTestsWithData):
             self.Writer.Delta,
             num_segments=Nsft + 1,
         )
-        twoF = search.get_fullycoherent_twoF(
+        twoF = search.get_fullycoherent_detstat(
             F0=self.Writer.F0,
             F1=self.Writer.F1,
             F2=self.Writer.F2,
@@ -857,7 +857,7 @@ class TestComputeFstat(BaseForTestsWithData):
         )
         reldiff = np.abs(twoF_cumulative[-1] - twoF) / twoF
         print(
-            "2F from get_fullycoherent_twoF() is {:.4f}"
+            "2F from get_fullycoherent_detstat() is {:.4f}"
             " while last value from calculate_twoF_cumulative() is {:.4f};"
             " relative difference: {:g}".format(twoF, twoF_cumulative[-1], reldiff)
         )
