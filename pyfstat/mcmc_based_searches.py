@@ -1,5 +1,4 @@
-""" Searches using MCMC-based methods """
-
+""" PyFstat search & follow-up classes using MCMC-based methods """
 
 import sys
 import os
@@ -22,72 +21,11 @@ import pyfstat.helper_functions as helper_functions
 
 
 class MCMCSearch(BaseSearchClass):
-    """MCMC search using ComputeFstat
+    """
+    MCMC search using ComputeFstat.
 
-    Parameters
-    ----------
-    theta_prior: dict
-        Dictionary of priors and fixed values for the search parameters.
-        For each parameters (key of the dict), if it is to be held fixed
-        the value should be the constant float, if it is be searched, the
-        value should be a dictionary of the prior.
-    tref, minStartTime, maxStartTime: int
-        GPS seconds of the reference time, start time and end time. While tref
-        is requirede, minStartTime and maxStartTime default to None in which
-        case all available data is used.
-    label, outdir: str
-        A label and output directory (optional, defaults is `'data'`) to
-        name files
-    sftfilepattern: str, optional
-        Pattern to match SFTs using wildcards (*?) and ranges [0-9];
-        mutiple patterns can be given separated by colons.
-    detectors: str, optional
-        Two character reference to the detectors to use, specify None for no
-        contraint and comma separate for multiple references.
-    nsteps: list (2,), optional
-        Number of burn-in and production steps to take, [nburn, nprod]. See
-        `pyfstat.MCMCSearch.setup_initialisation()` for details on adding
-        initialisation steps.
-    nwalkers, ntemps: int, optional
-        The number of walkers and temperates to use in the parallel
-        tempered PTSampler.
-    log10beta_min float < 0, optional
-        The  log_10(beta) value, if given the set of betas passed to PTSampler
-        are generated from `np.logspace(0, log10beta_min, ntemps)` (given
-        in descending order to ptemcee).
-    theta_initial: dict, array, optional
-        A dictionary of distribution about which to distribute the
-        initial walkers about
-    rhohatmax: float, optional
-        Upper bound for the SNR scale parameter (required to normalise the
-        Bayes factor) - this needs to be carefully set when using the
-        evidence.
-    binary: bool, optional
-        If true, search over binary parameters
-    BSGL: bool, optional
-        If true, use the BSGL statistic
-    SSBPrec: int, optional
-        SSBPrec (SSB precision) to use when calling ComputeFstat
-    RngMedWindow: int, optional
-        Running-Median window size (number of bins) for ComputeFstat
-    minCoverFreq, maxCoverFreq: float, optional
-        Minimum and maximum instantaneous frequency which will be covered
-        over the SFT time span as passed to CreateFstatInput
-    injectSources: dict, optional
-        If given, inject these properties into the SFT files before running
-        the search
-    assumeSqrtSX: float or list or str
-        Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}.
-        See `core.ComputeFstat`.
-    transientWindowType: str
-        If 'rect' or 'exp',
-        compute atoms so that a transient (t0,tau) map can later be computed.
-        ('none' instead of None explicitly calls the transient-window function,
-        but with the full range, for debugging)
-        Currently only supported for nsegs=1.
-    tCWFstatMapVersion: str
-        Choose between standard 'lal' implementation,
-        'pycuda' for gpu, and some others for devel/debug.
+    Evalutates the coherent F-statistic across a parameter space region
+    corresponding to an isolated/binary-modulated CW signal.
 
     Attributes
     ----------
@@ -101,7 +39,6 @@ class MCMCSearch(BaseSearchClass):
         Key, val pairs of the parameters (i.e. `F0`, `F1`), where the key is
         itself a dictionary which can item `multiplier`, `subtractor`, or
         `unit` by which to transform by and update the units.
-
     """
 
     symbol_dictionary = dict(
@@ -159,7 +96,73 @@ class MCMCSearch(BaseSearchClass):
         earth_ephem=None,
         sun_ephem=None,
     ):
+        """
+        Parameters
+        ----------
+        theta_prior: dict
+            Dictionary of priors and fixed values for the search parameters.
+            For each parameters (key of the dict), if it is to be held fixed
+            the value should be the constant float, if it is be searched, the
+            value should be a dictionary of the prior.
+        tref, minStartTime, maxStartTime: int
+            GPS seconds of the reference time, start time and end time. While tref
+            is requirede, minStartTime and maxStartTime default to None in which
+            case all available data is used.
+        label, outdir: str
+            A label and output directory (optional, defaults is `'data'`) to
+            name files
+        sftfilepattern: str, optional
+            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            mutiple patterns can be given separated by colons.
+        detectors: str, optional
+            Two character reference to the detectors to use, specify None for no
+            contraint and comma separated strings for multiple references.
+        nsteps: list (2,), optional
+            Number of burn-in and production steps to take, [nburn, nprod]. See
+            `pyfstat.MCMCSearch.setup_initialisation()` for details on adding
+            initialisation steps.
+        nwalkers, ntemps: int, optional
+            The number of walkers and temperates to use in the parallel
+            tempered PTSampler.
+        log10beta_min: float < 0, optional
+            The log_10(beta) value. If given, the set of betas passed to PTSampler
+            are generated from `np.logspace(0, log10beta_min, ntemps)` (given
+            in descending order to ptemcee).
+        theta_initial: dict, array, optional
+            A dictionary of distribution about which to distribute the
+            initial walkers about.
+        rhohatmax: float, optional
+            Upper bound for the SNR scale parameter (required to normalise the
+            Bayes factor) - this needs to be carefully set when using the
+            evidence.
+        binary: bool, optional
+            If true, search over binary orbital parameters.
+        BSGL: bool, optional
+            If true, use the BSGL statistic.
+        SSBPrec: int, optional
+            SSBPrec (SSB precision) to use when calling ComputeFstat. See `core.ComputeFstat`.
+        RngMedWindow: int, optional
+            Running-Median window size (number of bins) for ComputeFstat. See `core.ComputeFstat`.
+        minCoverFreq, maxCoverFreq: float, optional
+            Minimum and maximum instantaneous frequency which will be covered
+            over the SFT time span as passed to CreateFstatInput. See `core.ComputeFstat`.
+        injectSources: dict, optional
+            If given, inject these properties into the SFT files before running
+            the search. See `core.ComputeFstat`.
+        assumeSqrtSX: float or list or str
+            Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}.
+            See `core.ComputeFstat`.
+        transientWindowType: str
+            If 'rect' or 'exp',
+            compute atoms so that a transient (t0,tau) map can later be computed.
+            ('none' instead of None explicitly calls the transient-window function,
+            but with the full range, for debugging). See `core.ComputeFstat`.
+            Currently only supported for nsegs=1.
+        tCWFstatMapVersion: str
+            Choose between standard 'lal' implementation,
+            'pycuda' for gpu, and some others for devel/debug.
 
+        """
         self._set_init_params_dict(locals())
         self.theta_prior = theta_prior
         self.tref = tref
