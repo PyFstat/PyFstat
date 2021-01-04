@@ -3,7 +3,6 @@
 
 import os
 import logging
-import copy
 from pprint import pformat
 
 import glob
@@ -300,6 +299,16 @@ class ComputeFstat(BaseSearchClass):
             If true, search over binary parameters.
         BSGL : bool
             If true, compute the log10BSGL statistic rather than the twoF value.
+            For details, see Keitel et al (PRD 89, 064023, 2014):
+            https://arxiv.org/abs/1311.5738
+            Tuning parameters are currently hardcoded:
+
+            * `Fstar0=15` for coherent searches.
+
+            * A p-value of 1e-6 and correspondingly recalculated Fstar0
+              for semicoherent searches.
+
+            * Uniform per-detector prior line-vs-Gaussian odds.
         transientWindowType: str
             If `rect` or `exp`,
             allow for the Fstat to be computed over a transient range.
@@ -636,6 +645,8 @@ class ComputeFstat(BaseSearchClass):
                 logging.info("Initialising BSGL")
 
             # Tuning parameters - to be reviewed
+            # We use a fixed Fstar0 for coherent searches,
+            # and recompute it from a fixed p-value for the semicoherent case.
             numDetectors = 2
             if hasattr(self, "nsegs"):
                 p_val_threshold = 1e-6
@@ -647,10 +658,15 @@ class ComputeFstat(BaseSearchClass):
             else:
                 Fstar0 = 15.0
             logging.info("Using Fstar0 of {:1.2f}".format(Fstar0))
+            # assume uniform per-detector prior line-vs-Gaussian odds
             oLGX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
             oLGX[:numDetectors] = 1.0 / numDetectors
             self.BSGLSetup = lalpulsar.CreateBSGLSetup(
-                numDetectors, Fstar0, oLGX, True, 1
+                numDetectors=numDetectors,
+                Fstar0sc=Fstar0,
+                oLGX=oLGX,
+                useLogCorrection=True,
+                numSegments=getattr(self, "nsegs", 1),
             )
             self.twoFX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
             self.whatToCompute += lalpulsar.FSTATQ_2F_PER_DET
@@ -982,20 +998,24 @@ class ComputeFstat(BaseSearchClass):
             self.PulsarDopplerParams.argp = float(argp)
 
         lalpulsar.ComputeFstat(
-            self.FstatResults,
-            self.FstatInput,
-            self.PulsarDopplerParams,
-            1,
-            self.whatToCompute,
+            Fstats=self.FstatResults,
+            input=self.FstatInput,
+            doppler=self.PulsarDopplerParams,
+            numFreqBins=1,
+            whatToCompute=self.whatToCompute,
         )
 
         if not self.transientWindowType:
-            if self.BSGL is False:
-                return self.FstatResults.twoF[0]
-
+            # We operate on a single frequency bin, so we grab the 0 component
+            # of what is internally a twoF array.
             twoF = np.float(self.FstatResults.twoF[0])
-            self.twoFX[0] = self.FstatResults.twoFPerDet(0)
-            self.twoFX[1] = self.FstatResults.twoFPerDet(1)
+            if self.BSGL is False:
+                return twoF
+            # Else, we use the single-detector F-stats to compute log10BSGL.
+            self.twoFX[: self.FstatResults.numDetectors] = [
+                self.FstatResults.twoFPerDet(X)
+                for X in range(self.FstatResults.numDetectors)
+            ]
             log10BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
             return log10BSGL
 
@@ -1014,7 +1034,7 @@ class ComputeFstat(BaseSearchClass):
         self.FstatMap, self.timingFstatMap = tcw.call_compute_transient_fstat_map(
             self.tCWFstatMapVersion,
             self.tCWFstatMapFeatures,
-            self.FstatResults.multiFatoms[0],
+            self.FstatResults.multiFatoms[0],  # 0 index: single frequency bin
             self.windowRange,
         )
         if self.tCWFstatMapVersion == "lal":
@@ -1022,35 +1042,45 @@ class ComputeFstat(BaseSearchClass):
         else:
             F_mn = self.FstatMap.F_mn
 
+        # Now instead of the overall twoF,
+        # we get the maximum twoF over the transient window range.
         twoF = 2 * np.max(F_mn)
         if self.BSGL is False:
-            if np.isnan(twoF):
-                return 0
-            else:
-                return twoF
+            return 0 if np.isnan(twoF) else twoF
 
-        FstatResults_single = copy.copy(self.FstatResults)
-        FstatResults_single.numDetectors = 1
-        FstatResults_single.data = self.FstatResults.multiFatoms[0].data[0]
-        FS0 = lalpulsar.ComputeTransientFstatMap(
-            FstatResults_single.multiFatoms[0], self.windowRange, False
-        )
-        FstatResults_single.data = self.FstatResults.multiFatoms[0].data[1]
-        FS1 = lalpulsar.ComputeTransientFstatMap(
-            FstatResults_single.multiFatoms[0], self.windowRange, False
-        )
-
-        # for now, use the Doppler parameter with
-        # multi-detector F maximised over t0,tau
-        # to return BSGL
+        # If BSGL requested, we need to also compute per-detector F_mn maps.
+        # For now, we use the t0,tau index that maximises the multi-detector F
+        # to return BSGL for a signal with those parameters.
         # FIXME: should we instead compute BSGL over the whole F_mn
         # and return the maximum of that?
-        idx_maxTwoF = np.argmax(F_mn)
-
-        self.twoFX[0] = 2 * FS0.F_mn.data[idx_maxTwoF]
-        self.twoFX[1] = 2 * FS1.F_mn.data[idx_maxTwoF]
+        idx_maxTwoF = np.unravel_index(np.argmax(F_mn), F_mn.shape)
+        for X in range(self.FstatResults.numDetectors):
+            # For each detector, we need to build a MultiFstatAtomVector
+            # because that's what the Fstat map function expects.
+            singleIFOmultiFatoms = lalpulsar.CreateMultiFstatAtomVector(1)
+            # The first [0] index on the multiFatoms here is over frequency bins;
+            # we always operate on a single bin.
+            singleIFOmultiFatoms.data[0] = lalpulsar.CreateFstatAtomVector(
+                self.FstatResults.multiFatoms[0].data[X].length
+            )
+            singleIFOmultiFatoms.data[0].TAtom = (
+                self.FstatResults.multiFatoms[0].data[X].TAtom
+            )
+            singleIFOmultiFatoms.data[0].data = (
+                self.FstatResults.multiFatoms[0].data[X].data
+            )
+            FXstatMap, timingFXstatMap = tcw.call_compute_transient_fstat_map(
+                self.tCWFstatMapVersion,
+                self.tCWFstatMapFeatures,
+                singleIFOmultiFatoms,
+                self.windowRange,
+            )
+            if self.tCWFstatMapVersion == "lal":
+                F_mn_X = FXstatMap.F_mn.data
+            else:
+                F_mn_X = FXstatMap.F_mn
+            self.twoFX[X] = 2 * F_mn_X[idx_maxTwoF]
         log10BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
-
         return log10BSGL
 
     def _set_up_cumulative_times(self, tstart, tend, num_segments):
@@ -1577,11 +1607,11 @@ class SemiCoherentSearch(ComputeFstat):
             self.PulsarDopplerParams.argp = float(argp)
 
         lalpulsar.ComputeFstat(
-            self.FstatResults,
-            self.FstatInput,
-            self.PulsarDopplerParams,
-            1,
-            self.whatToCompute,
+            Fstats=self.FstatResults,
+            input=self.FstatInput,
+            doppler=self.PulsarDopplerParams,
+            numFreqBins=1,
+            whatToCompute=self.whatToCompute,
         )
 
         twoF_per_segment = self._get_per_segment_twoF()
@@ -1602,15 +1632,26 @@ class SemiCoherentSearch(ComputeFstat):
             return twoF
         else:
             for X in range(self.FstatResults.numDetectors):
-                FstatResults_single = copy.copy(self.FstatResults)
-                FstatResults_single.numDetectors = 1
-                FstatResults_single.data = self.FstatResults.multiFatoms[0].data[X]
-                FSX = lalpulsar.ComputeTransientFstatMap(
-                    FstatResults_single.multiFatoms[0],
-                    self.semicoherentWindowRange,
-                    False,
+                # For each detector, we need to build a MultiFstatAtomVector
+                # because that's what the Fstat map function expects.
+                singleIFOmultiFatoms = lalpulsar.CreateMultiFstatAtomVector(1)
+                # The first [0] index on the multiFatoms here is over frequency bins;
+                # we always operate on a single bin.
+                singleIFOmultiFatoms.data[0] = lalpulsar.CreateFstatAtomVector(
+                    self.FstatResults.multiFatoms[0].data[X].length
                 )
-                twoFX_per_segment = 2 * FSX.F_mn.data[:, 0]
+                singleIFOmultiFatoms.data[0].TAtom = (
+                    self.FstatResults.multiFatoms[0].data[X].TAtom
+                )
+                singleIFOmultiFatoms.data[0].data = (
+                    self.FstatResults.multiFatoms[0].data[X].data
+                )
+                FXstatMap = lalpulsar.ComputeTransientFstatMap(
+                    multiFstatAtoms=singleIFOmultiFatoms,
+                    windowRange=self.semicoherentWindowRange,
+                    useFReg=False,
+                )
+                twoFX_per_segment = 2 * FXstatMap.F_mn.data[:, 0]
                 self.twoFX[X] = twoFX_per_segment.sum()
                 if np.isnan(self.twoFX[X]):
                     logging.debug(
@@ -1627,7 +1668,9 @@ class SemiCoherentSearch(ComputeFstat):
 
     def _get_per_segment_twoF(self):
         Fmap = lalpulsar.ComputeTransientFstatMap(
-            self.FstatResults.multiFatoms[0], self.semicoherentWindowRange, False
+            multiFstatAtoms=self.FstatResults.multiFatoms[0],
+            windowRange=self.semicoherentWindowRange,
+            useFReg=False,
         )
         twoF = 2 * Fmap.F_mn.data[:, 0]
         return twoF
