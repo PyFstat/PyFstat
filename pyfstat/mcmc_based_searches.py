@@ -2944,7 +2944,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 logging.info(
                     "Checking old setup input file {}".format(run_setup_input_file)
                 )
-                old_setup = self._read_setup_input_file(run_setup_input_file)
+                old_setup = self.read_setup_input_file(run_setup_input_file)
                 if self._check_old_run_setup(
                     old_setup,
                     NstarMax=NstarMax,
@@ -3065,7 +3065,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         else:
             return run_setup
 
-    def _read_setup_input_file(self, run_setup_input_file):
+    def read_setup_input_file(self, run_setup_input_file):
         with open(run_setup_input_file, "rb+") as f:
             d = pickle.load(f)
         return d
