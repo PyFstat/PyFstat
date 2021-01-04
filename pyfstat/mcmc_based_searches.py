@@ -739,31 +739,32 @@ class MCMCSearch(BaseSearchClass):
             If true, plot the prior as a red line. If 'full' then for uniform
             priors plot the full extent of the prior.
         nstds: float
-            The number of standard deviations to plot centered on the mean
+            The number of standard deviations to plot centered on the median.
+            Standard deviation is computed from the samples using `numpy.std`.
         label_offset: float
-            Offset the labels from the plot: useful to precent overlapping the
-            tick labels with the axis labels
+            Offset the labels from the plot: useful to prevent overlapping the
+            tick labels with the axis labels. This option is passed to `ax.[x|y]axis.set_label_coords`.
         dpi: int
-            Passed to plt.savefig
+            Passed to plt.savefig.
         rc_context: dict
             Dictionary of rc values to set while generating the figure (see
-            matplotlib rc for more details)
+            matplotlib rc for more details).
         tglitch_ratio: bool
             If true, and tglitch is a parameter, plot posteriors as the
             fractional time at which the glitch occurs instead of the actual
-            time
+            time.
         fig_and_axes: tuple
-            fig and axes to plot on, the axes must be of the right shape,
+            (fig, axes) tuple to plot on. The axes must be of the right shape,
             namely (ndim, ndim)
         save_fig: bool
-            If true, save the figure, else return the fig, axes
+            If true, save the figure, else return the fig, axes.
         **kwargs:
-            Passed to corner.corner
+            Passed to corner.corner. Use "truths" to plot the true parameters of a signal.
 
         Returns
         -------
         fig, axes:
-            The matplotlib figure and axes, only returned if save_fig = False
+            The matplotlib figure and axes, only returned if save_fig = False.
 
         """
 
@@ -881,15 +882,17 @@ class MCMCSearch(BaseSearchClass):
                 return fig, axes
 
     def plot_chainconsumer(self, save_fig=True, label_offset=0.25, dpi=300, **kwargs):
-        """Generate a corner plot of the posterior using chainconsumer
+        """Generate a corner plot of the posterior using the `chaniconsumer` package.
+
+        `chainconsumer` is an optional dependency of PyFstat. See https://samreay.github.io/ChainConsumer/.
+
+        Parameters are akin to the ones described in MCMCSearch.plot_corner.
+        Only the differing parameters are explicitly described.
 
         Parameters
         ----------
-        dpi: int
-            Passed to plt.savefig
         **kwargs:
-            Passed to chainconsumer.plotter.plot
-
+            Passed to chainconsumer.plotter.plot. Use "truths" to plot the true parameters of a signal.
         """
         try:
             import chainconsumer
@@ -937,13 +940,6 @@ class MCMCSearch(BaseSearchClass):
         for ax in axes_list:
             ax.set_rasterized(True)
             ax.set_rasterization_zorder(-10)
-
-            # for tick in ax.xaxis.get_major_ticks():
-            #    #tick.label.set_fontsize(8)
-            #    tick.label.set_rotation('horizontal')
-            # for tick in ax.yaxis.get_major_ticks():
-            #    #tick.label.set_fontsize(8)
-            #    tick.label.set_rotation('vertical')
 
             plt.tight_layout(h_pad=0.0, w_pad=0.0)
             fig.subplots_adjust(hspace=0.05, wspace=0.05)
@@ -1053,7 +1049,22 @@ class MCMCSearch(BaseSearchClass):
         fig_and_axes=None,
         save_fig=True,
     ):
-        """ Plot the posterior in the context of the prior """
+        """Plot the prior and posterior probability distributions in the same figure
+
+        Parameters
+        ----------
+        normal_stds: int
+           Bounds of priors in terms of their standard deviation. Only used if
+           `norm`, `halfnorm`, `neghalfnorm` or `lognorm` priors are given, otherwise ignored.
+        injection_parameters: dict
+            Dictionary containing the parameters of a signal. All parameters being searched must be
+            present as dictionary keys, otherwise this option is ignored.
+        fig_and_axes: tuple
+            (fig, axes) tuple to plot on.
+        save_fig: bool
+            If true, save the figure, else return the fig, axes.
+
+        """
 
         # Check injection parameters first
         missing_keys = set(self.theta_keys) - injection_parameters.keys()
