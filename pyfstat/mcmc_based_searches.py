@@ -286,7 +286,7 @@ class MCMCSearch(BaseSearchClass):
         ]
         return np.sum(H)
 
-    def logl(self, theta, search):
+    def _logl(self, theta, search):
         in_theta = copy.copy(self.fixed_theta)
         for j, theta_i in enumerate(self.theta_idxs):
             in_theta[theta_i] = theta[j]
@@ -339,7 +339,7 @@ class MCMCSearch(BaseSearchClass):
                 for p in p0vec
             ]
         )
-        init_logl = np.array([self.logl(p, self.search) for p in p0vec])
+        init_logl = np.array([self._logl(p, self.search) for p in p0vec])
         return init_logl + init_logp
 
     def _check_initial_points(self, p0):
@@ -637,7 +637,7 @@ class MCMCSearch(BaseSearchClass):
             ntemps=self.ntemps,
             nwalkers=self.nwalkers,
             dim=self.ndim,
-            logl=self.logl,
+            logl=self._logl,
             logp=self._logp,
             logpargs=(self.theta_prior, self.theta_keys, self.search),
             loglargs=(self.search,),
@@ -1622,7 +1622,7 @@ class MCMCSearch(BaseSearchClass):
         p0 = self._generate_scattered_p0(p)
 
         self.search.BSGL = False
-        twoF = self.logl(p, self.search)
+        twoF = self._logl(p, self.search)
         self.search.BSGL = self.BSGL
 
         logging.info(
@@ -1797,7 +1797,7 @@ class MCMCSearch(BaseSearchClass):
                 self._initiate_search_object()
             p = self.samples[jmax]
             self.search.BSGL = False
-            maxtwoF = self.logl(p, self.search)
+            maxtwoF = self._logl(p, self.search)
             self.search.BSGL = self.BSGL
         else:
             maxtwoF = self._get_twoF_from_loglikelihood(jmax)
@@ -2331,7 +2331,7 @@ class MCMCGlitchSearch(MCMCSearch):
         ]
         return np.sum(H)
 
-    def logl(self, theta, search):
+    def _logl(self, theta, search):
         in_theta = copy.copy(self.fixed_theta)
         if self.nglitch > 1:
             ts = (
@@ -2722,7 +2722,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         ]
         return np.sum(H)
 
-    def logl(self, theta, search):
+    def _logl(self, theta, search):
         in_theta = copy.copy(self.fixed_theta)
         for j, theta_i in enumerate(self.theta_idxs):
             in_theta[theta_i] = theta[j]
@@ -3190,7 +3190,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 ntemps=self.ntemps,
                 nwalkers=self.nwalkers,
                 dim=self.ndim,
-                logl=self.logl,
+                logl=self._logl,
                 logp=self._logp,
                 logpargs=(self.theta_prior, self.theta_keys, self.search),
                 loglargs=(self.search,),
@@ -3347,7 +3347,7 @@ class MCMCTransientSearch(MCMCSearch):
         if self.maxStartTime is None:
             self.maxStartTime = self.search.maxStartTime
 
-    def logl(self, theta, search):
+    def _logl(self, theta, search):
         in_theta = {
             key: self.fixed_theta[k]
             for k, key in enumerate(self.full_theta_keys)
