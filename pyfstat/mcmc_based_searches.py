@@ -2749,14 +2749,6 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         logging.info("Update search object")
         self.search.init_computefstatistic()
 
-    def get_width_from_prior(self, prior, key):
-        if prior[key]["type"] == "unif":
-            return prior[key]["upper"] - prior[key]["lower"]
-
-    def get_mid_from_prior(self, prior, key):
-        if prior[key]["type"] == "unif":
-            return 0.5 * (prior[key]["upper"] + prior[key]["lower"])
-
     def read_setup_input_file(self, run_setup_input_file):
         with open(run_setup_input_file, "rb+") as f:
             d = pickle.load(f)
