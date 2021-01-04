@@ -279,7 +279,7 @@ class MCMCSearch(BaseSearchClass):
         if self.maxStartTime is None:
             self.maxStartTime = self.search.maxStartTime
 
-    def logp(self, theta_vals, theta_prior, theta_keys, search):
+    def _logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [
             self._generic_lnprior(**theta_prior[key])(p)
             for p, key in zip(theta_vals, theta_keys)
@@ -335,7 +335,7 @@ class MCMCSearch(BaseSearchClass):
     def _evaluate_logpost(self, p0vec):
         init_logp = np.array(
             [
-                self.logp(p, self.theta_prior, self.theta_keys, self.search)
+                self._logp(p, self.theta_prior, self.theta_keys, self.search)
                 for p in p0vec
             ]
         )
@@ -638,7 +638,7 @@ class MCMCSearch(BaseSearchClass):
             nwalkers=self.nwalkers,
             dim=self.ndim,
             logl=self.logl,
-            logp=self.logp,
+            logp=self._logp,
             logpargs=(self.theta_prior, self.theta_keys, self.search),
             loglargs=(self.search,),
             betas=self.betas,
@@ -2313,7 +2313,7 @@ class MCMCGlitchSearch(MCMCSearch):
         if self.maxStartTime is None:
             self.maxStartTime = self.search.maxStartTime
 
-    def logp(self, theta_vals, theta_prior, theta_keys, search):
+    def _logp(self, theta_vals, theta_prior, theta_keys, search):
         if self.nglitch > 1:
             ts = (
                 [self.minStartTime]
@@ -2715,7 +2715,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         if self.maxStartTime is None:
             self.maxStartTime = self.search.maxStartTime
 
-    def logp(self, theta_vals, theta_prior, theta_keys, search):
+    def _logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [
             self._generic_lnprior(**theta_prior[key])(p)
             for p, key in zip(theta_vals, theta_keys)
@@ -3191,7 +3191,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                 nwalkers=self.nwalkers,
                 dim=self.ndim,
                 logl=self.logl,
-                logp=self.logp,
+                logp=self._logp,
                 logpargs=(self.theta_prior, self.theta_keys, self.search),
                 loglargs=(self.search,),
                 betas=self.betas,
