@@ -499,8 +499,8 @@ class MCMCSearch(BaseSearchClass):
         Parameters
         ----------
         proposal_scale_factor: float
-            The proposal scale factor `a > 1` used by the sampler, see
-            [Goodman & Weare (2010) 10.2140/camcos.2010.5.65].
+            The proposal scale factor `a > 1` used by the sampler.
+            See Goodman & Weare (Comm App Math Comp Sci, Vol 5, No. 1, 2010): 10.2140/camcos.2010.5.65.
             The bigger the value, the wider the range to draw proposals from.
             If the acceptance fraction is too low, you can raise it by
             decreasing the `a` parameter; and if it is too high, you can reduce
