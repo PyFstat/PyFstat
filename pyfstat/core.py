@@ -623,7 +623,7 @@ class ComputeFstat(BaseSearchClass):
         PulsarDopplerParams.refTime = self.tref
         PulsarDopplerParams.Alpha = 1
         PulsarDopplerParams.Delta = 1
-        PulsarDopplerParams.fkdot = np.array([0, 0, 0, 0, 0, 0, 0])
+        PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
         self.PulsarDopplerParams = PulsarDopplerParams
 
         logging.info("Initialising FstatResults")
@@ -647,12 +647,12 @@ class ComputeFstat(BaseSearchClass):
             else:
                 Fstar0 = 15.0
             logging.info("Using Fstar0 of {:1.2f}".format(Fstar0))
-            oLGX = np.zeros(10)
+            oLGX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
             oLGX[:numDetectors] = 1.0 / numDetectors
             self.BSGLSetup = lalpulsar.CreateBSGLSetup(
                 numDetectors, Fstar0, oLGX, True, 1
             )
-            self.twoFX = np.zeros(10)
+            self.twoFX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
             self.whatToCompute += lalpulsar.FSTATQ_2F_PER_DET
 
         if self.transientWindowType:
@@ -970,7 +970,8 @@ class ComputeFstat(BaseSearchClass):
             A single value of the detection statistic (twoF or log10BSGL)
             at the input parameter values.
         """
-        self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
+        self.PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
+        self.PulsarDopplerParams.fkdot[:3] = [F0, F1, F2]
         self.PulsarDopplerParams.Alpha = float(Alpha)
         self.PulsarDopplerParams.Delta = float(Delta)
         if self.binary:
@@ -1564,7 +1565,8 @@ class SemiCoherentSearch(ComputeFstat):
             at the input parameter values.
         """
 
-        self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
+        self.PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
+        self.PulsarDopplerParams.fkdot[:3] = [F0, F1, F2]
         self.PulsarDopplerParams.Alpha = float(Alpha)
         self.PulsarDopplerParams.Delta = float(Delta)
         if self.binary:
