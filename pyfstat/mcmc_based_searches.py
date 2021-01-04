@@ -2745,204 +2745,6 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         )
         return d
 
-    def _update_search_object(self):
-        logging.info("Update search object")
-        self.search.init_computefstatistic()
-
-    def read_setup_input_file(self, run_setup_input_file):
-        with open(run_setup_input_file, "rb+") as f:
-            d = pickle.load(f)
-        return d
-
-    def write_setup_input_file(
-        self,
-        run_setup_input_file,
-        NstarMax,
-        Nsegs0,
-        nsegs_vals,
-        Nstar_vals,
-        theta_prior,
-    ):
-        d = dict(
-            NstarMax=NstarMax,
-            Nsegs0=Nsegs0,
-            nsegs_vals=nsegs_vals,
-            theta_prior=theta_prior,
-            Nstar_vals=Nstar_vals,
-        )
-        with open(run_setup_input_file, "wb+") as f:
-            pickle.dump(d, f)
-
-    def check_old_run_setup(self, old_setup, **kwargs):
-        try:
-            truths = [val == old_setup[key] for key, val in kwargs.items()]
-            if all(truths):
-                return True
-            else:
-                logging.info("Old setup doesn't match one of NstarMax, Nsegs0 or prior")
-        except KeyError as e:
-            logging.info("Error found when comparing with old setup: {}".format(e))
-            return False
-
-    def init_run_setup(
-        self,
-        run_setup=None,
-        NstarMax=1000,
-        Nsegs0=None,
-        log_table=True,
-        gen_tex_table=True,
-    ):
-
-        if run_setup is None and Nsegs0 is None:
-            raise ValueError(
-                "You must either specify the run_setup, or Nsegs0 and NStarMax"
-                " from which the optimal run_setup can be estimated"
-            )
-        if run_setup is None:
-            logging.info("No run_setup provided")
-
-            run_setup_input_file = os.path.join(
-                self.outdir, self.label + "_run_setup.p"
-            )
-
-            if os.path.isfile(run_setup_input_file):
-                logging.info(
-                    "Checking old setup input file {}".format(run_setup_input_file)
-                )
-                old_setup = self.read_setup_input_file(run_setup_input_file)
-                if self.check_old_run_setup(
-                    old_setup,
-                    NstarMax=NstarMax,
-                    Nsegs0=Nsegs0,
-                    theta_prior=self.theta_prior,
-                ):
-                    logging.info(
-                        "Using old setup with NstarMax={}, Nsegs0={}".format(
-                            NstarMax, Nsegs0
-                        )
-                    )
-                    nsegs_vals = old_setup["nsegs_vals"]
-                    Nstar_vals = old_setup["Nstar_vals"]
-                    generate_setup = False
-                else:
-                    generate_setup = True
-            else:
-                generate_setup = True
-
-            if generate_setup:
-                nsegs_vals, Nstar_vals = optimal_setup_functions.get_optimal_setup(
-                    NstarMax,
-                    Nsegs0,
-                    self.tref,
-                    self.minStartTime,
-                    self.maxStartTime,
-                    self.theta_prior,
-                    self.search.detector_names,
-                )
-                self.write_setup_input_file(
-                    run_setup_input_file,
-                    NstarMax,
-                    Nsegs0,
-                    nsegs_vals,
-                    Nstar_vals,
-                    self.theta_prior,
-                )
-
-            run_setup = [
-                ((self.nsteps[0], 0), nsegs, False) for nsegs in nsegs_vals[:-1]
-            ]
-            run_setup.append(((self.nsteps[0], self.nsteps[1]), nsegs_vals[-1], False))
-
-        else:
-            logging.info("Calculating the number of templates for this setup")
-            Nstar_vals = []
-            for i, rs in enumerate(run_setup):
-                rs = list(rs)
-                if len(rs) == 2:
-                    rs.append(False)
-                if np.shape(rs[0]) == ():
-                    rs[0] = (rs[0], 0)
-                run_setup[i] = rs
-
-                if args.no_template_counting:
-                    Nstar_vals.append([1, 1, 1])
-                else:
-                    Nstar = optimal_setup_functions.get_Nstar_estimate(
-                        rs[1],
-                        self.tref,
-                        self.minStartTime,
-                        self.maxStartTime,
-                        self.theta_prior,
-                        self.search.detector_names,
-                    )
-                    Nstar_vals.append(Nstar)
-
-        if log_table:
-            logging.info("Using run-setup as follows:")
-            logging.info("Stage | nburn | nprod | nsegs | Tcoh d | resetp0 | Nstar")
-            for i, rs in enumerate(run_setup):
-                Tcoh = (self.maxStartTime - self.minStartTime) / rs[1] / 86400
-                if Nstar_vals[i] is None:
-                    vtext = "N/A"
-                else:
-                    vtext = "{:0.3e}".format(int(Nstar_vals[i]))
-                logging.info(
-                    "{} | {} | {} | {} | {} | {} | {}".format(
-                        str(i).ljust(5),
-                        str(rs[0][0]).ljust(5),
-                        str(rs[0][1]).ljust(5),
-                        str(rs[1]).ljust(5),
-                        "{:6.1f}".format(Tcoh),
-                        str(rs[2]).ljust(7),
-                        vtext,
-                    )
-                )
-
-        if gen_tex_table:
-            filename = os.path.join(self.outdir, self.label + "_run_setup.tex")
-            with open(filename, "w+") as f:
-                f.write(r"\begin{tabular}{c|ccc}" + "\n")
-                f.write(
-                    r"Stage & $N_\mathrm{seg}$ &"
-                    r"$T_\mathrm{coh}^{\rm days}$ &"
-                    r"$\mathcal{N}^*(\Nseg^{(\ell)}, \Delta\mathbf{\lambda}^{(0)})$ \\ \hline"
-                    "\n"
-                )
-                for i, rs in enumerate(run_setup):
-                    Tcoh = float(self.maxStartTime - self.minStartTime) / rs[1] / 86400
-                    line = r"{} & {} & {} & {} \\" + "\n"
-                    if Nstar_vals[i] is None:
-                        Nstar = "N/A"
-                    else:
-                        Nstar = Nstar_vals[i]
-                    line = line.format(
-                        i,
-                        rs[1],
-                        "{:1.1f}".format(Tcoh),
-                        helper_functions.texify_float(Nstar),
-                    )
-                    f.write(line)
-                f.write(r"\end{tabular}" + "\n")
-
-        if args.setup_only:
-            logging.info("Exit as requested by setup_only flag")
-            sys.exit()
-        else:
-            return run_setup
-
-    def _get_p0_per_stage(self, reset_p0=False):
-        """Returns new initial positions for walkers at each stage of the ladder"""
-        if not hasattr(self, "sampler"):  # must be stage 0
-            p0 = self._generate_initial_p0()
-            p0 = self._apply_corrections_to_p0(p0)
-        elif reset_p0:
-            p0 = self._get_new_p0(self.sampler)
-            p0 = self._apply_corrections_to_p0(p0)
-            # self._check_initial_points(p0)
-        else:
-            p0 = self.sampler.chain[:, :, -1, :]
-        return p0
-
     def run(
         self,
         run_setup=None,
@@ -2958,36 +2760,14 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         gen_tex_table=True,
         window=50,
     ):
-        """Run the follow-up with the given run_setup
+        """Run the follow-up with the given run_setup.
+
+        See MCMCSearch.run's docstring for a description of the remainder arguments.
 
         Parameters
         ----------
-        run_setup: list of tuples, optional
-        proposal_scale_factor: float
-            The proposal scale factor used by the sampler, see Goodman & Weare
-            (2010). If the acceptance fraction is too low, you can raise it by
-            decreasing the a parameter; and if it is too high, you can reduce
-            it by increasing the a parameter [Foreman-Mackay (2013)].
-        save_pickle: bool
-            If true, save a pickle file of the full sampler state.
-        export_samples: bool
-            If true, save ASCII samples file to disk.
-        save_loudest: bool
-            If true, save a CFSv2 .loudest file to disk.
-        plot_walkers: bool
-            If true, save trace plots of the walkers.
-        walker_plot_args:
-            Dictionary passed as kwargs to _plot_walkers to control the plotting.
-            Also, if both "fig" and "axes" entries are set,
-            the plot is not saved to disk directly,
-            but .walker_fig and .walker_axes properties are returned.
-        window: int
-            The minimum number of autocorrelation times needed to trust the
-            result when estimating the autocorrelation time (see
-            ptemcee.Sampler.get_autocorr_time for further details.
-        **kwargs:
-            Passed to _plot_walkers to control the figures
-
+        run_setup, NstarMax, Nsegss0, log_table, gen_tex_table:
+            See `MCMCFollowUpSearch.init_run_setup`.
         """
 
         self.nsegs = 1
@@ -3117,6 +2897,204 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                     logging.warning(
                         "Failed to save walker plots due to Error {}".format(e)
                     )
+
+    def _update_search_object(self):
+        logging.info("Update search object")
+        self.search.init_computefstatistic()
+
+    def init_run_setup(
+        self,
+        run_setup=None,
+        NstarMax=1000,
+        Nsegs0=None,
+        log_table=True,
+        gen_tex_table=True,
+    ):
+        """"""
+        if run_setup is None and Nsegs0 is None:
+            raise ValueError(
+                "You must either specify the run_setup, or Nsegs0 and NStarMax"
+                " from which the optimal run_setup can be estimated"
+            )
+        if run_setup is None:
+            logging.info("No run_setup provided")
+
+            run_setup_input_file = os.path.join(
+                self.outdir, self.label + "_run_setup.p"
+            )
+
+            if os.path.isfile(run_setup_input_file):
+                logging.info(
+                    "Checking old setup input file {}".format(run_setup_input_file)
+                )
+                old_setup = self._read_setup_input_file(run_setup_input_file)
+                if self._check_old_run_setup(
+                    old_setup,
+                    NstarMax=NstarMax,
+                    Nsegs0=Nsegs0,
+                    theta_prior=self.theta_prior,
+                ):
+                    logging.info(
+                        "Using old setup with NstarMax={}, Nsegs0={}".format(
+                            NstarMax, Nsegs0
+                        )
+                    )
+                    nsegs_vals = old_setup["nsegs_vals"]
+                    Nstar_vals = old_setup["Nstar_vals"]
+                    generate_setup = False
+                else:
+                    generate_setup = True
+            else:
+                generate_setup = True
+
+            if generate_setup:
+                nsegs_vals, Nstar_vals = optimal_setup_functions.get_optimal_setup(
+                    NstarMax,
+                    Nsegs0,
+                    self.tref,
+                    self.minStartTime,
+                    self.maxStartTime,
+                    self.theta_prior,
+                    self.search.detector_names,
+                )
+                self._write_setup_input_file(
+                    run_setup_input_file,
+                    NstarMax,
+                    Nsegs0,
+                    nsegs_vals,
+                    Nstar_vals,
+                    self.theta_prior,
+                )
+
+            run_setup = [
+                ((self.nsteps[0], 0), nsegs, False) for nsegs in nsegs_vals[:-1]
+            ]
+            run_setup.append(((self.nsteps[0], self.nsteps[1]), nsegs_vals[-1], False))
+
+        else:
+            logging.info("Calculating the number of templates for this setup")
+            Nstar_vals = []
+            for i, rs in enumerate(run_setup):
+                rs = list(rs)
+                if len(rs) == 2:
+                    rs.append(False)
+                if np.shape(rs[0]) == ():
+                    rs[0] = (rs[0], 0)
+                run_setup[i] = rs
+
+                if args.no_template_counting:
+                    Nstar_vals.append([1, 1, 1])
+                else:
+                    Nstar = optimal_setup_functions.get_Nstar_estimate(
+                        rs[1],
+                        self.tref,
+                        self.minStartTime,
+                        self.maxStartTime,
+                        self.theta_prior,
+                        self.search.detector_names,
+                    )
+                    Nstar_vals.append(Nstar)
+
+        if log_table:
+            logging.info("Using run-setup as follows:")
+            logging.info("Stage | nburn | nprod | nsegs | Tcoh d | resetp0 | Nstar")
+            for i, rs in enumerate(run_setup):
+                Tcoh = (self.maxStartTime - self.minStartTime) / rs[1] / 86400
+                if Nstar_vals[i] is None:
+                    vtext = "N/A"
+                else:
+                    vtext = "{:0.3e}".format(int(Nstar_vals[i]))
+                logging.info(
+                    "{} | {} | {} | {} | {} | {} | {}".format(
+                        str(i).ljust(5),
+                        str(rs[0][0]).ljust(5),
+                        str(rs[0][1]).ljust(5),
+                        str(rs[1]).ljust(5),
+                        "{:6.1f}".format(Tcoh),
+                        str(rs[2]).ljust(7),
+                        vtext,
+                    )
+                )
+
+        if gen_tex_table:
+            filename = os.path.join(self.outdir, self.label + "_run_setup.tex")
+            with open(filename, "w+") as f:
+                f.write(r"\begin{tabular}{c|ccc}" + "\n")
+                f.write(
+                    r"Stage & $N_\mathrm{seg}$ &"
+                    r"$T_\mathrm{coh}^{\rm days}$ &"
+                    r"$\mathcal{N}^*(\Nseg^{(\ell)}, \Delta\mathbf{\lambda}^{(0)})$ \\ \hline"
+                    "\n"
+                )
+                for i, rs in enumerate(run_setup):
+                    Tcoh = float(self.maxStartTime - self.minStartTime) / rs[1] / 86400
+                    line = r"{} & {} & {} & {} \\" + "\n"
+                    if Nstar_vals[i] is None:
+                        Nstar = "N/A"
+                    else:
+                        Nstar = Nstar_vals[i]
+                    line = line.format(
+                        i,
+                        rs[1],
+                        "{:1.1f}".format(Tcoh),
+                        helper_functions.texify_float(Nstar),
+                    )
+                    f.write(line)
+                f.write(r"\end{tabular}" + "\n")
+
+        if args.setup_only:
+            logging.info("Exit as requested by setup_only flag")
+            sys.exit()
+        else:
+            return run_setup
+
+    def _read_setup_input_file(self, run_setup_input_file):
+        with open(run_setup_input_file, "rb+") as f:
+            d = pickle.load(f)
+        return d
+
+    def _write_setup_input_file(
+        self,
+        run_setup_input_file,
+        NstarMax,
+        Nsegs0,
+        nsegs_vals,
+        Nstar_vals,
+        theta_prior,
+    ):
+        d = dict(
+            NstarMax=NstarMax,
+            Nsegs0=Nsegs0,
+            nsegs_vals=nsegs_vals,
+            theta_prior=theta_prior,
+            Nstar_vals=Nstar_vals,
+        )
+        with open(run_setup_input_file, "wb+") as f:
+            pickle.dump(d, f)
+
+    def _check_old_run_setup(self, old_setup, **kwargs):
+        try:
+            truths = [val == old_setup[key] for key, val in kwargs.items()]
+            if all(truths):
+                return True
+            else:
+                logging.info("Old setup doesn't match one of NstarMax, Nsegs0 or prior")
+        except KeyError as e:
+            logging.info("Error found when comparing with old setup: {}".format(e))
+            return False
+
+    def _get_p0_per_stage(self, reset_p0=False):
+        """Returns new initial positions for walkers at each stage of the ladder"""
+        if not hasattr(self, "sampler"):  # must be stage 0
+            p0 = self._generate_initial_p0()
+            p0 = self._apply_corrections_to_p0(p0)
+        elif reset_p0:
+            p0 = self._get_new_p0(self.sampler)
+            p0 = self._apply_corrections_to_p0(p0)
+            # self._check_initial_points(p0)
+        else:
+            p0 = self.sampler.chain[:, :, -1, :]
+        return p0
 
 
 class MCMCTransientSearch(MCMCSearch):
