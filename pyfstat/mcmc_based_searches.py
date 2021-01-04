@@ -486,10 +486,12 @@ class MCMCSearch(BaseSearchClass):
         Parameters
         ----------
         proposal_scale_factor: float
-            The proposal scale factor used by the sampler, see Goodman & Weare
-            (2010). If the acceptance fraction is too low, you can raise it by
-            decreasing the a parameter; and if it is too high, you can reduce
-            it by increasing the a parameter [Foreman-Mackay (2013)].
+            The proposal scale factor `a > 1` used by the sampler, see
+            [Goodman & Weare (2010) 10.2140/camcos.2010.5.65].
+            The bigger the value, the wider the range to draw proposals from.
+            If the acceptance fraction is too low, you can raise it by
+            decreasing the `a` parameter; and if it is too high, you can reduce
+            it by increasing the `a` parameter [Foreman-Mackay arXiv:1202.3665 [astro-ph.IM] (2013)].
         save_pickle: bool
             If true, save a pickle file of the full sampler state.
         export_samples: bool
@@ -500,9 +502,12 @@ class MCMCSearch(BaseSearchClass):
             If true, save trace plots of the walkers.
         walker_plot_args:
             Dictionary passed as kwargs to _plot_walkers to control the plotting.
-            Also, if both "fig" and "axes" entries are set,
-            the plot is not saved to disk directly,
-            but .walker_fig and .walker_axes properties are returned.
+            Histogram of sampled detection statistic values can be retrieved setting "plot_det_stat" to `True`.
+            Parameters corresponding to an injected signal can be passed through "injection_parameters"
+            as a dictionary containing the parameters of said signal. All parameters being searched for must
+            be present, otherwise this option is ignored.
+            If both "fig" and "axes" entries are set, the plot is not saved to disk
+            directly, but (fig, axes) are returned.
         window: int
             The minimum number of autocorrelation times needed to trust the
             result when estimating the autocorrelation time (see
