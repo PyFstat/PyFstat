@@ -1577,7 +1577,7 @@ class MCMCSearch(BaseSearchClass):
             pickle.dump(d, File)
 
     def get_saved_data_dictionary(self):
-        """ Returns dictionary of the data saved in the pickle """
+        """ Returns dictionary of the data saved in the pickle `self.pickle_path`. """
         with open(self.pickle_path, "rb") as File:
             d = pickle.load(File)
         return d
@@ -1632,27 +1632,30 @@ class MCMCSearch(BaseSearchClass):
                     logging.info(key)
             return False
 
-    def get_savetxt_fmt_dict(self):
+    def _get_savetxt_fmt_dict(self):
         fmt_dict = helper_functions.get_doppler_params_output_format(self.theta_keys)
         fmt_dict["twoF"] = "%.9g"
         return fmt_dict
 
-    def get_savetxt_fmt_list(self):
+    def _get_savetxt_gmt_list(self):
         """Returns a list of output format specifiers, ordered like the samples
 
-        This is required because the output of get_savetxt_fmt_dict()
+        This is required because the output of _get_savetxt_fmt_dict()
         will depend on the order in which those entries have been coded up.
         """
-        fmt_dict = self.get_savetxt_fmt_dict()
+        fmt_dict = self._get_savetxt_fmt_dict()
         fmt_list = [fmt_dict[key] for key in self.output_keys]
         return fmt_list
 
     def export_samples_to_disk(self):
+        """
+        Export MCMC samples into a text file using `numpy.savetxt`.
+        """
         self.samples_file = os.path.join(self.outdir, self.label + "_samples.dat")
         logging.info("Exporting samples to {}".format(self.samples_file))
         header = "\n".join(self.output_file_header)
         header += "\n" + " ".join(self.output_keys)
-        outfmt = self.get_savetxt_fmt_list()
+        outfmt = self._get_savetxt_gmt_list()
         twoF = np.atleast_2d(self._get_twoF_from_loglikelihood()).T
         samples_out = np.concatenate((self.samples, twoF), axis=1)
         Ncols = np.shape(samples_out)[1]
@@ -1663,7 +1666,7 @@ class MCMCSearch(BaseSearchClass):
                 " do not match."
                 " If your search class uses different"
                 " keys than the base MCMCSearch class,"
-                " override the get_savetxt_fmt_dict"
+                " override the _get_savetxt_fmt_dict"
                 " method.".format(Ncols, len(outfmt))
             )
         np.savetxt(
@@ -2424,7 +2427,7 @@ class MCMCGlitchSearch(MCMCSearch):
             plt.close(fig)
         return ax
 
-    def get_savetxt_fmt_dict(self):
+    def _get_savetxt_fmt_dict(self):
         fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
         if "tglitch" in self.theta_keys:
             fmt["tglitch"] = "%d"
@@ -3327,7 +3330,7 @@ class MCMCTransientSearch(MCMCSearch):
         self.output_keys = self.theta_keys.copy()
         self.output_keys += ["log10BSGL" if self.BSGL else "twoF"]
 
-    def get_savetxt_fmt_dict(self):
+    def _get_savetxt_fmt_dict(self):
         fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
         if "transient_tstart" in self.theta_keys:
             fmt["transient_tstart"] = "%d"
