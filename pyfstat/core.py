@@ -398,6 +398,7 @@ class ComputeFstat(BaseSearchClass):
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.init_computefstatistic()
         self.output_file_header = self.get_output_file_header()
+        self.get_det_stat = self.get_fullycoherent_detstat
 
     def _get_SFTCatalog(self):
         """Load the SFTCatalog
@@ -648,10 +649,11 @@ class ComputeFstat(BaseSearchClass):
             # We use a fixed Fstar0 for coherent searches,
             # and recompute it from a fixed p-value for the semicoherent case.
             numDetectors = 2
-            if hasattr(self, "nsegs"):
+            nsegs_eff = max([getattr(self, "nsegs", 1), getattr(self, "nglitch", 1)])
+            if nsegs_eff > 1:
                 p_val_threshold = 1e-6
                 Fstar0s = np.linspace(0, 1000, 10000)
-                p_vals = scipy.special.gammaincc(2 * self.nsegs, Fstar0s)
+                p_vals = scipy.special.gammaincc(2 * nsegs_eff, Fstar0s)
                 Fstar0 = Fstar0s[np.argmin(np.abs(p_vals - p_val_threshold))]
                 if Fstar0 == Fstar0s[-1]:
                     raise ValueError("Max Fstar0 exceeded")
@@ -1630,6 +1632,7 @@ class SemiCoherentSearch(ComputeFstat):
             self.twoFX_per_segment = np.zeros(
                 (lalpulsar.PULSAR_MAX_DETECTORS, self.nsegs)
             )
+        self.get_det_stat = self.get_semicoherent_det_stat
 
     def _init_semicoherent_window_range(self):
         """
@@ -2083,6 +2086,7 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         self.cudaDeviceName = None
         self.binary = False
         self.init_computefstatistic()
+        self.get_det_stat = self.get_semicoherent_nglitch_twoF
 
     def get_semicoherent_nglitch_twoF(self, F0, F1, F2, Alpha, Delta, *args):
         """Returns the semi-coherent glitch summed twoF.

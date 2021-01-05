@@ -155,7 +155,6 @@ class GridSearch(BaseSearchClass):
                 earth_ephem=self.earth_ephem,
                 sun_ephem=self.sun_ephem,
             )
-            self.search.get_det_stat = self.search.get_fullycoherent_detstat
         else:
             self.search = SemiCoherentSearch(
                 label=self.label,
@@ -172,7 +171,6 @@ class GridSearch(BaseSearchClass):
                 detectors=self.detectors,
                 injectSources=self.injectSources,
             )
-            self.search.get_det_stat = self.search.get_semicoherent_det_stat
         # make sure to overwrite the min/max starttime in case the user
         # passed None and they were read from SFTs
         self.minStartTime = self.search.minStartTime
@@ -940,7 +938,6 @@ class TransientGridSearch(GridSearch):
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
         )
-        self.search.get_det_stat = self.search.get_fullycoherent_detstat
         # make sure to overwrite the min/max starttime in case the user
         # passed None and they were read from SFTs
         self.minStartTime = self.search.minStartTime
@@ -1202,7 +1199,6 @@ class GridGlitchSearch(GridSearch):
             earth_ephem=earth_ephem,
             sun_ephem=sun_ephem,
         )
-        self.search.get_det_stat = self.search.get_semicoherent_nglitch_twoF
 
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)

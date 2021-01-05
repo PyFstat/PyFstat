@@ -226,7 +226,33 @@ class MCMCSearch(BaseSearchClass):
         self._log_input()
 
     def _set_likelihoodcoef(self):
-        self.likelihoodcoef = np.log(70.0 / self.rhohatmax ** 4)
+        """Additional constant terms to turn a detection statistic into a likelihood.
+
+        In general, the (log-)likelihood can be obtained from the signal-to-noise
+        (log-)Bayes factor
+        (omitting the overall Gaussian-noise normalization term)
+        but the detection statistic may only be a monotonic function of the
+        Bayes factor, not the full thing.
+        E.g. this is the case for the standard CW F-statistic!
+        """
+        if self.BSGL:
+            # In this case, the corresponding term is already included
+            # in the detection statistic itself.
+            # See Eq. (36) in Keitel et al (PRD 89, 064023, 2014):
+            # https://arxiv.org/abs/1311.5738
+            # where Fstar0 = ln(cstar) = ln(rhohatmax**4/70).
+            # We just need to switch to natural log basis.
+            self.likelihooddetstatmultiplier = np.log(10)
+            self.likelihoodcoef = 0
+        else:
+            # If assuming only Gaussian noise + signal,
+            # the likelihood is essentially the F-statistic,
+            # but with an extra constant term depending on the amplitude prior.
+            # See Eq. (9) of Ashton & Prix (PRD 97, 103020, 2018):
+            # https://arxiv.org/abs/1802.05450
+            # Also need to go from twoF to F.
+            self.likelihooddetstatmultiplier = 0.5
+            self.likelihoodcoef = np.log(70.0 / self.rhohatmax ** 4)
 
     def _log_input(self):
         logging.info("theta_prior = {}".format(self.theta_prior))
@@ -300,8 +326,8 @@ class MCMCSearch(BaseSearchClass):
         in_theta = copy.copy(self.fixed_theta)
         for j, theta_i in enumerate(self.theta_idxs):
             in_theta[theta_i] = theta[j]
-        twoF = search.get_fullycoherent_detstat(*in_theta)
-        return twoF / 2.0 + self.likelihoodcoef
+        detstat = search.get_det_stat(*in_theta)
+        return detstat * self.likelihooddetstatmultiplier + self.likelihoodcoef
 
     def _unpack_input_theta(self):
         self.full_theta_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
@@ -1421,26 +1447,30 @@ class MCMCSearch(BaseSearchClass):
                 if burnin_idx and add_det_stat_burnin:
                     burn_in_vals = lnl[:, :burnin_idx].flatten()
                     try:
-                        twoF_burnin = 2 * (
+                        detstat_burnin = (
                             burn_in_vals[~np.isnan(burn_in_vals)] - self.likelihoodcoef
+                        ) / self.likelihooddetstatmultiplier
+                        axes[-1].hist(
+                            detstat_burnin, bins=50, histtype="step", color="C3"
                         )
-                        axes[-1].hist(twoF_burnin, bins=50, histtype="step", color="C3")
                     except ValueError:
                         logging.info(
-                            "Det. Stat. hist failed, most likely all "
-                            "values where the same"
+                            "Histogram of detection statistic failed, "
+                            "most likely all values were the same."
                         )
                         pass
                 else:
-                    twoF_burnin = []
+                    detstat_burnin = []
                 prod_vals = lnl[:, burnin_idx:].flatten()
                 try:
-                    twoF = 2 * (prod_vals[~np.isnan(prod_vals)] - self.likelihoodcoef)
-                    axes[-1].hist(twoF, bins=50, histtype="step", color="k")
+                    detstat = (
+                        prod_vals[~np.isnan(prod_vals)] - self.likelihoodcoef
+                    ) / self.likelihooddetstatmultiplier
+                    axes[-1].hist(detstat, bins=50, histtype="step", color="k")
                 except ValueError:
                     logging.info(
-                        "Det. Stat. hist failed, most likely all "
-                        "values where the same"
+                        "Histogram of detection statistic failed, "
+                        "most likely all values were the same."
                     )
                     pass
                 if self.BSGL:
@@ -1448,7 +1478,7 @@ class MCMCSearch(BaseSearchClass):
                 else:
                     axes[-1].set_xlabel(r"$\widetilde{2\mathcal{F}}$")
                 axes[-1].set_ylabel(r"$\mathrm{Counts}$")
-                combined_vals = np.append(twoF_burnin, twoF)
+                combined_vals = np.append(detstat_burnin, detstat)
                 if len(combined_vals) > 0:
                     minv = np.min(combined_vals)
                     maxv = np.max(combined_vals)
@@ -1656,6 +1686,8 @@ class MCMCSearch(BaseSearchClass):
     def _get_savetxt_fmt_dict(self):
         fmt_dict = helper_functions.get_doppler_params_output_format(self.theta_keys)
         fmt_dict["twoF"] = "%.9g"
+        if self.BSGL:
+            fmt_dict["log10BSGL"] = "%.9g"
         return fmt_dict
 
     def _get_savetxt_gmt_list(self):
@@ -1677,8 +1709,18 @@ class MCMCSearch(BaseSearchClass):
         header = "\n".join(self.output_file_header)
         header += "\n" + " ".join(self.output_keys)
         outfmt = self._get_savetxt_gmt_list()
-        twoF = np.atleast_2d(self._get_twoF_from_loglikelihood()).T
-        samples_out = np.concatenate((self.samples, twoF), axis=1)
+        # For convenience, we always save a twoF column,
+        # even if log10BSGL was used for the likelihood.
+        detstat = np.atleast_2d(self._get_detstat_from_loglikelihood()).T
+        if self.BSGL:
+            twoF = np.zeros_like(detstat)
+            self.search.BSGL = False
+            for idx, p in enumerate(self.samples):
+                twoF[idx] = self.search.get_det_stat(*p)
+            self.search.BSGL = self.BSGL
+            samples_out = np.concatenate((self.samples, twoF), axis=1)
+        # TODO: add single-IFO F-stats?
+        samples_out = np.concatenate((self.samples, detstat), axis=1)
         Ncols = np.shape(samples_out)[1]
         if len(outfmt) != Ncols:
             raise RuntimeError(
@@ -1698,11 +1740,16 @@ class MCMCSearch(BaseSearchClass):
             fmt=outfmt,
         )
 
-    def _get_twoF_from_loglikelihood(self, idx=None):
+    def _get_detstat_from_loglikelihood(self, idx=None):
+        """Inverts the extra terms applied in logl()."""
         if idx is None:
-            return (self.lnlikes - self.likelihoodcoef) * 2
+            return (
+                self.lnlikes - self.likelihoodcoef
+            ) / self.likelihooddetstatmultiplier
         else:
-            return (self.lnlikes[idx] - self.likelihoodcoef) * 2
+            return (
+                self.lnlikes[idx] - self.likelihoodcoef
+            ) / self.likelihooddetstatmultiplier
 
     def get_max_twoF(self):
         """Get the max. likelihood (loudest) sample and the compute
@@ -1734,14 +1781,16 @@ class MCMCSearch(BaseSearchClass):
         d = OrderedDict()
 
         if self.BSGL:
+            # need to recompute twoF at the max likelihood
             if hasattr(self, "search") is False:
                 self._initiate_search_object()
             p = self.samples[jmax]
             self.search.BSGL = False
-            maxtwoF = self._logl(p, self.search)
+            maxtwoF = self.search.get_det_stat(*p)
             self.search.BSGL = self.BSGL
         else:
-            maxtwoF = self._get_twoF_from_loglikelihood(jmax)
+            # can just reuse the logl value
+            maxtwoF = self._get_detstat_from_loglikelihood(jmax)
 
         repeats = []
         for i, k in enumerate(self.theta_keys):
@@ -2305,7 +2354,38 @@ class MCMCGlitchSearch(MCMCSearch):
         self.set_ephemeris_files(earth_ephem, sun_ephem)
 
     def _set_likelihoodcoef(self):
-        self.likelihoodcoef = (self.nglitch + 1) * np.log(70.0 / self.rhohatmax ** 4)
+        """Additional constant terms to turn a detection statistic into a likelihood.
+
+        In general, the (log-)likelihood can be obtained from the signal-to-noise
+        (log-)Bayes factor
+        (omitting the overall Gaussian-noise normalization term)
+        but the detection statistic may only be a monotonic function of the
+        Bayes factor, not the full thing.
+        E.g. this is the case for the standard CW F-statistic!
+
+        In the semi-coherent case, the number of segments must also be considered.
+        """
+        if self.BSGL:
+            # In this case, the corresponding term is already included
+            # in the detection statistic itself.
+            # See Eq. (55) in Keitel et al (PRD 89, 064023, 2014):
+            # https://arxiv.org/abs/1311.5738
+            # where Fstarhat0 = ln(cstar**Nseg) = Nseg * ln(rhohatmax**4/70).
+            # We just need to switch to natural log basis.
+            self.likelihooddetstatmultiplier = np.log(10)
+            self.likelihoodcoef = 0
+        else:
+            # If assuming only Gaussian noise + signal,
+            # the likelihood is essentially the F-statistic,
+            # but with an extra constant term depending on the amplitude prior.
+            # See Eq. (9) of Ashton & Prix (PRD 97, 103020, 2018):
+            # https://arxiv.org/abs/1802.05450
+            # Also need to go from twoF to F,
+            # and include the number of segments ( = nglitch+1 ) explicitly.
+            self.likelihooddetstatmultiplier = 0.5
+            self.likelihoodcoef = (self.nglitch + 1) * np.log(
+                70.0 / self.rhohatmax ** 4
+            )
 
     def _initiate_search_object(self):
         logging.info("Setting up search object")
@@ -2363,7 +2443,7 @@ class MCMCGlitchSearch(MCMCSearch):
         for j, theta_i in enumerate(self.theta_idxs):
             in_theta[theta_i] = theta[j]
         twoF = search.get_semicoherent_nglitch_twoF(*in_theta)
-        return twoF / 2.0 + self.likelihoodcoef
+        return twoF * self.likelihooddetstatmultiplier + self.likelihoodcoef
 
     def _unpack_input_theta(self):
         base_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
@@ -2537,15 +2617,17 @@ class MCMCGlitchSearch(MCMCSearch):
         return ax
 
     def _get_savetxt_fmt_dict(self):
-        fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
+        fmt_dict = helper_functions.get_doppler_params_output_format(self.theta_keys)
         if "tglitch" in self.theta_keys:
-            fmt["tglitch"] = "%d"
+            fmt_dict["tglitch"] = "%d"
         if "delta_F0" in self.theta_keys:
-            fmt["delta_F0"] = "%.16g"
+            fmt_dict["delta_F0"] = "%.16g"
         if "delta_F1" in self.theta_keys:
-            fmt["delta_F1"] = "%.16g"
-        fmt["twoF"] = "%.9g"
-        return fmt
+            fmt_dict["delta_F1"] = "%.16g"
+        fmt_dict["twoF"] = "%.9g"
+        if self.BSGL:
+            fmt_dict["log10BSGL"] = "%.9g"
+        return fmt_dict
 
 
 class MCMCSemiCoherentSearch(MCMCSearch):
@@ -2646,7 +2728,36 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             logging.info("Value `nsegs` not yet provided")
 
     def _set_likelihoodcoef(self):
-        self.likelihoodcoef = self.nsegs * np.log(70.0 / self.rhohatmax ** 4)
+        """Additional constant terms to turn a detection statistic into a likelihood.
+
+        In general, the (log-)likelihood can be obtained from the signal-to-noise
+        (log-)Bayes factor
+        (omitting the overall Gaussian-noise normalization term)
+        but the detection statistic may only be a monotonic function of the
+        Bayes factor, not the full thing.
+        E.g. this is the case for the standard CW F-statistic!
+
+        In the semi-coherent case, the number of segments must also be considered.
+        """
+        if self.BSGL:
+            # In this case, the corresponding term is already included
+            # in the detection statistic itself.
+            # See Eq. (55) in Keitel et al (PRD 89, 064023, 2014):
+            # https://arxiv.org/abs/1311.5738
+            # where Fstarhat0 = ln(cstar**Nseg) = Nseg * ln(rhohatmax**4/70).
+            # We just need to switch to natural log basis.
+            self.likelihooddetstatmultiplier = np.log(10)
+            self.likelihoodcoef = 0
+        else:
+            # If assuming only Gaussian noise + signal,
+            # the likelihood is essentially the F-statistic,
+            # but with an extra constant term depending on the amplitude prior.
+            # See Eq. (9) of Ashton & Prix (PRD 97, 103020, 2018):
+            # https://arxiv.org/abs/1802.05450
+            # Also need to go from twoF to F,
+            # and include the number of segments explicitly.
+            self.likelihooddetstatmultiplier = 0.5
+            self.likelihoodcoef = self.nsegs * np.log(70.0 / self.rhohatmax ** 4)
 
     def _get_data_dictionary_to_save(self):
         d = dict(
@@ -2696,13 +2807,6 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             for p, key in zip(theta_vals, theta_keys)
         ]
         return np.sum(H)
-
-    def _logl(self, theta, search):
-        in_theta = copy.copy(self.fixed_theta)
-        for j, theta_i in enumerate(self.theta_idxs):
-            in_theta[theta_i] = theta[j]
-        twoF = search.get_semicoherent_det_stat(*in_theta)
-        return twoF / 2.0 + self.likelihoodcoef
 
 
 class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
@@ -3290,8 +3394,8 @@ class MCMCTransientSearch(MCMCSearch):
         in_theta["tend"] = in_theta["tstart"] + tau
         if in_theta["tend"] > self.maxStartTime:
             return -np.inf
-        twoF = search.get_fullycoherent_detstat(**in_theta)
-        return twoF / 2.0 + self.likelihoodcoef
+        detstat = search.get_det_stat(**in_theta)
+        return detstat * self.likelihooddetstatmultiplier + self.likelihoodcoef
 
     def _unpack_input_theta(self):
         self.full_theta_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
@@ -3334,10 +3438,12 @@ class MCMCTransientSearch(MCMCSearch):
         self.output_keys += ["log10BSGL" if self.BSGL else "twoF"]
 
     def _get_savetxt_fmt_dict(self):
-        fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
+        fmt_dict = helper_functions.get_doppler_params_output_format(self.theta_keys)
         if "transient_tstart" in self.theta_keys:
-            fmt["transient_tstart"] = "%d"
+            fmt_dict["transient_tstart"] = "%d"
         if "transient_duration" in self.theta_keys:
-            fmt["transient_duration"] = "%d"
-        fmt["twoF"] = "%.9g"
-        return fmt
+            fmt_dict["transient_duration"] = "%d"
+        fmt_dict["twoF"] = "%.9g"
+        if self.BSGL:
+            fmt_dict["log10BSGL"] = "%.9g"
+        return fmt_dict
