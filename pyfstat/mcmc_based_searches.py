@@ -322,10 +322,15 @@ class MCMCSearch(BaseSearchClass):
         ]
         return np.sum(H)
 
-    def _logl(self, theta, search):
-        in_theta = copy.copy(self.fixed_theta)
+    def _set_point_for_evaluation(self, theta):
+        """Combines fixed and variable parameters to form a valid evaluation point."""
+        p = copy.copy(self.fixed_theta)
         for j, theta_i in enumerate(self.theta_idxs):
-            in_theta[theta_i] = theta[j]
+            p[theta_i] = theta[j]
+        return p
+
+    def _logl(self, theta, search):
+        in_theta = self._set_point_for_evaluation(theta)
         detstat = search.get_det_stat(*in_theta)
         return detstat * self.likelihooddetstatmultiplier + self.likelihoodcoef
 
@@ -366,7 +371,9 @@ class MCMCSearch(BaseSearchClass):
         self.theta_keys = [self.theta_keys[i] for i in idxs]
 
         self.output_keys = self.theta_keys.copy()
-        self.output_keys += ["log10BSGL" if self.BSGL else "twoF"]
+        self.output_keys.append("twoF")
+        if self.BSGL:
+            self.output_keys.append("log10BSGL")
 
     def _evaluate_logpost(self, p0vec):
         init_logp = np.array(
@@ -1705,18 +1712,20 @@ class MCMCSearch(BaseSearchClass):
         header = "\n".join(self.output_file_header)
         header += "\n" + " ".join(self.output_keys)
         outfmt = self._get_savetxt_gmt_list()
+        samples_out = copy.copy(self.samples)
         # For convenience, we always save a twoF column,
         # even if log10BSGL was used for the likelihood.
         detstat = np.atleast_2d(self._get_detstat_from_loglikelihood()).T
         if self.BSGL:
             twoF = np.zeros_like(detstat)
             self.search.BSGL = False
-            for idx, p in enumerate(self.samples):
+            for idx, samp in enumerate(self.samples):
+                p = self._set_point_for_evaluation(samp)
                 twoF[idx] = self.search.get_det_stat(*p)
             self.search.BSGL = self.BSGL
-            samples_out = np.concatenate((self.samples, twoF), axis=1)
+            samples_out = np.concatenate((samples_out, twoF), axis=1)
         # TODO: add single-IFO F-stats?
-        samples_out = np.concatenate((self.samples, detstat), axis=1)
+        samples_out = np.concatenate((samples_out, detstat), axis=1)
         Ncols = np.shape(samples_out)[1]
         if len(outfmt) != Ncols:
             raise RuntimeError(
@@ -1780,7 +1789,7 @@ class MCMCSearch(BaseSearchClass):
             # need to recompute twoF at the max likelihood
             if hasattr(self, "search") is False:
                 self._initiate_search_object()
-            p = self.samples[jmax]
+            p = self._set_point_for_evaluation(self.samples[jmax])
             self.search.BSGL = False
             maxtwoF = self.search.get_det_stat(*p)
             self.search.BSGL = self.BSGL
@@ -2385,6 +2394,8 @@ class MCMCGlitchSearch(MCMCSearch):
 
     def _initiate_search_object(self):
         logging.info("Setting up search object")
+        if self.BSGL:
+            raise ValueError("BSGL option currently not supported.")
         search_ranges = self._get_search_ranges()
         self.search = core.SemiCoherentGlitchSearch(
             label=self.label,
@@ -2428,16 +2439,14 @@ class MCMCGlitchSearch(MCMCSearch):
         return np.sum(H)
 
     def _logl(self, theta, search):
-        in_theta = copy.copy(self.fixed_theta)
+        in_theta = self._set_point_for_evaluation(theta)
         if self.nglitch > 1:
             ts = (
                 [self.minStartTime] + list(theta[-self.nglitch :]) + [self.maxStartTime]
             )
             if np.array_equal(ts, np.sort(ts)) is False:
                 return -np.inf
-
-        for j, theta_i in enumerate(self.theta_idxs):
-            in_theta[theta_i] = theta[j]
+        # FIXME: BSGL case?
         twoF = search.get_semicoherent_nglitch_twoF(*in_theta)
         return twoF * self.likelihooddetstatmultiplier + self.likelihoodcoef
 
@@ -2515,7 +2524,9 @@ class MCMCGlitchSearch(MCMCSearch):
                     self.theta_idxs[i] += 1
 
         self.output_keys = self.theta_keys.copy()
-        self.output_keys += ["log10BSGL" if self.BSGL else "twoF"]
+        self.output_keys.append("twoF")
+        if self.BSGL:
+            self.output_keys.append("log10BSGL")
 
     def _get_data_dictionary_to_save(self):
         d = dict(
@@ -3363,13 +3374,14 @@ class MCMCTransientSearch(MCMCSearch):
         if self.maxStartTime is None:
             self.maxStartTime = self.search.maxStartTime
 
-    def _logl(self, theta, search):
-        in_theta = {
+    def _set_point_for_evaluation(self, theta):
+        """Combines fixed and variable parameters to form a valid evaluation point."""
+        p = {
             key: self.fixed_theta[k]
             for k, key in enumerate(self.full_theta_keys)
             if "transient" not in key
         }
-        in_theta.update(
+        p.update(
             {
                 key: theta[k]
                 for k, key in enumerate(self.theta_keys)
@@ -3378,16 +3390,20 @@ class MCMCTransientSearch(MCMCSearch):
         )
         # FIXME: this can be simplified when changing all theta lists to dicts
         if "transient_tstart" in self.theta_keys:
-            in_theta["tstart"] = theta[self.theta_keys.index("transient_tstart")]
+            p["tstart"] = theta[self.theta_keys.index("transient_tstart")]
         else:
-            in_theta["tstart"] = self.fixed_theta[
+            p["tstart"] = self.fixed_theta[
                 self.full_theta_keys.index("transient_tstart")
             ]
         if "transient_duration" in self.theta_keys:
             tau = theta[self.theta_keys.index("transient_duration")]
         else:
             tau = self.fixed_theta[self.full_theta_keys.index("transient_duration")]
-        in_theta["tend"] = in_theta["tstart"] + tau
+        p["tend"] = p["tstart"] + tau
+        return p
+
+    def _logl(self, theta, search):
+        in_theta = self._set_point_for_evaluation(theta)
         if in_theta["tend"] > self.maxStartTime:
             return -np.inf
         detstat = search.get_det_stat(**in_theta)
@@ -3431,7 +3447,9 @@ class MCMCTransientSearch(MCMCSearch):
         self.theta_keys = [self.theta_keys[i] for i in idxs]
 
         self.output_keys = self.theta_keys.copy()
-        self.output_keys += ["log10BSGL" if self.BSGL else "twoF"]
+        self.output_keys.append("twoF")
+        if self.BSGL:
+            self.output_keys.append("log10BSGL")
 
     def _get_savetxt_fmt_dict(self):
         fmt_dict = helper_functions.get_doppler_params_output_format(self.theta_keys)
