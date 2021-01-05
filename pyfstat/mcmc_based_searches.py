@@ -1576,15 +1576,11 @@ class MCMCSearch(BaseSearchClass):
         p = pF[idx]
         p0 = self._generate_scattered_p0(p)
 
-        self.search.BSGL = False
-        twoF = self._logl(p, self.search)
-        self.search.BSGL = self.BSGL
-
         logging.info(
             (
-                "Gen. new p0 from pos {} which had det. stat.={:2.1f},"
-                " twoF={:2.1f} and lnp={:2.1f}"
-            ).format(idx[1], lnl[idx], twoF, lnp_finite[idx])
+                "Gen. new p0 from pos {} which had det. stat.={:2.1f}"
+                " and lnp={:2.1f}"
+            ).format(idx[1], lnl[idx], lnp_finite[idx])
         )
 
         return p0
