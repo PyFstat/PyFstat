@@ -52,8 +52,6 @@ coherent_search = pyfstat.ComputeFstat(
     maxCoverFreq=-0.5,
 )
 FS_1 = coherent_search.get_fullycoherent_twoF(
-    noise_and_signal_writer.tstart,
-    noise_and_signal_writer.tend,
     noise_and_signal_writer.F0,
     noise_and_signal_writer.F1,
     noise_and_signal_writer.F2,
@@ -115,8 +113,6 @@ coherent_search = pyfstat.ComputeFstat(
     maxCoverFreq=-0.5,
 )
 FS_2 = coherent_search.get_fullycoherent_twoF(
-    add_signal_writer.tstart,
-    add_signal_writer.tend,
     add_signal_writer.F0,
     add_signal_writer.F1,
     add_signal_writer.F2,

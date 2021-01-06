@@ -54,14 +54,14 @@ search = pyfstat.GridGlitchSearch(
 search.run()
 dT = time.time() - t1
 
-F0_vals = np.unique(search.data[:, 0]) - F0
-F1_vals = np.unique(search.data[:, 1]) - F1
-delta_F0s_vals = np.unique(search.data[:, 5]) - delta_F0
-tglitch_vals = np.unique(search.data[:, 7])
+F0_vals = np.unique(search.data["F0"]) - F0
+F1_vals = np.unique(search.data["F1"]) - F1
+delta_F0s_vals = np.unique(search.data["delta_F0"]) - delta_F0
+tglitch_vals = np.unique(search.data["tglitch"])
 tglitch_vals_days = (tglitch_vals - tstart) / 86400.0 - dtglitch / 86400.0
 
 print("Making gridcorner plot...")
-twoF = search.data[:, -1].reshape(
+twoF = search.data["twoF"].reshape(
     (len(F0_vals), len(F1_vals), len(delta_F0s_vals), len(tglitch_vals))
 )
 xyz = [F0_vals * 1e6, F1_vals * 1e12, delta_F0s_vals * 1e6, tglitch_vals_days]

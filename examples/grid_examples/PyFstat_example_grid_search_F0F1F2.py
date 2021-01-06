@@ -73,12 +73,17 @@ search.run()
 # FIXME: workaround for matplotlib "Exceeded cell block limit" errors
 agg_chunksize = 10000
 
+print("Plotting 2F(F0)...")
 search.plot_1D(
     xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$", agg_chunksize=agg_chunksize
 )
+print("Plotting 2F(F1)...")
 search.plot_1D(xkey="F1", agg_chunksize=agg_chunksize)
+print("Plotting 2F(F2)...")
 search.plot_1D(xkey="F2", agg_chunksize=agg_chunksize)
+print("Plotting 2F(Alpha)...")
 search.plot_1D(xkey="Alpha", agg_chunksize=agg_chunksize)
+print("Plotting 2F(Delta)...")
 search.plot_1D(xkey="Delta", agg_chunksize=agg_chunksize)
 # 2D plots will currently not work for >2 non-trivial (gridded) search dimensions
 # search.plot_2D(xkey="F0",ykey="F1",colorbar=True)
@@ -86,10 +91,10 @@ search.plot_1D(xkey="Delta", agg_chunksize=agg_chunksize)
 # search.plot_2D(xkey="F1",ykey="F2",colorbar=True)
 
 print("Making gridcorner plot...")
-F0_vals = np.unique(search.data[:, 2]) - F0
-F1_vals = np.unique(search.data[:, 3]) - F1
-F2_vals = np.unique(search.data[:, 4]) - F2
-twoF = search.data[:, -1].reshape((len(F0_vals), len(F1_vals), len(F2_vals)))
+F0_vals = np.unique(search.data["F0"]) - F0
+F1_vals = np.unique(search.data["F1"]) - F1
+F2_vals = np.unique(search.data["F2"]) - F2
+twoF = search.data["twoF"].reshape((len(F0_vals), len(F1_vals), len(F2_vals)))
 xyz = [F0_vals, F1_vals, F2_vals]
 labels = [
     "$f - f_0$",

@@ -1,5 +1,9 @@
 """
-Provides helpful functions to facilitate ease-of-use of pyfstat
+A collection of helpful functions to facilitate ease-of-use of PyFstat.
+
+Most of these are used internally by other parts of the package
+and are of interest mostly only for developers,
+but others can also be helpful for end users.
 """
 
 import os
@@ -11,7 +15,6 @@ import inspect
 import peakutils
 import shutil
 from functools import wraps
-from scipy.stats.distributions import ncx2
 import numpy as np
 import lal
 import lalpulsar
@@ -32,6 +35,7 @@ else:
 
 
 def set_up_optional_tqdm():
+    """Provides local replacement for tqdm if it cannot be imported."""
     try:
         from tqdm import tqdm
     except ImportError:
@@ -43,12 +47,14 @@ def set_up_optional_tqdm():
 
 
 def set_up_matplotlib_defaults():
+    """Sets some defaults for matplotlib plotting."""
     plt.switch_backend("Agg")
     plt.rcParams["text.usetex"] = shutil.which("latex") is not None
     plt.rcParams["axes.formatter.useoffset"] = False
 
 
 def set_up_command_line_arguments():
+    """Parse global commandline arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-v",
@@ -125,7 +131,22 @@ def set_up_command_line_arguments():
 
 
 def get_ephemeris_files():
-    """ Returns the earth_ephem and sun_ephem """
+    """Set the ephemeris files to use for the Earth and Sun.
+
+    This looks first for a configuration file `~/.pyfstat.conf`
+    and next in the $LALPULSAR_DATADIR environment variable.
+
+    If neither source provides the necessary files,
+    a warning is emitted and the user can still run PyFstat searches,
+    but must then include ephemeris options manually on each class instantiation.
+
+    The 'DE405' ephemerides version provided with lalpulsar is expected.
+
+    Returns
+    ----------
+    earth_ephem, sun_ephem: str
+        Paths of the two files containing positions of Earth and Sun.
+    """
     config_file = os.path.join(os.path.expanduser("~"), ".pyfstat.conf")
     env_var = "LALPULSAR_DATADIR"
     please = "Please provide the ephemerides paths when initialising searches."
@@ -180,6 +201,21 @@ def get_ephemeris_files():
 
 
 def round_to_n(x, n):
+    """Simple rounding function for getting a fixed number of digits.
+
+    Parameters
+    ----------
+    x: float
+        The number to round.
+    n: int
+        The number of digits to round to
+        (before plus after the decimal separator).
+
+    Returns
+    ----------
+    rounded: float
+        The rounded number.
+    """
     if not x:
         return 0
     power = -int(np.floor(np.log10(abs(x)))) + (n - 1)
@@ -188,6 +224,25 @@ def round_to_n(x, n):
 
 
 def texify_float(x, d=2):
+    """Format float numbers nicely for LaTeX output, including rounding.
+
+    Numbers with absolute values between 0.01 and 100 will be returned
+    in plain float format,
+    while smaller or larger numbers will be returned in powers-of-ten notation.
+
+    Parameters
+    ----------
+    x: float
+        The number to round and format.
+    n: int
+        The number of digits to round to
+        (before plus after the decimal separator).
+
+    Returns
+    ----------
+    formatted: str
+        The formatted string.
+    """
     if x == 0:
         return 0
     if type(x) == str:
@@ -204,7 +259,7 @@ def texify_float(x, d=2):
 
 
 def initializer(func):
-    """ Decorator function to automatically assign the parameters to self """
+    """Decorator to automatically assign the parameters of a class instantiation to self."""
     argspec = inspect.getfullargspec(func)
 
     @wraps(func)
@@ -222,7 +277,32 @@ def initializer(func):
 
 
 def get_peak_values(frequencies, twoF, threshold_2F, F0=None, F0range=None):
+    """Find a set of local peaks of twoF values over a 1D frequency list.
+
+    Parameters
+    ----------
+    frequencies: np.ndarray
+        1D array of frequency values.
+    twoF: np.ndarray
+        Corresponding 1D array of detection statistic values.
+    threshold_2F: float
+        Only report peaks above this threshold.
+    F0, F0range: float or None
+        Only report peaks within [F0-F0range,F0+F0range].
+
+    Returns
+    ----------
+    F0maxs: np.ndarray
+        1D array of peak frequencies.
+    twoFmaxs: np.ndarray
+        1D array of peak twoF values.
+    freq_errs: np.ndarray
+        1D array of peak frequency estimation error,
+        taken as the spacing between neighbouring input frequencies.
+    """
     if F0:
+        if F0range is None:
+            raise ValueError("If given F0, also need F0range.")
         cut_idxs = np.abs(frequencies - F0) < F0range
         frequencies = frequencies[cut_idxs]
         twoF = twoF[cut_idxs]
@@ -234,50 +314,41 @@ def get_peak_values(frequencies, twoF, threshold_2F, F0=None, F0range=None):
 
 
 def get_comb_values(F0, frequencies, twoF, period, N=4):
+    """Check which points of a [frequencies,twoF] set correspond to a certain comb of frequencies.
+
+    Parameters
+    ----------
+    F0: float
+        Base frequency for the comb.
+    frequencies: np.ndarray
+        1D array of frequency values.
+    twoF: np.ndarray
+        Corresponding 1D array of detection statistic values.
+    period: str
+        Modulation type of the comb, either `sidereal` or `terrestrial`.
+    N: int
+        Number of comb harmonics.
+
+    Returns
+    ----------
+    comb_frequencies: np.ndarray
+        1D array of relative frequency offsets for the comb harmonics.
+    comb_twoFs: np.ndarray
+        1D array of twoF values at the closest-matching frequencies.
+    freq_errs: np.ndarray
+        1D array of frequency match error,
+        taken as the spacing between neighbouring input frequencies.
+    """
     if period == "sidereal":
         period = 23 * 60 * 60 + 56 * 60 + 4.0616
     elif period == "terrestrial":
         period = 86400
+    else:
+        raise ValueError("period must be either 'sidereal' or 'terrestrial'.")
     freq_err = frequencies[1] - frequencies[0]
     comb_frequencies = [n * 1 / period for n in range(-N, N + 1)]
     comb_idxs = [np.argmin(np.abs(frequencies - F0 - F)) for F in comb_frequencies]
     return comb_frequencies, twoF[comb_idxs], freq_err * np.ones(len(comb_idxs))
-
-
-def compute_P_twoFstarcheck(twoFstarcheck, twoFcheck, M0, plot=False):
-    """ Returns the unnormalised pdf of twoFstarcheck given twoFcheck """
-    upper = 4 + twoFstarcheck + 0.5 * (2 * (4 * M0 + 2 * twoFcheck))
-    rho2starcheck = np.linspace(1e-1, upper, 500)
-    integrand = ncx2.pdf(twoFstarcheck, 4 * M0, rho2starcheck) * ncx2.pdf(
-        twoFcheck, 4, rho2starcheck
-    )
-    if plot:
-        fig, ax = plt.subplots()
-        ax.plot(rho2starcheck, integrand)
-        fig.savefig("test")
-    return np.trapz(integrand, rho2starcheck)
-
-
-def compute_pstar(twoFcheck_obs, twoFstarcheck_obs, m0, plot=False):
-    M0 = 2 * m0 + 1
-    upper = 4 + twoFcheck_obs + (2 * (4 * M0 + 2 * twoFcheck_obs))
-    twoFstarcheck_vals = np.linspace(1e-1, upper, 500)
-    P_twoFstarcheck = np.array(
-        [
-            compute_P_twoFstarcheck(twoFstarcheck, twoFcheck_obs, M0)
-            for twoFstarcheck in twoFstarcheck_vals
-        ]
-    )
-    C = np.trapz(P_twoFstarcheck, twoFstarcheck_vals)
-    idx = np.argmin(np.abs(twoFstarcheck_vals - twoFstarcheck_obs))
-    if plot:
-        fig, ax = plt.subplots()
-        ax.plot(twoFstarcheck_vals, P_twoFstarcheck)
-        ax.fill_between(twoFstarcheck_vals[: idx + 1], 0, P_twoFstarcheck[: idx + 1])
-        ax.axvline(twoFstarcheck_vals[idx])
-        fig.savefig("test")
-    pstar_l = np.trapz(P_twoFstarcheck[: idx + 1] / C, twoFstarcheck_vals[: idx + 1])
-    return 2 * np.min([pstar_l, 1 - pstar_l])
 
 
 def run_commandline(cl, log_level=20, raise_error=True, return_output=True):
@@ -288,9 +359,23 @@ def run_commandline(cl, log_level=20, raise_error=True, return_output=True):
     cl: str
         Command to run
     log_level: int
+        Sets the logging level for some of this function's messages.
         See https://docs.python.org/library/logging.html#logging-levels
-        default is '20' (INFO)
+        Default is '20' (INFO).
+        FIXME: Not used for all messages.
+    raise_error: bool
+        If True, raise an error if the subprocess fails.
+        If False, continue and just return `0`.
+    return_output: bool
+        If True, return the captured output of the subprocess (stdout and stderr).
+        If False, return nothing on successful execution.
 
+    Returns
+    ----------
+    out: str or int, optional
+        The captured output of the subprocess (stdout and stderr)
+        if `return_output=True`.
+        0 on failed execution if `raise_error=False`.
     """
 
     logging.log(log_level, "Now executing: " + cl)
@@ -322,15 +407,48 @@ def run_commandline(cl, log_level=20, raise_error=True, return_output=True):
 
 
 def convert_array_to_gsl_matrix(array):
+    """Convert a numpy array to a LAL-wrapped GSL matrix.
+
+    Parameters
+    ----------
+    array: np.ndarray
+        The array to convert.
+        `array.shape` must have 2 dimensions.
+
+    Returns
+    ----------
+    gsl_matrix: lal.gsl_matrix
+        The LAL-wrapped GSL matrix object.
+    """
     gsl_matrix = lal.gsl_matrix(*array.shape)
     gsl_matrix.data = array
     return gsl_matrix
 
 
-def get_sft_array(sftfilepattern, data_duration=None, F0=None, dF0=None):
-    """Return the raw data (absolute value) from a set of SFTs
+def get_sft_array(sftfilepattern, F0=None, dF0=None):
+    """Return the raw data (absolute values) from a set of SFTs.
 
-    FIXME: currently only returns data for first detector
+    FIXME: currently only returns data for first detector.
+
+    Parameters
+    ----------
+    sftfilepattern: str
+            Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
+            multiple patterns can be given separated by colons.
+    F0, dF0: float or None
+        Restrict frequency range to `[F0-dF0,F0+dF0]`.
+
+    Returns
+    ----------
+    times: np.ndarray
+        The SFT starttimes as a 1D array.
+    freqs: np.ndarray
+        The frequency bins in each SFT.
+        These will be the same for each SFT,
+        so only a single 1D array is returned.
+    data: np.ndarray
+        A 2D array of the absolute values of the SFT data
+        in each frequency bin at each timestamp.
     """
 
     if F0 is None and dF0 is None:
@@ -341,12 +459,6 @@ def get_sft_array(sftfilepattern, data_duration=None, F0=None, dF0=None):
     else:
         fMin = F0 - dF0
         fMax = F0 + dF0
-
-    if data_duration is not None:
-        logging.warning(
-            "Option 'data_duration' for get_sft_array()"
-            " is no longer in use and will be removed."
-        )
 
     SFTCatalog = lalpulsar.SFTdataFind(sftfilepattern, lalpulsar.SFTConstraints())
     MultiSFTs = lalpulsar.LoadMultiSFTs(SFTCatalog, fMin, fMax)
@@ -382,29 +494,39 @@ def get_covering_band(
     minOrbitPeriod=0.0,
     maxOrbitEcc=0.0,
 ):
-    """Get the covering band using XLALCWSignalCoveringBand
+    """Get the covering band for CW signals for given time and parameter ranges.
+
+    This uses the lalpulsar function `XLALCWSignalCoveringBand()`,
+    accounting for
+    the spin evolution of the signals within the given [F0,F1,F2] ranges,
+    the maximum possible Dopper modulation due to detector motion
+    (i.e. for the worst-case sky locations),
+    and for worst-case binary orbital motion.
 
     Parameters
     ----------
-    tref, tstart, tend: int
-        The reference, start, and end times of interest
+    tref: int
+        Reference time (in GPS seconds) for the signal parameters.
+    tstart: int
+        Start time (in GPS seconds) for the signal evolution to consider.
+    tend: int
+        End time (in GPS seconds) for the signal evolution to consider.
     F0, F1, F1: float
-        Minimum frequency and spin-down of signals to be covered
+        Minimum frequency and spin-down of signals to be covered.
     F0band, F1band, F1band: float
-        Ranges of frequency and spin-down of signals to be covered
+        Ranges of frequency and spin-down of signals to be covered.
     maxOrbitAsini: float
-        Largest orbital projected semi-major axis to be covered
+        Largest orbital projected semi-major axis to be covered.
     minOrbitPeriod: float
-        Shortest orbital period to be covered
+        Shortest orbital period to be covered.
     maxOrbitEcc: float
-        Highest orbital eccentricity to be covered
+        Highest orbital eccentricity to be covered.
 
     Returns
     -------
-    F0min, F0max: float
-        Estimates of the minimum and maximum frequencies of the signal during
-        the search
-
+    minCoverFreq, maxCoverFreq: float
+        Estimates of the minimum and maximum frequencies of the signals
+        from the given parameter ranges over the `[tstart,tend]` duration.
     """
     tref = lal.LIGOTimeGPS(tref)
     tstart = lal.LIGOTimeGPS(tstart)
@@ -434,18 +556,22 @@ def get_covering_band(
     return minCoverFreq, maxCoverFreq
 
 
-def twoFDMoffThreshold(
-    twoFon, knee=400, twoFDMoffthreshold_below_threshold=62, prefactor=0.9, offset=0.5
-):
-    """ Calculation of the 2F_DMoff threshold, see Eq 2 of arXiv:1707.5286 """
-    if twoFon <= knee:
-        return twoFDMoffthreshold_below_threshold
-    else:
-        return 10 ** (prefactor * np.log10(twoFon - offset))
-
-
 def match_commandlines(cl1, cl2, be_strict_about_full_executable_path=False):
-    """ Check if two commandlines match element-by-element, regardless of order """
+    """Check if two commandline strings match element-by-element, regardless of order.
+
+    Parameters
+    ----------
+    cl1, cl2: str
+        Commandline strings of `executable --key1=val1 --key2=val2` etc format.
+    be_strict_about_full_executable_path: bool
+        If False (default), only checks the basename of the executable.
+        If True, requires its full path to match.
+
+    Returns
+    -------
+    match: bool
+        Whether the executable and all `key=val` pairs of the two strings matched.
+    """
     cl1s = cl1.split(" ")
     cl2s = cl2.split(" ")
     # first item will be the executable name
@@ -458,13 +584,39 @@ def match_commandlines(cl1, cl2, be_strict_about_full_executable_path=False):
 
 
 def get_version_string():
+    """
+    Get the canonical version string of the currently running PyFstat instance.
+
+    Returns
+    -------
+    version: str
+        The version string.
+    """
     return get_versions()["version"]
 
 
 def get_doppler_params_output_format(keys):
-    # use same format for writing out search parameters
-    # as write_FstatCandidate_to_fp() function of lalapps_CFSv2
-    fmt = []
+    """Set a canonical output precision for frequency evolution parameters.
+
+    This uses the same format (`%.16g`) as
+    the `write_FstatCandidate_to_fp()` function of
+    `lalapps_ComputeFstatistic_v2`.
+
+    This assigns that format to each parameter name in `keys`
+    which matches a hardcoded list of known standard 'Doppler' parameters,
+    and ignores any others.
+
+    Parameters
+    -------
+    keys: dict
+        The parameter keys for which to select formats.
+
+    Returns
+    -------
+    fmt: dict
+        A dictionary assigning the default format to each parameter key
+        from the hardcoded list of standard 'Doppler' parameters.
+    """
     CFSv2_fmt = "%.16g"
     doppler_keys = [
         "F0",
@@ -478,38 +630,66 @@ def get_doppler_params_output_format(keys):
         "tp",
         "argp",
     ]
-
-    for k in keys:
-        if k in doppler_keys:
-            fmt += [CFSv2_fmt]
+    fmt = {k: CFSv2_fmt for k in keys if k in doppler_keys}
     return fmt
 
 
-def read_txt_file_with_header(f, comments="#"):
-    # wrapper to np.genfromtxt with smarter header handling
+def read_txt_file_with_header(f, names=True, comments="#"):
+    """Wrapper to np.genfromtxt with smarter handling of variable-length commented headers.
+
+    The header is identified as an uninterrupted block of lines
+    from the beginning of the file,
+    each starting with the given `comments` character.
+
+    After identifying a header of length `Nhead`,
+    this function then tells `np.genfromtxt()` to skip `Nhead-1` lines
+    (to allow for reading field names from the last commented line
+    before the actual data starts).
+
+    Parameters
+    -------
+    f: str
+        Name of the file to read.
+    names: bool
+        Passed on to `np.genfromtxt()`:
+        If True, the field names are read from the last header line.
+    comments: str
+        The character used to indicate the start of a comment.
+        Also passed on to `np.genfromtxt()`.
+
+    Returns
+    -------
+    data: np.ndarray
+        The data array read from the file after skipping the header.
+    """
     with open(f, "r") as f_opened:
         Nhead = 0
         for line in f_opened:
             if not line.startswith(comments):
                 break
             Nhead += 1
-    data = np.genfromtxt(f, skip_header=Nhead - 1, names=True, comments=comments)
-
+    data = np.atleast_1d(
+        np.genfromtxt(f, skip_header=Nhead - 1, names=names, comments=comments)
+    )
     return data
 
 
 def get_lalapps_commandline_from_SFTDescriptor(descriptor):
-    """get a lalapps commandline from SFT descriptor "comment" entry
+    """Extract a lalapps commandline from the 'comment' entry of a SFT descriptor.
+
+    Most SFT creation tools save their commandline into that entry,
+    so we can extract it and reuse it to reproduce that data.
 
     Parameters
     ----------
     descriptor: SFTDescriptor
-        element of a lalpulsar SFTCatalog
+        Element of a `lalpulsar.SFTCatalog` structure.
 
     Returns
     -------
     cmd: str
-        a lalapps commandline, or empty string if "lalapps" not found in comment
+        A lalapps commandline string,
+        or an empty string if 'lalapps' not found in comment.
     """
     comment = getattr(descriptor, "comment", None)
     if comment is None:
@@ -523,27 +703,27 @@ def get_lalapps_commandline_from_SFTDescriptor(descriptor):
 def read_parameters_dict_lines_from_file_header(
     outfile, comments="#", strip_spaces=True
 ):
-    """load a list of pretty-printed parameters dictionary lines from a commented file header
+    """Load a list of pretty-printed parameters dictionary lines from a commented file header.
 
     Returns a list of lines from a commented file header
     that match the pretty-printed parameters dictionary format
-    as generated by BaseSearchClass.get_output_file_header().
-    The opening/closing bracket lines ("{","}") are not included.
+    as generated by `BaseSearchClass.get_output_file_header()`.
+    The opening/closing bracket lines (`{`,`}`) are not included.
     Newline characters at the end of each line are stripped.
 
     Parameters
     ----------
     outfile: str
-        name of a PyFstat-produced output file
+        Name of a PyFstat-produced output file.
     comments: str
-        comment character used to start header lines
+        Comment character used to start header lines.
     strip_spaces: bool
-        whether to strip leading/trailing spaces
+        Whether to strip leading/trailing spaces.
 
     Returns
     -------
     dict_lines: list
-        a list of unparsed pprinted dictionary entries
+        A list of unparsed pprinted dictionary entries.
     """
     dict_lines = []
     with open(outfile, "r") as f_opened:
@@ -574,10 +754,10 @@ def read_parameters_dict_lines_from_file_header(
 
 
 def get_parameters_dict_from_file_header(outfile, comments="#", eval_values=False):
-    """load a parameters dict from a commented file header
+    """Load a parameters dict from a commented file header.
 
     Returns a parameters dictionary,
-    as generated by BaseSearchClass.get_output_file_header(),
+    as generated by `BaseSearchClass.get_output_file_header()`,
     from an output file header.
     Always returns a proper python dictionary,
     but the values will be unparsed strings if not requested otherwise.
@@ -585,18 +765,19 @@ def get_parameters_dict_from_file_header(outfile, comments="#", eval_values=Fals
     Parameters
     ----------
     outfile: str
-        name of a PyFstat-produced output file
+        Name of a PyFstat-produced output file.
     comments: str
-        comment character used to start header lines
+        Comment character used to start header lines.
     eval_values: bool
-        If False, return dictionary values as strings.
-        If True, evaluate them. DANGER! Only do this if you trust the source.
+        If False, return dictionary values as unparsed strings.
+        If True, evaluate each of them.
+        DANGER! Only do this if you trust the source of the file!
 
     Returns
     -------
     params_dict: dictionary
-        a dictionary of parameters
-        (with values either as unparsed strings, or evaluated)
+        A dictionary of parameters
+        (with values either as unparsed strings, or evaluated).
     """
     if eval_values:
         logging.warning(
@@ -638,29 +819,31 @@ def read_par(
     comments=["%", "#"],
     raise_error=False,
 ):
-    """Read in a .par or .loudest file, returns a dict of the data
+    """Read in a .par or .loudest file, returns a dictionary of the key=val pairs.
+
+    Notes
+    -----
+    This can also be used to read in `.loudest` files
+    produced by `lalapps_ComputeFstatistic_v2`,
+    or any file which has rows of `key=val` data
+    (in which the val can be understood using `eval(val)`).
 
     Parameters
     ----------
     filename : str
         Filename (path) containing rows of `key=val` data to read in.
     label, outdir, suffix : str, optional
-        If filename is None, form the file to read as `outdir/label.suffix`.
+        If filename is `None`, form the file to read as `outdir/label.suffix`.
     comments : str or list of strings, optional
         Characters denoting that a row is a comment.
     raise_error : bool, optional
         If True, raise an error for lines which are not comments, but cannot
         be read.
 
-    Notes
-    -----
-    This can also be used to read in .loudest files, or any file which has
-    rows of `key=val` data (in which the val can be understood using eval(val)
-
     Returns
     -------
     d: dict
-        The par values as a dict type
+        The `key=val` pairs as a dictionary.
 
     """
     if filename is None:
@@ -674,22 +857,24 @@ def read_par(
 
 
 def get_dictionary_from_lines(lines, comments, raise_error):
-    """Return dictionary of key=val pairs for each line in lines
+    """Return a dictionary of key=val pairs for each line in a list.
 
     Parameters
     ----------
-    comments : str or list of strings
+    lines: list of strings
+        The list of lines to parse.
+    comments: str or list of strings
         Characters denoting that a row is a comment.
-    raise_error : bool
-        If True, raise an error for lines which are not comments, but cannot
-        be read.
+    raise_error: bool
+        If True, raise an error for lines which are not comments,
+        but cannot be read.
         Note that CFSv2 "loudest" files contain complex numbers which fill raise
         an error unless this is set to False.
 
     Returns
     -------
     d: dict
-        The par values as a dict type
+        The `key=val` pairs as a dictionary.
 
     """
     d = {}
@@ -715,17 +900,24 @@ def get_dictionary_from_lines(lines, comments, raise_error):
 
 
 def get_predict_fstat_parameters_from_dict(signal_parameters):
-    """
+    """Extract a subset of parameters as needed for predicting F-stats.
+
     Given a dictionary with arbitrary signal parameters,
-    return only those ones required by helper_functions.predict_fstat
-    (Freq, Alpha, Delta, h0, cosi, psi)
+    this extracts only those ones required by `helper_functions.predict_fstat()`:
+    Freq, Alpha, Delta, h0, cosi, psi.
 
     Parameters
     ----------
     signal_parameters: dict
-        Dictionary containing at least the signal parameters required by
-        helper_functions.predict_fstat. This dictionary's keys must follow
-        the PyFstat convention (F0 instead of Freq).
+        Dictionary containing at least those signal parameters required by
+        helper_functions.predict_fstat.
+        This dictionary's keys must follow
+        the PyFstat convention (e.g. F0 instead of Freq).
+
+    Returns
+    -------
+    predict_fstat_params: dict
+        The dictionary of selected parameters.
     """
     predict_fstat_params = {
         key: signal_parameters[key]
@@ -754,44 +946,48 @@ def predict_fstat(
     transientStartTime=None,
     transientTau=None,
 ):
-    """Wrapper to lalapps_PredictFstat
+    """Wrapper to lalapps_PredictFstat for predicting expected F-stat values.
 
     Parameters
     ----------
     h0, cosi, psi, Alpha, Delta : float
-        Signal properties, see `lalapps_PredictFstat --help` for more info.
+        Signal parameters, see `lalapps_PredictFstat --help` for more info.
     F0: float or None
-        Only needed for noise floor estimation when given sftfilepattern
-        but assumeSqrtSX is None.
+        Signal frequency.
+        Only needed for noise floor estimation when given `sftfilepattern`
+        but `assumeSqrtSX=None`.
+        The actual F-stat prediction is frequency-independent.
     sftfilepattern : str or None
-        Pattern matching the sftfiles to use.
+        Pattern matching the SFT files to use for inferring
+        detectors, timestamps and/or estimating the noise floor.
     timestampsFiles : str or None
         Comma-separated list of per-detector files containing timestamps to use.
-        Only used if no sftfilepattern given.
+        Only used if `sftfilepattern=None`.
     minStartTime, duration : int or None
-        If sftfilepattern given: used as optional constraints.
-        If timestampsFiles given: ignored.
+        If `sftfilepattern` given: used as optional constraints.
+        If `timestampsFiles` given: ignored.
         If neither given: used as the interval for prediction.
     IFOs : str or None
         Comma-separated list of detectors.
-        Ignored if sftfilepattern is given,
-        required if it is not.
+        Required if `sftfilepattern=None`,
+        ignored otherwise.
     assumeSqrtSX : float or str
         Assume stationary per-detector noise-floor instead of estimating from SFTs.
         Single float or str value: use same for all IFOs.
-        Comma-separated string: must match len(detectors)
-        and/or the data in sftfilepattern.
+        Comma-separated string: must match `len(IFOs)`
+        and/or the data in `sftfilepattern`.
         Detectors will be paired to list elements following alphabetical order.
-        Required if sftfilepattern is not given,
-        optional if it is.
+        Required if `sftfilepattern=None`,
+        optional otherwise..
     tempory_filename : str
-        Temporary file used for lalapps_PredictFstat output, will be deleted.
+        Temporary file used for `lalapps_PredictFstat` output,
+        will be deleted at the end.
     earth_ephem, sun_ephem : str or None
-        Ephemerides files, defaults will be used if None.
+        Ephemerides files, defaults will be used if `None`.
     transientWindowType: str
         Optional parameter for transient signals,
         see `lalapps_PredictFstat --help`.
-        Default of "none" means a classical Continuous Wave signal.
+        Default of `none` means a classical Continuous Wave signal.
     transientStartTime, transientTau: int or None
         Optional parameters for transient signals,
         see `lalapps_PredictFstat --help`.
@@ -800,7 +996,6 @@ def predict_fstat(
     -------
     twoF_expected, twoF_sigma : float
         The expectation and standard deviation of 2F.
-
     """
 
     cl_pfs = []
@@ -888,8 +1083,18 @@ def predict_fstat(
 def parse_list_of_numbers(val):
     """Convert a number, list of numbers or comma-separated str into a list of numbers.
 
-    This is useful e.g. for sqrtSX inputs where the user can be expected
+    This is useful e.g. for `sqrtSX` inputs where the user can be expected
     to try either type of input.
+
+    Parameters
+    -------
+    val: float, list or str
+        The input to be parsed.
+
+    Returns
+    -------
+    out: list
+        The parsed list.
     """
     try:
         out = list(

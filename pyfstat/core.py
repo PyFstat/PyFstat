@@ -38,7 +38,12 @@ detector_colors = {"h1": "C0", "l1": "C1"}
 
 
 class BaseSearchClass:
-    """ The base search class providing parent methods to other searches """
+    """The base class providing parent methods to other PyFstat classes.
+
+    This does not actually have any 'search' functionality,
+    which needs to be added by child classes
+    along with full initialization and any other custom methods.
+    """
 
     def __new__(cls, *args, **kwargs):
         logging.info(f"Creating {cls.__name__} object...")
@@ -72,21 +77,19 @@ class BaseSearchClass:
             raise IOError("No sfts found matching {}".format(self.sftfilepattern))
 
     def set_ephemeris_files(self, earth_ephem=None, sun_ephem=None):
-        """Set the ephemeris files to use for the Earth and Sun
+        """Set the ephemeris files to use for the Earth and Sun.
+
+        NOTE: If not given explicit arguments,
+        default values from helper_functions.get_ephemeris_files()
+        are used (looking in ~/.pyfstat or $LALPULSAR_DATADIR)
 
         Parameters
         ----------
         earth_ephem, sun_ephem: str
             Paths of the two files containing positions of Earth and Sun,
             respectively at evenly spaced times, as passed to CreateFstatInput
-
-        Note: If not manually set, default values from get_ephemeris_files()
-              are used (looking in ~/.pyfstat or $LALPULSAR_DATADIR)
-
         """
-
         earth_ephem_default, sun_ephem_default = helper_functions.get_ephemeris_files()
-
         if earth_ephem is None:
             self.earth_ephem = earth_ephem_default
         else:
@@ -97,18 +100,21 @@ class BaseSearchClass:
             self.sun_ephem = sun_ephem
 
     def _set_init_params_dict(self, argsdict):
+        """ Store the initial input arguments, e.g. for logging output. """
         argsdict.pop("self")
         self.init_params_dict = argsdict
 
     def pprint_init_params_dict(self):
-        """
-        Pretty-print a parameters dictionary for output file headers.
+        """Pretty-print a parameters dictionary for output file headers.
 
-        Returns a list of lines to be printed,
-        including opening/closing "{" and "}",
-        consistent indentation,
-        as well as end-of-line commas,
-        but no comment markers at start of lines.
+        Returns
+        -------
+        pretty_init_parameters: list
+            A list of lines to be printed,
+            including opening/closing "{" and "}",
+            consistent indentation,
+            as well as end-of-line commas,
+            but no comment markers at start of lines.
         """
         pretty_init_parameters = pformat(
             self.init_params_dict, indent=2, width=74
@@ -123,6 +129,19 @@ class BaseSearchClass:
         return pretty_init_parameters
 
     def get_output_file_header(self):
+        """Constructs a meta-information header for text output files.
+
+        This will include
+        PyFstat and LALSuite versioning,
+        information about when/where/how the code was run,
+        and input parameters of the instantiated class.
+
+        Returns
+        -------
+        header: list
+            A list of formatted header lines.
+
+        """
         header = [
             "date: {}".format(str(datetime.now())),
             "user: {}".format(getpass.getuser()),
@@ -141,6 +160,24 @@ class BaseSearchClass:
     def read_par(
         self, filename=None, label=None, outdir=None, suffix="par", raise_error=True
     ):
+        """Read a `key=val` file and return a dictionary.
+
+        Parameters
+        ----------
+        filename: str or None
+            Filename (path) containing rows of `key=val` data to read in.
+        label, outdir, suffix : str or None
+            If filename is None, form the file to read as `outdir/label.suffix`.
+        raise_error : bool
+            If True, raise an error for lines which are not comments,
+            but cannot be read.
+
+        Returns
+        -------
+        params_dict: dict
+            A dictionary of the parsed `key=val` pairs.
+
+        """
         params_dict = helper_functions.read_par(
             filename=filename,
             label=label or getattr(self, "label", None),
@@ -152,25 +189,25 @@ class BaseSearchClass:
 
     @staticmethod
     def translate_keys_to_lal(dictionary):
-        """Convert input keys into lal input keys
+        """Convert input keys into lalpulsar convention.
 
-        Input keys are F0, F1, F2, ..., while LAL functions
-        prefer to use Freq, f1dot, f2dot, ....
+        In PyFstat's convention, input keys (search parameter names)
+        are F0, F1, F2, ...,
+        while lalpulsar functions prefer to use Freq, f1dot, f2dot, ....
 
-        Since lal keys are only used to call for lal routines,
-        it makes sense to have this function defined this way
-        so it can be called on the fly.
+        Since lalpulsar keys are only used internally to call lalpulsar routines,
+        this function is provided so the keys can be translated on the fly.
 
         Parameters
         ----------
         dictionary: dict
-            Dictionary to translate. A copy will be made (an returned)
+            Dictionary to translate. A copy will be made (and returned)
             before translation takes place.
 
         Returns
         -------
         translated_dict: dict
-            Copy of "dictionary" with new keys according to lal.
+            Copy of "dictionary" with new keys according to lalpulsar convention.
         """
 
         translation = {
@@ -197,7 +234,20 @@ class BaseSearchClass:
 
 
 class ComputeFstat(BaseSearchClass):
-    """ Base class providing interface to `lalpulsar.ComputeFstat` """
+    """Base search class providing an interface to `lalpulsar.ComputeFstat`.
+
+    In most cases, users should be using one of the higher-level search classes
+    from the grid_based_searches or mcmc_based_searches modules instead.
+
+    See the lalpulsar documentation at https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/group___compute_fstat__h.html
+    and R. Prix, The F-statistic and its implementation in ComputeFstatistic_v2 ( https://dcc.ligo.org/T0900149/public )
+    for details of the lalpulsar module and the meaning of various technical concepts
+    as embodied by some of the class's parameters.
+
+    Normally this will read in existing data through the `sftfilepattern` argument,
+    but if that option is `None` and the necessary alternative arguments are used,
+    it can also generate simulated data (including noise and/or signals) on the fly.
+    """
 
     @helper_functions.initializer
     def __init__(
@@ -236,56 +286,65 @@ class ComputeFstat(BaseSearchClass):
         tref : int
             GPS seconds of the reference time.
         sftfilepattern : str
-            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
             mutiple patterns can be given separated by colons.
         minStartTime, maxStartTime : int
-            Only use SFTs with timestamps starting from this range,
+            Only use SFTs with timestamps starting from within this range,
             following the XLALCWGPSinRange convention:
-            half-open intervals [minStartTime,maxStartTime]
+            half-open intervals [minStartTime,maxStartTime].
+        Tsft: int
+            SFT duration in seconds.
+            Only required if `sftfilepattern=None` and hence simulted data is
+            generated on the fly.
         binary : bool
-            If true, search of binary parameters.
+            If true, search over binary parameters.
         BSGL : bool
-            If true, compute the BSGL rather than the twoF value.
+            If true, compute the log10BSGL statistic rather than the twoF value.
         transientWindowType: str
-            If 'rect' or 'exp',
+            If `rect` or `exp`,
             allow for the Fstat to be computed over a transient range.
-            ('none' instead of None explicitly calls the transient-window
-            function, but with the full range, for debugging)
-            (if not None, will also force atoms regardless of computeAtoms option)
+            (`none` instead of `None` explicitly calls the transient-window
+            function, but with the full range, for debugging.)
+            (If not None, will also force atoms regardless of computeAtoms option.)
         t0Band, tauBand: int
-            if >0, search t0 in (minStartTime,minStartTime+t0Band)
-                   and tau in (tauMin,2*Tsft+tauBand).
-            if =0, only compute CW Fstat with t0=minStartTime,
-                   tau=maxStartTime-minStartTime.
+            Search ranges for transient start-time t0 and duration tau.
+            If >0, search t0 in (minStartTime,minStartTime+t0Band)
+            and tau in (tauMin,2*Tsft+tauBand).
+            If =0, only compute the continuous-wave Fstat with t0=minStartTime,
+            tau=maxStartTime-minStartTime.
         tauMin: int
-            defaults to 2*Tsft
-        dt0, dtau: int
-            grid resolutions in transient start-time and duration,
-            both default to Tsft
+            Minimum transient duration to cover,
+            defaults to 2*Tsft.
+        dt0: int
+            Grid resolution in transient start-time,
+            defaults to Tsft.
+        dtau: int
+            Grid resolution in transient duration,
+            defaults to Tsft.
         detectors : str
             Two-character references to the detectors for which to use data.
-            Specify None for no constraint.
-            For multiple detectors, separate by comma.
+            Specify `None` for no constraint.
+            For multiple detectors, separate by commas.
         minCoverFreq, maxCoverFreq : float
-            The min and max cover frequency passed to CreateFstatInput.
+            The min and max cover frequency passed to lalpulsar.CreateFstatInput.
             For negative values, these will be used as offsets from the min/max
             frequency contained in the sftfilepattern.
-            If either is None, search_ranges is used to estimate them.
+            If either is `None`, the search_ranges argument is used to estimate them.
             If the automatic estimation fails and you do not have a good idea
             what to set these two options to, setting both to -0.5 will
             reproduce the default behaviour of PyFstat <=1.4 and may be a
             reasonably safe fallback in many cases.
         search_ranges: dict
             Dictionary of ranges in all search parameters,
-            only used to estimate frequency band passed to CreateFstatInput,
-            if minCoverFreq, maxCoverFreq are not specified (=='None').
+            only used to estimate frequency band passed to lalpulsar.CreateFstatInput,
+            if minCoverFreq, maxCoverFreq are not specified (==`None`).
             For actually running searches,
             grids/points will have to be passed separately to the .run() method.
             The entry for each parameter must be a list of length 1, 2 or 3:
             [single_value], [min,max] or [min,max,step].
         injectSources : dict or str
-            Either a dictionary of the values to inject, or a string pointing
-            to the .cff file to inject
+            Either a dictionary of the signal parameters to inject,
+            or a string pointing to a .cff file defining a signal.
         injectSqrtSX : float or list or str
             Single-sided PSD values for generating fake Gaussian noise on the fly.
             Single float or str value: use same for all IFOs.
@@ -300,25 +359,30 @@ class ComputeFstat(BaseSearchClass):
             Detectors will be paired to list elements following alphabetical order.
             If working with signal-only data, please set assumeSqrtSX=1 .
         SSBprec : int
-            Flag to set the SSB calculation: 0=Newtonian, 1=relativistic,
-            2=relativisitic optimised, 3=DMoff, 4=NO_SPIN
+            Flag to set the Solar System Barycentring (SSB) calculation in lalpulsar:
+            0=Newtonian, 1=relativistic,
+            2=relativistic optimised, 3=DMoff, 4=NO_SPIN
         RngMedWindow : int
-           Running-Median window size (number of bins)
+           Running-Median window size for F-statistic noise normalization
+           (number of SFT bins).
         tCWFstatMapVersion: str
-            Choose between standard 'lal' implementation,
-            'pycuda' for gpu, and some others for devel/debug.
+            Choose between implementations of the transient F-statistic funcionality:
+            standard `lal` implementation,
+            `pycuda` for GPU version,
+            and some others only for devel/debug.
         cudaDeviceName: str
-            GPU name to be matched against drv.Device output.
+            GPU name to be matched against drv.Device output,
+            only for `tCWFstatMapVersion=pycuda`.
         computeAtoms: bool
-            request atoms calculations regardless of transientWindowType
+            Request calculation of 'F-statistic atoms' regardless of transientWindowType.
         earth_ephem: str
-            Earth ephemeris file path
-            if None, will check standard sources as per
-            helper_functions.get_ephemeris_files()
+            Earth ephemeris file path.
+            If None, will check standard sources as per
+            helper_functions.get_ephemeris_files().
         sun_ephem: str
-            Sun ephemeris file path
-            if None, will check standard sources as per
-            helper_functions.get_ephemeris_files()
+            Sun ephemeris file path.
+            If None, will check standard sources as per
+            helper_functions.get_ephemeris_files().
         """
 
         self._set_init_params_dict(locals())
@@ -331,7 +395,6 @@ class ComputeFstat(BaseSearchClass):
 
         If sftfilepattern is specified, load the data. If not, attempt to
         create data on the fly.
-
         """
         if hasattr(self, "SFTCatalog"):
             return
@@ -441,7 +504,16 @@ class ComputeFstat(BaseSearchClass):
         )
 
     def init_computefstatistic(self):
-        """ Initialisation step of run_computefstatistic for a single point or search range """
+        """Initialization step for the F-stastic computation internals.
+
+        This sets up the special input and output structures the lalpulsar module needs,
+        the ephemerides,
+        optional on-the-fly signal injections,
+        and extra options for multi-detector consistency checks and transient searches.
+
+        All inputs are taken from the pre-initialized object,
+        so this function does not have additional arguments of its own.
+        """
 
         self._get_SFTCatalog()
 
@@ -551,7 +623,7 @@ class ComputeFstat(BaseSearchClass):
         PulsarDopplerParams.refTime = self.tref
         PulsarDopplerParams.Alpha = 1
         PulsarDopplerParams.Delta = 1
-        PulsarDopplerParams.fkdot = np.array([0, 0, 0, 0, 0, 0, 0])
+        PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
         self.PulsarDopplerParams = PulsarDopplerParams
 
         logging.info("Initialising FstatResults")
@@ -575,12 +647,12 @@ class ComputeFstat(BaseSearchClass):
             else:
                 Fstar0 = 15.0
             logging.info("Using Fstar0 of {:1.2f}".format(Fstar0))
-            oLGX = np.zeros(10)
+            oLGX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
             oLGX[:numDetectors] = 1.0 / numDetectors
             self.BSGLSetup = lalpulsar.CreateBSGLSetup(
                 numDetectors, Fstar0, oLGX, True, 1
             )
-            self.twoFX = np.zeros(10)
+            self.twoFX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
             self.whatToCompute += lalpulsar.FSTATQ_2F_PER_DET
 
         if self.transientWindowType:
@@ -732,9 +804,11 @@ class ComputeFstat(BaseSearchClass):
         return minFreq_SFTs, maxFreq_SFTs
 
     def estimate_min_max_CoverFreq(self):
-        # extract spanned spin-range at reference-time from the template-bank
-        # input self.search_ranges must be a dictionary of lists per search parameter
-        # which can be either [single_value], [min,max] or [min,max,step].
+        """Extract spanned spin-range at reference -time from the template bank.
+
+        To use this method, self.search_ranges must be a dictionary of lists per search parameter
+        which can be either [single_value], [min,max] or [min,max,step].
+        """
         if type(self.search_ranges) is not dict:
             raise ValueError("Need a dictionary for search_ranges!")
         range_keys = list(self.search_ranges.keys())
@@ -861,8 +935,6 @@ class ComputeFstat(BaseSearchClass):
 
     def get_fullycoherent_twoF(
         self,
-        tstart,
-        tend,
         F0,
         F1,
         F2,
@@ -873,9 +945,33 @@ class ComputeFstat(BaseSearchClass):
         ecc=None,
         tp=None,
         argp=None,
+        tstart=None,
+        tend=None,
     ):
-        """ Returns twoF or ln(BSGL) fully-coherently at a single point """
-        self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
+        """Computes the detection statistic (twoF or log10BSGL) fully-coherently at a single point.
+
+        If transient parameters are enabled, the transient-F-stat map will also be computed here
+        (but stored in `self.FstatMap`, not returned).
+
+        Parameters
+        ----------
+        F0, F1, F2, Alpha, Delta: float
+            Parameters at which to compute the statistic.
+        asini, period, ecc, tp, argp: float, optional
+            Optional: Binary parameters at which to compute the statistic.
+        tstart, tend: int or None
+            GPS times to restrict the range of data used.
+            If None: falls back to self.minStartTime and self.maxStartTime.
+            If outside those: auto-truncated.
+
+        Returns
+        -------
+        stat: float
+            A single value of the detection statistic (twoF or log10BSGL)
+            at the input parameter values.
+        """
+        self.PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
+        self.PulsarDopplerParams.fkdot[:3] = [F0, F1, F2]
         self.PulsarDopplerParams.Alpha = float(Alpha)
         self.PulsarDopplerParams.Delta = float(Delta)
         if self.binary:
@@ -900,9 +996,15 @@ class ComputeFstat(BaseSearchClass):
             twoF = np.float(self.FstatResults.twoF[0])
             self.twoFX[0] = self.FstatResults.twoFPerDet(0)
             self.twoFX[1] = self.FstatResults.twoFPerDet(1)
-            log10_BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
-            return log10_BSGL / np.log10(np.exp(1))
+            log10BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
+            return log10BSGL
 
+        tstart = tstart or getattr(self, "minStartTime", None)
+        tend = tend or getattr(self, "maxStartTime", None)
+        if tstart is None or tend is None:
+            raise ValueError(
+                "Need tstart or self.minStartTime, and tend or self.maxStartTime!"
+            )
         self.windowRange.t0 = int(tstart)  # TYPE UINT4
         if self.windowRange.tauBand == 0:
             # true single-template search also in transient params:
@@ -947,9 +1049,9 @@ class ComputeFstat(BaseSearchClass):
 
         self.twoFX[0] = 2 * FS0.F_mn.data[idx_maxTwoF]
         self.twoFX[1] = 2 * FS1.F_mn.data[idx_maxTwoF]
-        log10_BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
+        log10BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
 
-        return log10_BSGL / np.log10(np.exp(1))
+        return log10BSGL
 
     def _set_up_cumulative_times(self, tstart, tend, num_segments):
         """Construct time arrays to be used in cumulative twoF computations.
@@ -1004,15 +1106,15 @@ class ComputeFstat(BaseSearchClass):
         Parameters
         ----------
         F0, F1, F2, Alpha, Delta: float
-            Parameters at which to compute the cumulative twoF
+            Parameters at which to compute the cumulative twoF.
         asini, period, ecc, tp, argp: float, optional
-            Optional: Binary parameters at which to compute the cumulative 2F
+            Optional: Binary parameters at which to compute the cumulative 2F.
         tstart, tend: int or None
-            GPS times to restrict the range of data used;
-            if None: falls back to self.minStartTime and self.maxStartTime;
-            if outside those: auto-truncated
+            GPS times to restrict the range of data used.
+            If None: falls back to self.minStartTime and self.maxStartTime;.
+            If outside those: auto-truncated.
         num_segments: int
-            Number of segments to split [tstart,tend] into
+            Number of segments to split [tstart,tend] into.
 
         Returns
         -------
@@ -1021,7 +1123,6 @@ class ComputeFstat(BaseSearchClass):
         twoFs : ndarray of shape (num_segments,)
             Values of twoF computed over
             [[tstart,tstart+duration] for duration in cumulative_durations].
-
         """
 
         reset_old_window = None
@@ -1080,23 +1181,25 @@ class ComputeFstat(BaseSearchClass):
         Parameters
         ----------
         F0, Alpha, Delta, h0, cosi, psi: float
-            Parameters at which to compute the cumulative predicted twoF
+            Parameters at which to compute the cumulative predicted twoF.
         tstart, tend: int or None
-            GPS times to restrict the range of data used;
-            if None: falls back to self.minStartTime and self.maxStartTime;
-            if outside those: auto-truncated
+            GPS times to restrict the range of data used.
+            If None: falls back to self.minStartTime and self.maxStartTime.
+            If outside those: auto-truncated.
         num_segments: int
-            Number of segments to split [tstart,tend] into
+            Number of segments to split [tstart,tend] into.
         predict_fstat_kwargs:
-            Other kwargs to be passed to helper_functions.predict_fstat.
+            Other kwargs to be passed to helper_functions.predict_fstat().
 
         Returns
         -------
-        cumulative_durations : ndarray of shape (num_segments,)
+        tstart: int
+            GPS start time of the observation span.
+        cumulative_durations: ndarray of shape (num_segments,)
             Offsets of each segment's tend from the overall tstart.
-        pfs : ndarray of size (num_segments,)
+        pfs: ndarray of size (num_segments,)
             Predicted 2F for each segment.
-        pfs_sigma : ndarray of size (num_segments,)
+        pfs_sigma: ndarray of size (num_segments,)
             Standard deviations of predicted 2F.
 
         """
@@ -1135,31 +1238,38 @@ class ComputeFstat(BaseSearchClass):
         outdir=None,
         **PFS_kwargs,
     ):
-        """Plot how 2F accumulates over time, and compare with expectation.
+        """Plot how 2F accumulates over time.
+
+        This compares the accumulation on the actual data set ('CFS', from self.calculate_twoF_cumulative())
+        against (optionally) the average expectation ('PFS', from self.predict_twoF_cumulative()).
 
         Parameters
         ----------
         CFS_input: dict
-            self.calculate_twoF_cumulative input arguments.
+            Input arguments for self.calculate_twoF_cumulative()
             (besides [tstart, tend, num_segments]).
         PFS_input: dict
-            self.predict_twoF_cumulative input arguments
+            Input arguments for self.predict_twoF_cumulative()
             (besides [tstart, tend, num_segments]).
-            if None: do not calculate predicted 2F
+            If None: do not calculate predicted 2F.
         tstart, tend: int or None
-            GPS times to restrict the range of data used;
-            if None: falls back to self.minStartTime and self.maxStartTime;
-            if outside those: auto-truncated
+            GPS times to restrict the range of data used.
+            If None: falls back to self.minStartTime and self.maxStartTime.
+            If outside those: auto-truncated.
         num_segments_(CFS|PFS) : int
             Number of time segments to (compute|predict) twoF.
         custom_ax_kwargs : dict
             Optional axis formatting options.
         savefig : bool
-            If true, save the figure in outdir.
+            If true, save the figure in `outdir`.
+            If false, return an axis object without saving to disk.
         label: str
-            Output filename (ignored unless savefig is True).
+            Output filename will be constructed by appending `_twoFcumulative.png`
+            to this label. (Ignored unless `savefig=true`.)
         outdir: str
-            Output folder (ignored unless savefig is True).
+            Output folder (ignored unless `savefig=true`).
+        PFS_kwargs: dict
+            Other kwargs to be passed to self.predict_twoF_cumulative().
 
         Returns
         -------
@@ -1239,39 +1349,25 @@ class ComputeFstat(BaseSearchClass):
             plt.close()
         return ax
 
-    def get_full_CFSv2_output(self, tstart, tend, F0, F1, F2, Alpha, Delta, tref):
-        """ Basic wrapper around CFSv2 to get the full (h0..) output """
-        cl_CFSv2 = "lalapps_ComputeFstatistic_v2 --minStartTime={} --maxStartTime={} --Freq={} --f1dot={} --f2dot={} --Alpha={} --Delta={} --refTime={} --DataFiles='{}' --outputLoudest='{}' --ephemEarth={} --ephemSun={}"
-        LoudestFile = "loudest.temp"
-        helper_functions.run_commandline(
-            cl_CFSv2.format(
-                tstart,
-                tend,
-                F0,
-                F1,
-                F2,
-                Alpha,
-                Delta,
-                tref,
-                self.sftfilepattern,
-                LoudestFile,
-                self.earth_ephem,
-                self.sun_ephem,
-            )
-        )
-        loudest = self.read_par(filename=LoudestFile, raise_error=False)
-        os.remove(LoudestFile)
-        return loudest
-
     def write_atoms_to_file(self, fnamebase=""):
+        """Save F-statistic atoms (time-dependent quantities) for a given parameter-space point.
+
+        Parameters
+        ----------
+        fnamebase: str
+            Basis for output filename, full name will be
+            `{fnamebase}_Fstatatoms_{dopplerName}.dat`
+            where `dopplerName` is a canonical lalpulsar formatting of the
+            'Doppler' parameter space point (frequency-evolution parameters).
+        """
         multiFatoms = getattr(self.FstatResults, "multiFatoms", None)
         if multiFatoms and multiFatoms[0]:
             dopplerName = lalpulsar.PulsarDopplerParams2String(self.PulsarDopplerParams)
             # fnameAtoms = os.path.join(self.outdir,'Fstatatoms_%s.dat' % dopplerName)
-            fnameAtoms = fnamebase + "_Fstatatoms_%s.dat" % dopplerName
+            fnameAtoms = f"{fnamebase}_Fstatatoms_{dopplerName}.dat"
             fo = lal.FileOpen(fnameAtoms, "w")
             for hline in self.output_file_header:
-                lal.FilePuts("# {:s}\n".format(hline), fo)
+                lal.FilePuts(f"# {hline}\n", fo)
             lalpulsar.write_MultiFstatAtoms_to_fp(fo, multiFatoms[0])
             del fo  # instead of lal.FileClose() which is not SWIG-exported
         else:
@@ -1280,16 +1376,28 @@ class ComputeFstat(BaseSearchClass):
             )
 
     def __del__(self):
-        """
-        In pyCuda case without autoinit,
-        we need to make sure the context is removed at the end
-        """
+        """In pyCuda case without autoinit, make sure the context is removed at the end."""
         if hasattr(self, "gpu_context") and self.gpu_context:
             self.gpu_context.detach()
 
 
 class SemiCoherentSearch(ComputeFstat):
-    """ A semi-coherent search """
+    """A simple semi-coherent search class.
+
+    This will split the data set into multiple segments,
+    run a coherent F-stat search over each,
+    and produce a final semi-coherent detection statistic as the sum over segments.
+
+    This does not include any concept of refinement between the two steps,
+    as some grid-based semi-coherent search algorithms do;
+    both the per-segment coherent F-statistics and the incoherent sum
+    are done at the same parameter space point.
+
+    The implementation is based on a simple trick using the transient F-stat map
+    functionality: basic F-stat atoms are computed only once over the full data set,
+    then the transient code with rectangular 'windows' is used to compute the
+    per-segment F-stats, and these are summed to get the semi-coherent result.
+    """
 
     @helper_functions.initializer
     def __init__(
@@ -1316,26 +1424,29 @@ class SemiCoherentSearch(ComputeFstat):
         sun_ephem=None,
     ):
         """
+        Only parameters with a special meaning for SemiCoherentSearch itself
+        are explicitly documented here.
+        For all other parameters inherited from pyfstat.ComputeFStat
+        see the documentation of that class.
+
         Parameters
         ----------
         label, outdir: str
             A label and directory to read/write data from/to.
         tref: int
             GPS seconds of the reference time.
+        nsegs: int
+            The (fixed) number of segments to split the data set into.
+        sftfilepattern: str
+            Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
+            multiple patterns can be given separated by colons.
         minStartTime, maxStartTime : int
             Only use SFTs with timestamps starting from this range,
             following the XLALCWGPSinRange convention:
             half-open intervals [minStartTime,maxStartTime].
             Also used to set up segment boundaries, i.e.
-            maxStartTime-minStartTime will be divided by nsegs
-            to obtain the per-segment coherence time Tcoh.
-        nsegs: int
-            The (fixed) number of segments
-        sftfilepattern: str
-            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
-            multiple patterns can be given separated by colons.
-
-        For all other parameters, see pyfstat.ComputeFStat.
+            `maxStartTime-minStartTime` will be divided by `nsegs`
+            to obtain the per-segment coherence time `Tcoh`.
         """
 
         self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
@@ -1370,6 +1481,15 @@ class SemiCoherentSearch(ComputeFstat):
         self.semicoherentWindowRange.dtau = int(1)  # Irrelevant
 
     def init_semicoherent_parameters(self):
+        """Set up a list of equal-length segments and the corresponding transient windows.
+
+        For a requested number of segments `self.nsegs`,
+        `self.tboundaries` will have `self.nsegs+1` entries
+        covering `[self.minStartTime,self.maxStartTime]`
+        and `self.Tcoh` will be the total duration divided by `self.nsegs`.
+
+        Each segment is required to be at least two SFTs long.f
+        """
         logging.info(
             (
                 "Initialising semicoherent parameters from"
@@ -1427,9 +1547,26 @@ class SemiCoherentSearch(ComputeFstat):
         argp=None,
         record_segments=False,
     ):
-        """ Returns twoF or ln(BSGL) semi-coherently at a single point """
+        """Computes the detection statistic (twoF or log10BSGL) semi-coherently at a single point.
 
-        self.PulsarDopplerParams.fkdot = np.array([F0, F1, F2, 0, 0, 0, 0])
+        Parameters
+        ----------
+        F0, F1, F2, Alpha, Delta: float
+            Parameters at which to compute the statistic.
+        asini, period, ecc, tp, argp: float, optional
+            Optional: Binary parameters at which to compute the statistic.
+        record_segments: boolean
+            If True, store the per-segment F-stat values as `self.twoF_per_segment`.
+
+        Returns
+        -------
+        stat: float
+            A single value of the detection statistic (semi-coherent twoF or log10BSGL)
+            at the input parameter values.
+        """
+
+        self.PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
+        self.PulsarDopplerParams.fkdot[:3] = [F0, F1, F2]
         self.PulsarDopplerParams.Alpha = float(Alpha)
         self.PulsarDopplerParams.Delta = float(Delta)
         if self.binary:
@@ -1482,12 +1619,11 @@ class SemiCoherentSearch(ComputeFstat):
                     )
                     twoFX_per_segment = np.nan_to_num(twoFX_per_segment, nan=0.0)
                     self.twoFX[X] = twoFX_per_segment.sum()
-            log10_BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
-            ln_BSGL = log10_BSGL * np.log(10.0)
-            if np.isnan(ln_BSGL):
-                logging.debug("NaNs in semi-coherent ln(BSGL) treated as zero")
-                ln_BSGL = 0.0
-            return ln_BSGL
+            log10BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
+            if np.isnan(log10BSGL):
+                logging.debug("NaNs in semi-coherent log10BSGL treated as zero")
+                log10BSGL = 0.0
+            return log10BSGL
 
     def _get_per_segment_twoF(self):
         Fmap = lalpulsar.ComputeTransientFstatMap(
@@ -1498,7 +1634,11 @@ class SemiCoherentSearch(ComputeFstat):
 
 
 class SearchForSignalWithJumps(BaseSearchClass):
-    """ A class which just adds some useful methods for glitches or timing noise """
+    """Internal helper class with some useful methods for glitches or timing noise.
+
+    Users should never need to interact with this class,
+    just with the derived search classes.
+    """
 
     def _shift_matrix(self, n, dT):
         """Generate the shift matrix
@@ -1605,12 +1745,12 @@ class SearchForSignalWithJumps(BaseSearchClass):
 
 
 class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
-    """A semi-coherent glitch search
+    """A semi-coherent search for CW signals from sources with timing glitches.
 
-    This implements a basic `semi-coherent glitch F-stat in which the data
-    is divided into segments either side of the proposed glitches and the
+    This implements a basic semi-coherent F-stat search in which the data
+    is divided into segments either side of the proposed glitch epochs and the
     fully-coherent F-stat in each segment is summed to give the semi-coherent
-    F-stat
+    F-stat.
     """
 
     @helper_functions.initializer
@@ -1638,6 +1778,11 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         sun_ephem=None,
     ):
         """
+        Only parameters with a special meaning for SemiCoherentGlitchSearch itself
+        are explicitly documented here.
+        For all other parameters inherited from pyfstat.ComputeFStat
+        see the documentation of that class.
+
         Parameters
         ----------
         label, outdir: str
@@ -1645,17 +1790,17 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         tref, minStartTime, maxStartTime: int
             GPS seconds of the reference time, and start and end of the data.
         nglitch: int
-            The (fixed) number of glitches; this can zero, but occasionally
-            this causes issue (in which case just use ComputeFstat).
+            The (fixed) number of glitches.
+            This is also allowed to be zero, but occasionally this causes issues,
+            in which case please use the basic ComputeFstat class instead.
         sftfilepattern: str
-            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
-            mutiple patterns can be given separated by colons.
-        theta0_idx, int
-            Index (zero-based) of which segment the theta refers to - uyseful
-            if providing a tight prior on theta to allow the signal to jump
-            too theta (and not just from)
-
-        For all other parameters, see pyfstat.ComputeFStat.
+            Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
+            multiple patterns can be given separated by colons.
+        theta0_idx: int
+            Index (zero-based) of which segment the theta (searched parameters)
+            refer to.
+            This is useful if providing a tight prior on theta to allow the
+            signal to jump to theta (and not just from).
         """
 
         self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
@@ -1669,7 +1814,22 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         self.init_computefstatistic()
 
     def get_semicoherent_nglitch_twoF(self, F0, F1, F2, Alpha, Delta, *args):
-        """ Returns the semi-coherent glitch summed twoF """
+        """Returns the semi-coherent glitch summed twoF.
+
+        Parameters
+        ----------
+        F0, F1, F2, Alpha, Delta: float
+            Parameters at which to compute the statistic.
+        args: dict
+            Additional arguments for the glitch parameters;
+            see the source code for full details.
+
+        Returns
+        -------
+        twoFSum: float
+            A single value of the semi-coherent summed detection statistic
+            at the input parameter values.
+        """
 
         args = list(args)
         tboundaries = [self.minStartTime] + args[-self.nglitch :] + [self.maxStartTime]
@@ -1691,13 +1851,13 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
             ts, te = tboundaries[i], tboundaries[i + 1]
             if te - ts > 1800:
                 twoFVal = self.get_fullycoherent_twoF(
-                    ts,
-                    te,
-                    theta_i_at_tref[1],
-                    theta_i_at_tref[2],
-                    theta_i_at_tref[3],
-                    Alpha,
-                    Delta,
+                    F0=theta_i_at_tref[1],
+                    F1=theta_i_at_tref[2],
+                    F2=theta_i_at_tref[3],
+                    Alpha=Alpha,
+                    Delta=Delta,
+                    tstart=ts,
+                    tend=te,
                 )
                 twoFSum += twoFVal
 
@@ -1709,9 +1869,9 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
     def compute_glitch_fstat_single(
         self, F0, F1, F2, Alpha, Delta, delta_F0, delta_F1, tglitch
     ):
-        """Returns the semi-coherent glitch summed twoF for nglitch=1
+        """Returns the semi-coherent glitch summed twoF for nglitch=1.
 
-        Note: OBSOLETE, used only for testing
+        NOTE: OBSOLETE, used only for testing.
         """
 
         theta = [F0, F1, F2]
@@ -1725,26 +1885,34 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         )
 
         twoFsegA = self.get_fullycoherent_twoF(
-            self.minStartTime, tglitch, theta[0], theta[1], theta[2], Alpha, Delta
+            F0=theta[0],
+            F1=theta[1],
+            F2=theta[2],
+            Alpha=Alpha,
+            Delta=Delta,
+            tstart=self.minStartTime,
+            tend=tglitch,
         )
 
         if tglitch == self.maxStartTime:
             return twoFsegA
 
         twoFsegB = self.get_fullycoherent_twoF(
-            tglitch,
-            self.maxStartTime,
-            theta_post_glitch[0],
-            theta_post_glitch[1],
-            theta_post_glitch[2],
-            Alpha,
-            Delta,
+            F0=theta_post_glitch[0],
+            F1=theta_post_glitch[1],
+            F2=theta_post_glitch[2],
+            Alpha=Alpha,
+            Delta=Delta,
+            tstart=tglitch,
+            tend=self.maxStartTime,
         )
 
         return twoFsegA + twoFsegB
 
 
 class DeprecatedClass:
+    """Outdated classes are marked for future removal by inheriting from this."""
+
     def __new__(cls, *args, **kwargs):
         logging.warning(
             f"The {cls.__name__} class is no longer maintained"
@@ -1757,6 +1925,8 @@ class DeprecatedClass:
 
 
 class DefunctClass:
+    """Removed classes are retained for a while but marked by inheriting from this."""
+
     last_supported_version = None
     pr_welcome = True
 

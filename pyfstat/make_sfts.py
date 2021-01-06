@@ -1,4 +1,4 @@
-""" pyfstat tools to generate sfts """
+"""PyFstat tools to generate and manipulate data in the form of SFTs."""
 
 
 import numpy as np
@@ -21,34 +21,50 @@ import pyfstat.helper_functions as helper_functions
 
 
 class KeyboardInterruptError(Exception):
+    """Custom exception to allow overriding interrupts."""
+
     pass
 
 
 class InjectionParametersGenerator:
     """
-    Draw injection parameter samples from the specified priors and return
-    them in the proper format.
+    Draw injection parameter samples from priors and return in dictionary format.
     """
 
     def __init__(self, priors=None, seed=None):
         """
+        Parameters
+        ----------
         priors: dict
-            Each key refers to one of the signal's parameters (following the PyFstat convention).
-            Priors can be given as values in three formats (by order of evaluation):
-                1) Callable without required arguments
-                    {"ParameterA": np.random.uniform}
-                2) Dict containing numpy.random distribution as key and kwargs in a dict as value
-                    {"ParameterA": {"uniform": {"low": 0, "high":1}}}
-                3) Constant value to be returned as is
-                    {"ParameterA": 1.0}
+            Each key refers to one of the signal's parameters
+            (following the PyFstat convention).
+            Priors can be given as values in three formats
+            (by order of evaluation):
+
+            1. Callable without required arguments:
+            `{"ParameterA": np.random.uniform}`.
+
+            2. Dict containing numpy.random distribution as key and kwargs in a dict as value:
+            `{"ParameterA": {"uniform": {"low": 0, "high":1}}}`.
+
+            3. Constant value to be returned as is:
+            `{"ParameterA": 1.0}`.
+
         seed:
-            `seed` argument to be feed to numpy.random.default_rng.
+            Argument to be fed to numpy.random.default_rng,
+            with all of its accepted types.
         """
         self.set_seed(seed)
         self.set_priors(priors or {})
 
     def set_priors(self, new_priors):
-        """Set priors to draw parameter space points from """
+        """Set priors to draw parameter space points from.
+
+        Parameters
+        ----------
+        new_priors: dict
+            The new set of priors to update the object with.
+        """
         if type(new_priors) is not dict:
             raise ValueError(
                 "new_priors is not a dict type.\nPlease, check "
@@ -60,10 +76,19 @@ class InjectionParametersGenerator:
         self._update_priors(new_priors)
 
     def set_seed(self, seed):
+        """Set the random seed for subsequent draws.
+
+        Parameters
+        ----------
+        seed:
+            Argument to be fed to numpy.random.default_rng,
+            with all of its accepted types.
+        """
         self.seed = seed
         self._rng = np.random.default_rng(self.seed)
 
     def _update_priors(self, new_priors):
+        """Internal method to do the actual prior setup."""
         for parameter_name, parameter_prior in new_priors.items():
             if callable(parameter_prior):
                 self.priors[parameter_name] = parameter_prior
@@ -80,6 +105,13 @@ class InjectionParametersGenerator:
                 )
 
     def draw(self):
+        """Draw a single multi-dimensional parameter space point from the given priors.
+
+        Returns
+        ----------
+        injection_parameters: dict
+            Dictionary with parameter names as keys and their numeric values.
+        """
         injection_parameters = {
             parameter_name: parameter_prior()
             for parameter_name, parameter_prior in self.priors.items()
@@ -91,14 +123,37 @@ class InjectionParametersGenerator:
 
 
 class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
-    """Like InjectionParametersGenerator, but with hardcoded priors to perform
-    all sky searches. It assumes 1) PyFstat notation and 2) Equatorial coordinates"""
+    """Like InjectionParametersGenerator, but with hardcoded all-sky priors.
+
+    This ensures uniform coverage of the 2D celestial sphere:
+    uniform distribution in `Alpha` and sine distribution for `Delta`.
+
+    It assumes 1) PyFstat notation and 2) equatorial coordinates.
+
+    `Alpha` and `Delta` are given 'restricted' status to stop the user from
+    changing them as long as using this special class.
+    """
 
     def set_priors(self, new_priors):
+        """Set priors to draw parameter space points from.
+
+        Parameters
+        ----------
+        new_priors: dict
+            The new set of priors to update the object with.
+        """
         self._check_if_updating_sky_priors(new_priors)
         super().set_priors({**new_priors, **self.restricted_priors})
 
     def set_seed(self, seed):
+        """Set the random seed for subsequent draws.
+
+        Parameters
+        ----------
+        seed:
+            Argument to be fed to numpy.random.default_rng,
+            with all of its accepted types.
+        """
         super().set_seed(seed)
         self.restricted_priors = {
             # This is required because numpy has no arcsin distro
@@ -107,19 +162,34 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
         }
 
     def _check_if_updating_sky_priors(self, new_priors):
+        """Internal method to stop the user from changing the sky prior."""
         if any(
             restricted_key in new_priors
             for restricted_key in self.restricted_priors.keys()
         ):
             logging.warning(
                 "Ignoring specified sky priors (Alpha, Delta)."
-                "This class is explicitly coded to prevent that from happening. Please, restore "
-                "to InjectionParametersGenerator if that's really what you want to do."
+                "This class is explicitly coded to prevent that from happening. "
+                "Please instead use InjectionParametersGenerator if that's really what you want to do."
             )
 
 
 class Writer(BaseSearchClass):
-    """ Instance object for generating SFTs """
+    """The main class for generating data in the form of SFTs.
+
+    Short Fourier Transforms (SFTs) are a standard data format used in LALSuite,
+    containing the Fourier transform of strain data over a duration Tsft.
+
+    SFT data can be generated from scratch, including Gaussian noise and/or
+    simulated CW signals or transient signals.
+    Existing SFTs (real data or previously simulated) can also be reused through
+    the `noiseSFTs` option, allowing to 'inject' additional signals into them.
+
+    This class currently relies on the `lalapps_Makefakedata_v5` executable
+    which will be run in a subprocess.
+    See `lalapps_Makefakedata_v5 --help`
+    for more detailed help with some of the parameters.
+    """
 
     signal_parameter_labels = [
         "tref",
@@ -134,12 +204,17 @@ class Writer(BaseSearchClass):
         "phi",
         "transientWindowType",
     ]
+    """Default convention of labels for the various signal parameters."""
+
     gps_time_and_string_formats_as_LAL = {
-        # GPS times should NOT be parsed using scientific notation
-        # LAL routines silently parse them wrongly
         "refTime": ":10.9f",
         "transientWindowType": ":s",
     }
+    """Dictionary to ensure proper format handling for some special parameters.
+
+    GPS times should NOT be parsed using scientific notation.
+    LAL routines would silently parse them wrongly.
+    """
 
     @helper_functions.initializer
     def __init__(
@@ -176,42 +251,73 @@ class Writer(BaseSearchClass):
         Parameters
         ----------
         label: string
-            a human-readable label to be used in naming the output files
-        tstart, duration : int
-            start and duration (in gps seconds) of the total observation span
+            A human-readable label to be used in naming the output files.
+        tstart: int
+            Starting GPS epoch of the data set.
+        duration: int
+            Duration (in GPS seconds) of the total data set.
         tref: float or None
-            reference time (default is None, which sets the reference time to
-            tstart)
+            Reference time for simulated signals.
+            Default is `None`, which sets the reference time to `tstart`.
         F0: float or None
-            frequency of signal to inject,
-            also used (if Band is not None) as center of frequency band;
-            also needed when noise-only (h0==None or ==0)
-            but no noiseSFTs given,
-            then again used as center of frequency band.
+            Frequency of a signal to inject.
+            Also used (if `Band` is not `None`) as center of frequency band.
+            Also needed when noise-only (`h0=None` or `h0==0`)
+            but no `noiseSFTs` given,
+            in which case it is also used as center of frequency band.
         F1, F2, Alpha, Delta, h0, cosi, psi, phi: float or None
-            frequency evolution and amplitude parameters for injection
-            if h0==None or h0==0, these are all ignored
-            if h0>0, then Alpha, Delta, cosi need to be set explicitly
+            Additional frequency evolution and amplitude parameters for a signal.
+            If `h0=None` or `h0=0`, these are all ignored.
+            If `h0>0`, then at least `[Alpha,Delta,cosi]` need to be set explicitly.
         Tsft: int
             The SFT duration in seconds.
-            Will be ignored if noiseSFTs are given.
+            Will be ignored if `noiseSFTs` are given.
+        outdir: str
+            The directory where files are written to.
+            Default: current working directory.
+        sqrtSX: float or list or str or None
+            Single-sided PSD values for generating fake Gaussian noise.
+            Single float or str value: use same for all detectors.
+            List or comma-separated string: must match len(detectors)
+            and/or the data in sftfilepattern.
+            Detectors will be paired to list elements following alphabetical order.
         noiseSFTs: str or None
-            SFT on top of which signals will be injected.
-            If not None, additional constraints can be applied using the arguments
-            tstart and duration.
+            Existing SFT files on top of which signals will be injected.
+            If not `None`, additional constraints can be applied
+            using the arguments `tstart` and `duration`.
+        SFTWindowType: str or None
+            LAL name of the windowing function to apply to the data.
+        SFTWindowBeta: float
+            Optional parameter for some windowing functions.
         Band: float or None
-            If float, and F0 is also not None, then output SFTs cover
-            [F0-Band/2,F0+Band/2].
-            If None and noiseSFTs given, use their bandwidth.
-            If None and no noiseSFTs given,
+            If float, and `F0` is also not `None`, then output SFTs cover
+            `[F0-Band/2,F0+Band/2]`.
+            If `None` and `noiseSFTs` given, use their bandwidth.
+            If `None` and no `noiseSFTs` given,
             a minimal covering band for a perfectly-matched
             single-template ComputeFstat analysis is estimated.
-        see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
+        detectors: str or None
+            Comma-separated list of detectors to generate data for.
+        earth_ephem, sun_ephem: str or None
+            Paths of the two files containing positions of Earth and Sun.
+            If None, will check standard sources as per
+            helper_functions.get_ephemeris_files().
+        transientWindowType: str
+            If `none`, a fully persistent CW signal is simulated.
+            If `rect` or `exp`, a transient signal with the corresponding
+            amplitude evolution is simulated.
+        transientStartTime: int or None
+            Start time for a transient signal.
+        transientTau: int or None
+            Duration (`rect` case) or decay time (`exp` case) of a transient signal.
+        randSeed: int or None
+            Optionally fix the random seed of Gaussian noise generation
+            for reproducibility.
         """
 
         self.set_ephemeris_files(earth_ephem, sun_ephem)
-        self.basic_setup()
-        self.parse_args_consistent_with_mfd()
+        self._basic_setup()
+        self._parse_args_consistent_with_mfd()
         self.calculate_fmin_Band()
 
     def _get_sft_constraints_from_tstart_duration(self):
@@ -334,7 +440,9 @@ class Writer(BaseSearchClass):
         self.duration = max(tend) - self.tstart
         self.detectors = ",".join(IFOs)
 
-    def basic_setup(self):
+    def _basic_setup(self):
+        """Basic parameters handling, path setup etc."""
+
         os.makedirs(self.outdir, exist_ok=True)
         self.config_file_name = os.path.join(self.outdir, self.label + ".cff")
         self.theta = np.array([self.phi, self.F0, self.F1, self.F2])
@@ -381,9 +489,15 @@ class Writer(BaseSearchClass):
             self.tref = self.tstart
 
     def tend(self):
+        """Simple method to return `tstart+duration`.
+
+        If stored as an attribute, there would be the risk of it going out of
+        sync with the other two values.
+        """
         return self.tstart + self.duration
 
-    def parse_args_consistent_with_mfd(self):
+    def _parse_args_consistent_with_mfd(self):
+        """Internal method to ensure parameters are handled consistently with MFD."""
         self.signal_parameters = self.translate_keys_to_lal(
             {
                 key: self.__dict__[key]
@@ -404,21 +518,20 @@ class Writer(BaseSearchClass):
             self.signal_formats["transientTau"] = ":10.0f"
 
     def calculate_fmin_Band(self):
-        """
-        Set fmin and Band for the output SFTs to cover.
+        """Set fmin and Band for the output SFTs to cover.
 
-        Either uses the user-provided Band and puts F0 in the middle,
-        does nothing to later reuse full bandwidth of noiseSFTs,
-        or if F0!=None, noiseSFTs==None and Band==None
+        Either uses the user-provided `Band` and puts `F0` in the middle,
+        does nothing to later reuse the full bandwidth of `noiseSFTs`,
+        or if `F0!=None`, `noiseSFTs=None` and `Band=None`
         it estimates a minimal band for just the injected signal:
         F-stat covering band plus extra bins for demod default parameters.
-        This way a perfectly matched single-template ComputeFstat analysis
-        should run through perfectly on the SFTs.
-        For any wider-band or mismatched search, the set Band manually.
+        This way a perfectly matched single-template `ComputeFstat` analysis
+        should run through perfectly on the returned SFTs.
+        For any wider-band or mismatched search, one needs to set `Band` manually.
 
-        If you want to use noiseSFTs but auto-estimate a minimal band,
-        call helper_functions.get_covering_band() yourself
-        and pass the results as fmin, Band.
+        If you want to use `noiseSFTs` but auto-estimate a minimal band,
+        call `helper_functions.get_covering_band()` yourself
+        and pass the results to `Writer` as `fmin`, `Band`.
         """
         if self.F0 is not None and self.Band is not None:
             self.fmin = self.F0 - 0.5 * self.Band
@@ -463,7 +576,8 @@ class Writer(BaseSearchClass):
                 "Generating SFTs with fmin={}, Band={}".format(self.fmin, self.Band)
             )
 
-    def get_single_config_line(self, i):
+    def _get_single_config_line(self, i):
+        """Formatting for signal injection parameters."""
         config_line = "[TS{}]\n".format(i)
         config_line += "\n".join(
             [
@@ -478,18 +592,23 @@ class Writer(BaseSearchClass):
         return config_line
 
     def make_cff(self, verbose=False):
-        """
-        Generates a .cff file
+        """Generates a .cff file including signal injection parameters.
 
+        This will be saved to `self.config_file_name`.
+
+        Parameters
+        ----------
+        verbose: boolean
+            If true, increase logging verbosity.
         """
 
-        content = self.get_single_config_line(0)
+        content = self._get_single_config_line(0)
 
         if verbose:
             logging.info("Injection parameters:")
             logging.info(content.rstrip("\n"))
 
-        if self.check_if_cff_file_needs_rewriting(content):
+        if self._check_if_cff_file_needs_rewriting(content):
             logging.info("Writing config file: {:s}".format(self.config_file_name))
             config_file = open(self.config_file_name, "w+")
             config_file.write(content)
@@ -500,10 +619,18 @@ class Writer(BaseSearchClass):
 
         This does not check the actual data contents of the SFTs,
         but only the following criteria:
+
          * filename
+
          * if injecting a signal, that the .cff file is older than the SFTs
            (but its contents should have been checked separately)
+
          * that the commandline stored in the (first) SFT header matches
+
+        Parameters
+        ----------
+        cl_mfd: str
+            The commandline we'd execute if not finding matching files.
         """
 
         need_new = "Will create new SFT file(s)."
@@ -540,7 +667,7 @@ class Writer(BaseSearchClass):
                         " '{}'.".format(self.config_file_name, self.sftfilepath)
                     )
                     # NOTE: at this point we assume it's safe to re-use, since
-                    # check_if_cff_file_needs_rewriting()
+                    # _check_if_cff_file_needs_rewriting()
                     # should have already been called before
             else:
                 raise RuntimeError(
@@ -577,8 +704,8 @@ class Writer(BaseSearchClass):
         )
         return True
 
-    def check_if_cff_file_needs_rewriting(self, content):
-        """Check if the .cff file has changed
+    def _check_if_cff_file_needs_rewriting(self, content):
+        """Check if the .cff file has changed.
 
         Returns True if the file should be overwritten - where possible avoid
         overwriting to allow cached data to be used
@@ -610,7 +737,7 @@ class Writer(BaseSearchClass):
                 return True
 
     def make_data(self, verbose=False):
-        """ A convienience wrapper to generate a cff file then sfts """
+        """A convenience wrapper to generate a cff file and then SFTs."""
         if self.h0:
             self.make_cff(verbose)
         else:
@@ -618,13 +745,13 @@ class Writer(BaseSearchClass):
         self.run_makefakedata()
 
     def run_makefakedata(self):
-        """ Generate the sft data from the configuration file """
+        """Generate the SFT data calling lalapps_Makefakedata_v5.
 
-        # Remove old data:
-        try:
-            os.unlink(os.path.join(self.outdir, "*" + self.label + "*.sft"))
-        except OSError:
-            pass
+        This first builds the full commandline,
+        then calls `check_cached_data_okay_to_use()`
+        to see if equivalent data files already exist,
+        and else runs the actual generation code.
+        """
 
         mfd = "lalapps_Makefakedata_v5"
         cl_mfd = [mfd]
@@ -693,7 +820,21 @@ class Writer(BaseSearchClass):
                 )
 
     def predict_fstat(self, assumeSqrtSX=None):
-        """ Wrapper to lalapps_PredictFstat """
+        """Predict the expected F-statistic value for the injection parameters.
+
+        Through helper_functions.predict_fstat(), this wraps
+        the lalapps_PredictFstat executable.
+
+        Parameters
+        ----------
+        assumeSqrtSX: float, str or None
+            If None, PSD is estimated from self.sftfilepath.
+            Else, assume this stationary per-detector noise-floor instead.
+            Single float or str value: use same for all IFOs.
+            Comma-separated string: must match len(self.detectors)
+            and the data in self.sftfilepath.
+            Detectors will be paired to list elements following alphabetical order.
+        """
         twoF_expected, twoF_sigma = helper_functions.predict_fstat(
             h0=self.h0,
             cosi=self.cosi,
@@ -717,7 +858,7 @@ class Writer(BaseSearchClass):
 
 
 class BinaryModulatedWriter(Writer):
-    """ Instance object for generating SFTs containing a continuous wave signal for a source in a binary system """
+    """Special Writer variant for simulating a CW signal for a source in a binary system."""
 
     @helper_functions.initializer
     def __init__(
@@ -756,20 +897,13 @@ class BinaryModulatedWriter(Writer):
         randSeed=None,
     ):
         """
+        Most parameters are the same as for the basic `Writer` class,
+        only the additional ones are documented here:
+
         Parameters
         ----------
-        label: string
-            a human-readable label to be used in naming the output files
-        tstart, duration : int
-            start and duration (in gps seconds) of the total observation span
-        tref: float or None
-            reference time (default is None, which sets the reference time to
-            tstart)
-        F0, F1, F2, Alpha, Delta, tp, argp, asini, ecc, period, h0, cosi, psi, phi: float
-            frequency, sky-position, binary orbit and amplitude parameters
-        Tsft: float
-            the sft duration
-        see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
+        tp, argp, asini, ecc, period:
+            binary orbit parameters
         """
         self.signal_parameter_labels = super().signal_parameter_labels + [
             "tp",
@@ -811,7 +945,7 @@ class BinaryModulatedWriter(Writer):
 
 
 class GlitchWriter(SearchForSignalWithJumps, Writer):
-    """ Instance object for generating SFTs containing glitch signals """
+    """Special Writer variant for simulating a CW signal containing a timing glitch."""
 
     @helper_functions.initializer
     def __init__(
@@ -848,30 +982,20 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
         randSeed=None,
     ):
         """
+        Most parameters are the same as for the basic `Writer` class,
+        only the additional ones are documented here:
+
         Parameters
         ----------
-        label: string
-            a human-readable label to be used in naming the output files
-        tstart, duration : float
-            start and duration (in gps seconds) of the total observation span
-        dtglitch: float
-            time (in gps seconds) of the glitch after tstart. To create data
-            without a glitch, set dtglitch=None
+        dtglitch: float or None
+            Time (in GPS seconds) of the glitch after `tstart`.
+            To create data without a glitch, set `dtglitch=None`.
         delta_phi, delta_F0, delta_F1: float
-            instanteneous glitch magnitudes in rad, Hz, and Hz/s respectively
-        tref: float or None
-            reference time (default is None, which sets the reference time to
-            tstart)
-        F0, F1, F2, Alpha, Delta, h0, cosi, psi, phi: float
-            frequency, sky-position, and amplitude parameters
-        Tsft: float
-            the sft duration
-
-        see `lalapps_Makefakedata_v5 --help` for help with the other paramaters
+            Instantaneous glitch magnitudes in rad, Hz, and Hz/s respectively.
         """
 
         self.set_ephemeris_files(earth_ephem, sun_ephem)
-        self.basic_setup()
+        self._basic_setup()
         self.calculate_fmin_Band()
 
         shapes = np.array(
@@ -902,9 +1026,9 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
             np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T
         )
 
-    def get_base_template(self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref):
+    def _get_base_template(self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref):
         """FIXME: ported over from Writer,
-        should be replaced by a more elegant re-use of parse_args_consistent_with_mfd
+        should be replaced by a more elegant re-use of _parse_args_consistent_with_mfd
         """
         return """[TS{}]
 Alpha = {:1.18e}
@@ -918,18 +1042,18 @@ f1dot = {:1.18e}
 f2dot = {:1.18e}
 refTime = {:10.6f}"""
 
-    def get_single_config_line_cw(
+    def _get_single_config_line_cw(
         self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
     ):
         template = (
-            self.get_base_template(
+            self._get_base_template(
                 i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
             )
             + """\n"""
         )
         return template.format(i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref)
 
-    def get_single_config_line_tcw(
+    def _get_single_config_line_tcw(
         self,
         i,
         Alpha,
@@ -947,7 +1071,7 @@ refTime = {:10.6f}"""
         transientTau,
     ):
         template = (
-            self.get_base_template(
+            self._get_base_template(
                 i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
             )
             + """
@@ -972,7 +1096,7 @@ transientTau = {:10.0f}\n"""
             transientTau,
         )
 
-    def get_single_config_line(
+    def _get_single_config_line(
         self,
         i,
         Alpha,
@@ -990,11 +1114,11 @@ transientTau = {:10.0f}\n"""
         transientTau,
     ):
         if window == "none":
-            return self.get_single_config_line_cw(
+            return self._get_single_config_line_cw(
                 i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref
             )
         else:
-            return self.get_single_config_line_tcw(
+            return self._get_single_config_line_tcw(
                 i,
                 Alpha,
                 Delta,
@@ -1012,16 +1136,21 @@ transientTau = {:10.0f}\n"""
             )
 
     def make_cff(self, verbose=False):
-        """
-        Generates an .cff file for a 'glitching' signal
+        """Generates a .cff file including signal injection parameters, including a glitch.
 
+        This will be saved to `self.config_file_name`.
+
+        Parameters
+        ----------
+        verbose: boolean
+            If true, increase logging verbosity.
         """
 
         thetas = self._calculate_thetas(self.theta, self.delta_thetas, self.tbounds)
 
         content = ""
         for i, (t, d, ts) in enumerate(zip(thetas, self.durations, self.tbounds[:-1])):
-            line = self.get_single_config_line(
+            line = self._get_single_config_line(
                 i,
                 self.Alpha,
                 self.Delta,
@@ -1044,7 +1173,7 @@ transientTau = {:10.0f}\n"""
             logging.info("Injection parameters:")
             logging.info(content.rstrip("\n"))
 
-        if self.check_if_cff_file_needs_rewriting(content):
+        if self._check_if_cff_file_needs_rewriting(content):
             logging.info("Writing config file: {:s}".format(self.config_file_name))
             config_file = open(self.config_file_name, "w+")
             config_file.write(content)
@@ -1052,7 +1181,13 @@ transientTau = {:10.0f}\n"""
 
 
 class FrequencyModulatedArtifactWriter(Writer):
-    """ Instance object for generating SFTs containing artifacts """
+    """Specialized Writer variant to generate SFTs containing simulated instrumental artifacts.
+
+    Contrary to the main `Writer` class, this calls the older
+    `lalapps_Makefakedata_v4` executable which supports the special `--lineFeature` option.
+    See `lalapps_Makefakedata_v4 --help`
+    for more detailed help with some of the parameters.
+    """
 
     @helper_functions.initializer
     def __init__(
@@ -1081,25 +1216,54 @@ class FrequencyModulatedArtifactWriter(Writer):
         """
         Parameters
         ----------
-        tstart, duration : int
-            start and duration times (in gps seconds) of the total observation
-        Pmod, F0, F1 h0: float
-            Modulation period, freq, freq-drift, and h0 of the artifact
-        Alpha, Delta: float
-            Sky position, in radians, of a signal of which to add the orbital
-            modulation to the artifact, if not `None`.
-        Tsft: float
-            the sft duration
+        label: string
+            A human-readable label to be used in naming the output files.
+        outdir: str
+            The directory where files are written to.
+            Default: current working directory.
+        tstart: int
+            Starting GPS epoch of the data set.
+        duration: int
+            Duration (in GPS seconds) of the total data set.
+        F0: float
+            Frequency of the artifact.
+        F1: float
+            Frequency drift of the artifact.
+        tref: float or None
+            Reference time for simulated signals.
+            Default is `None`, which sets the reference time to `tstart`.
+        h0: float
+            Amplitude of the artifact.
+        Tsft: int
+            The SFT duration in seconds.
+            Will be ignored if `noiseSFTs` are given.
         sqrtSX: float
-            Background IFO noise
-
-        see `lalapps_Makefakedata_v4 --help` for help with the other paramaters
+            Background detector noise level.
+        Band: float
+            Output SFTs cover
+            `[F0-Band/2,F0+Band/2]`.
+        Pmod: float
+            Modulation period of the artifact.
+        Pmod_phi, Pmod_amp: float
+            Additional parameters for modulation of the artifact.
+        Alpha, Delta: float or None
+            If not none: add an orbital modulation to the artifact
+            corresponding to a signal from that sky position, in radians.
+        detectors: str or None
+            Comma-separated list of detectors to generate data for.
+        earth_ephem, sun_ephem: str or None
+            Paths of the two files containing positions of Earth and Sun.
+            If None, will check standard sources as per
+            helper_functions.get_ephemeris_files().
+        randSeed: int or None
+            Optionally fix the random seed of Gaussian noise generation
+            for reproducibility.
         """
 
         self.phi = 0
         self.F2 = 0
 
-        self.basic_setup()
+        self._basic_setup()
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.tstart = int(tstart)
         self.duration = int(duration)
@@ -1125,6 +1289,22 @@ class FrequencyModulatedArtifactWriter(Writer):
             )
 
     def get_frequency(self, t):
+        """Evolve the artifact frequency in time.
+
+        This includes a drift term and optionally,
+        if `Alpha` and `Delta` are not `None`,
+        a simulated orbital modulation.
+
+        Parameters
+        ----------
+        t: float
+            Time stamp to evaluate the frequency at.
+
+        Returns
+        -------
+        f: float
+            Frequency at time `t`.
+        """
         DeltaFDrift = self.F1 * (t - self.tref)
 
         phir = 2 * np.pi * t / self.Pmod + self.Pmod_phi
@@ -1172,9 +1352,24 @@ class FrequencyModulatedArtifactWriter(Writer):
         return f
 
     def get_h0(self, t):
+        """Evaluate the artifact amplitude at a given time.
+
+        NOTE: Here it's actually implemented as a constant!
+
+        Parameters
+        ----------
+        t: float
+            Time stamp to evaluate at.
+
+        Returns
+        -------
+        h0: float
+            Amplitude at time `t`.
+        """
         return self.h0
 
     def concatenate_sft_files(self):
+        """Deals with multiple SFT files via lalapps_splitSFTs executable."""
         SFTFilename = lalpulsar.OfficialSFTFilename(
             self.detectors[0],
             self.detectors[1],
@@ -1209,6 +1404,11 @@ class FrequencyModulatedArtifactWriter(Writer):
             )
 
     def pre_compute_evolution(self):
+        """Precomputes evolution parameters for the artifact.
+
+        This computes midtimes, frequencies, phases and amplitudes
+        over the list of SFT timestamps.
+        """
         logging.info("Precomputing evolution parameters")
         self.lineFreqs = []
         self.linePhis = []
@@ -1231,6 +1431,7 @@ class FrequencyModulatedArtifactWriter(Writer):
             lineFreq_old = lineFreq
 
     def make_ith_sft(self, i):
+        """Call MFDv4 to create a single SFT with evolved artifact parameters."""
         try:
             self.run_makefakedata_v4(
                 self.mid_times[i],
@@ -1243,6 +1444,11 @@ class FrequencyModulatedArtifactWriter(Writer):
             raise KeyboardInterruptError()
 
     def make_data(self):
+        """Create a full multi-SFT data set.
+
+        This loops over SFTs and generate them serially or in parallel,
+        then contatenates the results together at the end.
+        """
         self.duration = self.Tsft
 
         self.tmp_outdir = os.path.join(self.outdir, self.label + "_tmp")
@@ -1284,7 +1490,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         self.concatenate_sft_files()
 
     def run_makefakedata_v4(self, mid_time, lineFreq, linePhi, h0, tmp_outdir):
-        """ Generate the sft data using the --lineFeature option """
+        """Generate SFT data using the MFDv4 code with the --lineFeature option."""
         cl_mfd = []
         cl_mfd.append("lalapps_Makefakedata_v4")
         cl_mfd.append("--outSingleSFT=FALSE")
@@ -1315,7 +1521,21 @@ class FrequencyModulatedArtifactWriter(Writer):
 
 
 class FrequencyAmplitudeModulatedArtifactWriter(FrequencyModulatedArtifactWriter):
-    """ Instance object for generating SFTs containing artifacts """
+    """A variant of FrequencyModulatedArtifactWriter with evolving amplitude."""
 
     def get_h0(self, t):
+        """Evaluate the artifact amplitude at a given time.
+
+        NOTE: Here it's actually changing over time!
+
+        Parameters
+        ----------
+        t: float
+            Time stamp to evaluate at.
+
+        Returns
+        -------
+        h0: float
+            Amplitude at time `t`.
+        """
         return self.h0 * np.sin(2 * np.pi * t / self.Pmod + self.Pmod_phi)

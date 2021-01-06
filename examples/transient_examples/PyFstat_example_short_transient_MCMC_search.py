@@ -59,7 +59,7 @@ theta_prior = {
 ntemps = 2
 log10beta_min = -1
 nwalkers = 100
-nsteps = [100, 100]
+nsteps = [200, 200]
 
 mcmc = pyfstat.MCMCTransientSearch(
     label="transient_search",

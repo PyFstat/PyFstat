@@ -69,14 +69,17 @@ search = pyfstat.GridSearch(
 )
 search.run()
 
+print("Plotting 2F(F0)...")
 search.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")
+print("Plotting 2F(F1)...")
 search.plot_1D(xkey="F1")
+print("Plotting 2F(F0,F1)...")
 search.plot_2D(xkey="F0", ykey="F1", colorbar=True)
 
 print("Making gridcorner plot...")
-F0_vals = np.unique(search.data[:, 2]) - F0
-F1_vals = np.unique(search.data[:, 3]) - F1
-twoF = search.data[:, -1].reshape((len(F0_vals), len(F1_vals)))
+F0_vals = np.unique(search.data["F0"]) - F0
+F1_vals = np.unique(search.data["F1"]) - F1
+twoF = search.data["twoF"].reshape((len(F0_vals), len(F1_vals)))
 xyz = [F0_vals, F1_vals]
 labels = [
     "$f - f_0$",
