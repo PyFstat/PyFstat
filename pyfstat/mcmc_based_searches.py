@@ -323,7 +323,17 @@ class MCMCSearch(BaseSearchClass):
         return np.sum(H)
 
     def _set_point_for_evaluation(self, theta):
-        """Combines fixed and variable parameters to form a valid evaluation point."""
+        """Combines fixed and variable parameters to form a valid evaluation point.
+
+        Parameters
+        ----------
+        theta: list or np.ndarray
+            The sampled (variable) parameters.
+        Returns
+        -------
+        p: list
+            The full parameter space point as a list.
+        """
         p = copy.copy(self.fixed_theta)
         for j, theta_i in enumerate(self.theta_idxs):
             p[theta_i] = theta[j]
@@ -1721,7 +1731,10 @@ class MCMCSearch(BaseSearchClass):
             self.search.BSGL = False
             for idx, samp in enumerate(self.samples):
                 p = self._set_point_for_evaluation(samp)
-                twoF[idx] = self.search.get_det_stat(*p)
+                if isinstance(p, dict):
+                    twoF[idx] = self.search.get_det_stat(**p)
+                else:
+                    twoF[idx] = self.search.get_det_stat(*p)
             self.search.BSGL = self.BSGL
             samples_out = np.concatenate((samples_out, twoF), axis=1)
         # TODO: add single-IFO F-stats?
@@ -1791,7 +1804,10 @@ class MCMCSearch(BaseSearchClass):
                 self._initiate_search_object()
             p = self._set_point_for_evaluation(self.samples[jmax])
             self.search.BSGL = False
-            maxtwoF = self.search.get_det_stat(*p)
+            if isinstance(p, dict):
+                maxtwoF = self.search.get_det_stat(**p)
+            else:
+                maxtwoF = self.search.get_det_stat(*p)
             self.search.BSGL = self.BSGL
         else:
             # can just reuse the logl value
@@ -3375,7 +3391,18 @@ class MCMCTransientSearch(MCMCSearch):
             self.maxStartTime = self.search.maxStartTime
 
     def _set_point_for_evaluation(self, theta):
-        """Combines fixed and variable parameters to form a valid evaluation point."""
+        """Combines fixed and variable parameters to form a valid evaluation point.
+
+        Parameters
+        ----------
+        theta: list or np.ndarray
+            The sampled (variable) parameters.
+        Returns
+        -------
+        p: dict
+            The full parameter space point as a dictionary.
+            (different from base MCMCSearch class!)
+        """
         p = {
             key: self.fixed_theta[k]
             for k, key in enumerate(self.full_theta_keys)
