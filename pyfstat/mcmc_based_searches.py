@@ -1078,6 +1078,10 @@ class MCMCSearch(BaseSearchClass):
         save_fig: bool
             If true, save the figure, else return the fig, axes.
 
+        Returns
+        -------
+        (fig, ax): (matplotlib.pyplot.figure, matplotlib.pyplot.axes)
+            If `save_fig` evaluates to `False`, return figure and axes.
         """
 
         # Check injection parameters first
@@ -1591,7 +1595,13 @@ class MCMCSearch(BaseSearchClass):
             pickle.dump(d, File)
 
     def get_saved_data_dictionary(self):
-        """ Returns dictionary of the data saved in the pickle `self.pickle_path`. """
+        """Read the data saved in `self.pickel_path` and return it as a dictionary.
+
+        Returns
+        --------
+        d: dict
+            Dictionary containing the data saved in the pickle `self.pickle_path`.
+        """
         with open(self.pickle_path, "rb") as File:
             d = pickle.load(File)
         return d
@@ -1698,7 +1708,20 @@ class MCMCSearch(BaseSearchClass):
             return (self.lnlikes[idx] - self.likelihoodcoef) * 2
 
     def get_max_twoF(self):
-        """Returns the max likelihood sample and the corresponding 2F value"""
+        """Get the max. likelihood (loudest) sample and the compute
+        its corresponding detection statistic.
+
+        The employed detection statistic depends on `self.BSGL`
+        (i.e. 2F if `self.BSGL` evaluates to `False`, log10BSGL otherwise).
+
+        Returns
+        -------
+        d: dict
+            Parameters of the loudest sample.
+
+        maxtwoF: float
+            Detection statistic (2F or log10BSGL) corresponding to the loudest sample.
+        """
         if not hasattr(self, "search"):
             raise RuntimeError(
                 "Object has no self.lnlikes attribute, please execute .run() first."
@@ -1743,6 +1766,12 @@ class MCMCSearch(BaseSearchClass):
 
         Point estimates are computed on the MCMC samples using `numpy.mean`,
         `numpy.std` and `numpy.quantiles` with q=[0.005, 0.05, 0.25, 0.5, 0.75, 0.95, 0.995].
+
+        Returns
+        -------
+        d: dict
+            Dictionary containing point estimates corresponding to ["mean", "std", "lower99",
+            "lower90", "lower50", "median", "upper50", "upper90", "upper99"].
         """
         d = OrderedDict()
         repeats = []  # taken from old get_median_stds(), not sure why necessary
