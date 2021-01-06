@@ -2,14 +2,6 @@ import pyfstat
 import numpy as np
 import os
 
-try:
-    from gridcorner import gridcorner
-except ImportError:
-    raise ImportError(
-        "Python module 'gridcorner' not found, please install from "
-        "https://gitlab.aei.uni-hannover.de/GregAshton/gridcorner"
-    )
-
 label = os.path.splitext(os.path.basename(__file__))[0]
 outdir = os.path.join("PyFstat_example_data", label)
 
@@ -84,7 +76,7 @@ search.plot_1D(xkey="F1")
 print("Plotting 2F(F0,F1)...")
 search.plot_2D(xkey="F0", ykey="F1", colorbar=True)
 
-print("Making corner plot...")
+print("Making gridcorner plot...")
 F0_vals = np.unique(search.data["F0"]) - F0
 F1_vals = np.unique(search.data["F1"]) - F1
 twoF = search.data["twoF"].reshape((len(F0_vals), len(F1_vals)))
@@ -94,7 +86,7 @@ labels = [
     "$\\dot{f} - \\dot{f}_0$",
     "$\\widetilde{2\\mathcal{F}}$",
 ]
-fig, axes = gridcorner(
+fig, axes = pyfstat.gridcorner(
     twoF, xyz, projection="log_mean", labels=labels, whspace=0.1, factor=1.8
 )
 fig.savefig(os.path.join(outdir, label + "_projection_matrix.png"))
