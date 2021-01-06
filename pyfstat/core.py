@@ -1623,7 +1623,6 @@ class SemiCoherentSearch(ComputeFstat):
             to obtain the per-segment coherence time `Tcoh`.
         """
 
-        self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.transientWindowType = None  # will use semicoherentWindowRange instead
         self.computeAtoms = True  # for semicoh 2F from ComputeTransientFstatMap()
@@ -2080,7 +2079,6 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
             signal to jump to theta (and not just from).
         """
 
-        self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.transientWindowType = "rect"
         self.t0Band = None
