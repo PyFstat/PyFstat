@@ -2070,7 +2070,22 @@ class MCMCSearch(BaseSearchClass):
         return p_val
 
     def compute_evidence(self, make_plots=False, write_to_file=None):
-        """ Computes the evidence/marginal likelihood for the model """
+        """Computes the evidence/marginal likelihood for the model.
+
+        Parameters
+        ----------
+        make_plots: bool
+           Plot the results and save them to os.path.join(self.outdir, self.label + "_beta_lnl.png")
+        write_to_file: str
+           If given, dump evidence and uncertainty estimation to the specified path.
+
+        Returns
+        -------
+        log10evidence: float
+            Estimation of the log10 evidence.
+        log10evidence_err: float
+            Log10 uncertainty of the evidence estimation.
+        """
         betas = self.betas
         mean_lnlikes = np.mean(np.mean(self.all_lnlikelihood, axis=1), axis=1)
 
@@ -2131,10 +2146,18 @@ class MCMCSearch(BaseSearchClass):
     def read_evidence_file_to_dict(evidence_file_name="Evidences.txt"):
         """Read evidence file and put it into an OrderedDict
 
+        An evidence file contains paris (log10evidence, log10evidence_err) for each
+        considered model. These pairs are prepended by the `self.label` variable.
+
         Parameters
         ----------
         evidence_file_name: str
             Filename to read.
+
+        Returns
+        -------
+        EvidenceDict: dict
+            Dictionary with the contents of `evidence_file_name`
         """
         EvidenceDict = OrderedDict()
         if os.path.isfile(evidence_file_name):
