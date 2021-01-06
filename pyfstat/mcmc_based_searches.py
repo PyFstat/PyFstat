@@ -2410,8 +2410,6 @@ class MCMCGlitchSearch(MCMCSearch):
 
     def _initiate_search_object(self):
         logging.info("Setting up search object")
-        if self.BSGL:
-            raise ValueError("BSGL option currently not supported.")
         search_ranges = self._get_search_ranges()
         self.search = core.SemiCoherentGlitchSearch(
             label=self.label,

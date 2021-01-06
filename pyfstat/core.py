@@ -2079,6 +2079,11 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
             signal to jump to theta (and not just from).
         """
 
+        if self.BSGL:
+            raise ValueError(
+                f"BSGL option currently not supported by {self.__class__.__name__}."
+            )
+
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.transientWindowType = "rect"
         self.t0Band = None
