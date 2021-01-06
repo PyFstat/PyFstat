@@ -32,9 +32,11 @@ if __name__ == "__main__":
     Alphas = [data.Alpha]
     Deltas = [data.Delta]
 
+    BSGL = False
+
     print("Standard CW search:")
     search1 = pyfstat.GridSearch(
-        label="CW",
+        label="CW" + ("-BSGL" if BSGL else ""),
         outdir=data.outdir,
         sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
         F0s=F0s,
@@ -43,16 +45,15 @@ if __name__ == "__main__":
         Alphas=Alphas,
         Deltas=Deltas,
         tref=data.tref,
-        BSGL=False,
+        BSGL=BSGL,
     )
     search1.run()
     search1.print_max_twoF()
-
     search1.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")
 
     print("with t0,tau bands:")
     search2 = pyfstat.TransientGridSearch(
-        label="tCW",
+        label="tCW" + ("-BSGL" if BSGL else ""),
         outdir=data.outdir,
         sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
         F0s=F0s,
@@ -64,11 +65,10 @@ if __name__ == "__main__":
         transientWindowType="rect",
         t0Band=data.duration - 2 * data.Tsft,
         tauBand=data.duration,
-        BSGL=False,
         outputTransientFstatMap=True,
         tCWFstatMapVersion="lal",
+        BSGL=BSGL,
     )
     search2.run()
     search2.print_max_twoF()
-
     search2.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")
