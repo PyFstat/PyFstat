@@ -726,6 +726,20 @@ class GridSearch(BaseSearchClass):
         else:
             return ax
 
+    def get_max_det_stat(self):
+        """Get the maximum detection statistic over the grid.
+
+        This requires the `run()` method to have been called before.
+
+        Returns
+        -------
+        d: dict
+            Dictionary containing parameters and detection statistic at the maximum.
+        """
+        idx = np.argmax(self.data[self.detstat])
+        d = OrderedDict([(key, self.data[key][idx]) for key in self.output_keys])
+        return d
+
     def get_max_twoF(self):
         """Get the maximum twoF over the grid.
 
