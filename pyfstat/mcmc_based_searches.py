@@ -504,7 +504,8 @@ class MCMCSearch(BaseSearchClass):
             The bigger the value, the wider the range to draw proposals from.
             If the acceptance fraction is too low, you can raise it by
             decreasing the `a` parameter; and if it is too high, you can reduce
-            it by increasing the `a` parameter [Foreman-Mackay arXiv:1202.3665 [astro-ph.IM] (2013)].
+            it by increasing the `a` parameter.
+            See Foreman-Mackay et al. (PASP 125 306, 2013): https://arxiv.org/abs/1202.3665.
         save_pickle: bool
             If true, save a pickle file of the full sampler state.
         export_samples: bool
