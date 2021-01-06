@@ -65,6 +65,9 @@ class GridSearch(BaseSearchClass):
     }
     """Formatted labels used for annotating central values in plots."""
 
+    fmt_detstat = "%.9g"
+    """Standard output precision for detection statistics."""
+
     @helper_functions.initializer
     def __init__(
         self,
@@ -118,16 +121,23 @@ class GridSearch(BaseSearchClass):
             os.mkdir(outdir)
         self.set_out_file()
         self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
-        self.output_keys = self.search_keys.copy()
-        self.output_keys.append("twoF")
-        if self.BSGL:
-            self.detstat = "log10BSGL"
-            self.output_keys.append(self.detstat)
-        else:
-            self.detstat = "twoF"
         for k in self.search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
+        if self.BSGL:
+            self.detstat = "log10BSGL"
+        else:
+            self.detstat = "twoF"
+        self._initiate_search_object()
+        self._set_output_keys()
         self.output_file_header = self.get_output_file_header()
+
+    def _set_output_keys(self):
+        self.output_keys = self.search_keys.copy()
+        self.output_keys.append("twoF")
+        if hasattr(self.search, "twoFX"):
+            self.output_keys += [f"twoF{IFO}" for IFO in self.search.detector_names]
+        if self.BSGL:
+            self.output_keys.append(self.detstat)
 
     def _get_search_ranges(self):
         if (self.minCoverFreq is None) or (self.maxCoverFreq is None):
@@ -364,9 +374,6 @@ class GridSearch(BaseSearchClass):
                 self.data = old_data
                 return
 
-        if hasattr(self, "search") is False:
-            self._initiate_search_object()
-
         logging.info(
             "Running search over a total of {:d} grid points...".format(
                 np.shape(iterable)[0]
@@ -384,9 +391,11 @@ class GridSearch(BaseSearchClass):
         ):
             thisCand = list(vals)
             detstat = self.search.get_det_stat(*vals)
+            thisCand.append(self.search.twoF)
+            if hasattr(self.search, "twoFX"):
+                thisCand += list(self.search.twoFX[: self.search.numDetectors])
             if self.detstat != "twoF":
-                thisCand.append(self.search.twoF)
-            thisCand.append(detstat)
+                thisCand.append(detstat)
             for k, key in enumerate(self.output_keys):
                 data[key][n] = thisCand[k]
 
@@ -399,9 +408,12 @@ class GridSearch(BaseSearchClass):
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
         fmt_dict = helper_functions.get_doppler_params_output_format(self.output_keys)
-        fmt_dict["twoF"] = "%.9g"
+        fmt_dict["twoF"] = self.fmt_detstat
+        if hasattr(self.search, "twoFX"):
+            for IFO in self.search.detector_names:
+                fmt_dict[f"twoF{IFO}"] = self.fmt_detstat
         if self.BSGL:
-            fmt_dict["log10BSGL"] = "%.9g"
+            fmt_dict["log10BSGL"] = self.fmt_detstat
         return fmt_dict
 
     def _get_savetxt_fmt_list(self):
@@ -909,19 +921,14 @@ class TransientGridSearch(GridSearch):
             os.mkdir(outdir)
         self.set_out_file()
         self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
-        self.output_keys = self.search_keys.copy()
-        self.output_keys.append("twoF")
-        if self.BSGL:
-            self.detstat = "log10BSGL"
-            self.output_keys.append(self.detstat)
-        else:
-            self.detstat = "twoF"
-        # for consistency below, t0/tau must come after detstat
-        # they are not included in self.search_keys because the main Fstat
-        # code does not loop over them
-        self.output_keys += ["t0", "tau"]
         for k in self.search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
+        if self.BSGL:
+            self.detstat = "log10BSGL"
+        else:
+            self.detstat = "maxTwoF"
+        self._initiate_search_object()
+        self._set_output_keys()
         self.output_file_header = self.get_output_file_header()
         if self.outputTransientFstatMap:
             self.tCWfilebase = os.path.splitext(self.out_file)[0] + "_tCW_"
@@ -929,6 +936,23 @@ class TransientGridSearch(GridSearch):
                 "Will save per-Doppler Fstatmap"
                 " results to {}*.dat".format(self.tCWfilebase)
             )
+
+    def _set_output_keys(self):
+        self.output_keys = self.search_keys.copy()
+        self.output_keys.append("twoF")
+        if hasattr(self.search, "twoFX"):
+            self.output_keys += [f"twoF{IFO}" for IFO in self.search.detector_names]
+        self.output_keys.append("maxTwoF")
+        if hasattr(self.search, "twoFXatMaxTwoF"):
+            self.output_keys += [
+                f"twoF{IFO}atMaxTwoF" for IFO in self.search.detector_names
+            ]
+        if self.detstat != "maxTwoF":
+            self.output_keys.append(self.detstat)
+        # for consistency below, t0/tau must come after detstat
+        # they are not included in self.search_keys because the main Fstat
+        # code does not loop over them
+        self.output_keys += ["t0", "tau"]
 
     def _initiate_search_object(self):
         logging.info("Setting up search object")
@@ -993,9 +1017,6 @@ class TransientGridSearch(GridSearch):
             self.data = old_data
             return
 
-        if hasattr(self, "search") is False:
-            self._initiate_search_object()
-
         output_dtype = np.dtype(
             {
                 "names": self.output_keys,
@@ -1015,9 +1036,14 @@ class TransientGridSearch(GridSearch):
             windowRange = getattr(self.search, "windowRange", None)
             FstatMap = getattr(self.search, "FstatMap", None)
             self.timingFstatMap += getattr(self.search, "timingFstatMap", 0.0)
-            if self.detstat != "twoF":
-                thisCand.append(self.search.twoF)
-            thisCand.append(detstat)
+            thisCand.append(self.search.twoF)
+            if hasattr(self.search, "twoFX"):
+                thisCand += list(self.search.twoFX[: self.search.numDetectors])
+            thisCand.append(self.search.maxTwoF)
+            if hasattr(self.search, "twoFXatMaxTwoF"):
+                thisCand += list(self.search.twoFXatMaxTwoF[: self.search.numDetectors])
+            if self.detstat != "maxTwoF":
+                thisCand.append(detstat)
             if getattr(self, "transientWindowType", None):
                 if self.tCWFstatMapVersion == "lal":
                     F_mn = FstatMap.F_mn.data
@@ -1091,9 +1117,16 @@ class TransientGridSearch(GridSearch):
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
         fmt_dict = helper_functions.get_doppler_params_output_format(self.output_keys)
-        fmt_dict["twoF"] = "%.9g"
-        if self.BSGL:
-            fmt_dict["log10BSGL"] = "%.9g"
+        fmt_dict["twoF"] = self.fmt_detstat
+        if hasattr(self.search, "twoFX"):
+            for IFO in self.search.detector_names:
+                fmt_dict[f"twoF{IFO}"] = self.fmt_detstat
+        fmt_dict["maxTwoF"] = self.fmt_detstat
+        if hasattr(self.search, "twoFXatMaxTwoF"):
+            for IFO in self.search.detector_names:
+                fmt_dict[f"twoF{IFO}atMaxTwoF"] = self.fmt_detstat
+        if self.detstat != "maxTwoF":
+            fmt_dict[self.detstat] = self.fmt_detstat
         fmt_dict["t0"] = "%d"
         fmt_dict["tau"] = "%d"
         return fmt_dict
@@ -1189,11 +1222,13 @@ class GridGlitchSearch(GridSearch):
         """
 
         self._set_init_params_dict(locals())
+        if os.path.isdir(outdir) is False:
+            os.mkdir(outdir)
+        self.set_out_file()
         self.BSGL = False
         self.input_arrays = False
         if tglitchs is None:
             raise ValueError("You must specify `tglitchs`")
-
         self.search_keys = [
             "F0",
             "F1",
@@ -1204,32 +1239,30 @@ class GridGlitchSearch(GridSearch):
             "delta_F1",
             "tglitch",
         ]
-        self.output_keys = self.search_keys.copy()
-        self.detstat = "twoF"
-        self.output_keys += [self.detstat]
         for k in self.search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
-        search_ranges = self._get_search_ranges()
+        self.detstat = "twoF"
+        self._initiate_search_object()
+        self._set_output_keys()
+        self.output_file_header = self.get_output_file_header()
 
+    def _initiate_search_object(self):
+        logging.info("Setting up search object")
+        search_ranges = self._get_search_ranges()
         self.search = SemiCoherentGlitchSearch(
-            label=label,
-            outdir=outdir,
+            label=self.label,
+            outdir=self.outdir,
             sftfilepattern=self.sftfilepattern,
-            tref=tref,
-            minStartTime=minStartTime,
-            maxStartTime=maxStartTime,
-            minCoverFreq=minCoverFreq,
-            maxCoverFreq=maxCoverFreq,
+            tref=self.tref,
+            minStartTime=self.minStartTime,
+            maxStartTime=self.maxStartTime,
+            minCoverFreq=self.minCoverFreq,
+            maxCoverFreq=self.maxCoverFreq,
             search_ranges=search_ranges,
             BSGL=self.BSGL,
-            earth_ephem=earth_ephem,
-            sun_ephem=sun_ephem,
+            earth_ephem=self.earth_ephem,
+            sun_ephem=self.sun_ephem,
         )
-
-        if os.path.isdir(outdir) is False:
-            os.mkdir(outdir)
-        self.set_out_file()
-        self.output_file_header = self.get_output_file_header()
 
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
@@ -1237,7 +1270,7 @@ class GridGlitchSearch(GridSearch):
         fmt_dict["delta_F0"] = "%.16g"
         fmt_dict["delta_F1"] = "%.16g"
         fmt_dict["tglitch"] = "%d"
-        fmt_dict[self.detstat] = "%.9g"
+        fmt_dict[self.detstat] = self.fmt_detstat
         return fmt_dict
 
 
