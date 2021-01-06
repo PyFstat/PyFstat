@@ -1202,7 +1202,7 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
     label = "TestMCMCSearch"
     Band = 1
 
-    def _check_twoF_predicted(self):
+    def _check_twoF_predicted(self, assertTrue=True):
         self.twoF_predicted = self.Writer.predict_fstat()
         self.max_dict, self.maxTwoF = self.search.get_max_twoF()
         diff = np.abs((self.maxTwoF - self.twoF_predicted)) / self.twoF_predicted
@@ -1214,9 +1214,10 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
                 )
             )
         )
-        self.assertTrue(diff < 0.3)
+        if assertTrue:
+            self.assertTrue(diff < 0.3)
 
-    def _check_mcmc_quantiles(self, transient=False):
+    def _check_mcmc_quantiles(self, transient=False, assertTrue=True):
         summary_stats = self.search.get_summary_stats()
         nsigmas = 3
         conf = "99"
@@ -1245,7 +1246,8 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
                     k, nsigmas, inj[k], lower, upper, within
                 )
             )
-            self.assertTrue(within)
+            if assertTrue:
+                self.assertTrue(within)
             within = (inj[k] >= summary_stats[k]["lower" + conf]) and (
                 inj[k] <= summary_stats[k]["upper" + conf]
             )
@@ -1259,11 +1261,13 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
                     within,
                 )
             )
-            self.assertTrue(within)
+            if assertTrue:
+                self.assertTrue(within)
 
 
 class TestMCMCSearch(BaseForMCMCSearchTests):
     label = "TestMCMCSearch"
+    BSGL = False
 
     def test_fully_coherent_MCMC(self):
 
@@ -1355,11 +1359,104 @@ class TestMCMCSearch(BaseForMCMCSearchTests):
                 nwalkers=20,
                 ntemps=2,
                 log10beta_min=-1,
+                BSGL=self.BSGL,
             )
             self.search.run(plot_walkers=False)
             self.search.print_summary()
             self._check_twoF_predicted()
             self._check_mcmc_quantiles()
+
+
+class TestMCMCSearchBSGL(TestMCMCSearch):
+    label = "TestMCMCSearch"
+    detectors = "H1,L1"
+    BSGL = True
+
+    def test_MCMC_search_on_data_with_line(self):
+        # We reuse the default multi-IFO SFTs
+        # but add an additional single-detector artifact to H1 only.
+        # For simplicity, this is modelled here as a fully modulated CW-like signal,
+        # just restricted to the single detector.
+        SFTs_H1 = self.Writer.sftfilepath.split(";")[0]
+        SFTs_L1 = self.Writer.sftfilepath.split(";")[1]
+        extra_writer = pyfstat.Writer(
+            label=self.label + "_with_line",
+            outdir=self.outdir,
+            tref=self.tref,
+            F0=self.Writer.F0 + 0.5e-6,
+            F1=self.Writer.F1,
+            F2=self.Writer.F2,
+            Alpha=self.Writer.Alpha,
+            Delta=self.Writer.Delta,
+            h0=10 * self.Writer.h0,
+            cosi=self.Writer.cosi,
+            sqrtSX=0,  # don't add yet another set of Gaussian noise
+            noiseSFTs=SFTs_H1,
+            SFTWindowType=self.Writer.SFTWindowType,
+            SFTWindowBeta=self.Writer.SFTWindowBeta,
+        )
+        extra_writer.make_data()
+        data_with_line = ";".join([SFTs_L1, extra_writer.sftfilepath])
+        # use a single fixed prior and search F0 only for speed
+        thetas = {
+            "F0": {
+                "type": "unif",
+                "lower": self.F0 - 1e-6,
+                "upper": self.F0 + 1e-6,
+            },
+            "F1": self.F1,
+            "F2": self.F2,
+            "Alpha": self.Alpha,
+            "Delta": self.Delta,
+        }
+        # now run a standard F-stat search over this data
+        self.search = pyfstat.MCMCSearch(
+            label=self.label + "-F",
+            outdir=self.outdir,
+            theta_prior=thetas,
+            tref=self.tref,
+            sftfilepattern=data_with_line,
+            nsteps=[20, 20],
+            nwalkers=20,
+            ntemps=2,
+            log10beta_min=-1,
+            BSGL=False,
+        )
+        self.search.run(plot_walkers=True)
+        self.search.print_summary()
+        # The tests here are expected to fail,
+        # as the F-search will get confused by the line.
+        self._check_twoF_predicted(assertTrue=False)
+        mode_F0_Fsearch = self.max_dict["F0"]
+        maxTwoF_Fsearch = self.maxTwoF
+        self._check_mcmc_quantiles(assertTrue=False)
+        # also run a BSGL search over the same data
+        self.search = pyfstat.MCMCSearch(
+            label=self.label + "-BSGL",
+            outdir=self.outdir,
+            theta_prior=thetas,
+            tref=self.tref,
+            sftfilepattern=data_with_line,
+            nsteps=[20, 20],
+            nwalkers=20,
+            ntemps=2,
+            log10beta_min=-1,
+            BSGL=True,
+        )
+        self.search.run(plot_walkers=True)
+        self.search.print_summary()
+        # Still skipping the check on twoF.
+        self._check_twoF_predicted(assertTrue=False)
+        mode_F0_BSGLsearch = self.max_dict["F0"]
+        maxTwoF_BSGLsearch = self.maxTwoF
+        # But this should now pass cleanly.
+        self._check_mcmc_quantiles()
+        # And the BSGL search should find a lower-F mode closer to the true multi-IFO signal.
+        self.assertTrue(maxTwoF_BSGLsearch < maxTwoF_Fsearch)
+        self.assertTrue(mode_F0_BSGLsearch < mode_F0_Fsearch)
+        self.assertTrue(
+            np.abs(mode_F0_BSGLsearch - self.F0) < np.abs(mode_F0_Fsearch - self.F0)
+        )
 
 
 class TestMCMCSemiCoherentSearch(BaseForMCMCSearchTests):
