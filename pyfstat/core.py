@@ -407,8 +407,10 @@ class ComputeFstat(BaseSearchClass):
         create data on the fly.
         """
         if hasattr(self, "SFTCatalog"):
+            logging.info("Already have SFTCatalog.")
             return
         if self.sftfilepattern is None:
+            logging.info("No sftfilepattern given, making fake SFTCatalog.")
             for k in ["minStartTime", "maxStartTime", "detectors"]:
                 if getattr(self, k) is None:
                     raise ValueError(
@@ -425,6 +427,7 @@ class ComputeFstat(BaseSearchClass):
             SFTCatalog = lalpulsar.SFTCatalog()
             Toverlap = 0
             self.detector_names = self.detectors.split(",")
+            self.numDetectors = len(self.detector_names)
             detNames = lal.CreateStringVector(*[d for d in self.detector_names])
             # MakeMultiTimestamps follows the same [minStartTime,maxStartTime)
             # convention as the SFT library, so we can pass Tspan like this
@@ -438,7 +441,7 @@ class ComputeFstat(BaseSearchClass):
             self.SFTCatalog = SFTCatalog
             return
 
-        logging.info("Initialising SFTCatalog")
+        logging.info("Initialising SFTCatalog from sftfilepattern.")
         constraints = lalpulsar.SFTConstraints()
         constr_str = []
         if self.detectors:
@@ -505,11 +508,12 @@ class ComputeFstat(BaseSearchClass):
             self.maxStartTime = int(SFT_timestamps[-1]) + self.Tsft
 
         self.detector_names = list(set([d.header.name for d in self.SFTCatalog.data]))
-        if len(self.detector_names) == 0:
+        self.numDetectors = len(self.detector_names)
+        if self.numDetectors == 0:
             raise ValueError("No data loaded.")
         logging.info(
-            "Loaded {} SFTs from detectors {}".format(
-                len(SFT_timestamps), self.detector_names
+            "Loaded {} SFTs from {} detectors: {}".format(
+                len(SFT_timestamps), self.numDetectors, self.detector_names
             )
         )
 
@@ -648,7 +652,6 @@ class ComputeFstat(BaseSearchClass):
             # Tuning parameters - to be reviewed
             # We use a fixed Fstar0 for coherent searches,
             # and recompute it from a fixed p-value for the semicoherent case.
-            numDetectors = 2
             nsegs_eff = max([getattr(self, "nsegs", 1), getattr(self, "nglitch", 1)])
             if nsegs_eff > 1:
                 p_val_threshold = 1e-6
@@ -662,9 +665,9 @@ class ComputeFstat(BaseSearchClass):
             logging.info("Using Fstar0 of {:1.2f}".format(Fstar0))
             # assume uniform per-detector prior line-vs-Gaussian odds
             oLGX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
-            oLGX[:numDetectors] = 1.0 / numDetectors
+            oLGX[: self.numDetectors] = 1.0 / self.numDetectors
             self.BSGLSetup = lalpulsar.CreateBSGLSetup(
-                numDetectors=numDetectors,
+                numDetectors=self.numDetectors,
                 Fstar0sc=Fstar0,
                 oLGX=oLGX,
                 useLogCorrection=True,
