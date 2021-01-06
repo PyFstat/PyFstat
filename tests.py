@@ -1708,6 +1708,83 @@ class TestGridSearchBSGL(TestGridSearch):
     detectors = "H1,L1"
     BSGL = True
 
+    def test_grid_search_on_data_with_line(self):
+        # We reuse the default multi-IFO SFTs
+        # but add an additional single-detector artifact to H1 only.
+        # For simplicity, this is modelled here as a fully modulated CW-like signal,
+        # just restricted to the single detector.
+        SFTs_H1 = self.Writer.sftfilepath.split(";")[0]
+        SFTs_L1 = self.Writer.sftfilepath.split(";")[1]
+        extra_writer = pyfstat.Writer(
+            label=self.label + "_with_line",
+            outdir=self.outdir,
+            tref=self.tref,
+            F0=self.Writer.F0 + 0.0005,
+            F1=self.Writer.F1,
+            F2=self.Writer.F2,
+            Alpha=self.Writer.Alpha,
+            Delta=self.Writer.Delta,
+            h0=10 * self.Writer.h0,
+            cosi=self.Writer.cosi,
+            sqrtSX=0,  # don't add yet another set of Gaussian noise
+            noiseSFTs=SFTs_H1,
+            SFTWindowType=self.Writer.SFTWindowType,
+            SFTWindowBeta=self.Writer.SFTWindowBeta,
+        )
+        extra_writer.make_data()
+        data_with_line = ";".join([SFTs_L1, extra_writer.sftfilepath])
+        # now run a standard F-stat search over this data
+        searchF = pyfstat.GridSearch(
+            label="grid_search",
+            outdir=self.outdir,
+            sftfilepattern=data_with_line,
+            F0s=self.F0s,
+            F1s=[self.Writer.F1],
+            F2s=[self.Writer.F2],
+            Alphas=[self.Writer.Alpha],
+            Deltas=[self.Writer.Delta],
+            tref=self.tref,
+            BSGL=False,
+        )
+        searchF.run()
+        self.assertTrue(os.path.isfile(searchF.out_file))
+        max2F_point_searchF = searchF.get_max_twoF()
+        self.assertTrue(np.all(max2F_point_searchF["twoF"] >= searchF.data["twoF"]))
+        # also run a BSGL search over the same data
+        searchBSGL = pyfstat.GridSearch(
+            label="grid_search",
+            outdir=self.outdir,
+            sftfilepattern=data_with_line,
+            F0s=self.F0s,
+            F1s=[self.Writer.F1],
+            F2s=[self.Writer.F2],
+            Alphas=[self.Writer.Alpha],
+            Deltas=[self.Writer.Delta],
+            tref=self.tref,
+            BSGL=True,
+        )
+        searchBSGL.run()
+        self.assertTrue(os.path.isfile(searchBSGL.out_file))
+        max2F_point_searchBSGL = searchBSGL.get_max_twoF()
+        self.assertTrue(
+            np.all(max2F_point_searchBSGL["twoF"] >= searchBSGL.data["twoF"])
+        )
+        # Since we search the same grids and store all output,
+        # the twoF from both searches should be the same.
+        self.assertTrue(max2F_point_searchBSGL["twoF"] == max2F_point_searchF["twoF"])
+        maxBSGL_point = searchBSGL.get_max_det_stat()
+        self.assertTrue(
+            np.all(maxBSGL_point["log10BSGL"] >= searchBSGL.data["log10BSGL"])
+        )
+        # The BSGL search should produce a lower max2F value than the F search.
+        self.assertTrue(maxBSGL_point["twoF"] < max2F_point_searchF["twoF"])
+        # But the maxBSGL_point should be the true multi-IFO signal
+        # while max2F_point_searchF should have fallen for the single-IFO line.
+        self.assertTrue(
+            np.abs(maxBSGL_point["F0"] - self.F0)
+            < np.abs(max2F_point_searchF["F0"] - self.F0)
+        )
+
 
 class TestTransientGridSearch(BaseForTestsWithData):
     label = "TestTransientGridSearch"
