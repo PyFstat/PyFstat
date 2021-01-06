@@ -2979,20 +2979,28 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         gen_tex_table=True,
     ):
         """
+        Initialize the setup of the follow-up run computing the required quantities fro, NstarMax
+        and Nsegs0.
+
+        Parameters
+        ----------
         NstarMax, Nsegs0: int
             Required parameters to create a new follow-up setup.
             See `pyfstat.optimal_setup_functions.get_optimal_setup`.
-
         run_setup: optional
             If None, a new setup will be created from NstarMax and Nsegs0.
             Use `MCMCFollowUpSearch.read_setup_input_file` to read a previous
             setup file.
-
         log_table: bool
             Log follow-up setup using `logging.info` as a table.
         gen_tex_table: bool
             Dump follow-up setup into a text file as a tex table.
             File is constructed as `os.path.join(self.outdir, self.label + "_run_setup.tex")`.
+
+        Returns
+        -------
+        run_setup: list
+           List containing the setup of the follow-up run.
         """
         if run_setup is None and Nsegs0 is None:
             raise ValueError(
