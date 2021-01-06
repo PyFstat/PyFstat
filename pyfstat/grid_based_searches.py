@@ -119,11 +119,12 @@ class GridSearch(BaseSearchClass):
         self.set_out_file()
         self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         self.output_keys = self.search_keys.copy()
+        self.output_keys.append("twoF")
         if self.BSGL:
             self.detstat = "log10BSGL"
+            self.output_keys.append(self.detstat)
         else:
             self.detstat = "twoF"
-        self.output_keys.append(self.detstat)
         for k in self.search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
         self.output_file_header = self.get_output_file_header()
@@ -381,8 +382,11 @@ class GridSearch(BaseSearchClass):
         for n, vals in enumerate(
             tqdm(iterable, total=getattr(self, "total_iterations", None))
         ):
+            thisCand = list(vals)
             detstat = self.search.get_det_stat(*vals)
-            thisCand = list(vals) + [detstat]
+            if self.detstat != "twoF":
+                thisCand.append(self.search.twoF)
+            thisCand.append(detstat)
             for k, key in enumerate(self.output_keys):
                 data[key][n] = thisCand[k]
 
@@ -395,7 +399,9 @@ class GridSearch(BaseSearchClass):
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
         fmt_dict = helper_functions.get_doppler_params_output_format(self.output_keys)
-        fmt_dict[self.detstat] = "%.9g"
+        fmt_dict["twoF"] = "%.9g"
+        if self.BSGL:
+            fmt_dict["log10BSGL"] = "%.9g"
         return fmt_dict
 
     def _get_savetxt_fmt_list(self):
@@ -890,11 +896,12 @@ class TransientGridSearch(GridSearch):
         self.set_out_file()
         self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         self.output_keys = self.search_keys.copy()
+        self.output_keys.append("twoF")
         if self.BSGL:
             self.detstat = "log10BSGL"
+            self.output_keys.append(self.detstat)
         else:
             self.detstat = "twoF"
-        self.output_keys.append(self.detstat)
         # for consistency below, t0/tau must come after detstat
         # they are not included in self.search_keys because the main Fstat
         # code does not loop over them
@@ -989,11 +996,14 @@ class TransientGridSearch(GridSearch):
             )
         )
         for n, vals in enumerate(tqdm(self.input_data)):
+            thisCand = list(vals)
             detstat = self.search.get_det_stat(*vals)
             windowRange = getattr(self.search, "windowRange", None)
             FstatMap = getattr(self.search, "FstatMap", None)
             self.timingFstatMap += getattr(self.search, "timingFstatMap", 0.0)
-            thisCand = list(vals) + [detstat]
+            if self.detstat != "twoF":
+                thisCand.append(self.search.twoF)
+            thisCand.append(detstat)
             if getattr(self, "transientWindowType", None):
                 if self.tCWFstatMapVersion == "lal":
                     F_mn = FstatMap.F_mn.data
@@ -1067,7 +1077,9 @@ class TransientGridSearch(GridSearch):
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
         fmt_dict = helper_functions.get_doppler_params_output_format(self.output_keys)
-        fmt_dict[self.detstat] = "%.9g"
+        fmt_dict["twoF"] = "%.9g"
+        if self.BSGL:
+            fmt_dict["log10BSGL"] = "%.9g"
         fmt_dict["t0"] = "%d"
         fmt_dict["tau"] = "%d"
         return fmt_dict
