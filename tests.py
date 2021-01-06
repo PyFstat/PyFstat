@@ -1593,6 +1593,7 @@ class TestGridSearch(BaseForTestsWithData):
     F0s = [29.999, 30.001, 1e-4]
     F1s = [-1e-10, 0, 1e-11]
     Band = 0.5
+    BSGL = False
 
     def test_grid_search(self):
         search = pyfstat.GridSearch(
@@ -1605,6 +1606,7 @@ class TestGridSearch(BaseForTestsWithData):
             Alphas=[self.Writer.Alpha],
             Deltas=[self.Writer.Delta],
             tref=self.tref,
+            BSGL=self.BSGL,
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
@@ -1638,7 +1640,7 @@ class TestGridSearch(BaseForTestsWithData):
         cl_CFSv2.append("--FreqBand {}".format(self.F0s[1] - self.F0s[0]))
         cl_CFSv2.append("--dFreq {}".format(self.F0s[2]))
         cl_CFSv2.append("--f1dot {} --f1dotBand 0".format(self.F1))
-        cl_CFSv2.append("--DataFiles " + self.Writer.sftfilepath)
+        cl_CFSv2.append("--DataFiles '{}'".format(self.Writer.sftfilepath))
         cl_CFSv2.append("--refTime {}".format(self.tref))
         earth_ephem, sun_ephem = pyfstat.helper_functions.get_ephemeris_files()
         if earth_ephem is not None:
@@ -1678,6 +1680,7 @@ class TestGridSearch(BaseForTestsWithData):
             Deltas=[self.Writer.Delta],
             tref=self.tref,
             nsegs=2,
+            BSGL=self.BSGL,
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
@@ -1694,9 +1697,16 @@ class TestGridSearch(BaseForTestsWithData):
             Deltas=[self.Writer.Delta],
             tref=self.tref,
             tglitchs=[self.tref],
+            # BSGL=self.BSGL,  # not supported by this class
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
+
+
+class TestGridSearchBSGL(TestGridSearch):
+    label = "TestGridSearchBSGL"
+    detectors = "H1,L1"
+    BSGL = True
 
 
 class TestTransientGridSearch(BaseForTestsWithData):
