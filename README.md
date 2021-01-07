@@ -2,7 +2,7 @@
 
 This is a python package providing an interface to perform F-statistic based
 continuous gravitational wave (CW) searches,
-built on top of the [LALSuite](https://doi.org/10.7935/GT1W-FZ16) library.
+built on top of the [LALSuite library](https://doi.org/10.7935/GT1W-FZ16).
 
 Getting started:
 * This README provides information on
@@ -71,7 +71,7 @@ If getting PyFstat from conda-forge, it already includes the required ephemeride
 PyPi releases are available from https://pypi.org/project/PyFstat/.
 
 Note that the PyFstat installation will fail at the
-[LALSuite](https://pypi.org/project/lalsuite/) dependency stage
+LALSuite dependency stage
 if your `pip` is too old (e.g. 18.1); to be on the safe side, before starting do
 ```
 pip install --upgrade pip
@@ -181,7 +181,7 @@ For a general introduction to installing modules, see
   as these checks are required to pass by the online integration pipeline.
 * Some optional plotting methods depend on the additional package
   [chainconsumer](https://github.com/Samreay/ChainConsumer)
-  and some of the [examples](./examples) require this to run.
+  and some of the [example scripts](./examples) require this to run.
   For `pip` users, this is most conveniently installed by
 ```
 pip install chainconsumer
@@ -283,8 +283,14 @@ Other contributors:
 ## Citing this work
 
 If you use `PyFstat` in a publication we would appreciate if you cite both a DOI for the software itself (see below)
-and the original paper introducing the code: Ashton&Prix 2018 [[inspire](https://inspirehep.net/literature/1655200)] [[ADS](https://ui.adsabs.harvard.edu/abs/2018PhRvD..97j3020A/)].
-If you use the transient module, please also cite: Keitel&Ashton 2018 [[inspire](https://inspirehep.net/literature/1673205)] [[ADS](https://ui.adsabs.harvard.edu/abs/2018CQGra..35t5003K/)].
+and the original paper introducing the code:
+[Ashton&Prix 2018](https://doi.org/10.1103/PhysRevD.97.103020)
+([inspire:1655200](https://inspirehep.net/literature/1655200)
+/ [ADS:2018PhRvD..97j3020A](https://ui.adsabs.harvard.edu/abs/2018PhRvD..97j3020A/)).
+If you use the transient module, please also cite:
+[Keitel&Ashton 2018](https://doi.org/10.1088/1361-6382/aade34)
+([inspire:1673205](https://inspirehep.net/literature/1673205)
+/ [ADS:2018CQGra..35t5003K](https://ui.adsabs.harvard.edu/abs/2018CQGra..35t5003K/)).
 
 If you'd like to cite the `PyFstat` package in general,
 or versions from 1.5.x upwards,
@@ -313,7 +319,10 @@ the DOIs for those versions can be found from the sidebar at
 [this older Zenodo record](https://doi.org/10.5281/zenodo.1243930)
 and please amend the BibTeX entry accordingly.
 
-PyFstat makes generous use of functionality from the [LALSuite](https://doi.org/10.7935/GT1W-FZ16) library
+PyFstat makes generous use of functionality from the LALSuite library
 and it will usually be appropriate to also cite that project
-(see [here](https://git.ligo.org/lscsoft/lalsuite/#acknowledgment) for a recommended bibtex entry)
-and also [Wette 2020](https://doi.org/10.1016/j.softx.2020.100634) ([inspire](https://inspirehep.net/literature/1837108) / [ADS](https://ui.adsabs.harvard.edu/abs/2020SoftX..1200634W/abstract)) for the C-to-python [SWIG](http://www.swig.org) bindings.
+(see [this recommended bibtex entry](https://git.ligo.org/lscsoft/lalsuite/#acknowledgment))
+and also [Wette 2020](https://doi.org/10.1016/j.softx.2020.100634)
+([inspire:1837108](https://inspirehep.net/literature/1837108)
+/ [ADS:2020SoftX..1200634W](https://ui.adsabs.harvard.edu/abs/2020SoftX..1200634W/))
+for the C-to-python [SWIG](http://www.swig.org) bindings.
