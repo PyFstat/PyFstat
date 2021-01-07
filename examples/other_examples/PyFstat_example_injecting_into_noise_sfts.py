@@ -1,6 +1,6 @@
 """
 Software injection into pre-existing data files
-===================================
+===============================================
 
 Add a software injection into a set of SFTs.
 
