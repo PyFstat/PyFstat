@@ -1,9 +1,11 @@
-## 1.10.0 [tbd]
+## 1.10.0 [07/01/2021]
 
  - documentation now available from https://pyfstat.readthedocs.io
+   - and examples can be run on https://mybinder.org/v2/gh/PyFstat/PyFstat/master
    - still being improved
+ - added `gridcorner` module for plotting GridSearch results
  - removed the specialist grid-based classes which were deprecated in 1.9.0
- - big internal changes to search classes
+ - internal changes to search classes
    - should ideally not change anything for standard CW use cases
    - but fix some corner cases and make for more robustness
    - made tstart,tend optional in `get_fullycoherent_twoF()`
@@ -27,6 +29,7 @@
    - `twoFDMoffThreshold()`
  - new example `other_examples/PyFstat_example_spectrogram.py`
  - some improvements to tests and examples
+ - KNOWN ISSUES: implementation of line-robust statistic BSGL will need to be overhauled
 
 ## 1.9.0 [30/10/2020]
 
