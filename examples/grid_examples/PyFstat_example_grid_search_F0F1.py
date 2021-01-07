@@ -1,5 +1,5 @@
 """
-Targeted grid search: Linear spindown
+Directed grid search: Linear spindown
 ==========================================
 
 Search for CW signal including one spindown parameter

@@ -1,11 +1,12 @@
 """
-Software injections using real data
+Software injection into pre-existing data files
 ===================================
 
 Add a software injection into a set of SFTs.
 
 In this case, the set of SFTs is generated using Makefakedata_v5,
-but the same procedure can be applied to any other set of SFTs.
+but the same procedure can be applied to any other set of SFTs
+(including real detector data).
 """
 
 import os

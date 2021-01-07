@@ -1,5 +1,5 @@
 """
-Targeted grid search: Quadratic spindown
+Directed grid search: Quadratic spindown
 ==========================================
 
 Search for CW signal including two spindown parameters

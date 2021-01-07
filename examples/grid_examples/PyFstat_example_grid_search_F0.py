@@ -1,5 +1,5 @@
 """
-Targeted grid search: Monochromatic source
+Directed grid search: Monochromatic source
 ==========================================
 
 Search for a monochromatic (no spindown) signal using
