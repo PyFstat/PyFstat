@@ -3196,12 +3196,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
 
 class MCMCTransientSearch(MCMCSearch):
-    """MCMC search for a transient signal using ComputeFstat
-
-    See parent MCMCSearch for a list of all additional parameters, here we list
-    only the additional init parameters of this class.
-
-    """
+    """MCMC search for a transient signal using ComputeFstat"""
 
     symbol_dictionary = dict(
         F0=r"$f$",
@@ -3212,6 +3207,11 @@ class MCMCTransientSearch(MCMCSearch):
         transient_tstart=r"$t_\mathrm{start}$",
         transient_duration=r"$\Delta T$",
     )
+    """
+    symbol_dictionary: dict
+        Key, val pairs of the parameters (`F0`, `F1`, ...), to LaTeX math
+        symbols for plots
+    """
     unit_dictionary = dict(
         F0=r"Hz",
         F1=r"Hz/s",
@@ -3221,7 +3221,11 @@ class MCMCTransientSearch(MCMCSearch):
         transient_tstart=r"s",
         transient_duration=r"s",
     )
-
+    """
+    unit_dictionary: dict
+        Key, val pairs of the parameters (`F0`, `F1`, ..., including glitch parameters),
+        and the units (`Hz`, `Hz/s`, ...).
+    """
     transform_dictionary = dict(
         transient_duration={
             "multiplier": 1 / 86400.0,
@@ -3235,6 +3239,12 @@ class MCMCTransientSearch(MCMCSearch):
             "label": "Transient start-time \n days after minStartTime",
         },
     )
+    """
+    transform_dictionary: dict
+        Key, val pairs of the parameters (`F0`, `F1`, ...), where the key is
+        itself a dictionary which can item `multiplier`, `subtractor`, or
+        `unit` by which to transform by and update the units.
+    """
 
     def _initiate_search_object(self):
         logging.info("Setting up search object")
