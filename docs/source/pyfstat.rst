@@ -1,6 +1,11 @@
 pyfstat package
 ===============
 
+These pages document the full API and set of classes provided by PyFstat.
+
+See :doc:`here <readme>` for installation instructions and
+other general information.
+
 Submodules
 ----------
 
