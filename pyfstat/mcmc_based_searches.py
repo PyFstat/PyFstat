@@ -51,7 +51,6 @@ class MCMCSearch(BaseSearchClass):
         argp=r"argp",
     )
     """
-    symbol_dictionary
         Key, val pairs of the parameters (`F0`, `F1`, ...), to LaTeX math
         symbols for plots
     """
@@ -68,13 +67,11 @@ class MCMCSearch(BaseSearchClass):
         argp="",
     )
     """
-    unit_dictionary
         Key, val pairs of the parameters (i.e. `F0`, `F1`), and the
         units (i.e. `Hz`)
     """
     transform_dictionary = {}
     """
-    transform_dictionary
         Key, val pairs of the parameters (i.e. `F0`, `F1`), where the key is
         itself a dictionary which can item `multiplier`, `subtractor`, or
         `unit` by which to transform by and update the units.
@@ -2197,7 +2194,6 @@ class MCMCGlitchSearch(MCMCSearch):
         Delta=r"$\delta$",
     )
     """
-    symbol_dictionary
         Key, val pairs of the parameters (`F0`, `F1`, ...), to LaTeX math
         symbols for plots
     """
@@ -2207,7 +2203,6 @@ class MCMCGlitchSearch(MCMCSearch):
         tglitch=r"$t_\mathrm{glitch}$",
     )
     """
-    glitch_symbol_dictionary
         Key, val pairs of glitch parameters (`dF0`, `dF1`, `tglitch`), to LaTeX math
         symbols for plots. This dictionary included within `self.symbol_dictionary`.
     """
@@ -2223,7 +2218,6 @@ class MCMCGlitchSearch(MCMCSearch):
         tglitch=r"s",
     )
     """
-    unit_dictionary
         Key, val pairs of the parameters (`F0`, `F1`, ..., including glitch parameters),
         and the units (`Hz`, `Hz/s`, ...).
     """
@@ -2236,7 +2230,6 @@ class MCMCGlitchSearch(MCMCSearch):
         }
     )
     """
-    transform_dictionary
         Key, val pairs of the parameters (`F0`, `F1`, ...), where the key is
         itself a dictionary which can item `multiplier`, `subtractor`, or
         `unit` by which to transform by and update the units.
@@ -3208,7 +3201,6 @@ class MCMCTransientSearch(MCMCSearch):
         transient_duration=r"$\Delta T$",
     )
     """
-    symbol_dictionary
         Key, val pairs of the parameters (`F0`, `F1`, ...), to LaTeX math
         symbols for plots
     """
@@ -3222,7 +3214,6 @@ class MCMCTransientSearch(MCMCSearch):
         transient_duration=r"s",
     )
     """
-    unit_dictionary
         Key, val pairs of the parameters (`F0`, `F1`, ..., including glitch parameters),
         and the units (`Hz`, `Hz/s`, ...).
     """
@@ -3240,7 +3231,6 @@ class MCMCTransientSearch(MCMCSearch):
         },
     )
     """
-    transform_dictionary
         Key, val pairs of the parameters (`F0`, `F1`, ...), where the key is
         itself a dictionary which can item `multiplier`, `subtractor`, or
         `unit` by which to transform by and update the units.
