@@ -24,11 +24,11 @@ meaning for example that you'll need to use the jupyter file browser to find
 the plots which are saved to files instead of being directly displayed.
 
 .. toctree::
-    binary_examples/index
-    followup_examples/index
-    glitch_examples/index
     grid_examples/index
     mcmc_examples/index
     mcmc_vs_grid_simple_example/index
-    other_examples/index
+    followup_examples/index
+    binary_examples/index
+    glitch_examples/index
     transient_examples/index
+    other_examples/index
