@@ -2,8 +2,8 @@
    sphinx-apidoc -f -o source ../ ../versioneer.py ../setup.py
    (everything after the first "../" are exclude patterns)
 
-PyFstat
-=======
+PyFstat module documentation
+============================
 
 .. toctree::
    :maxdepth: 4
