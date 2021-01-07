@@ -197,6 +197,12 @@ class GridSearch(BaseSearchClass):
             return np.array(x)
 
     def _get_input_data_array(self):
+        """Set up an input data array, i.e. the product array over search dimensions.
+
+        This is a numpy structured array with named columns
+        and explicit dtype (cannot have named columns without that).
+        (Will also ensure safety when reading/saving data from/to .txt files.)
+        """
         logging.info("Generating input data array")
         coord_arrays = []
         for sl in self.search_keys:
