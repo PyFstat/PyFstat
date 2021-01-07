@@ -11,9 +11,10 @@ import matplotlib.pyplot as plt
 
 import pyfstat
 
-plt.rcParams["font.family"] = "serif"
-plt.rcParams["font.size"] = 18
-plt.rcParams["text.usetex"] = True
+# not github-action compatible
+# plt.rcParams["font.family"] = "serif"
+# plt.rcParams["font.size"] = 18
+# plt.rcParams["text.usetex"] = True
 
 label = "PyFstat_example_spectrogram"
 outdir = os.path.join("PyFstat_example_data", label)
