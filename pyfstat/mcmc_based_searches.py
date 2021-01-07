@@ -52,7 +52,7 @@ class MCMCSearch(BaseSearchClass):
     )
     """
     symbol_dictionary: dict
-        Key, val pairs of the parameters (i.e. `F0`, `F1`), to Latex math
+        Key, val pairs of the parameters (`F0`, `F1`, ...), to LaTeX math
         symbols for plots
     """
     unit_dictionary = dict(
@@ -2196,11 +2196,21 @@ class MCMCGlitchSearch(MCMCSearch):
         Alpha=r"$\alpha$",
         Delta=r"$\delta$",
     )
+    """
+    symbol_dictionary: dict
+        Key, val pairs of the parameters (`F0`, `F1`, ...), to LaTeX math
+        symbols for plots
+    """
     glitch_symbol_dictionary = dict(
         delta_F0=r"$\delta f$",
         delta_F1=r"$\delta \dot{f}$",
         tglitch=r"$t_\mathrm{glitch}$",
     )
+    """
+    glitch_symbol_dictionary: dict
+        Key, val pairs of glitch parameters (`dF0`, `dF1`, `tglitch`), to LaTeX math
+        symbols for plots. This dictionary included within `self.symbol_dictionary`.
+    """
     symbol_dictionary.update(glitch_symbol_dictionary)
     unit_dictionary = dict(
         F0=r"Hz",
@@ -2212,6 +2222,11 @@ class MCMCGlitchSearch(MCMCSearch):
         delta_F1=r"Hz/s",
         tglitch=r"s",
     )
+    """
+    unit_dictionary: dict
+        Key, val pairs of the parameters (`F0`, `F1`, ..., including glitch parameters),
+        and the units (`Hz`, `Hz/s`, ...).
+    """
     transform_dictionary = dict(
         tglitch={
             "multiplier": 1 / 86400.0,
@@ -2220,6 +2235,12 @@ class MCMCGlitchSearch(MCMCSearch):
             "label": r"$t^{g}_0$ \n [d]",
         }
     )
+    """
+    transform_dictionary: dict
+        Key, val pairs of the parameters (`F0`, `F1`, ...), where the key is
+        itself a dictionary which can item `multiplier`, `subtractor`, or
+        `unit` by which to transform by and update the units.
+    """
 
     @helper_functions.initializer
     def __init__(
