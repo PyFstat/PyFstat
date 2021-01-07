@@ -1,5 +1,14 @@
-""" Searches using MCMC-based methods """
+"""PyFstat search & follow-up classes using MCMC-based methods
 
+The general approach is described in
+Ashton & Prix (PRD 97, 103020, 2018):
+https://arxiv.org/abs/1802.05450
+and we use the `ptemcee` sampler
+described in Vousden et al. (MNRAS 455, 1919-1937, 2016):
+https://arxiv.org/abs/1501.05823
+and based on Foreman-Mackey et al. (PASP 125, 306, 2013):
+https://arxiv.org/abs/1202.3665
+"""
 
 import sys
 import os
@@ -22,86 +31,11 @@ import pyfstat.helper_functions as helper_functions
 
 
 class MCMCSearch(BaseSearchClass):
-    """MCMC search using ComputeFstat
+    """
+    MCMC search using ComputeFstat.
 
-    Parameters
-    ----------
-    theta_prior: dict
-        Dictionary of priors and fixed values for the search parameters.
-        For each parameters (key of the dict), if it is to be held fixed
-        the value should be the constant float, if it is be searched, the
-        value should be a dictionary of the prior.
-    tref, minStartTime, maxStartTime: int
-        GPS seconds of the reference time, start time and end time. While tref
-        is requirede, minStartTime and maxStartTime default to None in which
-        case all available data is used.
-    label, outdir: str
-        A label and output directory (optional, defaults is `'data'`) to
-        name files
-    sftfilepattern: str, optional
-        Pattern to match SFTs using wildcards (*?) and ranges [0-9];
-        mutiple patterns can be given separated by colons.
-    detectors: str, optional
-        Two character reference to the detectors to use, specify None for no
-        contraint and comma separate for multiple references.
-    nsteps: list (2,), optional
-        Number of burn-in and production steps to take, [nburn, nprod]. See
-        `pyfstat.MCMCSearch.setup_initialisation()` for details on adding
-        initialisation steps.
-    nwalkers, ntemps: int, optional
-        The number of walkers and temperates to use in the parallel
-        tempered PTSampler.
-    log10beta_min float < 0, optional
-        The  log_10(beta) value, if given the set of betas passed to PTSampler
-        are generated from `np.logspace(0, log10beta_min, ntemps)` (given
-        in descending order to ptemcee).
-    theta_initial: dict, array, optional
-        A dictionary of distribution about which to distribute the
-        initial walkers about
-    rhohatmax: float, optional
-        Upper bound for the SNR scale parameter (required to normalise the
-        Bayes factor) - this needs to be carefully set when using the
-        evidence.
-    binary: bool, optional
-        If true, search over binary parameters
-    BSGL: bool, optional
-        If true, use the BSGL statistic
-    SSBPrec: int, optional
-        SSBPrec (SSB precision) to use when calling ComputeFstat
-    RngMedWindow: int, optional
-        Running-Median window size (number of bins) for ComputeFstat
-    minCoverFreq, maxCoverFreq: float, optional
-        Minimum and maximum instantaneous frequency which will be covered
-        over the SFT time span as passed to CreateFstatInput
-    injectSources: dict, optional
-        If given, inject these properties into the SFT files before running
-        the search
-    assumeSqrtSX: float or list or str
-        Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}.
-        See `core.ComputeFstat`.
-    transientWindowType: str
-        If 'rect' or 'exp',
-        compute atoms so that a transient (t0,tau) map can later be computed.
-        ('none' instead of None explicitly calls the transient-window function,
-        but with the full range, for debugging)
-        Currently only supported for nsegs=1.
-    tCWFstatMapVersion: str
-        Choose between standard 'lal' implementation,
-        'pycuda' for gpu, and some others for devel/debug.
-
-    Attributes
-    ----------
-    symbol_dictionary: dict
-        Key, val pairs of the parameters (i.e. `F0`, `F1`), to Latex math
-        symbols for plots
-    unit_dictionary: dict
-        Key, val pairs of the parameters (i.e. `F0`, `F1`), and the
-        units (i.e. `Hz`)
-    transform_dictionary: dict
-        Key, val pairs of the parameters (i.e. `F0`, `F1`), where the key is
-        itself a dictionary which can item `multiplier`, `subtractor`, or
-        `unit` by which to transform by and update the units.
-
+    Evaluates the coherent F-statistic across a parameter space region
+    corresponding to an isolated/binary-modulated CW signal.
     """
 
     symbol_dictionary = dict(
@@ -116,6 +50,10 @@ class MCMCSearch(BaseSearchClass):
         tp=r"tp",
         argp=r"argp",
     )
+    """
+        Key, val pairs of the parameters (`F0`, `F1`, ...), to LaTeX math
+        symbols for plots
+    """
     unit_dictionary = dict(
         F0=r"Hz",
         F1=r"Hz/s",
@@ -128,7 +66,16 @@ class MCMCSearch(BaseSearchClass):
         tp="",
         argp="",
     )
+    """
+        Key, val pairs of the parameters (i.e. `F0`, `F1`), and the
+        units (i.e. `Hz`)
+    """
     transform_dictionary = {}
+    """
+        Key, val pairs of the parameters (i.e. `F0`, `F1`), where the key is
+        itself a dictionary which can item `multiplier`, `subtractor`, or
+        `unit` by which to transform by and update the units.
+    """
 
     def __init__(
         self,
@@ -159,7 +106,73 @@ class MCMCSearch(BaseSearchClass):
         earth_ephem=None,
         sun_ephem=None,
     ):
+        """
+        Parameters
+        ----------
+        theta_prior: dict
+            Dictionary of priors and fixed values for the search parameters.
+            For each parameters (key of the dict), if it is to be held fixed
+            the value should be the constant float, if it is be searched, the
+            value should be a dictionary of the prior.
+        tref, minStartTime, maxStartTime: int
+            GPS seconds of the reference time, start time and end time. While tref
+            is requirede, minStartTime and maxStartTime default to None in which
+            case all available data is used.
+        label, outdir: str
+            A label and output directory (optional, defaults is `'data'`) to
+            name files
+        sftfilepattern: str, optional
+            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            mutiple patterns can be given separated by colons.
+        detectors: str, optional
+            Two character reference to the detectors to use, specify None for no
+            contraint and comma separated strings for multiple references.
+        nsteps: list (2,), optional
+            Number of burn-in and production steps to take, [nburn, nprod]. See
+            `pyfstat.MCMCSearch.setup_initialisation()` for details on adding
+            initialisation steps.
+        nwalkers, ntemps: int, optional
+            The number of walkers and temperates to use in the parallel
+            tempered PTSampler.
+        log10beta_min: float < 0, optional
+            The log_10(beta) value. If given, the set of betas passed to PTSampler
+            are generated from `np.logspace(0, log10beta_min, ntemps)` (given
+            in descending order to ptemcee).
+        theta_initial: dict, array, optional
+            A dictionary of distribution about which to distribute the
+            initial walkers about.
+        rhohatmax: float, optional
+            Upper bound for the SNR scale parameter (required to normalise the
+            Bayes factor) - this needs to be carefully set when using the
+            evidence.
+        binary: bool, optional
+            If true, search over binary orbital parameters.
+        BSGL: bool, optional
+            If true, use the BSGL statistic.
+        SSBPrec: int, optional
+            SSBPrec (SSB precision) to use when calling ComputeFstat. See `core.ComputeFstat`.
+        RngMedWindow: int, optional
+            Running-Median window size (number of bins) for ComputeFstat. See `core.ComputeFstat`.
+        minCoverFreq, maxCoverFreq: float, optional
+            Minimum and maximum instantaneous frequency which will be covered
+            over the SFT time span as passed to CreateFstatInput. See `core.ComputeFstat`.
+        injectSources: dict, optional
+            If given, inject these properties into the SFT files before running
+            the search. See `core.ComputeFstat`.
+        assumeSqrtSX: float or list or str
+            Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}.
+            See `core.ComputeFstat`.
+        transientWindowType: str
+            If 'rect' or 'exp',
+            compute atoms so that a transient (t0,tau) map can later be computed.
+            ('none' instead of None explicitly calls the transient-window function,
+            but with the full range, for debugging). See `core.ComputeFstat`.
+            Currently only supported for nsegs=1.
+        tCWFstatMapVersion: str
+            Choose between standard 'lal' implementation,
+            'pycuda' for gpu, and some others for devel/debug.
 
+        """
         self._set_init_params_dict(locals())
         self.theta_prior = theta_prior
         self.tref = tref
@@ -276,14 +289,14 @@ class MCMCSearch(BaseSearchClass):
         if self.maxStartTime is None:
             self.maxStartTime = self.search.maxStartTime
 
-    def logp(self, theta_vals, theta_prior, theta_keys, search):
+    def _logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [
             self._generic_lnprior(**theta_prior[key])(p)
             for p, key in zip(theta_vals, theta_keys)
         ]
         return np.sum(H)
 
-    def logl(self, theta, search):
+    def _logl(self, theta, search):
         in_theta = copy.copy(self.fixed_theta)
         for j, theta_i in enumerate(self.theta_idxs):
             in_theta[theta_i] = theta[j]
@@ -332,11 +345,11 @@ class MCMCSearch(BaseSearchClass):
     def _evaluate_logpost(self, p0vec):
         init_logp = np.array(
             [
-                self.logp(p, self.theta_prior, self.theta_keys, self.search)
+                self._logp(p, self.theta_prior, self.theta_keys, self.search)
                 for p in p0vec
             ]
         )
-        init_logl = np.array([self.logl(p, self.search) for p in p0vec])
+        init_logl = np.array([self._logl(p, self.search) for p in p0vec])
         return init_logl + init_logp
 
     def _check_initial_points(self, p0):
@@ -383,11 +396,13 @@ class MCMCSearch(BaseSearchClass):
         Parameters
         ----------
         nburn0: int
-            Number of initialisation steps to take
+            Number of initialisation steps to take.
         scatter_val: float
             Relative number to scatter walkers around the maximum likelihood
-            position after the initialisation step
-
+            position after the initialisation step. If the maximum likelihood
+            point is located at `p`, the new walkers are randomly drawn from a
+            multivariate gaussian distribution centered at `p` with standard
+            deviation `diag(scatter_val * p)`.
         """
 
         logging.info(
@@ -397,114 +412,6 @@ class MCMCSearch(BaseSearchClass):
         )
         self.nsteps = [nburn0] + self.nsteps
         self.scatter_val = scatter_val
-
-    #    def setup_burnin_convergence_testing(
-    #            self, n=10, test_type='autocorr', windowed=False, **kwargs):
-    #        """ Set up convergence testing during the MCMC simulation
-    #
-    #        Parameters
-    #        ----------
-    #        n: int
-    #            Number of steps after which to test convergence
-    #        test_type: str ['autocorr', 'GR']
-    #            If 'autocorr' use the exponential autocorrelation time (kwargs
-    #            passed to `get_autocorr_convergence`). If 'GR' use the Gelman-Rubin
-    #            statistic (kwargs passed to `get_GR_convergence`)
-    #        windowed: bool
-    #            If True, only calculate the convergence test in a window of length
-    #            `n`
-    #        **kwargs:
-    #            Passed to either `_test_autocorr_convergence()` or
-    #            `_test_GR_convergence()` depending on `test_type`.
-    #
-    #        """
-    #        logging.info('Setting up convergence testing')
-    #        self.convergence_n = n
-    #        self.convergence_windowed = windowed
-    #        self.convergence_test_type = test_type
-    #        self.convergence_kwargs = kwargs
-    #        self.convergence_diagnostic = []
-    #        self.convergence_diagnosticx = []
-    #        if test_type in ['autocorr']:
-    #            self._get_convergence_test = self._test_autocorr_convergence
-    #        elif test_type in ['GR']:
-    #            self._get_convergence_test = self._test_GR_convergence
-    #        else:
-    #            raise ValueError('test_type {} not understood'.format(test_type))
-    #
-    #
-    #    def _test_autocorr_convergence(self, i, test=True, n_cut=5):
-    #        try:
-    #            acors = np.zeros((self.ntemps, self.ndim))
-    #            for temp in range(self.ntemps):
-    #                if self.convergence_windowed:
-    #                    j = i-self.convergence_n
-    #                else:
-    #                    j = 0
-    #                x = np.mean(self.sampler.chain[temp, :, j:i, :], axis=0)
-    #                acors[temp, :] = emcee.autocorr.exponential_time(x)
-    #            c = np.max(acors, axis=0)
-    #        except emcee.autocorr.AutocorrError:
-    #            logging.info('Failed to calculate exponential autocorrelation')
-    #            c = np.zeros(self.ndim) + np.nan
-    #        except AttributeError:
-    #            logging.info('Unable to calculate exponential autocorrelation')
-    #            c = np.zeros(self.ndim) + np.nan
-    #
-    #        self.convergence_diagnosticx.append(i - self.convergence_n/2.)
-    #        self.convergence_diagnostic.append(list(c))
-    #
-    #        if test:
-    #            return i > n_cut * np.max(c)
-    #
-    #    def _test_GR_convergence(self, i, test=True, R=1.1):
-    #        if self.convergence_windowed:
-    #            s = self.sampler.chain[0, :, i-self.convergence_n+1:i+1, :]
-    #        else:
-    #            s = self.sampler.chain[0, :, :i+1, :]
-    #        N = float(self.convergence_n)
-    #        M = float(self.nwalkers)
-    #        W = np.mean(np.var(s, axis=1), axis=0)
-    #        per_walker_mean = np.mean(s, axis=1)
-    #        mean = np.mean(per_walker_mean, axis=0)
-    #        B = N / (M-1.) * np.sum((per_walker_mean-mean)**2, axis=0)
-    #        Vhat = (N-1)/N * W + (M+1)/(M*N) * B
-    #        c = np.sqrt(Vhat/W)
-    #        self.convergence_diagnostic.append(c)
-    #        self.convergence_diagnosticx.append(i - self.convergence_n/2.)
-    #
-    #        if test and np.max(c) < R:
-    #            return True
-    #        else:
-    #            return False
-    #
-    #    def _test_convergence(self, i, **kwargs):
-    #        if np.mod(i+1, self.convergence_n) == 0:
-    #            return self._get_convergence_test(i, self.sampler, **kwargs)
-    #        else:
-    #            return False
-    #
-    #    def _run_sampler_with_conv_test(self, p0, nprod=0, nburn=0):
-    #        logging.info('Running {} burn-in steps with convergence testing'
-    #                     .format(nburn))
-    #        iterator = tqdm(self.sampler.sample(p0, iterations=nburn), total=nburn)
-    #        for i, output in enumerate(iterator):
-    #            if self._test_convergence(i, self.sampler, test=True,
-    #                                      **self.convergence_kwargs):
-    #                logging.info(
-    #                    'Converged at {} before max number {} of steps reached'
-    #                    .format(i, nburn))
-    #                self.convergence_idx = i
-    #                break
-    #        iterator.close()
-    #        logging.info('Running {} production steps'.format(nprod))
-    #        j = nburn
-    #        iterator = tqdm(self.sampler.sample(output[0], iterations=nprod),
-    #                        total=nprod)
-    #        for result in iterator:
-    #            self._test_convergence(j, self.sampler, test=False,
-    #                                   **self.convergence_kwargs)
-    #            j += 1
 
     def _run_sampler(self, p0, nprod=0, nburn=0, window=50):
         for result in tqdm(
@@ -589,23 +496,29 @@ class MCMCSearch(BaseSearchClass):
         Parameters
         ----------
         proposal_scale_factor: float
-            The proposal scale factor used by the sampler, see Goodman & Weare
-            (2010). If the acceptance fraction is too low, you can raise it by
-            decreasing the a parameter; and if it is too high, you can reduce
-            it by increasing the a parameter [Foreman-Mackay (2013)].
+            The proposal scale factor `a > 1` used by the sampler.
+            See Goodman & Weare (Comm App Math Comp Sci, Vol 5, No. 1, 2010): 10.2140/camcos.2010.5.65.
+            The bigger the value, the wider the range to draw proposals from.
+            If the acceptance fraction is too low, you can raise it by
+            decreasing the `a` parameter; and if it is too high, you can reduce
+            it by increasing the `a` parameter.
+            See Foreman-Mackay et al. (PASP 125 306, 2013): https://arxiv.org/abs/1202.3665.
         save_pickle: bool
             If true, save a pickle file of the full sampler state.
         export_samples: bool
-            If true, save ASCII samples file to disk.
+            If true, save ASCII samples file to disk. See `MCMCSearch.export_samples_to_disk`.
         save_loudest: bool
-            If true, save a CFSv2 .loudest file to disk.
+            If true, save a CFSv2 .loudest file to disk. See `MCMCSearch.generate_loudest`.
         plot_walkers: bool
             If true, save trace plots of the walkers.
         walker_plot_args:
             Dictionary passed as kwargs to _plot_walkers to control the plotting.
-            Also, if both "fig" and "axes" entries are set,
-            the plot is not saved to disk directly,
-            but .walker_fig and .walker_axes properties are returned.
+            Histogram of sampled detection statistic values can be retrieved setting "plot_det_stat" to `True`.
+            Parameters corresponding to an injected signal can be passed through "injection_parameters"
+            as a dictionary containing the parameters of said signal. All parameters being searched for must
+            be present, otherwise this option is ignored.
+            If both "fig" and "axes" entries are set, the plot is not saved to disk
+            directly, but (fig, axes) are returned.
         window: int
             The minimum number of autocorrelation times needed to trust the
             result when estimating the autocorrelation time (see
@@ -634,8 +547,8 @@ class MCMCSearch(BaseSearchClass):
             ntemps=self.ntemps,
             nwalkers=self.nwalkers,
             dim=self.ndim,
-            logl=self.logl,
-            logp=self.logp,
+            logl=self._logl,
+            logp=self._logp,
             logpargs=(self.theta_prior, self.theta_keys, self.search),
             loglargs=(self.search,),
             betas=self.betas,
@@ -837,31 +750,32 @@ class MCMCSearch(BaseSearchClass):
             If true, plot the prior as a red line. If 'full' then for uniform
             priors plot the full extent of the prior.
         nstds: float
-            The number of standard deviations to plot centered on the mean
+            The number of standard deviations to plot centered on the median.
+            Standard deviation is computed from the samples using `numpy.std`.
         label_offset: float
-            Offset the labels from the plot: useful to precent overlapping the
-            tick labels with the axis labels
+            Offset the labels from the plot: useful to prevent overlapping the
+            tick labels with the axis labels. This option is passed to `ax.[x|y]axis.set_label_coords`.
         dpi: int
-            Passed to plt.savefig
+            Passed to plt.savefig.
         rc_context: dict
             Dictionary of rc values to set while generating the figure (see
-            matplotlib rc for more details)
+            matplotlib rc for more details).
         tglitch_ratio: bool
             If true, and tglitch is a parameter, plot posteriors as the
             fractional time at which the glitch occurs instead of the actual
-            time
+            time.
         fig_and_axes: tuple
-            fig and axes to plot on, the axes must be of the right shape,
+            (fig, axes) tuple to plot on. The axes must be of the right shape,
             namely (ndim, ndim)
         save_fig: bool
-            If true, save the figure, else return the fig, axes
+            If true, save the figure, else return the fig, axes.
         **kwargs:
-            Passed to corner.corner
+            Passed to corner.corner. Use "truths" to plot the true parameters of a signal.
 
         Returns
         -------
         fig, axes:
-            The matplotlib figure and axes, only returned if save_fig = False
+            The matplotlib figure and axes, only returned if save_fig = False.
 
         """
 
@@ -979,15 +893,17 @@ class MCMCSearch(BaseSearchClass):
                 return fig, axes
 
     def plot_chainconsumer(self, save_fig=True, label_offset=0.25, dpi=300, **kwargs):
-        """Generate a corner plot of the posterior using chainconsumer
+        """Generate a corner plot of the posterior using the `chaniconsumer` package.
+
+        `chainconsumer` is an optional dependency of PyFstat. See https://samreay.github.io/ChainConsumer/.
+
+        Parameters are akin to the ones described in MCMCSearch.plot_corner.
+        Only the differing parameters are explicitly described.
 
         Parameters
         ----------
-        dpi: int
-            Passed to plt.savefig
         **kwargs:
-            Passed to chainconsumer.plotter.plot
-
+            Passed to chainconsumer.plotter.plot. Use "truths" to plot the true parameters of a signal.
         """
         try:
             import chainconsumer
@@ -1035,13 +951,6 @@ class MCMCSearch(BaseSearchClass):
         for ax in axes_list:
             ax.set_rasterized(True)
             ax.set_rasterization_zorder(-10)
-
-            # for tick in ax.xaxis.get_major_ticks():
-            #    #tick.label.set_fontsize(8)
-            #    tick.label.set_rotation('horizontal')
-            # for tick in ax.yaxis.get_major_ticks():
-            #    #tick.label.set_fontsize(8)
-            #    tick.label.set_rotation('vertical')
 
             plt.tight_layout(h_pad=0.0, w_pad=0.0)
             fig.subplots_adjust(hspace=0.05, wspace=0.05)
@@ -1151,7 +1060,26 @@ class MCMCSearch(BaseSearchClass):
         fig_and_axes=None,
         save_fig=True,
     ):
-        """ Plot the posterior in the context of the prior """
+        """Plot the prior and posterior probability distributions in the same figure
+
+        Parameters
+        ----------
+        normal_stds: int
+           Bounds of priors in terms of their standard deviation. Only used if
+           `norm`, `halfnorm`, `neghalfnorm` or `lognorm` priors are given, otherwise ignored.
+        injection_parameters: dict
+            Dictionary containing the parameters of a signal. All parameters being searched must be
+            present as dictionary keys, otherwise this option is ignored.
+        fig_and_axes: tuple
+            (fig, axes) tuple to plot on.
+        save_fig: bool
+            If true, save the figure, else return the fig, axes.
+
+        Returns
+        -------
+        (fig, ax): (matplotlib.pyplot.figure, matplotlib.pyplot.axes)
+            If `save_fig` evaluates to `False`, return figure and axes.
+        """
 
         # Check injection parameters first
         missing_keys = set(self.theta_keys) - injection_parameters.keys()
@@ -1619,7 +1547,7 @@ class MCMCSearch(BaseSearchClass):
         p0 = self._generate_scattered_p0(p)
 
         self.search.BSGL = False
-        twoF = self.logl(p, self.search)
+        twoF = self._logl(p, self.search)
         self.search.BSGL = self.BSGL
 
         logging.info(
@@ -1664,7 +1592,13 @@ class MCMCSearch(BaseSearchClass):
             pickle.dump(d, File)
 
     def get_saved_data_dictionary(self):
-        """ Returns dictionary of the data saved in the pickle """
+        """Read the data saved in `self.pickel_path` and return it as a dictionary.
+
+        Returns
+        --------
+        d: dict
+            Dictionary containing the data saved in the pickle `self.pickle_path`.
+        """
         with open(self.pickle_path, "rb") as File:
             d = pickle.load(File)
         return d
@@ -1719,27 +1653,30 @@ class MCMCSearch(BaseSearchClass):
                     logging.info(key)
             return False
 
-    def get_savetxt_fmt_dict(self):
+    def _get_savetxt_fmt_dict(self):
         fmt_dict = helper_functions.get_doppler_params_output_format(self.theta_keys)
         fmt_dict["twoF"] = "%.9g"
         return fmt_dict
 
-    def get_savetxt_fmt_list(self):
+    def _get_savetxt_gmt_list(self):
         """Returns a list of output format specifiers, ordered like the samples
 
-        This is required because the output of get_savetxt_fmt_dict()
+        This is required because the output of _get_savetxt_fmt_dict()
         will depend on the order in which those entries have been coded up.
         """
-        fmt_dict = self.get_savetxt_fmt_dict()
+        fmt_dict = self._get_savetxt_fmt_dict()
         fmt_list = [fmt_dict[key] for key in self.output_keys]
         return fmt_list
 
     def export_samples_to_disk(self):
+        """
+        Export MCMC samples into a text file using `numpy.savetxt`.
+        """
         self.samples_file = os.path.join(self.outdir, self.label + "_samples.dat")
         logging.info("Exporting samples to {}".format(self.samples_file))
         header = "\n".join(self.output_file_header)
         header += "\n" + " ".join(self.output_keys)
-        outfmt = self.get_savetxt_fmt_list()
+        outfmt = self._get_savetxt_gmt_list()
         twoF = np.atleast_2d(self._get_twoF_from_loglikelihood()).T
         samples_out = np.concatenate((self.samples, twoF), axis=1)
         Ncols = np.shape(samples_out)[1]
@@ -1750,7 +1687,7 @@ class MCMCSearch(BaseSearchClass):
                 " do not match."
                 " If your search class uses different"
                 " keys than the base MCMCSearch class,"
-                " override the get_savetxt_fmt_dict"
+                " override the _get_savetxt_fmt_dict"
                 " method.".format(Ncols, len(outfmt))
             )
         np.savetxt(
@@ -1767,13 +1704,20 @@ class MCMCSearch(BaseSearchClass):
         else:
             return (self.lnlikes[idx] - self.likelihoodcoef) * 2
 
-    def get_max_twoF(self, threshold=0.05):
-        """Returns the max likelihood sample and the corresponding 2F value
+    def get_max_twoF(self):
+        """Get the max. likelihood (loudest) sample and the compute
+        its corresponding detection statistic.
 
-        Note: the sample is returned as a dictionary along with an estimate of
-        the standard deviation calculated from the std of all samples with a
-        twoF within `threshold` (relative) to the max twoF
+        The employed detection statistic depends on `self.BSGL`
+        (i.e. 2F if `self.BSGL` evaluates to `False`, log10BSGL otherwise).
 
+        Returns
+        -------
+        d: dict
+            Parameters of the loudest sample.
+
+        maxtwoF: float
+            Detection statistic (2F or log10BSGL) corresponding to the loudest sample.
         """
         if not hasattr(self, "search"):
             raise RuntimeError(
@@ -1794,7 +1738,7 @@ class MCMCSearch(BaseSearchClass):
                 self._initiate_search_object()
             p = self.samples[jmax]
             self.search.BSGL = False
-            maxtwoF = self.logl(p, self.search)
+            maxtwoF = self._logl(p, self.search)
             self.search.BSGL = self.BSGL
         else:
             maxtwoF = self._get_twoF_from_loglikelihood(jmax)
@@ -1815,7 +1759,17 @@ class MCMCSearch(BaseSearchClass):
         return d, maxtwoF
 
     def get_summary_stats(self):
-        """ Returns a dict of point estimates for all production samples """
+        """Returns a dict of point estimates for all production samples.
+
+        Point estimates are computed on the MCMC samples using `numpy.mean`,
+        `numpy.std` and `numpy.quantiles` with q=[0.005, 0.05, 0.25, 0.5, 0.75, 0.95, 0.995].
+
+        Returns
+        -------
+        d: dict
+            Dictionary containing point estimates corresponding to ["mean", "std", "lower99",
+            "lower90", "lower50", "median", "upper50", "upper90", "upper99"].
+        """
         d = OrderedDict()
         repeats = []  # taken from old get_median_stds(), not sure why necessary
         for s, k in zip(self.samples.T, self.theta_keys):
@@ -1881,7 +1835,13 @@ class MCMCSearch(BaseSearchClass):
         return return_flag
 
     def write_par(self, method="median"):
-        """ Writes a .par of the best-fit params with an estimated std """
+        """Writes a .par of the best-fit params with an estimated std
+
+        Parameters
+        ----------
+        method: str
+            How to select the `best-fit` params. Available methods: "median", "mean", "twoFmax".
+        """
 
         if method == "med":
             method = "median"
@@ -2084,8 +2044,16 @@ class MCMCSearch(BaseSearchClass):
         pdf = self._pdf_twoFhat(twoFhats, self.nglitch, ntrials)
         return np.trapz(pdf, twoFhats)
 
-    def get_p_value(self, delta_F0, time_trials=0):
-        """ Get's the p-value for the maximum twoFhat value """
+    def get_p_value(self, delta_F0=0, time_trials=0):
+        """Gets the p-value for the maximum twoFhat value assuming Gaussian noise
+
+        Parameters
+        ----------
+        delta_F0: float
+            Frequency variation due to a glitch.
+        time_trials: int, optional
+            Number of trials in each glitch + 1.
+        """
         d, max_twoF = self.get_max_twoF()
         if self.nglitch == 1:
             tglitches = [d["tglitch"]]
@@ -2099,7 +2067,22 @@ class MCMCSearch(BaseSearchClass):
         return p_val
 
     def compute_evidence(self, make_plots=False, write_to_file=None):
-        """ Computes the evidence/marginal likelihood for the model """
+        """Computes the evidence/marginal likelihood for the model.
+
+        Parameters
+        ----------
+        make_plots: bool
+           Plot the results and save them to os.path.join(self.outdir, self.label + "_beta_lnl.png")
+        write_to_file: str
+           If given, dump evidence and uncertainty estimation to the specified path.
+
+        Returns
+        -------
+        log10evidence: float
+            Estimation of the log10 evidence.
+        log10evidence_err: float
+            Log10 uncertainty of the evidence estimation.
+        """
         betas = self.betas
         mean_lnlikes = np.mean(np.mean(self.all_lnlikelihood, axis=1), axis=1)
 
@@ -2158,6 +2141,21 @@ class MCMCSearch(BaseSearchClass):
 
     @staticmethod
     def read_evidence_file_to_dict(evidence_file_name="Evidences.txt"):
+        """Read evidence file and put it into an OrderedDict
+
+        An evidence file contains paris (log10evidence, log10evidence_err) for each
+        considered model. These pairs are prepended by the `self.label` variable.
+
+        Parameters
+        ----------
+        evidence_file_name: str
+            Filename to read.
+
+        Returns
+        -------
+        EvidenceDict: dict
+            Dictionary with the contents of `evidence_file_name`
+        """
         EvidenceDict = OrderedDict()
         if os.path.isfile(evidence_file_name):
             with open(evidence_file_name, "r") as f:
@@ -2167,6 +2165,15 @@ class MCMCSearch(BaseSearchClass):
         return EvidenceDict
 
     def write_evidence_file_from_dict(self, EvidenceDict, evidence_file_name):
+        """Write evidence dict to a file
+
+        Parameters
+        ----------
+        EvidenceDict: dict
+            Dictionary to dump into a file.
+        evidence_file_name: str
+            File name to dump dict into.
+        """
         with open(evidence_file_name, "w+") as f:
             for key, val in EvidenceDict.items():
                 f.write("{} {} {}\n".format(key, val[0], val[1]))
@@ -2177,19 +2184,6 @@ class MCMCGlitchSearch(MCMCSearch):
 
     See parent MCMCSearch for a list of all additional parameters, here we list
     only the additional init parameters of this class.
-
-    Parameters
-    ----------
-    nglitch: int
-        The number of glitches to allow
-    dtglitchmin: int
-        The minimum duration (in seconds) of a segment between two glitches
-        or a glitch and the start/end of the data
-    theta0_idx, int
-        Index (zero-based) of which segment the theta refers to - useful
-        if providing a tight prior on theta to allow the signal to jump
-        too theta (and not just from)
-
     """
 
     symbol_dictionary = dict(
@@ -2199,11 +2193,19 @@ class MCMCGlitchSearch(MCMCSearch):
         Alpha=r"$\alpha$",
         Delta=r"$\delta$",
     )
+    """
+        Key, val pairs of the parameters (`F0`, `F1`, ...), to LaTeX math
+        symbols for plots
+    """
     glitch_symbol_dictionary = dict(
         delta_F0=r"$\delta f$",
         delta_F1=r"$\delta \dot{f}$",
         tglitch=r"$t_\mathrm{glitch}$",
     )
+    """
+        Key, val pairs of glitch parameters (`dF0`, `dF1`, `tglitch`), to LaTeX math
+        symbols for plots. This dictionary included within `self.symbol_dictionary`.
+    """
     symbol_dictionary.update(glitch_symbol_dictionary)
     unit_dictionary = dict(
         F0=r"Hz",
@@ -2215,6 +2217,10 @@ class MCMCGlitchSearch(MCMCSearch):
         delta_F1=r"Hz/s",
         tglitch=r"s",
     )
+    """
+        Key, val pairs of the parameters (`F0`, `F1`, ..., including glitch parameters),
+        and the units (`Hz`, `Hz/s`, ...).
+    """
     transform_dictionary = dict(
         tglitch={
             "multiplier": 1 / 86400.0,
@@ -2223,6 +2229,11 @@ class MCMCGlitchSearch(MCMCSearch):
             "label": r"$t^{g}_0$ \n [d]",
         }
     )
+    """
+        Key, val pairs of the parameters (`F0`, `F1`, ...), where the key is
+        itself a dictionary which can item `multiplier`, `subtractor`, or
+        `unit` by which to transform by and update the units.
+    """
 
     @helper_functions.initializer
     def __init__(
@@ -2255,7 +2266,19 @@ class MCMCGlitchSearch(MCMCSearch):
         earth_ephem=None,
         sun_ephem=None,
     ):
-
+        """
+        Parameters
+        ----------
+        nglitch: int
+            The number of glitches to allow
+        dtglitchmin: int
+            The minimum duration (in seconds) of a segment between two glitches
+            or a glitch and the start/end of the data
+        theta0_idx, int
+            Index (zero-based) of which segment the theta refers to - useful
+            if providing a tight prior on theta to allow the signal to jump
+            too theta (and not just from)
+        """
         self._set_init_params_dict(locals())
         if os.path.isdir(outdir) is False:
             os.mkdir(outdir)
@@ -2310,7 +2333,7 @@ class MCMCGlitchSearch(MCMCSearch):
         if self.maxStartTime is None:
             self.maxStartTime = self.search.maxStartTime
 
-    def logp(self, theta_vals, theta_prior, theta_keys, search):
+    def _logp(self, theta_vals, theta_prior, theta_keys, search):
         if self.nglitch > 1:
             ts = (
                 [self.minStartTime]
@@ -2328,7 +2351,7 @@ class MCMCGlitchSearch(MCMCSearch):
         ]
         return np.sum(H)
 
-    def logl(self, theta, search):
+    def _logl(self, theta, search):
         in_theta = copy.copy(self.fixed_theta)
         if self.nglitch > 1:
             ts = (
@@ -2440,7 +2463,9 @@ class MCMCGlitchSearch(MCMCSearch):
         return p0
 
     def plot_cumulative_max(self, savefig=False):
-        """Here we override the standard version to deal with the split at glitches.
+        """
+        Override MCMCSearch.plot_cumulative_max implementation to dea with the
+        split at gltiches.
 
         Parameters
         ----------
@@ -2511,7 +2536,7 @@ class MCMCGlitchSearch(MCMCSearch):
             plt.close(fig)
         return ax
 
-    def get_savetxt_fmt_dict(self):
+    def _get_savetxt_fmt_dict(self):
         fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
         if "tglitch" in self.theta_keys:
             fmt["tglitch"] = "%d"
@@ -2524,66 +2549,13 @@ class MCMCGlitchSearch(MCMCSearch):
 
 
 class MCMCSemiCoherentSearch(MCMCSearch):
-    """MCMC search for a signal using the semi-coherent ComputeFstat
+    """MCMC search for a signal using the semicoherent ComputeFstat.
 
-    Parameters
-    ----------
-    theta_prior: dict
-        Dictionary of priors and fixed values for the search parameters.
-        For each parameters (key of the dict), if it is to be held fixed
-        the value should be the constant float, if it is be searched, the
-        value should be a dictionary of the prior.
-    tref, minStartTime, maxStartTime: int
-        GPS seconds of the reference time, start time and end time. While tref
-        is requirede, minStartTime and maxStartTime default to None in which
-        case all available data is used.
-    label, outdir: str
-        A label and output directory (optional, defaults is `'data'`) to
-        name files
-    sftfilepattern: str, optional
-        Pattern to match SFTs using wildcards (*?) and ranges [0-9];
-        mutiple patterns can be given separated by colons.
-    detectors: str, optional
-        Two character reference to the detectors to use, specify None for no
-        contraint and comma separate for multiple references.
-    nsteps: list (2,), optional
-        Number of burn-in and production steps to take, [nburn, nprod]. See
-        `pyfstat.MCMCSearch.setup_initialisation()` for details on adding
-        initialisation steps.
-    nwalkers, ntemps: int, optional
-        The number of walkers and temperates to use in the parallel
-        tempered PTSampler.
-    log10beta_min float < 0, optional
-        The  log_10(beta) value, if given the set of betas passed to PTSampler
-        are generated from `np.logspace(0, log10beta_min, ntemps)` (given
-        in descending order to ptemcee).
-    theta_initial: dict, array, optional
-        A dictionary of distribution about which to distribute the
-        initial walkers about
-    rhohatmax: float, optional
-        Upper bound for the SNR scale parameter (required to normalise the
-        Bayes factor) - this needs to be carefully set when using the
-        evidence.
-    binary: bool, optional
-        If true, search over binary parameters
-    BSGL: bool, optional
-        If true, use the BSGL statistic
-    SSBPrec: int, optional
-        SSBPrec (SSB precision) to use when calling ComputeFstat
-    RngMedWindow: int, optional
-        Running-Median window size (number of bins) for ComputeFstat
-    minCoverFreq, maxCoverFreq: float, optional
-        Minimum and maximum instantaneous frequency which will be covered
-        over the SFT time span as passed to CreateFstatInput
-    injectSources: dict, optional
-        If given, inject these properties into the SFT files before running
-        the search
-    assumeSqrtSX: float or list or str, optional
-        Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}.
-        See `core.ComputeFstat`.
-    nsegs: int
-        The number of segments
+    Evaluates the semicoherent F-statistic acros a parameter space region
+    corresponding to an isolated/binary-modulated CW signal.
 
+    See MCMCSearch for a list of additional parameters, here we list only the additional
+    init parameters of this class.
     """
 
     def __init__(
@@ -2614,7 +2586,13 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         earth_ephem=None,
         sun_ephem=None,
     ):
-
+        """
+        Parameters
+        ----------
+        nsegs: int
+            The number of segments into which the input datastream will be devided.
+            Coherence time is computed internally as (maxStartTime - minStarTime) / nsegs.
+        """
         self._set_init_params_dict(locals())
         self.theta_prior = theta_prior
         self.tref = tref
@@ -2712,14 +2690,14 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         if self.maxStartTime is None:
             self.maxStartTime = self.search.maxStartTime
 
-    def logp(self, theta_vals, theta_prior, theta_keys, search):
+    def _logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [
             self._generic_lnprior(**theta_prior[key])(p)
             for p, key in zip(theta_vals, theta_keys)
         ]
         return np.sum(H)
 
-    def logl(self, theta, search):
+    def _logl(self, theta, search):
         in_theta = copy.copy(self.fixed_theta)
         for j, theta_i in enumerate(self.theta_idxs):
             in_theta[theta_i] = theta[j]
@@ -2728,76 +2706,15 @@ class MCMCSemiCoherentSearch(MCMCSearch):
 
 
 class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
-    """A follow up procudure increasing the coherence time in a zoom
+    """Hierarchical follow-up procedure
 
-    Parameters
-    ----------
-    theta_prior: dict
-        Dictionary of priors and fixed values for the search parameters.
-        For each parameters (key of the dict), if it is to be held fixed
-        the value should be the constant float, if it is be searched, the
-        value should be a dictionary of the prior.
-    tref, minStartTime, maxStartTime: int
-        GPS seconds of the reference time, start time and end time. While tref
-        is requirede, minStartTime and maxStartTime default to None in which
-        case all available data is used.
-    label, outdir: str
-        A label and output directory (optional, defaults is `'data'`) to
-        name files
-    sftfilepattern: str, optional
-        Pattern to match SFTs using wildcards (*?) and ranges [0-9];
-        mutiple patterns can be given separated by colons.
-    detectors: str, optional
-        Two character reference to the detectors to use, specify None for no
-        contraint and comma separate for multiple references.
-    nsteps: list (2,), optional
-        Number of burn-in and production steps to take, [nburn, nprod]. See
-        `pyfstat.MCMCSearch.setup_initialisation()` for details on adding
-        initialisation steps.
-    nwalkers, ntemps: int, optional
-        The number of walkers and temperates to use in the parallel
-        tempered PTSampler.
-    log10beta_min float < 0, optional
-        The  log_10(beta) value, if given the set of betas passed to PTSampler
-        are generated from `np.logspace(0, log10beta_min, ntemps)` (given
-        in descending order to ptemcee).
-    theta_initial: dict, array, optional
-        A dictionary of distribution about which to distribute the
-        initial walkers about
-    rhohatmax: float, optional
-        Upper bound for the SNR scale parameter (required to normalise the
-        Bayes factor) - this needs to be carefully set when using the
-        evidence.
-    binary: bool, optional
-        If true, search over binary parameters
-    BSGL: bool, optional
-        If true, use the BSGL statistic
-    SSBPrec: int, optional
-        SSBPrec (SSB precision) to use when calling ComputeFstat
-    RngMedWindow: int, optional
-        Running-Median window size (number of bins) for ComputeFstat
-    minCoverFreq, maxCoverFreq: float, optional
-        Minimum and maximum instantaneous frequency which will be covered
-        over the SFT time span as passed to CreateFstatInput
-    injectSources: dict, optional
-        If given, inject these properties into the SFT files before running
-        the search
-    assumeSqrtSX: float, optional
-        Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}
+    Executes MCMC runs with increasing coherence times in order to follow up a parameter space
+    region. The main idea is to use an MCMC run to identify an interesting parameter space region
+    to then zoom-in said region using a finer "effective resolution" by increasing the coherence time.
+    See Ashton & Prix (PRD 97, 103020, 2018): https://arxiv.org/abs/1802.05450
 
-    Attributes
-    ----------
-    symbol_dictionary: dict
-        Key, val pairs of the parameters (i.e. `F0`, `F1`), to Latex math
-        symbols for plots
-    unit_dictionary: dict
-        Key, val pairs of the parameters (i.e. `F0`, `F1`), and the
-        units (i.e. `Hz`)
-    transform_dictionary: dict
-        Key, val pairs of the parameters (i.e. `F0`, `F1`), where the key is
-        itself a dictionary which can item `multiplier`, `subtractor`, or
-        `unit` by which to transform by and update the units.
-
+    See MCMCSemiCoherentSearch for a list of additional parameters, here we list only the additional
+    init parameters of this class.
     """
 
     def __init__(
@@ -2894,52 +2811,164 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         )
         return d
 
-    def update_search_object(self):
-        logging.info("Update search object")
-        self.search.init_computefstatistic()
-
-    def get_width_from_prior(self, prior, key):
-        if prior[key]["type"] == "unif":
-            return prior[key]["upper"] - prior[key]["lower"]
-
-    def get_mid_from_prior(self, prior, key):
-        if prior[key]["type"] == "unif":
-            return 0.5 * (prior[key]["upper"] + prior[key]["lower"])
-
-    def read_setup_input_file(self, run_setup_input_file):
-        with open(run_setup_input_file, "rb+") as f:
-            d = pickle.load(f)
-        return d
-
-    def write_setup_input_file(
+    def run(
         self,
-        run_setup_input_file,
-        NstarMax,
-        Nsegs0,
-        nsegs_vals,
-        Nstar_vals,
-        theta_prior,
+        run_setup=None,
+        proposal_scale_factor=2,
+        NstarMax=10,
+        Nsegs0=None,
+        save_pickle=True,
+        export_samples=True,
+        save_loudest=True,
+        plot_walkers=True,
+        walker_plot_args=None,
+        log_table=True,
+        gen_tex_table=True,
+        window=50,
     ):
-        d = dict(
+        """Run the follow-up with the given run_setup.
+
+        See MCMCSearch.run's docstring for a description of the remainder arguments.
+
+        Parameters
+        ----------
+        run_setup, log_table, gen_tex_table:
+            See `MCMCFollowUpSearch.init_run_setup`.
+        NstarMax, Nsegs0:
+            See `pyfstat.optimal_setup_functions.get_optimal_setup`.
+        """
+
+        self.nsegs = 1
+        self._set_likelihoodcoef()
+        self._initiate_search_object()
+        run_setup = self.init_run_setup(
+            run_setup,
             NstarMax=NstarMax,
             Nsegs0=Nsegs0,
-            nsegs_vals=nsegs_vals,
-            theta_prior=theta_prior,
-            Nstar_vals=Nstar_vals,
+            log_table=log_table,
+            gen_tex_table=gen_tex_table,
         )
-        with open(run_setup_input_file, "wb+") as f:
-            pickle.dump(d, f)
+        self.run_setup = run_setup
+        self._estimate_run_time()
 
-    def check_old_run_setup(self, old_setup, **kwargs):
-        try:
-            truths = [val == old_setup[key] for key, val in kwargs.items()]
-            if all(truths):
-                return True
+        walker_plot_args = walker_plot_args or {}
+
+        self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
+        if self.old_data_is_okay_to_use is True:
+            logging.warning("Using saved data from {}".format(self.pickle_path))
+            d = self.get_saved_data_dictionary()
+            self.samples = d["samples"]
+            self.lnprobs = d["lnprobs"]
+            self.lnlikes = d["lnlikes"]
+            self.all_lnlikelihood = d["all_lnlikelihood"]
+            self.chain = d["chain"]
+            self.nsegs = run_setup[-1][1]
+            return
+
+        nsteps_total = 0
+        for j, ((nburn, nprod), nseg, reset_p0) in enumerate(run_setup):
+            p0 = self._get_p0_per_stage(reset_p0)
+
+            self.nsegs = nseg
+            self._set_likelihoodcoef()
+            self.search.nsegs = nseg
+            self._update_search_object()
+            self.search.init_semicoherent_parameters()
+            self.sampler = PTSampler(
+                ntemps=self.ntemps,
+                nwalkers=self.nwalkers,
+                dim=self.ndim,
+                logl=self._logl,
+                logp=self._logp,
+                logpargs=(self.theta_prior, self.theta_keys, self.search),
+                loglargs=(self.search,),
+                betas=self.betas,
+                a=proposal_scale_factor,
+            )
+
+            Tcoh = (self.maxStartTime - self.minStartTime) / nseg / 86400.0
+            logging.info(
+                (
+                    "Running {}/{} with {} steps and {} nsegs " "(Tcoh={:1.2f} days)"
+                ).format(j + 1, len(run_setup), (nburn, nprod), nseg, Tcoh)
+            )
+            self._run_sampler(p0, nburn=nburn, nprod=nprod, window=window)
+            logging.info(
+                "Max detection statistic of run was {}".format(
+                    np.max(self.sampler.loglikelihood)
+                )
+            )
+
+            if plot_walkers:
+                try:
+                    walkers_fig, walkers_axes = self._plot_walkers(
+                        nprod=nprod, xoffset=nsteps_total, **walker_plot_args
+                    )
+                    for ax in walkers_axes[: self.ndim]:
+                        ax.axvline(nsteps_total, color="k", ls="--", lw=0.25)
+                except Exception as e:
+                    logging.warning("Failed to plot walkers due to Error {}".format(e))
+
+            nsteps_total += nburn + nprod
+
+        if plot_walkers:
+            nstep_list = np.array(
+                [el[0][0] for el in run_setup] + [run_setup[-1][0][1]]
+            )
+            mids = np.cumsum(nstep_list) - nstep_list / 2
+            mid_labels = ["{:1.0f}".format(i) for i in np.arange(0, len(mids) - 1)]
+            mid_labels += ["Production"]
+            for ax in walkers_axes[: self.ndim]:
+                axy = ax.twiny()
+                axy.tick_params(pad=-10, direction="in", axis="x", which="major")
+                axy.minorticks_off()
+                axy.set_xlim(ax.get_xlim())
+                axy.set_xticks(mids)
+                axy.set_xticklabels(mid_labels)
+
+        samples = self.sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
+        lnprobs = self.sampler.logprobability[0, :, nburn:].reshape((-1))
+        lnlikes = self.sampler.loglikelihood[0, :, nburn:].reshape((-1))
+        all_lnlikelihood = self.sampler.loglikelihood
+        self.samples = samples
+        self.lnprobs = lnprobs
+        self.lnlikes = lnlikes
+        self.all_lnlikelihood = all_lnlikelihood
+        if save_pickle:
+            self._pickle_data(samples, lnprobs, lnlikes, all_lnlikelihood)
+        if export_samples:
+            self.export_samples_to_disk()
+        if save_loudest:
+            self.generate_loudest()
+
+        if plot_walkers:
+            try:
+                walkers_fig.tight_layout()
+            except Exception as e:
+                logging.warning(
+                    "Failed to set tight layout for walkers plot due to Error {}".format(
+                        e
+                    )
+                )
+            if (walker_plot_args.get("fig") is not None) and (
+                walker_plot_args.get("axes") is not None
+            ):
+                self.walkers_fig = walkers_fig
+                self.walkers_axes = walkers_axes
             else:
-                logging.info("Old setup doesn't match one of NstarMax, Nsegs0 or prior")
-        except KeyError as e:
-            logging.info("Error found when comparing with old setup: {}".format(e))
-            return False
+                try:
+                    walkers_fig.savefig(
+                        os.path.join(self.outdir, self.label + "_walkers.png")
+                    )
+                    plt.close(walkers_fig)
+                except Exception as e:
+                    logging.warning(
+                        "Failed to save walker plots due to Error {}".format(e)
+                    )
+
+    def _update_search_object(self):
+        logging.info("Update search object")
+        self.search.init_computefstatistic()
 
     def init_run_setup(
         self,
@@ -2949,7 +2978,30 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         log_table=True,
         gen_tex_table=True,
     ):
+        """
+        Initialize the setup of the follow-up run computing the required quantities fro, NstarMax
+        and Nsegs0.
 
+        Parameters
+        ----------
+        NstarMax, Nsegs0: int
+            Required parameters to create a new follow-up setup.
+            See `pyfstat.optimal_setup_functions.get_optimal_setup`.
+        run_setup: optional
+            If None, a new setup will be created from NstarMax and Nsegs0.
+            Use `MCMCFollowUpSearch.read_setup_input_file` to read a previous
+            setup file.
+        log_table: bool
+            Log follow-up setup using `logging.info` as a table.
+        gen_tex_table: bool
+            Dump follow-up setup into a text file as a tex table.
+            File is constructed as `os.path.join(self.outdir, self.label + "_run_setup.tex")`.
+
+        Returns
+        -------
+        run_setup: list
+           List containing the setup of the follow-up run.
+        """
         if run_setup is None and Nsegs0 is None:
             raise ValueError(
                 "You must either specify the run_setup, or Nsegs0 and NStarMax"
@@ -2967,7 +3019,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                     "Checking old setup input file {}".format(run_setup_input_file)
                 )
                 old_setup = self.read_setup_input_file(run_setup_input_file)
-                if self.check_old_run_setup(
+                if self._check_old_run_setup(
                     old_setup,
                     NstarMax=NstarMax,
                     Nsegs0=Nsegs0,
@@ -2996,7 +3048,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                     self.theta_prior,
                     self.search.detector_names,
                 )
-                self.write_setup_input_file(
+                self._write_setup_input_file(
                     run_setup_input_file,
                     NstarMax,
                     Nsegs0,
@@ -3087,6 +3139,41 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         else:
             return run_setup
 
+    def read_setup_input_file(self, run_setup_input_file):
+        with open(run_setup_input_file, "rb+") as f:
+            d = pickle.load(f)
+        return d
+
+    def _write_setup_input_file(
+        self,
+        run_setup_input_file,
+        NstarMax,
+        Nsegs0,
+        nsegs_vals,
+        Nstar_vals,
+        theta_prior,
+    ):
+        d = dict(
+            NstarMax=NstarMax,
+            Nsegs0=Nsegs0,
+            nsegs_vals=nsegs_vals,
+            theta_prior=theta_prior,
+            Nstar_vals=Nstar_vals,
+        )
+        with open(run_setup_input_file, "wb+") as f:
+            pickle.dump(d, f)
+
+    def _check_old_run_setup(self, old_setup, **kwargs):
+        try:
+            truths = [val == old_setup[key] for key, val in kwargs.items()]
+            if all(truths):
+                return True
+            else:
+                logging.info("Old setup doesn't match one of NstarMax, Nsegs0 or prior")
+        except KeyError as e:
+            logging.info("Error found when comparing with old setup: {}".format(e))
+            return False
+
     def _get_p0_per_stage(self, reset_p0=False):
         """Returns new initial positions for walkers at each stage of the ladder"""
         if not hasattr(self, "sampler"):  # must be stage 0
@@ -3100,189 +3187,9 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             p0 = self.sampler.chain[:, :, -1, :]
         return p0
 
-    def run(
-        self,
-        run_setup=None,
-        proposal_scale_factor=2,
-        NstarMax=10,
-        Nsegs0=None,
-        save_pickle=True,
-        export_samples=True,
-        save_loudest=True,
-        plot_walkers=True,
-        walker_plot_args=None,
-        log_table=True,
-        gen_tex_table=True,
-        window=50,
-    ):
-        """Run the follow-up with the given run_setup
-
-        Parameters
-        ----------
-        run_setup: list of tuples, optional
-        proposal_scale_factor: float
-            The proposal scale factor used by the sampler, see Goodman & Weare
-            (2010). If the acceptance fraction is too low, you can raise it by
-            decreasing the a parameter; and if it is too high, you can reduce
-            it by increasing the a parameter [Foreman-Mackay (2013)].
-        save_pickle: bool
-            If true, save a pickle file of the full sampler state.
-        export_samples: bool
-            If true, save ASCII samples file to disk.
-        save_loudest: bool
-            If true, save a CFSv2 .loudest file to disk.
-        plot_walkers: bool
-            If true, save trace plots of the walkers.
-        walker_plot_args:
-            Dictionary passed as kwargs to _plot_walkers to control the plotting.
-            Also, if both "fig" and "axes" entries are set,
-            the plot is not saved to disk directly,
-            but .walker_fig and .walker_axes properties are returned.
-        window: int
-            The minimum number of autocorrelation times needed to trust the
-            result when estimating the autocorrelation time (see
-            ptemcee.Sampler.get_autocorr_time for further details.
-        **kwargs:
-            Passed to _plot_walkers to control the figures
-
-        """
-
-        self.nsegs = 1
-        self._set_likelihoodcoef()
-        self._initiate_search_object()
-        run_setup = self.init_run_setup(
-            run_setup,
-            NstarMax=NstarMax,
-            Nsegs0=Nsegs0,
-            log_table=log_table,
-            gen_tex_table=gen_tex_table,
-        )
-        self.run_setup = run_setup
-        self._estimate_run_time()
-
-        walker_plot_args = walker_plot_args or {}
-
-        self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
-        if self.old_data_is_okay_to_use is True:
-            logging.warning("Using saved data from {}".format(self.pickle_path))
-            d = self.get_saved_data_dictionary()
-            self.samples = d["samples"]
-            self.lnprobs = d["lnprobs"]
-            self.lnlikes = d["lnlikes"]
-            self.all_lnlikelihood = d["all_lnlikelihood"]
-            self.chain = d["chain"]
-            self.nsegs = run_setup[-1][1]
-            return
-
-        nsteps_total = 0
-        for j, ((nburn, nprod), nseg, reset_p0) in enumerate(run_setup):
-            p0 = self._get_p0_per_stage(reset_p0)
-
-            self.nsegs = nseg
-            self._set_likelihoodcoef()
-            self.search.nsegs = nseg
-            self.update_search_object()
-            self.search.init_semicoherent_parameters()
-            self.sampler = PTSampler(
-                ntemps=self.ntemps,
-                nwalkers=self.nwalkers,
-                dim=self.ndim,
-                logl=self.logl,
-                logp=self.logp,
-                logpargs=(self.theta_prior, self.theta_keys, self.search),
-                loglargs=(self.search,),
-                betas=self.betas,
-                a=proposal_scale_factor,
-            )
-
-            Tcoh = (self.maxStartTime - self.minStartTime) / nseg / 86400.0
-            logging.info(
-                (
-                    "Running {}/{} with {} steps and {} nsegs " "(Tcoh={:1.2f} days)"
-                ).format(j + 1, len(run_setup), (nburn, nprod), nseg, Tcoh)
-            )
-            self._run_sampler(p0, nburn=nburn, nprod=nprod, window=window)
-            logging.info(
-                "Max detection statistic of run was {}".format(
-                    np.max(self.sampler.loglikelihood)
-                )
-            )
-
-            if plot_walkers:
-                try:
-                    walkers_fig, walkers_axes = self._plot_walkers(
-                        nprod=nprod, xoffset=nsteps_total, **walker_plot_args
-                    )
-                    for ax in walkers_axes[: self.ndim]:
-                        ax.axvline(nsteps_total, color="k", ls="--", lw=0.25)
-                except Exception as e:
-                    logging.warning("Failed to plot walkers due to Error {}".format(e))
-
-            nsteps_total += nburn + nprod
-
-        if plot_walkers:
-            nstep_list = np.array(
-                [el[0][0] for el in run_setup] + [run_setup[-1][0][1]]
-            )
-            mids = np.cumsum(nstep_list) - nstep_list / 2
-            mid_labels = ["{:1.0f}".format(i) for i in np.arange(0, len(mids) - 1)]
-            mid_labels += ["Production"]
-            for ax in walkers_axes[: self.ndim]:
-                axy = ax.twiny()
-                axy.tick_params(pad=-10, direction="in", axis="x", which="major")
-                axy.minorticks_off()
-                axy.set_xlim(ax.get_xlim())
-                axy.set_xticks(mids)
-                axy.set_xticklabels(mid_labels)
-
-        samples = self.sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
-        lnprobs = self.sampler.logprobability[0, :, nburn:].reshape((-1))
-        lnlikes = self.sampler.loglikelihood[0, :, nburn:].reshape((-1))
-        all_lnlikelihood = self.sampler.loglikelihood
-        self.samples = samples
-        self.lnprobs = lnprobs
-        self.lnlikes = lnlikes
-        self.all_lnlikelihood = all_lnlikelihood
-        if save_pickle:
-            self._pickle_data(samples, lnprobs, lnlikes, all_lnlikelihood)
-        if export_samples:
-            self.export_samples_to_disk()
-        if save_loudest:
-            self.generate_loudest()
-
-        if plot_walkers:
-            try:
-                walkers_fig.tight_layout()
-            except Exception as e:
-                logging.warning(
-                    "Failed to set tight layout for walkers plot due to Error {}".format(
-                        e
-                    )
-                )
-            if (walker_plot_args.get("fig") is not None) and (
-                walker_plot_args.get("axes") is not None
-            ):
-                self.walkers_fig = walkers_fig
-                self.walkers_axes = walkers_axes
-            else:
-                try:
-                    walkers_fig.savefig(
-                        os.path.join(self.outdir, self.label + "_walkers.png")
-                    )
-                    plt.close(walkers_fig)
-                except Exception as e:
-                    logging.warning(
-                        "Failed to save walker plots due to Error {}".format(e)
-                    )
-
 
 class MCMCTransientSearch(MCMCSearch):
-    """MCMC search for a transient signal using ComputeFstat
-
-    See parent MCMCSearch for a list of all additional parameters, here we list
-    only the additional init parameters of this class.
-
-    """
+    """MCMC search for a transient signal using ComputeFstat"""
 
     symbol_dictionary = dict(
         F0=r"$f$",
@@ -3293,6 +3200,10 @@ class MCMCTransientSearch(MCMCSearch):
         transient_tstart=r"$t_\mathrm{start}$",
         transient_duration=r"$\Delta T$",
     )
+    """
+        Key, val pairs of the parameters (`F0`, `F1`, ...), to LaTeX math
+        symbols for plots
+    """
     unit_dictionary = dict(
         F0=r"Hz",
         F1=r"Hz/s",
@@ -3302,7 +3213,10 @@ class MCMCTransientSearch(MCMCSearch):
         transient_tstart=r"s",
         transient_duration=r"s",
     )
-
+    """
+        Key, val pairs of the parameters (`F0`, `F1`, ..., including glitch parameters),
+        and the units (`Hz`, `Hz/s`, ...).
+    """
     transform_dictionary = dict(
         transient_duration={
             "multiplier": 1 / 86400.0,
@@ -3316,6 +3230,11 @@ class MCMCTransientSearch(MCMCSearch):
             "label": "Transient start-time \n days after minStartTime",
         },
     )
+    """
+        Key, val pairs of the parameters (`F0`, `F1`, ...), where the key is
+        itself a dictionary which can item `multiplier`, `subtractor`, or
+        `unit` by which to transform by and update the units.
+    """
 
     def _initiate_search_object(self):
         logging.info("Setting up search object")
@@ -3344,7 +3263,7 @@ class MCMCTransientSearch(MCMCSearch):
         if self.maxStartTime is None:
             self.maxStartTime = self.search.maxStartTime
 
-    def logl(self, theta, search):
+    def _logl(self, theta, search):
         in_theta = {
             key: self.fixed_theta[k]
             for k, key in enumerate(self.full_theta_keys)
@@ -3414,7 +3333,7 @@ class MCMCTransientSearch(MCMCSearch):
         self.output_keys = self.theta_keys.copy()
         self.output_keys += ["log10BSGL" if self.BSGL else "twoF"]
 
-    def get_savetxt_fmt_dict(self):
+    def _get_savetxt_fmt_dict(self):
         fmt = helper_functions.get_doppler_params_output_format(self.theta_keys)
         if "transient_tstart" in self.theta_keys:
             fmt["transient_tstart"] = "%d"
