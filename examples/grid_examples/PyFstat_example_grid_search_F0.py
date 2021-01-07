@@ -1,9 +1,16 @@
+"""
+Directed grid search: Monochromatic source
+==========================================
+
+Search for a monochromatic (no spindown) signal using
+a parameter space grid (i.e. no MCMC).
+"""
 import pyfstat
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-label = os.path.splitext(os.path.basename(__file__))[0]
+label = "PyFstat_example_grid_search_F0"
 outdir = os.path.join("PyFstat_example_data", label)
 
 F0 = 30.0
@@ -24,8 +31,6 @@ tstart = 1000000000
 duration = 100 * 86400
 tend = tstart + duration
 tref = 0.5 * (tstart + tend)
-
-example_name = os.path.splitext(os.path.basename(__file__))[0]
 
 data = pyfstat.Writer(
     label=label,
@@ -54,7 +59,7 @@ F2s = [F2]
 Alphas = [Alpha]
 Deltas = [Delta]
 search = pyfstat.GridSearch(
-    example_name,
+    label,
     outdir,
     os.path.join(outdir, "*" + label + "*sft"),
     F0s,

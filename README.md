@@ -12,9 +12,9 @@ and [citing](#citing-this-work) PyFstat.
 * The classes provided by PyFstat and the full API are documented at [pyfstat.readthedocs.io](https://pyfstat.readthedocs.io/) (work in progress)
 * Additional usage documentation will be added to the
 [project wiki](https://github.com/PyFstat/PyFstat/wiki) (work in progress).
-* We also have a number of
-[examples](https://github.com/PyFstat/PyFstat/tree/master/examples),
-demonstrating different use cases.
+* We also have a number of [examples](https://github.com/PyFstat/PyFstat/tree/master/examples),
+demonstrating different use cases. Run them as jupyter notebooks with
+[binder](https://mybinder.org/v2/gh/PyFstat/PyFstat/master).
 * New contributors are encouraged to have a look into
 [how to set up a development environment](#contributing-to-pyfstat)
 
@@ -24,6 +24,7 @@ demonstrating different use cases.
 ![Integration Tests](https://github.com/PyFstat/PyFstat/workflows/Integration%20Tests/badge.svg)
 ![Docker](https://github.com/PyFstat/PyFstat/workflows/Docker/badge.svg)
 [![Documentation Status](https://readthedocs.org/projects/pyfstat/badge/?version=latest)](https://pyfstat.readthedocs.io/en/latest/?badge=latest)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PyFstat/PyFstat/master)
 
 A [changelog](https://github.com/PyFstat/PyFstat/blob/master/CHANGELOG.md)
 is also available (only maintained from v1.2 onwards).

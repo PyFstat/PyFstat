@@ -1,3 +1,11 @@
+"""
+Compute a spectrogram
+==========================
+
+Compute the spectrogram of a set of SFTs. This is useful to produce
+visualizations of the Doppler modulation of a CW signal.
+"""
+
 import tempfile
 
 import matplotlib.pyplot as plt
@@ -8,7 +16,7 @@ plt.rcParams["font.family"] = "serif"
 plt.rcParams["font.size"] = 18
 plt.rcParams["text.usetex"] = True
 
-label = "track_example"
+label = "PyFstat_example_spectrogram"
 
 depth = 5
 

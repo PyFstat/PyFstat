@@ -1,4 +1,14 @@
 #!/usr/bin/env python
+"""
+Long transient search examples: Make data
+=========================================
+
+An example to generate data with a long transient signal.
+
+This can be run either stand-alone (will just generate SFT files and nothing else);
+or it is also being imported from
+PyFstat_example_long_transient_MCMC_search.py
+"""
 
 import pyfstat
 import os

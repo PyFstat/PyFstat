@@ -1,3 +1,12 @@
+"""
+Glitch robust grid search
+=========================
+
+Grid search employing a signal hypothesis allowing for a glitch to
+be present in the data. The setup corresponds to a targeted search,
+and the simulated signal contains a single glitch.
+"""
+
 import pyfstat
 import numpy as np
 from PyFstat_example_make_data_for_search_on_1_glitch import (
@@ -16,7 +25,7 @@ from PyFstat_example_make_data_for_search_on_1_glitch import (
 import time
 import os
 
-label = "semicoherent_glitch_robust_directed_grid_search_on_1_glitch"
+label = "PyFstat_example_glitch_robust_directed_grid_search_on_1_glitch"
 
 Nstar = 1000
 F0_width = np.sqrt(Nstar) * np.sqrt(12) / (np.pi * duration)

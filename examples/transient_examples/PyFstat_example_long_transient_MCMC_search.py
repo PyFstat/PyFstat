@@ -1,5 +1,10 @@
 #!/usr/bin/env python
+"""
+Long transient MCMC search
+==========================
 
+MCMC search for a long transient CW signal.
+"""
 import pyfstat
 import os
 import numpy as np

@@ -1,3 +1,12 @@
+"""
+MCMC search on data presenting a glitch
+=======================================
+
+Executes a directed MCMC semicoherent F-statistic search on data
+presenting a glitch. This is intended to show the impact of
+glitches on vanilla CW searches.
+"""
+
 import numpy as np
 import pyfstat
 from PyFstat_example_make_data_for_search_on_1_glitch import (
@@ -13,7 +22,7 @@ from PyFstat_example_make_data_for_search_on_1_glitch import (
 )
 import os
 
-label = "standard_directed_MCMC_search_on_1_glitch"
+label = "PyFstat_example_standard_directed_MCMC_search_on_1_glitch"
 
 Nstar = 10000
 F0_width = np.sqrt(Nstar) * np.sqrt(12) / (np.pi * duration)

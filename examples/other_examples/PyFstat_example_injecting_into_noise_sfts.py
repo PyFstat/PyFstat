@@ -1,8 +1,19 @@
+"""
+Software injection into pre-existing data files
+===================================
+
+Add a software injection into a set of SFTs.
+
+In this case, the set of SFTs is generated using Makefakedata_v5,
+but the same procedure can be applied to any other set of SFTs
+(including real detector data).
+"""
+
 import os
 import numpy as np
 import pyfstat
 
-label = os.path.splitext(os.path.basename(__file__))[0]
+label = "PyFstat_example_injection_into_noise_sfts"
 outdir = os.path.join("PyFstat_example_data", label)
 
 tstart = 1269734418

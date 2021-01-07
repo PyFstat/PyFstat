@@ -1,3 +1,12 @@
+"""
+Glitch robust MCMC search
+=========================
+
+MCMC search employing a signal hypothesis allowing for a glitch to
+be present in the data. The setup corresponds to a targeted search,
+and the simulated signal contains a single glitch.
+"""
+
 import numpy as np
 import pyfstat
 import time
@@ -16,7 +25,7 @@ from PyFstat_example_make_data_for_search_on_1_glitch import (
 )
 import os
 
-label = "semicoherent_glitch_robust_directed_MCMC_search_on_1_glitch"
+label = "PyFstat_example_glitch_robust_directed_MCMC_search_on_1_glitch"
 
 Nstar = 1000
 F0_width = np.sqrt(Nstar) * np.sqrt(12) / (np.pi * duration)

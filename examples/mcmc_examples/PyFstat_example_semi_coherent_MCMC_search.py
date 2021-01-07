@@ -1,8 +1,15 @@
+"""
+MCMC search: Semicoherent F-statistic
+=======================================
+
+Directed MCMC search for an isolated CW signal using the
+semicoherent F-statistic.
+"""
 import pyfstat
 import numpy as np
 import os
 
-label = os.path.splitext(os.path.basename(__file__))[0]
+label = "PyFstat_example_semi_coherent_MCMC_search"
 outdir = os.path.join("PyFstat_example_data", label)
 
 # Properties of the GW data

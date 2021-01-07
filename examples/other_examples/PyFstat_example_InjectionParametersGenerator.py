@@ -1,3 +1,10 @@
+"""
+Randomly sampling parameter space points
+========================================
+
+Application of dedicated classes to sample software injection
+parameters according to the specified parameter space priors.
+"""
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,7 +14,7 @@ from pyfstat import (
     Writer,
 )
 
-label = os.path.splitext(os.path.basename(__file__))[0]
+label = "PyFstat_example_InjectionParametersGenerator"
 outdir = os.path.join("PyFstat_example_data", label)
 
 # Properties of the GW data

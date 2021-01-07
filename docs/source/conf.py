@@ -16,7 +16,6 @@ import sys
 sys.path.insert(0, os.path.abspath("../../"))
 sys.path.insert(0, os.path.abspath("../../pyfstat/"))
 
-
 # -- Project information -----------------------------------------------------
 
 project = "PyFstat"
@@ -37,6 +36,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinx_gallery.gen_gallery",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -64,6 +64,19 @@ html_theme = "sphinx_rtd_theme"
 # what content will be inserted into the main body of an autoclass directive
 # both: the class’ and the __init__ method’s docstring are concatenated and inserted.
 autoclass_content = "both"
-
 # how to sort automatically documented members
 autodoc_member_order = "bysource"
+
+# -- Options for gallery -----------------------------------
+min_reported_time = 0
+
+examples_basedir = "../../examples/"
+_, example_names, _ = next(os.walk(examples_basedir))
+
+sphinx_gallery_conf = {
+    "examples_dirs": [os.path.join(examples_basedir, case) for case in example_names],
+    "gallery_dirs": example_names,
+    "filename_pattern": "/PyFstat_example_",
+    "plot_gallery": "False",  # our examples are slow, so we can't generate plots every time the docs are built
+    "line_numbers": True,
+}

@@ -1,8 +1,15 @@
+"""
+Directed grid search: Linear spindown
+==========================================
+
+Search for CW signal including one spindown parameter
+using a parameter space grid (i.e. no MCMC).
+"""
 import pyfstat
 import numpy as np
 import os
 
-label = os.path.splitext(os.path.basename(__file__))[0]
+label = "PyFstat_example_grid_search_F0F1"
 outdir = os.path.join("PyFstat_example_data", label)
 
 F0 = 30.0

@@ -1,3 +1,11 @@
+"""
+Binary CW example: Semicoherent MCMC search
+==========================================================
+
+MCMC search of a CW signal produced by a source in a binary
+system using the semicoherent F-statistic.
+"""
+
 import pyfstat
 import numpy as np
 import os
@@ -7,7 +15,7 @@ directed_search = True
 # If False, ecc and argp priors are used
 known_eccentricity = True
 
-label = os.path.splitext(os.path.basename(__file__))[0]
+label = "PyFstat_example_semi_coherent_binary_search_using_MCMC"
 outdir = os.path.join("PyFstat_example_data", label)
 
 # Properties of the GW data

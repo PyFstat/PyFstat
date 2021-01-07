@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -e
+
+if [[ ! -f /.dockerenv ]]; then
+    echo "This script was written for repo2docker and is supposed to run inside a docker container."
+    echo "Exiting because this script can delete data if run outside of a docker container."
+    exit 1
+fi
+
+# Install the latest version of PyFstat
+pip install .
+
+# Get the example scripts and clean up files
+TMP_DIR=/tmp/pyfstat
+mkdir -p ${TMP_DIR}
+cp -r examples/*/*.py .binder ${TMP_DIR}
+find . -delete
+
+# Generate notebooks from the python scripts
+NOTEBOOKS_SCRIPTS_DIR=.generated-notebooks
+mkdir -p ${NOTEBOOKS_SCRIPTS_DIR}
+cp -r ${TMP_DIR}/* ${NOTEBOOKS_SCRIPTS_DIR}
+find ${NOTEBOOKS_SCRIPTS_DIR} -name '*.py' ! -name '*run_all*' -exec sphx_glr_python_to_jupyter.py '{}' +
+
+# This symlink is required
+mkdir notebooks
+ln -s ../${NOTEBOOKS_SCRIPTS_DIR} notebooks/auto_examples

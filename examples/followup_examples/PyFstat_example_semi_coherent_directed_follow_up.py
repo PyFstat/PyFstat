@@ -1,9 +1,16 @@
+"""
+Follow up example
+=================
+
+Multi-stage MCMC follow up of a CW signal produced by an isolated
+source using a ladder of coherent times.
+"""
 import pyfstat
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-label = os.path.splitext(os.path.basename(__file__))[0]
+label = "PyFstat_example_semi_coherent_directed_follow_up"
 outdir = os.path.join("PyFstat_example_data", label)
 
 # Properties of the GW data
