@@ -119,10 +119,10 @@ class MCMCSearch(BaseSearchClass):
             is requirede, minStartTime and maxStartTime default to None in which
             case all available data is used.
         label, outdir: str
-            A label and output directory (optional, defaults is `'data'`) to
+            A label and output directory (optional, default is `data`) to
             name files
         sftfilepattern: str, optional
-            Pattern to match SFTs using wildcards (*?) and ranges [0-9];
+            Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
             mutiple patterns can be given separated by colons.
         detectors: str, optional
             Two character reference to the detectors to use, specify None for no
