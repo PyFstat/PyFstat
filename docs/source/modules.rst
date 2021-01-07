@@ -2,8 +2,13 @@
    sphinx-apidoc -f -o source ../ ../versioneer.py ../setup.py
    (everything after the first "../" are exclude patterns)
 
-PyFstat
-=======
+PyFstat module documentation
+============================
+
+These pages document the full API and set of classes provided by PyFstat.
+
+See :doc:`here <readme>` for installation instructions and
+other general information.
 
 .. toctree::
    :maxdepth: 4
