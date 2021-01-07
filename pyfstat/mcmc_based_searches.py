@@ -2722,20 +2722,6 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
 
     See MCMCSemiCoherentSearch for a list of additional parameters, here we list only the additional
     init parameters of this class.
-
-    Attributes
-    ----------
-    symbol_dictionary: dict
-        Key, val pairs of the parameters (i.e. `F0`, `F1`), to Latex math
-        symbols for plots
-    unit_dictionary: dict
-        Key, val pairs of the parameters (i.e. `F0`, `F1`), and the
-        units (i.e. `Hz`)
-    transform_dictionary: dict
-        Key, val pairs of the parameters (i.e. `F0`, `F1`), where the key is
-        itself a dictionary which can item `multiplier`, `subtractor`, or
-        `unit` by which to transform by and update the units.
-
     """
 
     def __init__(
