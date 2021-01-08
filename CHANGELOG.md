@@ -1,4 +1,4 @@
-## 1.10.0 [07/01/2021]
+## 1.10.0 [08/01/2021]
 
  - documentation now available from https://pyfstat.readthedocs.io
    - and examples can be run on https://mybinder.org/v2/gh/PyFstat/PyFstat/master
