@@ -287,10 +287,16 @@ and the original paper introducing the code:
 [Ashton&Prix 2018](https://doi.org/10.1103/PhysRevD.97.103020)
 ([inspire:1655200](https://inspirehep.net/literature/1655200)
 / [ADS:2018PhRvD..97j3020A](https://ui.adsabs.harvard.edu/abs/2018PhRvD..97j3020A/)).
-If you use the transient module, please also cite:
+This is also the main reference for the MCMC approach.
+In addition, parts of the package are based on the following papers:
+* For transient searches, please also cite:
 [Keitel&Ashton 2018](https://doi.org/10.1088/1361-6382/aade34)
 ([inspire:1673205](https://inspirehep.net/literature/1673205)
 / [ADS:2018CQGra..35t5003K](https://ui.adsabs.harvard.edu/abs/2018CQGra..35t5003K/)).
+* For glitch-robust searches, please also cite:
+[Ashton, Prix & Jones 2018](https://doi.org/10.1103/PhysRevD.98.063011)
+([inspire:1672396](https://inspirehep.net/literature/1672396)
+/ [ADS:2018PhRvD..98f3011A](https://ui.adsabs.harvard.edu/abs/2018PhRvD..98f3011A/)
 
 If you'd like to cite the `PyFstat` package in general,
 or versions from 1.5.x upwards,
