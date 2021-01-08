@@ -41,7 +41,9 @@ The most promising signals from such sources,
 although as of 2020 not yet detected,
 are so-called 'Continuous Waves' (CWs):
 long-lasting, quasi-monochromatic gravitational waves.
-Many search methods have been developed and applied on LIGO and Virgo data,
+Many search methods have been developed and applied on
+LIGO [@TheLIGOScientific:2014jea]
+and Virgo [@TheVirgo:2014hva] data,
 most of them based on variants of matched filtering.
 See @Prix:2009oha, @Riles:2017evm, and @Sieniawska:2019hmd for reviews of the field.
 
