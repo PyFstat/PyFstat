@@ -60,6 +60,7 @@ It has been one of the standard methods for LIGO-Virgo CW searches for two decad
 
 *PyFstat* provides classes for various search strategies and target signals,
 contained in three main submodules:
+
 - `core` : `ComputeFstat` is the basic wrapper to LALSuite's $\mathcal{F}$-statistic algorithm,
 though, like other base classes in this submodule, it should be rarely accessed by end-users.
 - `grid_based_searches` : Simple search classes based on regular grids over the parameter space.
@@ -89,6 +90,7 @@ are for the MCMC exploration of small parameter-space regions
 and for the long-duration transient case
 
 Additional helper classes, utility functions and internals are included to
+
 - handle the Short Fourier Transform (SFT) data format popularly used for CW searches in LIGO data;
 - simulate artificial data with noise and signals in them;
 - plotting.
@@ -126,6 +128,7 @@ nor very convenient for rapid development and integration with modern technologi
 like GPUs or machine learning.
 
 *PyFstat* serves a dual function of
+
 - making LALSuite CW functionality more easily accessible through a Python interface,
 thus facilitating the new user experience and,
 for developers, the exploratory implementation of novel methods;
@@ -133,6 +136,7 @@ for developers, the exploratory implementation of novel methods;
 most notably for MCMC-based candidate followup.
 
 So far, *PyFstat* has been used
+
 - for the original proposal of using MCMC for CW candidate followup [@Ashton:2018ure];
 - for developing glitch-robust CW search methods [@Ashton:2018qth];
 - for speeding up long-transient searches with GPUs [@Keitel:2018pxz];
