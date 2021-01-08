@@ -47,7 +47,7 @@ and Virgo [@TheVirgo:2014hva] data,
 most of them based on variants of matched filtering.
 See @Prix:2009oha, @Riles:2017evm, and @Sieniawska:2019hmd for reviews of the field.
 
-The *PyFstat* package provides an interface,
+The `PyFstat` package provides an interface,
 built on top of the LIGO Scientific Collaboration's LALSuite library [@lalsuite],
 to perform $\mathcal{F}$-statistic based CW data analysis.
 The $\mathcal{F}$-statistic, first introduced by @Jaranowski:1998qm,
@@ -58,20 +58,20 @@ its frequency, inherent spin-down, and sky location)
 and maximized over its amplitude parameters.
 It has been one of the standard methods for LIGO-Virgo CW searches for two decades.
 
-*PyFstat* provides classes for various search strategies and target signals,
+`PyFstat` provides classes for various search strategies and target signals,
 contained in three main submodules:
 
-- `core` : `ComputeFstat` is the basic wrapper to LALSuite's $\mathcal{F}$-statistic algorithm,
-though, like other base classes in this submodule, it should be rarely accessed by end-users.
-- `grid_based_searches` : Simple search classes based on regular grids over the parameter space.
-- `mcmc_based_searches` : Classes to cover small parameter space regions around
+- `core` : Contains the basic wrapper to LALSuite's $\mathcal{F}$-statistic algorithm;
+the classes in this submodule should be rarely accessed by end-users.
+- `grid_based_searches` : Classes to search over regular parameter-space grids.
+- `mcmc_based_searches` : Classes to cover small parameter-space regions around
 search targets or promising signal candidates from wider searches ('followup' use case)
-with stochastic template placement through the ptemcee sampler.
+with stochastic template placement through the `ptemcee` sampler [@Vousden:2015pte].
 
-Besides standard CW signals from isolated neutron stars, *PyFstat* can also be used
+Besides standard CW signals from isolated neutron stars, `PyFstat` can also be used
 for CW signals from sources in binary systems (including the additional orbital parameters),
 for CWs with a discontinuity at a pulsar glitch,
-and for a class of CW-like long-duration transient signals expected e.g. from _after_ a pulsar glitch.
+and for CW-like long-duration transient signals expected e.g. from _after_ a pulsar glitch.
 Specialized versions of both the grid-based and MCMC-based search classes
 are provided for several of these scenarios.
 
@@ -81,35 +81,35 @@ Both fully-coherent and semi-coherent searches
 are covered,
 and in addition to the $\mathcal{F}$-statistic,
 an additional detection statistic that is more robust against single-detector noise artifacts
-@Keitel:2013wga
+[@Keitel:2013wga]
 is also supported.
-However, *PyFstat* does not compete with the sophisticated
+However, `PyFstat` does not compete with the sophisticated
 grid setups and semi-coherent algorithms implemented in various LALSuite programs.
-As discussed below, the main scientific use cases for *PyFstat* at the time of publication
+As discussed below, the main scientific use cases for `PyFstat` at the time of publication
 are for the MCMC exploration of small parameter-space regions
-and for the long-duration transient case
+and for the long-duration transient case.
 
 Additional helper classes, utility functions and internals are included to
 
-- handle the Short Fourier Transform (SFT) data format popularly used for CW searches in LIGO data;
+- handle the common Short Fourier Transform (SFT) data format for LIGO data;
 - simulate artificial data with noise and signals in them;
-- plotting.
+- plot results.
 
-*PyFstat* was first described in @Ashton:2018ure which remains the main reference
+`PyFstat` was first described in @Ashton:2018ure which remains the main reference
 for the MCMC-based analysis implemented in the package.
-The extension to transient signals, which uses pyCUDA for speedup,
+The extension to transient signals, which uses `PyCUDA` [@Kloeckner:2012pyc] for speedup,
 is discussed in detail in @Keitel:2018pxz .
 Most of the underlying LALSuite functionality is accessed through SWIG wrappings [@Wette:2020air]
-though some parts, such as the SFT handling,
-is as of the writing of this paper still called through stand-alone `lalapps` executables,
-though a backend migration to pure SWIG usage is planned for the future.
+though for some parts, such as the SFT handling,
+we still (as of the writing of this paper) call stand-alone `lalapps` executables.
+Completing the backend migration to pure SWIG usage is planned for the future.
 
-The source of *PyFstat* is hosted on [GitHub](https://github.com/PyFstat/PyFstat/).
+The source of `PyFstat` is hosted on [GitHub](https://github.com/PyFstat/PyFstat/).
 This repository also contains an automated test suite
 and a set of introductory example scripts.
 Issues with the software can be submitted through GitHub
 and pull requests are always welcome.
-Documentation in html and pdf formats is available from https://readthedocs.org/projects/pyfstat/
+Documentation in html and pdf formats is available from [readthedocs.org](https://readthedocs.org/projects/pyfstat/)
 and installation instructions can be obtained both from there
 and from the project's [README](https://github.com/PyFstat/PyFstat/blob/master/README.md) file.
 
@@ -120,14 +120,12 @@ The sensitivity of searches for CWs and long-duration transient GWs
 is generally limited by computational resources,
 as the required number of matched-filter templates increases steeply
 for long observation times and wide parameter spaces.
-
 The C-based LALSuite library [@lalsuite] contains many sophisticated search methods
 with a long development history and high level of optimization,
-but is not very accessible for researchers new to the field or for students,
-nor very convenient for rapid development and integration with modern technologies
+but is not very accessible for researchers new to the field or for students;
+nor is it very convenient for rapid development and integration with modern technologies
 like GPUs or machine learning.
-
-*PyFstat* serves a dual function of
+Hence, `PyFstat` serves a dual function of
 
 - making LALSuite CW functionality more easily accessible through a Python interface,
 thus facilitating the new user experience and,
@@ -135,20 +133,20 @@ for developers, the exploratory implementation of novel methods;
 - providing a set of production-ready search classes for use cases not yet covered by LALSuite itself,
 most notably for MCMC-based candidate followup.
 
-So far, *PyFstat* has been used
+So far, `PyFstat` has been used for
 
-- for the original proposal of using MCMC for CW candidate followup [@Ashton:2018ure];
-- for developing glitch-robust CW search methods [@Ashton:2018qth];
-- for speeding up long-transient searches with GPUs [@Keitel:2018pxz];
-- for the followup from all-sky searches for CWs from sources in binary systems,
+- the original proposal of MCMC followup for CW candidates [@Ashton:2018ure];
+- developing glitch-robust CW search methods [@Ashton:2018qth];
+- speeding up long-transient searches with GPUs [@Keitel:2018pxz];
+- followup of candidates from all-sky searches for CWs from sources in binary systems,
 see @Covas:2020nwy and @Abbott:2020mev.
 
 # Acknowledgements
 
-We acknowledge contributions to the package from Karl Wette, Sylvia Zhu and Dan Foreman-Mackey.
-and helpful suggestions by John T. Whelan and Luca Rei
+We acknowledge contributions to the package from Karl Wette, Sylvia Zhu and Dan Foreman-Mackey;
+as well as helpful suggestions by John T. Whelan and Luca Rei
 and the LIGO-Virgo-KAGRA Continuous Wave working group.
-D.~K. and R.~T. are supported by European Union FEDER funds, the Ministry of Science, 
+D.K. and R.T. are supported by European Union FEDER funds, the Ministry of Science, 
 Innovation and Universities and the Spanish Agencia Estatal de Investigación grants
 PID2019-106416GB-I00/AEI/10.13039/501100011033,
 FPA2016-76821-P,
@@ -159,8 +157,7 @@ Comunitat Autonoma de les Illes Balears through the Direcció General de Políti
 Generalitat Valenciana (PROMETEO/2019/071),
 EU COST Actions CA18108, CA17137, CA16214, and CA16104,
 and the Spanish Ministerio de Ciencia, Innovación y Universidades
-(R.~T.: ref.~FPU 18/00694;
-D.~K.: ref.~BEAGAL 18/00148, cofinanced by the Universitat de les Illes Balears
-).
+(R.T.: ref. FPU 18/00694;
+D.K.: ref. BEAGAL 18/00148, cofinanced by the Universitat de les Illes Balears).
 
 # References
