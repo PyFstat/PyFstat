@@ -44,7 +44,7 @@ for case in os.listdir(basedir):
                 for step in ordered_cases[case]
             ]
         else:
-            scripts = sorted(glob(os.path.join(exdir, "*")))
+            scripts = sorted(glob(os.path.join(exdir, "PyFstat_example_*.py")))
         print(f"Executing {len(scripts)} script(s) in example directory {exdir}...")
         for script in scripts:
             Nscripts += 1

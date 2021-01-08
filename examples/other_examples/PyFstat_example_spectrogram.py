@@ -6,17 +6,18 @@ Compute the spectrogram of a set of SFTs. This is useful to produce
 visualizations of the Doppler modulation of a CW signal.
 """
 
-import tempfile
-
+import os
 import matplotlib.pyplot as plt
 
 import pyfstat
 
-plt.rcParams["font.family"] = "serif"
-plt.rcParams["font.size"] = 18
-plt.rcParams["text.usetex"] = True
+# not github-action compatible
+# plt.rcParams["font.family"] = "serif"
+# plt.rcParams["font.size"] = 18
+# plt.rcParams["text.usetex"] = True
 
 label = "PyFstat_example_spectrogram"
+outdir = os.path.join("PyFstat_example_data", label)
 
 depth = 5
 
@@ -41,17 +42,21 @@ signal_parameters = {
     "h0": data_parameters["sqrtSX"] / depth,
     "cosi": 1.0,
 }
-with tempfile.TemporaryDirectory() as tmpdir:
-    data = pyfstat.BinaryModulatedWriter(
-        label=label, outdir=tmpdir, **data_parameters, **signal_parameters
-    )
-    data.make_data()
-    times, freqs, sft_data = pyfstat.helper_functions.get_sft_array(data.sftfilepath)
 
+# making data
+data = pyfstat.BinaryModulatedWriter(
+    label=label, outdir=outdir, **data_parameters, **signal_parameters
+)
+data.make_data()
+
+print("Loading SFT data and computing normalized power...")
+times, freqs, sft_data = pyfstat.helper_functions.get_sft_array(data.sftfilepath)
 normalized_power = (
     2 * sft_data ** 2 / (data_parameters["Tsft"] * data_parameters["sqrtSX"] ** 2)
 )
 
+plotfile = os.path.join(outdir, label + ".png")
+print(f"Plotting to file: {plotfile}")
 fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))
 ax.grid(which="both")
 ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]", ylim=(99.98, 100.02))
@@ -64,4 +69,4 @@ c = ax.pcolormesh(
 )
 fig.colorbar(c, label="Normalized Power")
 plt.tight_layout()
-fig.savefig("spectrogram_example.png")
+fig.savefig(plotfile)
