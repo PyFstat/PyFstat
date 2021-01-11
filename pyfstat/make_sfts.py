@@ -814,6 +814,9 @@ class Writer(BaseSearchClass):
                     f" but did not get the expected SFT file path(s): {self.sftfilepath}."
                 )
             logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
+            logging.info("Now validating each SFT file...")
+            for sft in self.sftfilenames:
+                lalpulsar.ValidateSFTFile(sft)
 
     def predict_fstat(self, assumeSqrtSX=None):
         """Predict the expected F-statistic value for the injection parameters.
