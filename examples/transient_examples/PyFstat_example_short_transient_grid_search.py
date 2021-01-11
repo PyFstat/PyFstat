@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     print("Standard CW search:")
     search1 = pyfstat.GridSearch(
-        label="CW" + ("-BSGL" if BSGL else ""),
+        label="CW" + ("_BSGL" if BSGL else ""),
         outdir=data.outdir,
         sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
         F0s=F0s,
@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     print("with t0,tau bands:")
     search2 = pyfstat.TransientGridSearch(
-        label="tCW" + ("-BSGL" if BSGL else ""),
+        label="tCW" + ("_BSGL" if BSGL else ""),
         outdir=data.outdir,
         sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
         F0s=F0s,
