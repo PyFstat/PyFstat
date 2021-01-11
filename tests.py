@@ -219,10 +219,7 @@ class TestWriter(BaseForTestsWithData):
             ),
         )
         self.assertTrue(os.path.isfile(expected_outfile))
-        cl_validate = "lalapps_SFTvalidate " + expected_outfile
-        pyfstat.helper_functions.run_commandline(
-            cl_validate, raise_error=True, return_output=False
-        )
+        self.assertTrue(lalpulsar.ValidateSFTFile(expected_outfile) == 0)
 
     def test_makefakedata_usecached(self):
         if os.path.isfile(self.Writer.config_file_name):

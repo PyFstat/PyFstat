@@ -64,7 +64,7 @@ setup(
         "bashplotlib",
         "peakutils",
         "pathos",
-        "lalsuite>=6.76",
+        "lalsuite>=6.80",
         "versioneer",
     ],
 )
