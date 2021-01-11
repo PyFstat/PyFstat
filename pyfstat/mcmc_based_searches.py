@@ -1760,14 +1760,9 @@ class MCMCSearch(BaseSearchClass):
 
     def _get_detstat_from_loglikelihood(self, idx=None):
         """Inverts the extra terms applied in logl()."""
-        if idx is None:
-            return (
-                self.lnlikes - self.likelihoodcoef
-            ) / self.likelihooddetstatmultiplier
-        else:
-            return (
-                self.lnlikes[idx] - self.likelihoodcoef
-            ) / self.likelihooddetstatmultiplier
+        return (
+            self.lnlikes[idx if idx is not None else ...] - self.likelihoodcoef
+        ) / self.likelihooddetstatmultiplier
 
     def get_max_twoF(self):
         """Get the max. likelihood (loudest) sample and the compute
