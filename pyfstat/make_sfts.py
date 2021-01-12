@@ -278,8 +278,7 @@ class Writer(BaseSearchClass):
         sqrtSX: float or list or str or None
             Single-sided PSD values for generating fake Gaussian noise.
             Single float or str value: use same for all detectors.
-            List or comma-separated string: must match len(detectors)
-            and/or the data in sftfilepattern.
+            List or comma-separated string: must match len(detectors).
             Detectors will be paired to list elements following alphabetical order.
         noiseSFTs: str or None
             Existing SFT files on top of which signals will be injected.
@@ -481,9 +480,8 @@ class Writer(BaseSearchClass):
         else:
             self._get_setup_from_tstart_duration()
 
-        self.sftfilepath = ";".join(
-            [os.path.join(self.outdir, fn) for fn in self.sftfilenames]
-        )
+        self.sftfilenames = [os.path.join(self.outdir, fn) for fn in self.sftfilenames]
+        self.sftfilepath = ";".join(self.sftfilenames)
 
         if self.tref is None:
             self.tref = self.tstart
@@ -636,8 +634,7 @@ class Writer(BaseSearchClass):
         need_new = "Will create new SFT file(s)."
 
         logging.info("Checking if we can re-use existing SFT data file(s)...")
-        sftfiles = self.sftfilepath.split(";")
-        for sftfile in sftfiles:
+        for sftfile in self.sftfilenames:
             if os.path.isfile(sftfile) is False:
                 logging.info(
                     "...no SFT file matching '{}' found. {}".format(sftfile, need_new)
@@ -651,7 +648,7 @@ class Writer(BaseSearchClass):
                     [
                         os.path.getmtime(sftfile)
                         < os.path.getmtime(self.config_file_name)
-                        for sftfile in sftfiles
+                        for sftfile in self.sftfilenames
                     ]
                 ):
                     logging.info(
@@ -680,7 +677,7 @@ class Writer(BaseSearchClass):
         # here we check one SFT header from each SFT file,
         # assuming that any concatenated file has been sanely constructed with
         # matching CLs
-        for sftfile in sftfiles:
+        for sftfile in self.sftfilenames:
             catalog = lalpulsar.SFTdataFind(sftfile, None)
             cl_old = helper_functions.get_lalapps_commandline_from_SFTDescriptor(
                 catalog.data[0]
@@ -811,13 +808,15 @@ class Writer(BaseSearchClass):
         check_ok = self.check_cached_data_okay_to_use(cl_mfd)
         if check_ok is False:
             helper_functions.run_commandline(cl_mfd)
-            if np.all([os.path.isfile(f) for f in self.sftfilepath.split(";")]):
-                logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
-            else:
-                raise RuntimeError(
+            if not np.all([os.path.isfile(f) for f in self.sftfilenames]):
+                raise IOError(
                     f"It seems we successfully ran {mfd},"
                     f" but did not get the expected SFT file path(s): {self.sftfilepath}."
                 )
+            logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
+            logging.info("Now validating each SFT file...")
+            for sft in self.sftfilenames:
+                lalpulsar.ValidateSFTFile(sft)
 
     def predict_fstat(self, assumeSqrtSX=None):
         """Predict the expected F-statistic value for the injection parameters.
