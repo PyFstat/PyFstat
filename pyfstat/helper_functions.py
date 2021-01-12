@@ -1001,25 +1001,8 @@ def predict_fstat(
     cl_pfs = []
     cl_pfs.append("lalapps_PredictFstat")
 
-    if h0 is not None:
-        cl_pfs.append("--h0={}".format(h0))
-    if cosi is not None:
-        cl_pfs.append("--cosi={}".format(cosi))
-    # NOTE: as of lalsuite 6.76, [psi,Alpha,Delta] are required even for
-    # noise-only calls, hence we default them to 0 if h0 is None or ==0,
-    # but fail if they're not set with h0>0.
-    # This can likely be simplified after a future lalsuite release.
-    pars = {"psi": psi, "Alpha": Alpha, "Delta": Delta}
-    for par in pars.keys():
-        if pars[par] is None:
-            if h0:
-                raise ValueError(
-                    "For h0>0, {:s} needs to be set explicitly.".format(par)
-                )
-            else:
-                cl_pfs.append("--{:s}=0".format(par))
-        else:
-            cl_pfs.append("--{:s}={}".format(par, pars[par]))
+    pars = {"h0": h0, "cosi": cosi, "psi": psi, "Alpha": Alpha, "Delta": Delta}
+    cl_pfs.extend([f"--{key}={val}" for key, val in pars.items() if val is not None])
 
     if sftfilepattern is None:
         if IFOs is None or assumeSqrtSX is None:
@@ -1034,9 +1017,6 @@ def predict_fstat(
                 cl_pfs.append("--minStartTime={}".format(minStartTime))
                 cl_pfs.append("--duration={}".format(duration))
         else:
-            if len(timestampsFiles.split(",")) != len(IFOs.split(",")):
-                # checking this manually here because PFS would segfault
-                raise ValueError("timestampsFiles and IFOs must have same length!")
             cl_pfs.append("--timestampsFiles={}".format(timestampsFiles))
     else:
         cl_pfs.append("--DataFiles='{}'".format(sftfilepattern))
