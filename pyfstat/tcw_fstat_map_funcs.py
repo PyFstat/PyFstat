@@ -141,7 +141,7 @@ class pyTransientFstatMap:
         with open(tCWfile, "w") as tfp:
             for hline in header:
                 tfp.write("# {:s}\n".format(hline))
-            tfp.write("# t0 [s]     tau [s]     2F\n")
+            tfp.write("# t0[s]     tau[s]     2F\n")
             for m, F_m in enumerate(self.F_mn):
                 this_t0 = windowRange.t0 + m * windowRange.dt0
                 for n, this_F in enumerate(F_m):
