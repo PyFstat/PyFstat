@@ -1051,9 +1051,7 @@ class TransientGridSearch(GridSearch):
                     self.search.FstatMap.write_F_mn_to_file(
                         tCWfile, windowRange, self.output_file_header
                     )
-                maxidx = np.unravel_index(
-                    self.search.FstatMap.F_mn.argmax(), self.search.FstatMap.F_mn.shape
-                )
+                maxidx = self.search.FstatMap.get_maxF_idx()
                 thisCand += [
                     windowRange.t0 + maxidx[0] * windowRange.dt0,
                     windowRange.tau + maxidx[1] * windowRange.dtau,

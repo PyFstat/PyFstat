@@ -1187,9 +1187,7 @@ class ComputeFstat(BaseSearchClass):
         # to return BSGL for a signal with those parameters.
         # FIXME: should we instead compute BSGL over the whole F_mn
         # and return the maximum of that?
-        idx_maxTwoF = np.unravel_index(
-            np.argmax(self.FstatMap.F_mn), self.FstatMap.F_mn.shape
-        )
+        idx_maxTwoF = self.FstatMap.get_maxF_idx()
         for X in range(self.FstatResults.numDetectors):
             # For each detector, we need to build a MultiFstatAtomVector
             # because that's what the Fstat map function expects.

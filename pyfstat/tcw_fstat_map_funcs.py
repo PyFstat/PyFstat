@@ -112,6 +112,16 @@ class pyTransientFstatMap:
         self.t0_ML = transientFstatMap_t.t0_ML
         self.tau_ML = transientFstatMap_t.tau_ML
 
+    def get_maxF_idx(self):
+        """Gets the 2D-unravelled index pair of the maximum of the F_mn map
+
+        Returns
+        -------
+        idx: tuple
+            The m,n indices of the map entry with maximal F value.
+        """
+        return np.unravel_index(np.argmax(self.F_mn), self.F_mn.shape)
+
     def write_F_mn_to_file(self, tCWfile, windowRange, header=[]):
         """Format a 2D transient-F-stat matrix over `(t0,tau)` and write as a text file.
 
