@@ -21,8 +21,6 @@ from pyfstat.core import (
     args,
     DefunctClass,
 )
-import lalpulsar
-import lal
 
 
 class GridSearch(BaseSearchClass):
@@ -1034,7 +1032,6 @@ class TransientGridSearch(GridSearch):
             thisCand = list(vals)
             detstat = self.search.get_det_stat(*vals)
             windowRange = getattr(self.search, "windowRange", None)
-            FstatMap = getattr(self.search, "FstatMap", None)
             self.timingFstatMap += getattr(self.search, "timingFstatMap", 0.0)
             thisCand.append(self.search.twoF)
             if hasattr(self.search, "twoFX"):
@@ -1045,26 +1042,16 @@ class TransientGridSearch(GridSearch):
             if self.detstat != "maxTwoF":
                 thisCand.append(detstat)
             if getattr(self, "transientWindowType", None):
-                if self.tCWFstatMapVersion == "lal":
-                    F_mn = FstatMap.F_mn.data
-                else:
-                    F_mn = FstatMap.F_mn
+                if not hasattr(self.search, "FstatMap"):
+                    raise RuntimeError(
+                        "Since transientWindowType!=None, we expected to have a FstatMap."
+                    )
                 if self.outputTransientFstatMap:
                     tCWfile = self.get_transient_fstat_map_filename(thisCand)
-                    if self.tCWFstatMapVersion == "lal":
-                        fo = lal.FileOpen(tCWfile, "w")
-                        for hline in self.output_file_header:
-                            lal.FilePuts("# {:s}\n".format(hline), fo)
-                        lal.FilePuts("# t0[s]      tau[s]      2F\n", fo)
-                        lalpulsar.write_transientFstatMap_to_fp(
-                            fo, FstatMap, windowRange, None
-                        )
-                        # instead of lal.FileClose(),
-                        # which is not SWIG-exported:
-                        del fo
-                    else:
-                        self.write_F_mn(tCWfile, F_mn, windowRange)
-                maxidx = np.unravel_index(F_mn.argmax(), F_mn.shape)
+                    self.write_F_mn(tCWfile, self.search.FstatMap.F_mn, windowRange)
+                maxidx = np.unravel_index(
+                    self.search.FstatMap.F_mn.argmax(), self.search.FstatMap.F_mn.shape
+                )
                 thisCand += [
                     windowRange.t0 + maxidx[0] * windowRange.dt0,
                     windowRange.tau + maxidx[1] * windowRange.dtau,

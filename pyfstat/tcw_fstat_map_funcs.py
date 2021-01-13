@@ -63,7 +63,11 @@ class pyTransientFstatMap:
     Attributes
     ----------
     F_mn: np.ndarray
-        2D array of F values (not 2F!).
+        2D array of F values (not 2F!),
+        with `m` an index over start-times `t0`,
+        and  `n` an index over duration parameters `tau`,
+        in steps of `dt0`  in `[t0,  t0+t0Band]`,
+        and `dtau` in `[tau, tau+tauBand]`.
     maxF: float
         Maximum of F (not 2F!) over the array.
     t0_ML: float
@@ -72,7 +76,7 @@ class pyTransientFstatMap:
         Maximum likelihood estimate of the transient duration `tau`.
     """
 
-    def __init__(self, N_t0Range, N_tauRange):
+    def __init__(self, N_t0Range=None, N_tauRange=None, transientFstatMap_t=None):
         """
         The class can be initialized with the following:
 
@@ -82,29 +86,44 @@ class pyTransientFstatMap:
             Number of `t0` values covered.
         N_tauRange: int
             Number of `tau` values covered.
+        transientFstatMap_t: lalpulsar.transientFstatMap_t
+            pre-allocated matrix from lalpulsar.
         """
+        if transientFstatMap_t:
+            self._init_from_lalpulsar_type(transientFstatMap_t)
+        else:
+            if not N_t0Range or not N_tauRange:
+                raise ValueError(
+                    "Need either a transientFstatMap_t or a pair of (N_t0Range, N_tauRange)!."
+                )
+            self.F_mn = np.zeros((N_t0Range, N_tauRange), dtype=np.float32)
+            # Initializing maxF to a negative value ensures
+            # that we always update at least once and hence return
+            # sane t0_d_ML, tau_d_ML
+            # even if there is only a single bin where F=0 happens.
+            self.maxF = float(-1.0)
+            self.t0_ML = float(0.0)
+            self.tau_ML = float(0.0)
 
-        self.F_mn = np.zeros((N_t0Range, N_tauRange), dtype=np.float32)
-        # Initializing maxF to a negative value ensures
-        # that we always update at least once and hence return
-        # sane t0_d_ML, tau_d_ML
-        # even if there is only a single bin where F=0 happens.
-        self.maxF = float(-1.0)
-        self.t0_ML = float(0.0)
-        self.tau_ML = float(0.0)
+    def _init_from_lalpulsar_type(self, transientFstatMap_t):
+        """This essentially just strips out a redundant member level from the lalpulsar structure."""
+        self.F_mn = transientFstatMap_t.F_mn.data
+        self.maxF = transientFstatMap_t.maxF
+        self.t0_ML = transientFstatMap_t.t0_ML
+        self.tau_ML = transientFstatMap_t.tau_ML
 
 
 fstatmap_versions = {
-    "lal": lambda multiFstatAtoms, windowRange: getattr(
-        lalpulsar, "ComputeTransientFstatMap"
-    )(multiFstatAtoms, windowRange, False),
+    "lal": lambda multiFstatAtoms, windowRange: lalpulsar_compute_transient_fstat_map(
+        multiFstatAtoms, windowRange
+    ),
     "pycuda": lambda multiFstatAtoms, windowRange: pycuda_compute_transient_fstat_map(
         multiFstatAtoms, windowRange
     ),
 }
 """Dictionary of the actual callable transient F-stat map functions this module supports.
 
-Actual runtime variability depends on the corresponding external modules
+Actual runtime availability depends on the corresponding external modules
 being available.
 """
 
@@ -305,6 +324,32 @@ def call_compute_transient_fstat_map(
     return FstatMap, timingFstatMap
 
 
+def lalpulsar_compute_transient_fstat_map(multiFstatAtoms, windowRange):
+    """Wrapper for the standard lalpulsar function for computing a transient F-statistic map.
+
+    See https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/_transient_c_w__utils_8h.html
+    for the wrapped function.
+
+    Parameters
+    ----------
+    multiFstatAtoms: lalpulsar.MultiFstatAtomVector
+        The time-dependent F-stat atoms previously computed by `ComputeFstat`.
+    windowRange: lalpulsar.transientWindowRange_t
+        The structure defining the transient parameters.
+
+    Returns
+    -------
+    FstatMap: pyTransientFstatMap
+        The computed results, see the class definition for details.
+    """
+    FstatMap_lalpulsar = lalpulsar.ComputeTransientFstatMap(
+        multiFstatAtoms=multiFstatAtoms,
+        windowRange=windowRange,
+        useFReg=False,
+    )
+    return pyTransientFstatMap(transientFstatMap_t=FstatMap_lalpulsar)
+
+
 def reshape_FstatAtomsVector(atomsVector):
     """Make a dictionary of ndarrays out of an F-stat atoms 'vector' structure.
 
@@ -388,12 +433,7 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange):
     Returns
     -------
     FstatMap: pyTransientFstatMap
-        A 2D matrix `F_mn`,
-        with `m` an index over start-times `t0`,
-        and  `n` an index over duration parameters `tau`,
-        in steps of `dt0`  in `[t0,  t0+t0Band]`,
-        and `dtau` in `[tau, tau+tauBand]`
-        as defined in the `windowRange` input.
+        The computed results, see the class definition for details.
     """
 
     if windowRange.type >= lalpulsar.TRANSIENT_LAST:

@@ -1157,14 +1157,10 @@ class ComputeFstat(BaseSearchClass):
             self.FstatResults.multiFatoms[0],  # 0 index: single frequency bin
             self.windowRange,
         )
-        if self.tCWFstatMapVersion == "lal":
-            F_mn = self.FstatMap.F_mn.data
-        else:
-            F_mn = self.FstatMap.F_mn
 
         # Now instead of the overall twoF,
         # we get the maximum twoF over the transient window range.
-        self.maxTwoF = 2 * np.max(F_mn)
+        self.maxTwoF = 2 * self.FstatMap.maxF
         if np.isnan(self.maxTwoF):
             self.maxTwoF = 0
         return self.maxTwoF
@@ -1186,16 +1182,14 @@ class ComputeFstat(BaseSearchClass):
             at the input parameter values.
             Also stored as `self.log10BSGL`.
         """
-        if self.tCWFstatMapVersion == "lal":
-            F_mn = self.FstatMap.F_mn.data
-        else:
-            F_mn = self.FstatMap.F_mn
         # First, we need to also compute per-detector F_mn maps.
         # For now, we use the t0,tau index that maximises the multi-detector F
         # to return BSGL for a signal with those parameters.
         # FIXME: should we instead compute BSGL over the whole F_mn
         # and return the maximum of that?
-        idx_maxTwoF = np.unravel_index(np.argmax(F_mn), F_mn.shape)
+        idx_maxTwoF = np.unravel_index(
+            np.argmax(self.FstatMap.F_mn), self.FstatMap.F_mn.shape
+        )
         for X in range(self.FstatResults.numDetectors):
             # For each detector, we need to build a MultiFstatAtomVector
             # because that's what the Fstat map function expects.
@@ -1217,11 +1211,7 @@ class ComputeFstat(BaseSearchClass):
                 singleIFOmultiFatoms,
                 self.windowRange,
             )
-            if self.tCWFstatMapVersion == "lal":
-                F_mn_X = FXstatMap.F_mn.data
-            else:
-                F_mn_X = FXstatMap.F_mn
-            self.twoFXatMaxTwoF[X] = 2 * F_mn_X[idx_maxTwoF]
+            self.twoFXatMaxTwoF[X] = 2 * FXstatMap.F_mn[idx_maxTwoF]
         self.log10BSGL = lalpulsar.ComputeBSGL(
             self.maxTwoF, self.twoFXatMaxTwoF, self.BSGLSetup
         )
