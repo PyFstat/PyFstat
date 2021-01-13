@@ -2372,36 +2372,12 @@ class MCMCGlitchSearch(MCMCSearch):
     def _set_likelihoodcoef(self):
         """Additional constant terms to turn a detection statistic into a likelihood.
 
-        In general, the (log-)likelihood can be obtained from the signal-to-noise
-        (log-)Bayes factor
-        (omitting the overall Gaussian-noise normalization term)
-        but the detection statistic may only be a monotonic function of the
-        Bayes factor, not the full thing.
-        E.g. this is the case for the standard CW F-statistic!
-
-        In the semi-coherent case, the number of segments must also be considered.
+        See MCMCSearch._set_likelihoodcoef for the base implementation.
+        This method simply extends it in order to account for the increased number
+        of segments due to the presence of glitches.
         """
-        if self.BSGL:
-            # In this case, the corresponding term is already included
-            # in the detection statistic itself.
-            # See Eq. (55) in Keitel et al (PRD 89, 064023, 2014):
-            # https://arxiv.org/abs/1311.5738
-            # where Fstarhat0 = ln(cstar**Nseg) = Nseg * ln(rhohatmax**4/70).
-            # We just need to switch to natural log basis.
-            self.likelihooddetstatmultiplier = np.log(10)
-            self.likelihoodcoef = 0
-        else:
-            # If assuming only Gaussian noise + signal,
-            # the likelihood is essentially the F-statistic,
-            # but with an extra constant term depending on the amplitude prior.
-            # See Eq. (9) of Ashton & Prix (PRD 97, 103020, 2018):
-            # https://arxiv.org/abs/1802.05450
-            # Also need to go from twoF to F,
-            # and include the number of segments ( = nglitch+1 ) explicitly.
-            self.likelihooddetstatmultiplier = 0.5
-            self.likelihoodcoef = (self.nglitch + 1) * np.log(
-                70.0 / self.rhohatmax ** 4
-            )
+        super()._set_likelihoodcoef()
+        self.likelihoodcoef *= self.nglitch + 1
 
     def _initiate_search_object(self):
         logging.info("Setting up search object")
@@ -2746,34 +2722,12 @@ class MCMCSemiCoherentSearch(MCMCSearch):
     def _set_likelihoodcoef(self):
         """Additional constant terms to turn a detection statistic into a likelihood.
 
-        In general, the (log-)likelihood can be obtained from the signal-to-noise
-        (log-)Bayes factor
-        (omitting the overall Gaussian-noise normalization term)
-        but the detection statistic may only be a monotonic function of the
-        Bayes factor, not the full thing.
-        E.g. this is the case for the standard CW F-statistic!
-
-        In the semi-coherent case, the number of segments must also be considered.
+        See MCMCSearch._set_likelihoodcoef for the base implementation.
+        This method simply extends it in order to account for the increased number
+        of segments a semicoherent search works with.
         """
-        if self.BSGL:
-            # In this case, the corresponding term is already included
-            # in the detection statistic itself.
-            # See Eq. (55) in Keitel et al (PRD 89, 064023, 2014):
-            # https://arxiv.org/abs/1311.5738
-            # where Fstarhat0 = ln(cstar**Nseg) = Nseg * ln(rhohatmax**4/70).
-            # We just need to switch to natural log basis.
-            self.likelihooddetstatmultiplier = np.log(10)
-            self.likelihoodcoef = 0
-        else:
-            # If assuming only Gaussian noise + signal,
-            # the likelihood is essentially the F-statistic,
-            # but with an extra constant term depending on the amplitude prior.
-            # See Eq. (9) of Ashton & Prix (PRD 97, 103020, 2018):
-            # https://arxiv.org/abs/1802.05450
-            # Also need to go from twoF to F,
-            # and include the number of segments explicitly.
-            self.likelihooddetstatmultiplier = 0.5
-            self.likelihoodcoef = self.nsegs * np.log(70.0 / self.rhohatmax ** 4)
+        super()._set_likelihoodcoef()
+        self.likelihoodcoef *= self.nsegs
 
     def _get_data_dictionary_to_save(self):
         d = dict(
