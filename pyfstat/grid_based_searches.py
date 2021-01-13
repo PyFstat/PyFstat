@@ -1048,7 +1048,9 @@ class TransientGridSearch(GridSearch):
                     )
                 if self.outputTransientFstatMap:
                     tCWfile = self.get_transient_fstat_map_filename(thisCand)
-                    self.write_F_mn(tCWfile, self.search.FstatMap.F_mn, windowRange)
+                    self.search.FstatMap.write_F_mn_to_file(
+                        tCWfile, windowRange, self.output_file_header
+                    )
                 maxidx = np.unravel_index(
                     self.search.FstatMap.F_mn.argmax(), self.search.FstatMap.F_mn.shape
                 )
@@ -1117,30 +1119,6 @@ class TransientGridSearch(GridSearch):
         fmt_dict["t0"] = "%d"
         fmt_dict["tau"] = "%d"
         return fmt_dict
-
-    def write_F_mn(self, tCWfile, F_mn, windowRange):
-        """Helper function to format a transient-F-stat matrix over `(t0,tau)`.
-
-        Parameters
-        ----------
-        tCWfile: str
-            Name of the file to write to.
-        F_mn: np.ndarray
-            The 2D matrix of transient twoF-stat values.
-        windowRange: lalpulsar.transientWindowRange_t
-            A lalpulsar structure containing the transient parameters.
-        """
-        with open(tCWfile, "w") as tfp:
-            for hline in self.output_file_header:
-                tfp.write("# {:s}\n".format(hline))
-            tfp.write("# t0 [s]     tau [s]     2F\n")
-            for m, F_m in enumerate(F_mn):
-                this_t0 = windowRange.t0 + m * windowRange.dt0
-                for n, this_F in enumerate(F_m):
-                    this_tau = windowRange.tau + n * windowRange.dtau
-                    tfp.write(
-                        "  %10d %10d %- 11.8g\n" % (this_t0, this_tau, 2.0 * this_F)
-                    )
 
     def __del__(self):
         if hasattr(self, "search"):

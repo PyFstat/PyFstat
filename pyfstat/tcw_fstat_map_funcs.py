@@ -112,6 +112,34 @@ class pyTransientFstatMap:
         self.t0_ML = transientFstatMap_t.t0_ML
         self.tau_ML = transientFstatMap_t.tau_ML
 
+    def write_F_mn_to_file(self, tCWfile, windowRange, header=[]):
+        """Format a 2D transient-F-stat matrix over `(t0,tau)` and write as a text file.
+
+        Apart from the optional extra header lines,
+        the format is consistent with lalpulsar.write_transientFstatMap_to_fp().
+
+        Parameters
+        ----------
+        tCWfile: str
+            Name of the file to write to.
+        windowRange: lalpulsar.transientWindowRange_t
+            A lalpulsar structure containing the transient parameters.
+        header: list
+            A list of additional header lines
+            to print at the start of the file.
+        """
+        with open(tCWfile, "w") as tfp:
+            for hline in header:
+                tfp.write("# {:s}\n".format(hline))
+            tfp.write("# t0 [s]     tau [s]     2F\n")
+            for m, F_m in enumerate(self.F_mn):
+                this_t0 = windowRange.t0 + m * windowRange.dt0
+                for n, this_F in enumerate(F_m):
+                    this_tau = windowRange.tau + n * windowRange.dtau
+                    tfp.write(
+                        "  %10d %10d %- 11.8g\n" % (this_t0, this_tau, 2.0 * this_F)
+                    )
+
 
 fstatmap_versions = {
     "lal": lambda multiFstatAtoms, windowRange: lalpulsar_compute_transient_fstat_map(
