@@ -1,5 +1,5 @@
 ---
-title: 'PyFstat: a python package for gravitational-wave data analysis with the F-statistic'
+title: 'PyFstat: a python package for continuous gravitational-wave data analysis'
 tags:
   - Python
   - gravitational waves
