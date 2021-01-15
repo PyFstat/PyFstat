@@ -76,25 +76,26 @@ are provided for these scenarios.
 Both fully-coherent and semi-coherent searches
 (where the data is split into several segments for efficiency)
 are covered,
-and in addition to the $\mathcal{F}$-statistic,
-an additional detection statistic that is more robust against single-detector noise artifacts
+and an extension to the $\mathcal{F}$-statistic
+that is more robust against single-detector noise artifacts
 [@Keitel:2013wga]
 is also supported.
-However, `PyFstat` does not compete with the sophisticated
+However, `PyFstat`'s grid-based searches do not compete with the sophisticated
 grid setups and semi-coherent algorithms implemented in various `LALSuite` programs.
 As discussed below, the main scientific use cases for `PyFstat` at the time of publication
 are for the MCMC exploration of small parameter-space regions
 and for the long-duration transient case.
 
+`PyFstat` was first introduced in @Ashton:2018ure which remains the main reference
+for the MCMC-based analysis implemented in the package.
+The extension to transient signals, which uses `PyCUDA` [@Kloeckner:2012pyc] for speedup,
+is discussed in detail in @Keitel:2018pxz,
+and the glitch-robust search approaches in @Ashton:2018qth.
+
 Additional helper classes, utility functions and internals are included for
 handling the common Short Fourier Transform (SFT) data format for LIGO data,
 simulating artificial data with noise and signals in them,
 and plotting results and diagnostics.
-
-`PyFstat` was first introduced in @Ashton:2018ure which remains the main reference
-for the MCMC-based analysis implemented in the package.
-The extension to transient signals, which uses `PyCUDA` [@Kloeckner:2012pyc] for speedup,
-is discussed in detail in @Keitel:2018pxz.
 Most of the underlying `LALSuite` functionality is accessed through SWIG wrappings [@Wette:2020air]
 though for some parts, such as the SFT handling,
 we still (as of the writing of this paper) call stand-alone `lalapps` executables.
