@@ -1,5 +1,5 @@
 ---
-title: 'PyFstat: a python package for continuous gravitational-wave data analysis'
+title: 'PyFstat: a Python package for continuous gravitational-wave data analysis'
 tags:
   - Python
   - gravitational waves
@@ -36,46 +36,43 @@ bibliography: paper.bib
 
 Gravitational waves in the sensitivity band of ground-based detectors
 can be emitted by a number of astrophysical sources,
-not only from binary coalescences, but also by individual spinning neutron stars.
+including not only binary coalescences, but also individual spinning neutron stars.
 The most promising signals from such sources,
 although as of 2020 not yet detected,
-are so-called 'Continuous Waves' (CWs):
-long-lasting, quasi-monochromatic gravitational waves.
+are the long-lasting, quasi-monochromatic 'Continuous Waves' (CWs).
 Many search methods have been developed and applied on
 LIGO [@TheLIGOScientific:2014jea]
-and Virgo [@TheVirgo:2014hva] data,
-most of them based on variants of matched filtering.
+and Virgo [@TheVirgo:2014hva] data.
 See @Prix:2009oha, @Riles:2017evm, and @Sieniawska:2019hmd for reviews of the field.
 
-The `PyFstat` package provides an interface,
-built on top of the LIGO Scientific Collaboration's LALSuite library [@lalsuite],
-to perform $\mathcal{F}$-statistic based CW data analysis.
-The $\mathcal{F}$-statistic, first introduced by @Jaranowski:1998qm,
-is a matched-filter detection statistic for CW signals
+The `PyFstat` package provides a convenient interface
+to perform a range of CW data analysis tasks.
+It revolves around the $\mathcal{F}$-statistic,
+first introduced by @Jaranowski:1998qm:
+a matched-filter detection statistic for CW signals
 described by a set of frequency evolution parameters
-(for an isolated neutron star:
-its frequency, inherent spin-down, and sky location)
-and maximized over its amplitude parameters.
+and maximized over amplitude parameters.
 It has been one of the standard methods for LIGO-Virgo CW searches for two decades.
+`PyFstat` is built on top of established routines
+in `LALSuite` [@lalsuite]
+but enables a flexible approach to designing new search strategies.
 
-`PyFstat` provides classes for various search strategies and target signals,
-contained in three main submodules:
+Classes for various search strategies and target signals
+are contained in three main submodules:
 
-- `core` : Contains the basic wrapper to LALSuite's $\mathcal{F}$-statistic algorithm;
-the classes in this submodule should be rarely accessed by end-users.
+- `core` : The basic wrappers to `LALSuite`'s $\mathcal{F}$-statistic algorithm.
+End-users should rarely need to access these directly.
 - `grid_based_searches` : Classes to search over regular parameter-space grids.
-- `mcmc_based_searches` : Classes to cover small parameter-space regions around
-search targets or promising signal candidates from wider searches ('followup' use case)
-with stochastic template placement through the `ptemcee` sampler [@Vousden:2015pte].
+- `mcmc_based_searches` : Classes to cover small parameter-space regions
+<!-- around search targets or promising signal candidates from wider searches ('followup' use case) -->
+through stochastic template placement with the `ptemcee` sampler [@Vousden:2015pte].
 
-Besides standard CW signals from isolated neutron stars, `PyFstat` can also be used
-for CW signals from sources in binary systems (including the additional orbital parameters),
+Besides standard CWs from isolated neutron stars, `PyFstat` can also be used
+for CWs from sources in binary systems (including the additional orbital parameters),
 for CWs with a discontinuity at a pulsar glitch,
-and for CW-like long-duration transient signals expected e.g. from _after_ a pulsar glitch.
-Specialized versions of both the grid-based and MCMC-based search classes
-are provided for several of these scenarios.
-
-
+and for CW-like long-duration transient signals e.g. from _after_ a pulsar glitch.
+Specialized versions of both grid-based and MCMC-based search classes
+are provided for these scenarios.
 Both fully-coherent and semi-coherent searches
 (where the data is split into several segments for efficiency)
 are covered,
@@ -84,34 +81,33 @@ an additional detection statistic that is more robust against single-detector no
 [@Keitel:2013wga]
 is also supported.
 However, `PyFstat` does not compete with the sophisticated
-grid setups and semi-coherent algorithms implemented in various LALSuite programs.
+grid setups and semi-coherent algorithms implemented in various `LALSuite` programs.
 As discussed below, the main scientific use cases for `PyFstat` at the time of publication
 are for the MCMC exploration of small parameter-space regions
 and for the long-duration transient case.
 
-Additional helper classes, utility functions and internals are included to
+Additional helper classes, utility functions and internals are included for
+handling the common Short Fourier Transform (SFT) data format for LIGO data,
+simulating artificial data with noise and signals in them,
+and plotting results and diagnostics.
 
-- handle the common Short Fourier Transform (SFT) data format for LIGO data;
-- simulate artificial data with noise and signals in them;
-- plot results.
-
-`PyFstat` was first described in @Ashton:2018ure which remains the main reference
+`PyFstat` was first introduced in @Ashton:2018ure which remains the main reference
 for the MCMC-based analysis implemented in the package.
 The extension to transient signals, which uses `PyCUDA` [@Kloeckner:2012pyc] for speedup,
-is discussed in detail in @Keitel:2018pxz .
-Most of the underlying LALSuite functionality is accessed through SWIG wrappings [@Wette:2020air]
+is discussed in detail in @Keitel:2018pxz.
+Most of the underlying `LALSuite` functionality is accessed through SWIG wrappings [@Wette:2020air]
 though for some parts, such as the SFT handling,
 we still (as of the writing of this paper) call stand-alone `lalapps` executables.
 Completing the backend migration to pure SWIG usage is planned for the future.
 
 The source of `PyFstat` is hosted on [GitHub](https://github.com/PyFstat/PyFstat/).
-This repository also contains an automated test suite
+The repository also contains an automated test suite
 and a set of introductory example scripts.
 Issues with the software can be submitted through GitHub
 and pull requests are always welcome.
 Documentation in html and pdf formats is available from [readthedocs.org](https://readthedocs.org/projects/pyfstat/)
-and installation instructions can be obtained both from there
-and from the project's [README](https://github.com/PyFstat/PyFstat/blob/master/README.md) file.
+and installation instructions can be found there
+or in the [README](https://github.com/PyFstat/PyFstat/blob/master/README.md) file.
 
 
 # Statement of need
@@ -120,18 +116,17 @@ The sensitivity of searches for CWs and long-duration transient GWs
 is generally limited by computational resources,
 as the required number of matched-filter templates increases steeply
 for long observation times and wide parameter spaces.
-The C-based LALSuite library [@lalsuite] contains many sophisticated search methods
+The C-based `LALSuite` library [@lalsuite] contains many sophisticated search methods
 with a long development history and high level of optimization,
 but is not very accessible for researchers new to the field or for students;
 nor is it very convenient for rapid development and integration with modern technologies
 like GPUs or machine learning.
 Hence, `PyFstat` serves a dual function of
-
-- making LALSuite CW functionality more easily accessible through a Python interface,
+(i) making `LALSuite` CW functionality more easily accessible through a `Python` interface,
 thus facilitating the new user experience and,
 for developers, the exploratory implementation of novel methods;
-- providing a set of production-ready search classes for use cases not yet covered by LALSuite itself,
-most notably for MCMC-based candidate followup.
+and (ii) providing a set of production-ready search classes for use cases not yet covered by `LALSuite` itself,
+most notably for MCMC-based followup of promising candidates from wide-parameter-space searches.
 
 So far, `PyFstat` has been used for
 
