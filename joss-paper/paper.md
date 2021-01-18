@@ -55,7 +55,8 @@ and maximized over amplitude parameters.
 It has been one of the standard methods for LIGO-Virgo CW searches for two decades.
 `PyFstat` is built on top of established routines
 in `LALSuite` [@lalsuite]
-but enables a flexible approach to designing new search strategies.
+but through its more modern `python` interface
+it enables a flexible approach to designing new search strategies.
 
 Classes for various search strategies and target signals
 are contained in three main submodules:
