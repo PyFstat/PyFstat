@@ -81,10 +81,10 @@ and an extension to the $\mathcal{F}$-statistic
 that is more robust against single-detector noise artifacts
 [@Keitel:2013wga]
 is also supported.
-However, `PyFstat`'s grid-based searches do not compete with the sophisticated
-grid setups and semi-coherent algorithms implemented in various `LALSuite` programs.
-As discussed below, the main scientific use cases for `PyFstat` at the time of publication
-are for the MCMC exploration of small parameter-space regions
+While `PyFstat`'s grid-based searches do not compete with the sophisticated
+grid setups and semi-coherent algorithms implemented in various `LALSuite` programs,
+its main scientific use cases so far are for the MCMC exploration
+of interesting parameter-space regions
 and for the long-duration transient case.
 
 `PyFstat` was first introduced in @Ashton:2018ure which remains the main reference
