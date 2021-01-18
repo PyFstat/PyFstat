@@ -45,7 +45,7 @@ LIGO [@TheLIGOScientific:2014jea]
 and Virgo [@TheVirgo:2014hva] data.
 See @Prix:2009oha, @Riles:2017evm, and @Sieniawska:2019hmd for reviews of the field.
 
-The `PyFstat` package provides a convenient interface
+The `PyFstat` package provides tools
 to perform a range of CW data analysis tasks.
 It revolves around the $\mathcal{F}$-statistic,
 first introduced by @Jaranowski:1998qm:
@@ -63,12 +63,12 @@ are contained in three main submodules:
 - `core` : The basic wrappers to `LALSuite`'s $\mathcal{F}$-statistic algorithm.
 End-users should rarely need to access these directly.
 - `grid_based_searches` : Classes to search over regular parameter-space grids.
-- `mcmc_based_searches` : Classes to cover small parameter-space regions
+- `mcmc_based_searches` : Classes to cover promising parameter-space regions
 <!-- around search targets or promising signal candidates from wider searches ('followup' use case) -->
 through stochastic template placement with the `ptemcee` sampler [@Vousden:2015pte].
 
 Besides standard CWs from isolated neutron stars, `PyFstat` can also be used
-for CWs from sources in binary systems (including the additional orbital parameters),
+to search for CWs from sources in binary systems (including the additional orbital parameters),
 for CWs with a discontinuity at a pulsar glitch,
 and for CW-like long-duration transient signals e.g. from _after_ a pulsar glitch.
 Specialized versions of both grid-based and MCMC-based search classes
