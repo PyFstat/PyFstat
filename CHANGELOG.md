@@ -1,3 +1,17 @@
+## 1.11.0 [20/01/2021]
+
+ - LALSuite >= 6.80 now required
+ - simplified calls to F-stat prediction
+ - Writer:
+   - internal cleanup of sftfilenames vs sftfilepath
+   - SFTs are validated at end of `run_makefakedata()`
+ - core and search classes: improved and fixed non-standard detection statistics
+   - fixed basic twoFX and BSGL computation logic for transient and semicoherent cases, generalized to Ndet>2
+   - reorganised methods for these computations
+   - additional results are stored as class attributes
+   - for transients, the detection statistic is now called explicitly `maxTwoF`
+ - grid classes now initiate their `.search` object at instantiation instead of at first `run()` call
+
 ## 1.10.1 [20/01/2021]
 
  - bugfix for `MCMCSearch.plot_prior_posterior()`
