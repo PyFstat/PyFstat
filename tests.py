@@ -784,7 +784,7 @@ class TestComputeFstat(BaseForTestsWithData):
             maxCoverFreq=self.F0 + 0.1,
             BSGL=True,
         )
-        log10BSGL = search_H1L1.get_fullycoherent_twoF(
+        log10BSGL = search_H1L1.get_fullycoherent_detstat(
             F0=self.F0,
             F1=self.F1,
             F2=self.F2,
@@ -813,7 +813,7 @@ class TestComputeFstat(BaseForTestsWithData):
             maxCoverFreq=self.F0 + 0.1,
             BSGL=True,
         )
-        log10BSGL = search_H1L1.get_fullycoherent_twoF(
+        log10BSGL = search_H1L1.get_fullycoherent_detstat(
             F0=self.F0,
             F1=self.F1,
             F2=self.F2,
@@ -843,7 +843,7 @@ class TestComputeFstat(BaseForTestsWithData):
             self.Writer.Delta,
             num_segments=Nsft + 1,
         )
-        twoF = search.get_fullycoherent_twoF(
+        twoF = search.get_fullycoherent_detstat(
             F0=self.Writer.F0,
             F1=self.Writer.F1,
             F2=self.Writer.F2,
@@ -854,7 +854,7 @@ class TestComputeFstat(BaseForTestsWithData):
         )
         reldiff = np.abs(twoF_cumulative[-1] - twoF) / twoF
         print(
-            "2F from get_fullycoherent_twoF() is {:.4f}"
+            "2F from get_fullycoherent_detstat() is {:.4f}"
             " while last value from calculate_twoF_cumulative() is {:.4f};"
             " relative difference: {:g}".format(twoF, twoF_cumulative[-1], reldiff)
         )
@@ -1199,7 +1199,7 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
     label = "TestMCMCSearch"
     Band = 1
 
-    def _check_twoF_predicted(self):
+    def _check_twoF_predicted(self, assertTrue=True):
         self.twoF_predicted = self.Writer.predict_fstat()
         self.max_dict, self.maxTwoF = self.search.get_max_twoF()
         diff = np.abs((self.maxTwoF - self.twoF_predicted)) / self.twoF_predicted
@@ -1211,9 +1211,10 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
                 )
             )
         )
-        self.assertTrue(diff < 0.3)
+        if assertTrue:
+            self.assertTrue(diff < 0.3)
 
-    def _check_mcmc_quantiles(self, transient=False):
+    def _check_mcmc_quantiles(self, transient=False, assertTrue=True):
         summary_stats = self.search.get_summary_stats()
         nsigmas = 3
         conf = "99"
@@ -1242,7 +1243,8 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
                     k, nsigmas, inj[k], lower, upper, within
                 )
             )
-            self.assertTrue(within)
+            if assertTrue:
+                self.assertTrue(within)
             within = (inj[k] >= summary_stats[k]["lower" + conf]) and (
                 inj[k] <= summary_stats[k]["upper" + conf]
             )
@@ -1256,11 +1258,13 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
                     within,
                 )
             )
-            self.assertTrue(within)
+            if assertTrue:
+                self.assertTrue(within)
 
 
 class TestMCMCSearch(BaseForMCMCSearchTests):
     label = "TestMCMCSearch"
+    BSGL = False
 
     def test_fully_coherent_MCMC(self):
 
@@ -1352,11 +1356,104 @@ class TestMCMCSearch(BaseForMCMCSearchTests):
                 nwalkers=20,
                 ntemps=2,
                 log10beta_min=-1,
+                BSGL=self.BSGL,
             )
             self.search.run(plot_walkers=False)
             self.search.print_summary()
             self._check_twoF_predicted()
             self._check_mcmc_quantiles()
+
+
+class TestMCMCSearchBSGL(TestMCMCSearch):
+    label = "TestMCMCSearch"
+    detectors = "H1,L1"
+    BSGL = True
+
+    def test_MCMC_search_on_data_with_line(self):
+        # We reuse the default multi-IFO SFTs
+        # but add an additional single-detector artifact to H1 only.
+        # For simplicity, this is modelled here as a fully modulated CW-like signal,
+        # just restricted to the single detector.
+        SFTs_H1 = self.Writer.sftfilepath.split(";")[0]
+        SFTs_L1 = self.Writer.sftfilepath.split(";")[1]
+        extra_writer = pyfstat.Writer(
+            label=self.label + "_with_line",
+            outdir=self.outdir,
+            tref=self.tref,
+            F0=self.Writer.F0 + 0.5e-6,
+            F1=self.Writer.F1,
+            F2=self.Writer.F2,
+            Alpha=self.Writer.Alpha,
+            Delta=self.Writer.Delta,
+            h0=10 * self.Writer.h0,
+            cosi=self.Writer.cosi,
+            sqrtSX=0,  # don't add yet another set of Gaussian noise
+            noiseSFTs=SFTs_H1,
+            SFTWindowType=self.Writer.SFTWindowType,
+            SFTWindowBeta=self.Writer.SFTWindowBeta,
+        )
+        extra_writer.make_data()
+        data_with_line = ";".join([SFTs_L1, extra_writer.sftfilepath])
+        # use a single fixed prior and search F0 only for speed
+        thetas = {
+            "F0": {
+                "type": "unif",
+                "lower": self.F0 - 1e-6,
+                "upper": self.F0 + 1e-6,
+            },
+            "F1": self.F1,
+            "F2": self.F2,
+            "Alpha": self.Alpha,
+            "Delta": self.Delta,
+        }
+        # now run a standard F-stat search over this data
+        self.search = pyfstat.MCMCSearch(
+            label=self.label + "-F",
+            outdir=self.outdir,
+            theta_prior=thetas,
+            tref=self.tref,
+            sftfilepattern=data_with_line,
+            nsteps=[20, 20],
+            nwalkers=20,
+            ntemps=2,
+            log10beta_min=-1,
+            BSGL=False,
+        )
+        self.search.run(plot_walkers=True)
+        self.search.print_summary()
+        # The tests here are expected to fail,
+        # as the F-search will get confused by the line.
+        self._check_twoF_predicted(assertTrue=False)
+        mode_F0_Fsearch = self.max_dict["F0"]
+        maxTwoF_Fsearch = self.maxTwoF
+        self._check_mcmc_quantiles(assertTrue=False)
+        # also run a BSGL search over the same data
+        self.search = pyfstat.MCMCSearch(
+            label=self.label + "-BSGL",
+            outdir=self.outdir,
+            theta_prior=thetas,
+            tref=self.tref,
+            sftfilepattern=data_with_line,
+            nsteps=[20, 20],
+            nwalkers=20,
+            ntemps=2,
+            log10beta_min=-1,
+            BSGL=True,
+        )
+        self.search.run(plot_walkers=True)
+        self.search.print_summary()
+        # Still skipping the check on twoF.
+        self._check_twoF_predicted(assertTrue=False)
+        mode_F0_BSGLsearch = self.max_dict["F0"]
+        maxTwoF_BSGLsearch = self.maxTwoF
+        # But this should now pass cleanly.
+        self._check_mcmc_quantiles()
+        # And the BSGL search should find a lower-F mode closer to the true multi-IFO signal.
+        self.assertTrue(maxTwoF_BSGLsearch < maxTwoF_Fsearch)
+        self.assertTrue(mode_F0_BSGLsearch < mode_F0_Fsearch)
+        self.assertTrue(
+            np.abs(mode_F0_BSGLsearch - self.F0) < np.abs(mode_F0_Fsearch - self.F0)
+        )
 
 
 class TestMCMCSemiCoherentSearch(BaseForMCMCSearchTests):
@@ -1590,6 +1687,7 @@ class TestGridSearch(BaseForTestsWithData):
     F0s = [29.999, 30.001, 1e-4]
     F1s = [-1e-10, 0, 1e-11]
     Band = 0.5
+    BSGL = False
 
     def test_grid_search(self):
         search = pyfstat.GridSearch(
@@ -1602,6 +1700,7 @@ class TestGridSearch(BaseForTestsWithData):
             Alphas=[self.Writer.Alpha],
             Deltas=[self.Writer.Delta],
             tref=self.tref,
+            BSGL=self.BSGL,
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
@@ -1635,7 +1734,7 @@ class TestGridSearch(BaseForTestsWithData):
         cl_CFSv2.append("--FreqBand {}".format(self.F0s[1] - self.F0s[0]))
         cl_CFSv2.append("--dFreq {}".format(self.F0s[2]))
         cl_CFSv2.append("--f1dot {} --f1dotBand 0".format(self.F1))
-        cl_CFSv2.append("--DataFiles " + self.Writer.sftfilepath)
+        cl_CFSv2.append("--DataFiles '{}'".format(self.Writer.sftfilepath))
         cl_CFSv2.append("--refTime {}".format(self.tref))
         earth_ephem, sun_ephem = pyfstat.helper_functions.get_ephemeris_files()
         if earth_ephem is not None:
@@ -1675,6 +1774,7 @@ class TestGridSearch(BaseForTestsWithData):
             Deltas=[self.Writer.Delta],
             tref=self.tref,
             nsegs=2,
+            BSGL=self.BSGL,
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
@@ -1691,9 +1791,93 @@ class TestGridSearch(BaseForTestsWithData):
             Deltas=[self.Writer.Delta],
             tref=self.tref,
             tglitchs=[self.tref],
+            # BSGL=self.BSGL,  # not supported by this class
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
+
+
+class TestGridSearchBSGL(TestGridSearch):
+    label = "TestGridSearchBSGL"
+    detectors = "H1,L1"
+    BSGL = True
+
+    def test_grid_search_on_data_with_line(self):
+        # We reuse the default multi-IFO SFTs
+        # but add an additional single-detector artifact to H1 only.
+        # For simplicity, this is modelled here as a fully modulated CW-like signal,
+        # just restricted to the single detector.
+        SFTs_H1 = self.Writer.sftfilepath.split(";")[0]
+        SFTs_L1 = self.Writer.sftfilepath.split(";")[1]
+        extra_writer = pyfstat.Writer(
+            label=self.label + "_with_line",
+            outdir=self.outdir,
+            tref=self.tref,
+            F0=self.Writer.F0 + 0.0005,
+            F1=self.Writer.F1,
+            F2=self.Writer.F2,
+            Alpha=self.Writer.Alpha,
+            Delta=self.Writer.Delta,
+            h0=10 * self.Writer.h0,
+            cosi=self.Writer.cosi,
+            sqrtSX=0,  # don't add yet another set of Gaussian noise
+            noiseSFTs=SFTs_H1,
+            SFTWindowType=self.Writer.SFTWindowType,
+            SFTWindowBeta=self.Writer.SFTWindowBeta,
+        )
+        extra_writer.make_data()
+        data_with_line = ";".join([SFTs_L1, extra_writer.sftfilepath])
+        # now run a standard F-stat search over this data
+        searchF = pyfstat.GridSearch(
+            label="grid_search",
+            outdir=self.outdir,
+            sftfilepattern=data_with_line,
+            F0s=self.F0s,
+            F1s=[self.Writer.F1],
+            F2s=[self.Writer.F2],
+            Alphas=[self.Writer.Alpha],
+            Deltas=[self.Writer.Delta],
+            tref=self.tref,
+            BSGL=False,
+        )
+        searchF.run()
+        self.assertTrue(os.path.isfile(searchF.out_file))
+        max2F_point_searchF = searchF.get_max_twoF()
+        self.assertTrue(np.all(max2F_point_searchF["twoF"] >= searchF.data["twoF"]))
+        # also run a BSGL search over the same data
+        searchBSGL = pyfstat.GridSearch(
+            label="grid_search",
+            outdir=self.outdir,
+            sftfilepattern=data_with_line,
+            F0s=self.F0s,
+            F1s=[self.Writer.F1],
+            F2s=[self.Writer.F2],
+            Alphas=[self.Writer.Alpha],
+            Deltas=[self.Writer.Delta],
+            tref=self.tref,
+            BSGL=True,
+        )
+        searchBSGL.run()
+        self.assertTrue(os.path.isfile(searchBSGL.out_file))
+        max2F_point_searchBSGL = searchBSGL.get_max_twoF()
+        self.assertTrue(
+            np.all(max2F_point_searchBSGL["twoF"] >= searchBSGL.data["twoF"])
+        )
+        # Since we search the same grids and store all output,
+        # the twoF from both searches should be the same.
+        self.assertTrue(max2F_point_searchBSGL["twoF"] == max2F_point_searchF["twoF"])
+        maxBSGL_point = searchBSGL.get_max_det_stat()
+        self.assertTrue(
+            np.all(maxBSGL_point["log10BSGL"] >= searchBSGL.data["log10BSGL"])
+        )
+        # The BSGL search should produce a lower max2F value than the F search.
+        self.assertTrue(maxBSGL_point["twoF"] < max2F_point_searchF["twoF"])
+        # But the maxBSGL_point should be the true multi-IFO signal
+        # while max2F_point_searchF should have fallen for the single-IFO line.
+        self.assertTrue(
+            np.abs(maxBSGL_point["F0"] - self.F0)
+            < np.abs(max2F_point_searchF["F0"] - self.F0)
+        )
 
 
 class TestTransientGridSearch(BaseForTestsWithData):

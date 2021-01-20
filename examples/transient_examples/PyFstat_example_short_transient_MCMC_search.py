@@ -65,8 +65,10 @@ log10beta_min = -1
 nwalkers = 100
 nsteps = [200, 200]
 
+BSGL = False
+
 mcmc = pyfstat.MCMCTransientSearch(
-    label="transient_search",
+    label="transient_search" + ("_BSGL" if BSGL else ""),
     outdir=data.outdir,
     sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
     theta_prior=theta_prior,
@@ -76,6 +78,7 @@ mcmc = pyfstat.MCMCTransientSearch(
     ntemps=ntemps,
     log10beta_min=log10beta_min,
     transientWindowType="rect",
+    BSGL=BSGL,
 )
 mcmc.run(walker_plot_args={"plot_det_stat": True, "injection_parameters": inj})
 mcmc.print_summary()

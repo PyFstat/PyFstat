@@ -3,7 +3,6 @@
 
 import os
 import logging
-import copy
 from pprint import pformat
 
 import glob
@@ -300,6 +299,16 @@ class ComputeFstat(BaseSearchClass):
             If true, search over binary parameters.
         BSGL : bool
             If true, compute the log10BSGL statistic rather than the twoF value.
+            For details, see Keitel et al (PRD 89, 064023, 2014):
+            https://arxiv.org/abs/1311.5738
+            Tuning parameters are currently hardcoded:
+
+            * `Fstar0=15` for coherent searches.
+
+            * A p-value of 1e-6 and correspondingly recalculated Fstar0
+              for semicoherent searches.
+
+            * Uniform per-detector prior line-vs-Gaussian odds.
         transientWindowType: str
             If `rect` or `exp`,
             allow for the Fstat to be computed over a transient range.
@@ -389,6 +398,7 @@ class ComputeFstat(BaseSearchClass):
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.init_computefstatistic()
         self.output_file_header = self.get_output_file_header()
+        self.get_det_stat = self.get_fullycoherent_detstat
 
     def _get_SFTCatalog(self):
         """Load the SFTCatalog
@@ -397,8 +407,10 @@ class ComputeFstat(BaseSearchClass):
         create data on the fly.
         """
         if hasattr(self, "SFTCatalog"):
+            logging.info("Already have SFTCatalog.")
             return
         if self.sftfilepattern is None:
+            logging.info("No sftfilepattern given, making fake SFTCatalog.")
             for k in ["minStartTime", "maxStartTime", "detectors"]:
                 if getattr(self, k) is None:
                     raise ValueError(
@@ -415,6 +427,7 @@ class ComputeFstat(BaseSearchClass):
             SFTCatalog = lalpulsar.SFTCatalog()
             Toverlap = 0
             self.detector_names = self.detectors.split(",")
+            self.numDetectors = len(self.detector_names)
             detNames = lal.CreateStringVector(*[d for d in self.detector_names])
             # MakeMultiTimestamps follows the same [minStartTime,maxStartTime)
             # convention as the SFT library, so we can pass Tspan like this
@@ -428,7 +441,7 @@ class ComputeFstat(BaseSearchClass):
             self.SFTCatalog = SFTCatalog
             return
 
-        logging.info("Initialising SFTCatalog")
+        logging.info("Initialising SFTCatalog from sftfilepattern.")
         constraints = lalpulsar.SFTConstraints()
         constr_str = []
         if self.detectors:
@@ -495,11 +508,12 @@ class ComputeFstat(BaseSearchClass):
             self.maxStartTime = int(SFT_timestamps[-1]) + self.Tsft
 
         self.detector_names = list(set([d.header.name for d in self.SFTCatalog.data]))
-        if len(self.detector_names) == 0:
+        self.numDetectors = len(self.detector_names)
+        if self.numDetectors == 0:
             raise ValueError("No data loaded.")
         logging.info(
-            "Loaded {} SFTs from detectors {}".format(
-                len(SFT_timestamps), self.detector_names
+            "Loaded {} SFTs from {} detectors: {}".format(
+                len(SFT_timestamps), self.numDetectors, self.detector_names
             )
         )
 
@@ -636,21 +650,28 @@ class ComputeFstat(BaseSearchClass):
                 logging.info("Initialising BSGL")
 
             # Tuning parameters - to be reviewed
-            numDetectors = 2
-            if hasattr(self, "nsegs"):
+            # We use a fixed Fstar0 for coherent searches,
+            # and recompute it from a fixed p-value for the semicoherent case.
+            nsegs_eff = max([getattr(self, "nsegs", 1), getattr(self, "nglitch", 1)])
+            if nsegs_eff > 1:
                 p_val_threshold = 1e-6
                 Fstar0s = np.linspace(0, 1000, 10000)
-                p_vals = scipy.special.gammaincc(2 * self.nsegs, Fstar0s)
+                p_vals = scipy.special.gammaincc(2 * nsegs_eff, Fstar0s)
                 Fstar0 = Fstar0s[np.argmin(np.abs(p_vals - p_val_threshold))]
                 if Fstar0 == Fstar0s[-1]:
                     raise ValueError("Max Fstar0 exceeded")
             else:
                 Fstar0 = 15.0
             logging.info("Using Fstar0 of {:1.2f}".format(Fstar0))
+            # assume uniform per-detector prior line-vs-Gaussian odds
             oLGX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
-            oLGX[:numDetectors] = 1.0 / numDetectors
+            oLGX[: self.numDetectors] = 1.0 / self.numDetectors
             self.BSGLSetup = lalpulsar.CreateBSGLSetup(
-                numDetectors, Fstar0, oLGX, True, 1
+                numDetectors=self.numDetectors,
+                Fstar0sc=Fstar0,
+                oLGX=oLGX,
+                useLogCorrection=True,
+                numSegments=getattr(self, "nsegs", 1),
             )
             self.twoFX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
             self.whatToCompute += lalpulsar.FSTATQ_2F_PER_DET
@@ -729,6 +750,9 @@ class ComputeFstat(BaseSearchClass):
             ) = tcw.init_transient_fstat_map_features(
                 self.tCWFstatMapVersion == "pycuda", self.cudaDeviceName
             )
+
+            if self.BSGL:
+                self.twoFXatMaxTwoF = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
 
     def _set_min_max_cover_freqs(self):
         # decide on which minCoverFreq and maxCoverFreq to use:
@@ -933,7 +957,7 @@ class ComputeFstat(BaseSearchClass):
             maxOrbitEcc=maxOrbitEcc,
         )
 
-    def get_fullycoherent_twoF(
+    def get_fullycoherent_detstat(
         self,
         F0,
         F1,
@@ -950,8 +974,14 @@ class ComputeFstat(BaseSearchClass):
     ):
         """Computes the detection statistic (twoF or log10BSGL) fully-coherently at a single point.
 
-        If transient parameters are enabled, the transient-F-stat map will also be computed here
-        (but stored in `self.FstatMap`, not returned).
+        These are also stored to `self.twoF` and `self.log10BSGL` respectively.
+        As the basic statistic of this class, `self.twoF` is always computed.
+        If `self.BSGL`, additionally the single-detector 2F-stat values are saved
+        in `self.twoFX`.
+
+        If transient parameters are enabled (`self.transientWindowType` is set),
+        the full transient-F-stat map will also be computed here,
+        but stored in `self.FstatMap`, not returned.
 
         Parameters
         ----------
@@ -962,13 +992,66 @@ class ComputeFstat(BaseSearchClass):
         tstart, tend: int or None
             GPS times to restrict the range of data used.
             If None: falls back to self.minStartTime and self.maxStartTime.
-            If outside those: auto-truncated.
+            This is only passed on to `self.get_transient_detstat()`,
+            i.e. only used if `self.transientWindowType` is set.
 
         Returns
         -------
         stat: float
             A single value of the detection statistic (twoF or log10BSGL)
             at the input parameter values.
+            Also stored as `self.twoF` or `self.log10BSGL`.
+        """
+        self.get_fullycoherent_twoF(
+            F0, F1, F2, Alpha, Delta, asini, period, ecc, tp, argp
+        )
+        if not self.transientWindowType:
+            if self.BSGL is False:
+                return self.twoF
+            self.get_fullycoherent_single_IFO_twoFs()
+            self.get_fullycoherent_log10BSGL()
+            return self.log10BSGL
+        self.get_transient_maxTwoFstat(tstart, tend)
+        if self.BSGL is False:
+            return self.maxTwoF
+        else:
+            return self.get_transient_log10BSGL()
+
+    def get_fullycoherent_twoF(
+        self,
+        F0,
+        F1,
+        F2,
+        Alpha,
+        Delta,
+        asini=None,
+        period=None,
+        ecc=None,
+        tp=None,
+        argp=None,
+    ):
+        """Computes the fully-coherent 2F statistic at a single point.
+
+        NOTE: This always uses the full data set as defined when initialising
+        the search object.
+        If you want to restrict the range of data used for a single 2F computation,
+        you need to set a `self.transientWindowType` and then call
+        `self.get_fullycoherent_detstat()` with `tstart` and `tend` options
+        instead of this funcion.
+
+        Parameters
+        ----------
+        F0, F1, F2, Alpha, Delta: float
+            Parameters at which to compute the statistic.
+        asini, period, ecc, tp, argp: float, optional
+            Optional: Binary parameters at which to compute the statistic.
+
+        Returns
+        -------
+        twoF: float
+            A single value of the fully-coherent 2F statistic
+            at the input parameter values.
+            Also stored as `self.twoF`.
         """
         self.PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
         self.PulsarDopplerParams.fkdot[:3] = [F0, F1, F2]
@@ -982,23 +1065,82 @@ class ComputeFstat(BaseSearchClass):
             self.PulsarDopplerParams.argp = float(argp)
 
         lalpulsar.ComputeFstat(
-            self.FstatResults,
-            self.FstatInput,
-            self.PulsarDopplerParams,
-            1,
-            self.whatToCompute,
+            Fstats=self.FstatResults,
+            input=self.FstatInput,
+            doppler=self.PulsarDopplerParams,
+            numFreqBins=1,
+            whatToCompute=self.whatToCompute,
         )
+        # We operate on a single frequency bin, so we grab the 0 component
+        # of what is internally a twoF array.
+        self.twoF = np.float(self.FstatResults.twoF[0])
+        return self.twoF
 
-        if not self.transientWindowType:
-            if self.BSGL is False:
-                return self.FstatResults.twoF[0]
+    def get_fullycoherent_single_IFO_twoFs(self):
+        """Computes single-detector F-stats at a single point.
 
-            twoF = np.float(self.FstatResults.twoF[0])
-            self.twoFX[0] = self.FstatResults.twoFPerDet(0)
-            self.twoFX[1] = self.FstatResults.twoFPerDet(1)
-            log10BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
-            return log10BSGL
+        This requires `self.get_fullycoherent_twoF()` to be run first.
 
+        Returns
+        -------
+        twoFX: list
+            A list of the single-detector detection statistics twoF.
+            Also stored as `self.twoFX`.
+        """
+        self.twoFX[: self.FstatResults.numDetectors] = [
+            self.FstatResults.twoFPerDet(X)
+            for X in range(self.FstatResults.numDetectors)
+        ]
+        return self.twoFX
+
+    def get_fullycoherent_log10BSGL(self):
+        """Computes the line-robust statistic log10BSGL at a single point.
+
+        This requires `self.get_fullycoherent_twoF()`
+        and `self.get_fullycoherent_single_IFO_twoFs()`
+        to be run first.
+
+        Returns
+        -------
+        log10BSGL: float
+            A single value of the detection statistic log10BSGL
+            at the input parameter values.
+            Also stored as `self.log10BSGL`.
+        """
+        self.log10BSGL = lalpulsar.ComputeBSGL(self.twoF, self.twoFX, self.BSGLSetup)
+        return self.log10BSGL
+
+    def get_transient_maxTwoFstat(
+        self,
+        tstart=None,
+        tend=None,
+    ):
+        """Computes the transient maxTwoF statistic at a single point.
+
+        This requires `self.get_fullycoherent_twoF()` to be run first.
+
+        The full transient-F-stat map will also be computed here,
+        but stored in `self.FstatMap`, not returned.
+
+        Parameters
+        ----------
+        F0, F1, F2, Alpha, Delta: float
+            Parameters at which to compute the statistic.
+        asini, period, ecc, tp, argp: float, optional
+            Optional: Binary parameters at which to compute the statistic.
+        tstart, tend: int or None
+            GPS times to restrict the range of data used.
+            If None: falls back to self.minStartTime and self.maxStartTime.
+            This is only passed on to `self.get_transient_detstat()`,
+            i.e. only used if `self.transientWindowType` is set.
+
+        Returns
+        -------
+        maxTwoF: float
+            A single value of the detection statistic (twoF or log10BSGL)
+            at the input parameter values.
+            Also stored as `self.maxTwoF`.
+        """
         tstart = tstart or getattr(self, "minStartTime", None)
         tend = tend or getattr(self, "maxStartTime", None)
         if tstart is None or tend is None:
@@ -1007,51 +1149,71 @@ class ComputeFstat(BaseSearchClass):
             )
         self.windowRange.t0 = int(tstart)  # TYPE UINT4
         if self.windowRange.tauBand == 0:
-            # true single-template search also in transient params:
-            # actual (t0,tau) window was set with tstart, tend before
             self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
 
         self.FstatMap, self.timingFstatMap = tcw.call_compute_transient_fstat_map(
             self.tCWFstatMapVersion,
             self.tCWFstatMapFeatures,
-            self.FstatResults.multiFatoms[0],
+            self.FstatResults.multiFatoms[0],  # 0 index: single frequency bin
             self.windowRange,
         )
-        if self.tCWFstatMapVersion == "lal":
-            F_mn = self.FstatMap.F_mn.data
-        else:
-            F_mn = self.FstatMap.F_mn
 
-        twoF = 2 * np.max(F_mn)
-        if self.BSGL is False:
-            if np.isnan(twoF):
-                return 0
-            else:
-                return twoF
+        # Now instead of the overall twoF,
+        # we get the maximum twoF over the transient window range.
+        self.maxTwoF = 2 * self.FstatMap.maxF
+        if np.isnan(self.maxTwoF):
+            self.maxTwoF = 0
+        return self.maxTwoF
 
-        FstatResults_single = copy.copy(self.FstatResults)
-        FstatResults_single.numDetectors = 1
-        FstatResults_single.data = self.FstatResults.multiFatoms[0].data[0]
-        FS0 = lalpulsar.ComputeTransientFstatMap(
-            FstatResults_single.multiFatoms[0], self.windowRange, False
-        )
-        FstatResults_single.data = self.FstatResults.multiFatoms[0].data[1]
-        FS1 = lalpulsar.ComputeTransientFstatMap(
-            FstatResults_single.multiFatoms[0], self.windowRange, False
-        )
+    def get_transient_log10BSGL(self):
+        """Computes a transient detection statistic log10BSGL at a single point.
 
-        # for now, use the Doppler parameter with
-        # multi-detector F maximised over t0,tau
-        # to return BSGL
+        This requires `self.get_transient_maxTwoFstat()` to be run first.
+
+        The single-detector 2F-stat values
+        used for that computation (at the index of `maxTwoF`)
+        are saved in `self.twoFXatMaxTwoF`,
+        not returned.
+
+        Returns
+        -------
+        log10BSGL: float
+            A single value of the detection statistic log10BSGL
+            at the input parameter values.
+            Also stored as `self.log10BSGL`.
+        """
+        # First, we need to also compute per-detector F_mn maps.
+        # For now, we use the t0,tau index that maximises the multi-detector F
+        # to return BSGL for a signal with those parameters.
         # FIXME: should we instead compute BSGL over the whole F_mn
         # and return the maximum of that?
-        idx_maxTwoF = np.argmax(F_mn)
-
-        self.twoFX[0] = 2 * FS0.F_mn.data[idx_maxTwoF]
-        self.twoFX[1] = 2 * FS1.F_mn.data[idx_maxTwoF]
-        log10BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
-
-        return log10BSGL
+        idx_maxTwoF = self.FstatMap.get_maxF_idx()
+        for X in range(self.FstatResults.numDetectors):
+            # For each detector, we need to build a MultiFstatAtomVector
+            # because that's what the Fstat map function expects.
+            singleIFOmultiFatoms = lalpulsar.CreateMultiFstatAtomVector(1)
+            # The first [0] index on the multiFatoms here is over frequency bins;
+            # we always operate on a single bin.
+            singleIFOmultiFatoms.data[0] = lalpulsar.CreateFstatAtomVector(
+                self.FstatResults.multiFatoms[0].data[X].length
+            )
+            singleIFOmultiFatoms.data[0].TAtom = (
+                self.FstatResults.multiFatoms[0].data[X].TAtom
+            )
+            singleIFOmultiFatoms.data[0].data = (
+                self.FstatResults.multiFatoms[0].data[X].data
+            )
+            FXstatMap, timingFXstatMap = tcw.call_compute_transient_fstat_map(
+                self.tCWFstatMapVersion,
+                self.tCWFstatMapFeatures,
+                singleIFOmultiFatoms,
+                self.windowRange,
+            )
+            self.twoFXatMaxTwoF[X] = 2 * FXstatMap.F_mn[idx_maxTwoF]
+        self.log10BSGL = lalpulsar.ComputeBSGL(
+            self.maxTwoF, self.twoFXatMaxTwoF, self.BSGLSetup
+        )
+        return self.log10BSGL
 
     def _set_up_cumulative_times(self, tstart, tend, num_segments):
         """Construct time arrays to be used in cumulative twoF computations.
@@ -1136,7 +1298,7 @@ class ComputeFstat(BaseSearchClass):
         )
 
         twoFs = [
-            self.get_fullycoherent_twoF(
+            self.get_fullycoherent_detstat(
                 tstart=tstart,
                 tend=tstart + duration,
                 F0=F0,
@@ -1449,7 +1611,6 @@ class SemiCoherentSearch(ComputeFstat):
             to obtain the per-segment coherence time `Tcoh`.
         """
 
-        self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.transientWindowType = None  # will use semicoherentWindowRange instead
         self.computeAtoms = True  # for semicoh 2F from ComputeTransientFstatMap()
@@ -1457,6 +1618,11 @@ class SemiCoherentSearch(ComputeFstat):
         self.cudaDeviceName = None
         self.init_computefstatistic()
         self.init_semicoherent_parameters()
+        if self.BSGL:
+            self.twoFX_per_segment = np.zeros(
+                (lalpulsar.PULSAR_MAX_DETECTORS, self.nsegs)
+            )
+        self.get_det_stat = self.get_semicoherent_det_stat
 
     def _init_semicoherent_window_range(self):
         """
@@ -1549,6 +1715,55 @@ class SemiCoherentSearch(ComputeFstat):
     ):
         """Computes the detection statistic (twoF or log10BSGL) semi-coherently at a single point.
 
+        As the basic statistic of this class, `self.twoF` is always computed.
+        If `self.BSGL`, additionally the single-detector 2F-stat values are saved
+        in `self.twoFX`.
+
+        Parameters
+        ----------
+        F0, F1, F2, Alpha, Delta: float
+            Parameters at which to compute the statistic.
+        asini, period, ecc, tp, argp: float, optional
+            Optional: Binary parameters at which to compute the statistic.
+        record_segments: boolean
+            If True, store the per-segment F-stat values as `self.twoF_per_segment`
+            and (if `self.BSGL=True`) the per-detector per-segment F-stats
+            as `self.twoFX_per_segment`.
+
+        Returns
+        -------
+        stat: float
+            A single value of the detection statistic (semi-coherent twoF or log10BSGL)
+            at the input parameter values.
+            Also stored as `self.twoF` or `self.log10BSGL`.
+        """
+
+        self.get_semicoherent_twoF(
+            F0, F1, F2, Alpha, Delta, asini, period, ecc, tp, argp, record_segments
+        )
+
+        if self.BSGL is False:
+            return self.twoF
+        else:
+            self.get_semicoherent_single_IFO_twoFs(record_segments)
+            return self.get_semicoherent_log10BSGL()
+
+    def get_semicoherent_twoF(
+        self,
+        F0,
+        F1,
+        F2,
+        Alpha,
+        Delta,
+        asini=None,
+        period=None,
+        ecc=None,
+        tp=None,
+        argp=None,
+        record_segments=False,
+    ):
+        """Computes the semi-coherent twoF statistic at a single point.
+
         Parameters
         ----------
         F0, F1, F2, Alpha, Delta: float
@@ -1560,9 +1775,10 @@ class SemiCoherentSearch(ComputeFstat):
 
         Returns
         -------
-        stat: float
-            A single value of the detection statistic (semi-coherent twoF or log10BSGL)
+        twoF: float
+            A single value of the semi-coherent twoF statistic
             at the input parameter values.
+            Also stored as `self.twoF`.
         """
 
         self.PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
@@ -1577,57 +1793,105 @@ class SemiCoherentSearch(ComputeFstat):
             self.PulsarDopplerParams.argp = float(argp)
 
         lalpulsar.ComputeFstat(
-            self.FstatResults,
-            self.FstatInput,
-            self.PulsarDopplerParams,
-            1,
-            self.whatToCompute,
+            Fstats=self.FstatResults,
+            input=self.FstatInput,
+            doppler=self.PulsarDopplerParams,
+            numFreqBins=1,
+            whatToCompute=self.whatToCompute,
         )
 
         twoF_per_segment = self._get_per_segment_twoF()
-        twoF = twoF_per_segment.sum()
+        self.twoF = twoF_per_segment.sum()
 
-        if np.isnan(twoF):
+        if np.isnan(self.twoF):
             logging.debug(
                 "NaNs in per-segment 2F treated as zero"
                 " and semi-coherent 2F re-computed."
             )
             twoF_per_segment = np.nan_to_num(twoF_per_segment, nan=0.0)
-            twoF = twoF_per_segment.sum()
+            self.twoF = twoF_per_segment.sum()
 
         if record_segments:
             self.twoF_per_segment = twoF_per_segment
 
-        if self.BSGL is False:
-            return twoF
-        else:
-            for X in range(self.FstatResults.numDetectors):
-                FstatResults_single = copy.copy(self.FstatResults)
-                FstatResults_single.numDetectors = 1
-                FstatResults_single.data = self.FstatResults.multiFatoms[0].data[X]
-                FSX = lalpulsar.ComputeTransientFstatMap(
-                    FstatResults_single.multiFatoms[0],
-                    self.semicoherentWindowRange,
-                    False,
+    def get_semicoherent_single_IFO_twoFs(self, record_segments=False):
+        """Computes the semi-coherent single-detector F-statss at a single point.
+
+        This requires `self.get_semicoherent_twoF()` to be run first.
+
+        Parameters
+        ----------
+        record_segments: boolean
+            If True, store the per-detector per-segment F-stat values
+            as `self.twoFX_per_segment`.
+
+
+        Returns
+        -------
+        twoFX: list
+            A list of the single-detector detection statistics twoF.
+            Also stored as `self.twoFX`.
+        """
+        for X in range(self.FstatResults.numDetectors):
+            # For each detector, we need to build a MultiFstatAtomVector
+            # because that's what the Fstat map function expects.
+            singleIFOmultiFatoms = lalpulsar.CreateMultiFstatAtomVector(1)
+            # The first [0] index on the multiFatoms here is over frequency bins;
+            # we always operate on a single bin.
+            singleIFOmultiFatoms.data[0] = lalpulsar.CreateFstatAtomVector(
+                self.FstatResults.multiFatoms[0].data[X].length
+            )
+            singleIFOmultiFatoms.data[0].TAtom = (
+                self.FstatResults.multiFatoms[0].data[X].TAtom
+            )
+            singleIFOmultiFatoms.data[0].data = (
+                self.FstatResults.multiFatoms[0].data[X].data
+            )
+            FXstatMap = lalpulsar.ComputeTransientFstatMap(
+                multiFstatAtoms=singleIFOmultiFatoms,
+                windowRange=self.semicoherentWindowRange,
+                useFReg=False,
+            )
+            twoFX_per_segment = 2 * FXstatMap.F_mn.data[:, 0]
+            self.twoFX[X] = twoFX_per_segment.sum()
+            if np.isnan(self.twoFX[X]):
+                logging.debug(
+                    "NaNs in per-segment per-detector 2F treated as zero"
+                    " and sum re-computed."
                 )
-                twoFX_per_segment = 2 * FSX.F_mn.data[:, 0]
+                twoFX_per_segment = np.nan_to_num(twoFX_per_segment, nan=0.0)
                 self.twoFX[X] = twoFX_per_segment.sum()
-                if np.isnan(self.twoFX[X]):
-                    logging.debug(
-                        "NaNs in per-segment per-detector 2F treated as zero"
-                        " and sum re-computed."
-                    )
-                    twoFX_per_segment = np.nan_to_num(twoFX_per_segment, nan=0.0)
-                    self.twoFX[X] = twoFX_per_segment.sum()
-            log10BSGL = lalpulsar.ComputeBSGL(twoF, self.twoFX, self.BSGLSetup)
-            if np.isnan(log10BSGL):
-                logging.debug("NaNs in semi-coherent log10BSGL treated as zero")
-                log10BSGL = 0.0
-            return log10BSGL
+            if record_segments:
+                self.twoFX_per_segment[
+                    : self.FstatResults.numDetectors, :
+                ] = twoFX_per_segment
+        return self.twoFX
+
+    def get_semicoherent_log10BSGL(self):
+        """Computes the semi-coherent log10BSGL statistic at a single point.
+
+        This requires `self.get_semicoherent_twoF()`
+        and `self.get_semicoherent_single_IFO_twoFs()`
+        to be run first.
+
+        Returns
+        -------
+        log10BSGL: float
+            A single value of the semi-coherent log10BSGL statistic
+            at the input parameter values.
+            Also stored as `self.log10BSGL`.
+        """
+        self.log10BSGL = lalpulsar.ComputeBSGL(self.twoF, self.twoFX, self.BSGLSetup)
+        if np.isnan(self.log10BSGL):
+            logging.debug("NaNs in semi-coherent log10BSGL treated as zero")
+            self.log10BSGL = 0.0
+        return self.log10BSGL
 
     def _get_per_segment_twoF(self):
         Fmap = lalpulsar.ComputeTransientFstatMap(
-            self.FstatResults.multiFatoms[0], self.semicoherentWindowRange, False
+            multiFstatAtoms=self.FstatResults.multiFatoms[0],
+            windowRange=self.semicoherentWindowRange,
+            useFReg=False,
         )
         twoF = 2 * Fmap.F_mn.data[:, 0]
         return twoF
@@ -1803,7 +2067,11 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
             signal to jump to theta (and not just from).
         """
 
-        self.fs_file_name = os.path.join(self.outdir, self.label + "_FS.dat")
+        if self.BSGL:
+            raise ValueError(
+                f"BSGL option currently not supported by {self.__class__.__name__}."
+            )
+
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.transientWindowType = "rect"
         self.t0Band = None
@@ -1812,6 +2080,7 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         self.cudaDeviceName = None
         self.binary = False
         self.init_computefstatistic()
+        self.get_det_stat = self.get_semicoherent_nglitch_twoF
 
     def get_semicoherent_nglitch_twoF(self, F0, F1, F2, Alpha, Delta, *args):
         """Returns the semi-coherent glitch summed twoF.
@@ -1850,7 +2119,7 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         for i, theta_i_at_tref in enumerate(thetas):
             ts, te = tboundaries[i], tboundaries[i + 1]
             if te - ts > 1800:
-                twoFVal = self.get_fullycoherent_twoF(
+                twoFVal = self.get_fullycoherent_detstat(
                     F0=theta_i_at_tref[1],
                     F1=theta_i_at_tref[2],
                     F2=theta_i_at_tref[3],
@@ -1884,7 +2153,7 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
             theta_post_glitch_at_glitch, tref - tglitch
         )
 
-        twoFsegA = self.get_fullycoherent_twoF(
+        twoFsegA = self.get_fullycoherent_detstat(
             F0=theta[0],
             F1=theta[1],
             F2=theta[2],
@@ -1897,7 +2166,7 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         if tglitch == self.maxStartTime:
             return twoFsegA
 
-        twoFsegB = self.get_fullycoherent_twoF(
+        twoFsegB = self.get_fullycoherent_detstat(
             F0=theta_post_glitch[0],
             F1=theta_post_glitch[1],
             F2=theta_post_glitch[2],

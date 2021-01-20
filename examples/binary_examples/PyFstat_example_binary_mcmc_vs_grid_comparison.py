@@ -105,8 +105,6 @@ twoF_values = np.zeros(grid_points.shape[0])
 for ind in range(grid_points.shape[0]):
     point = grid_points[ind]
     twoF_values[ind] = compute_f_stat.get_fullycoherent_twoF(
-        tstart=data_parameters["tstart"],
-        tend=tend,
         F0=signal_parameters["F0"],
         F1=signal_parameters["F1"],
         F2=signal_parameters["F2"],
