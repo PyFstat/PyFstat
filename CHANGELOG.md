@@ -1,3 +1,7 @@
+## 1.10.1 [20/01/2021]
+
+ - bugfix for `MCMCSearch.plot_prior_posterior()`
+
 ## 1.10.0 [08/01/2021]
 
  - documentation now available from https://pyfstat.readthedocs.io
