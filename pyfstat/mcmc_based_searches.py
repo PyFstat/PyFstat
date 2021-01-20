@@ -1082,11 +1082,12 @@ class MCMCSearch(BaseSearchClass):
         """
 
         # Check injection parameters first
+        injection_parameters = injection_parameters or {}
         missing_keys = set(self.theta_keys) - injection_parameters.keys()
         if missing_keys:
             logging.warning(
                 f"plot_prior_posterior(): Missing keys {missing_keys} in 'injection_parameters',"
-                " argument will be ignored."
+                " no injection parameters will be highlighted."
             )
             injection_parameters = None
 
