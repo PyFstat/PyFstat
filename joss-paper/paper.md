@@ -121,7 +121,7 @@ for long observation times and wide parameter spaces.
 The C-based `LALSuite` library [@lalsuite] contains many sophisticated search methods
 with a long development history and high level of optimization,
 but is not very accessible for researchers new to the field or for students;
-nor is it very convenient for rapid development and integration with modern technologies
+nor is it convenient for rapid development and integration with modern technologies
 like GPUs or machine learning.
 Hence, `PyFstat` serves a dual function of
 (i) making `LALSuite` CW functionality more easily accessible through a `Python` interface,
