@@ -55,7 +55,7 @@ and maximized over amplitude parameters.
 It has been one of the standard methods for LIGO-Virgo CW searches for two decades.
 `PyFstat` is built on top of established routines
 in `LALSuite` [@lalsuite]
-but through its more modern `python` interface
+but through its more modern `Python` interface
 it enables a flexible approach to designing new search strategies.
 
 Classes for various search strategies and target signals
@@ -65,8 +65,7 @@ are contained in three main submodules:
 End-users should rarely need to access these directly.
 - `grid_based_searches` : Classes to search over regular parameter-space grids.
 - `mcmc_based_searches` : Classes to cover promising parameter-space regions
-<!-- around search targets or promising signal candidates from wider searches ('followup' use case) -->
-through stochastic template placement with the `ptemcee` sampler [@Vousden:2015pte].
+through stochastic template placement with the Markov Chain Monte Carlo (MCMC) sampler `ptemcee` [@Vousden:2015pte].
 
 Besides standard CWs from isolated neutron stars, `PyFstat` can also be used
 to search for CWs from sources in binary systems (including the additional orbital parameters),
@@ -107,6 +106,7 @@ The repository also contains an automated test suite
 and a set of introductory example scripts.
 Issues with the software can be submitted through GitHub
 and pull requests are always welcome.
+`PyFstat` can be installed through pip, conda or docker containers.
 Documentation in html and pdf formats is available from [readthedocs.org](https://readthedocs.org/projects/pyfstat/)
 and installation instructions can be found there
 or in the [README](https://github.com/PyFstat/PyFstat/blob/master/README.md) file.
