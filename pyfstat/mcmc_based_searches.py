@@ -8,6 +8,39 @@ described in Vousden et al. (MNRAS 455, 1919-1937, 2016):
 https://arxiv.org/abs/1501.05823
 and based on Foreman-Mackey et al. (PASP 125, 306, 2013):
 https://arxiv.org/abs/1202.3665
+
+Defining the prior
+##################
+
+The MCMC based searches (i.e. `pyfstat.MCMC*`) require a prior specification for each model parameter,
+implemented via a `python dictionary <https://docs.python.org/tutorial/datastructures.html#dictionaries>`_.
+This is best explained through a simple example, here is the prior for a *directed* search with a *uniform*
+prior on the frequency and a *normal* prior on the frequency derivative:
+
+.. code-block:: python
+
+    theta_prior = {'F0': {'type': 'unif',
+                          'lower': 29.9,
+                          'upper': 30.1},
+                   'F1': {'type': 'norm',
+                          'loc': 0,
+                          'scale': 1e-10},
+                   'F2': 0,
+                   'Alpha': 2.3,
+                   'Delta': 1.8
+                   }
+
+For the sky positions ``Alpha`` and ``Delta``, we give the fixed values (i.e. they are considered *known* by
+the MCMC simulation), the same is true for ``F2``, the second derivative of the frequency which we fix at ``0``.
+Meanwhile, for the frequency ``F0`` and first frequency derivative ``F1`` we give a dictionary specifying their
+prior distribution. This dictionary must contain three arguments: the ``type`` (in this case either ``unif`` or
+``norm``) which specifies the type of distribution, then two shape arguments. The shape parameters will depend
+on the ``type`` of distribution, but here we use ``lower`` and ``upper``, required for the ``unif`` prior while
+``loc`` and ``scale`` are required for the ``norm`` prior.
+
+Currently, two other types of prior are implemented: ``halfnorm``, ``neghalfnorm`` (both of which require ``loc``
+and ``scale`` shape parameters). Further priors can be added by modifying ``pyfstat.MCMCSearch._generic_lnprior``.
+
 """
 
 import sys
