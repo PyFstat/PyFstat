@@ -802,7 +802,7 @@ class MCMCSearch(BaseSearchClass):
 
     def plot_corner(
         self,
-        figsize=(7, 7),
+        figsize=(10, 10),
         add_prior=False,
         nstds=None,
         label_offset=0.4,
@@ -929,10 +929,15 @@ class MCMCSearch(BaseSearchClass):
                 max_n_ticks=4,
                 plot_contours=True,
                 plot_datapoints=True,
-                # label_kwargs={'fontsize': 12},
+                label_kwargs={"fontsize": 12},
                 data_kwargs={"alpha": 0.1, "ms": 0.5},
                 range=_range,
                 hist_kwargs=hist_kwargs,
+                show_titles=True,
+                quantiles=[0.05, 0.95]
+                if "quantiles" not in kwargs
+                else kwargs.pop("quantiles"),
+                verbose=True if "verbose" not in kwargs else kwargs.pop("verbose"),
                 **kwargs,
             )
 
@@ -949,13 +954,13 @@ class MCMCSearch(BaseSearchClass):
 
                 for tick in ax.xaxis.get_major_ticks():
                     # tick.label.set_fontsize(8)
-                    tick.label.set_rotation("horizontal")
+                    tick.label.set_rotation(30)
                 for tick in ax.yaxis.get_major_ticks():
                     # tick.label.set_fontsize(8)
-                    tick.label.set_rotation("vertical")
+                    tick.label.set_rotation(30)
 
-            plt.tight_layout(h_pad=0.0, w_pad=0.0)
-            fig.subplots_adjust(hspace=0.05, wspace=0.05)
+            plt.tight_layout()
+            fig.subplots_adjust(hspace=0.1, wspace=0.1)
 
             if add_prior:
                 self._add_prior_to_corner(axes, self.samples, add_prior)
