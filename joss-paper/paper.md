@@ -136,7 +136,8 @@ So far, `PyFstat` has been used for
 - developing glitch-robust CW search methods [@Ashton:2018qth];
 - speeding up long-transient searches with GPUs [@Keitel:2018pxz];
 - followup of candidates from all-sky searches for CWs from sources in binary systems,
-see @Covas:2020nwy and @Abbott:2020mev.
+see @Covas:2020nwy and @Abbott:2020mev;
+- studying the impact of neutron star's proper motions on CW searches [@Covas:2020hcy].
 
 # Acknowledgements
 
