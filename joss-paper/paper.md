@@ -157,5 +157,6 @@ EU COST Actions CA18108, CA17137, CA16214, and CA16104,
 and the Spanish Ministerio de Ciencia, Innovación y Universidades
 (R.T.: ref. FPU 18/00694;
 D.K.: ref. BEAGAL 18/00148, cofinanced by the Universitat de les Illes Balears).
+This paper has been assigned document number LIGO-P2100008.
 
 # References
