@@ -48,7 +48,6 @@ def set_up_optional_tqdm():
 
 def set_up_matplotlib_defaults():
     """Sets some defaults for matplotlib plotting."""
-    plt.switch_backend("Agg")
     plt.rcParams["text.usetex"] = shutil.which("latex") is not None
     plt.rcParams["axes.formatter.useoffset"] = False
 
