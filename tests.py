@@ -1380,9 +1380,9 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
             label=self.label + "_with_line",
             outdir=self.outdir,
             tref=self.tref,
-            F0=self.Writer.F0 + 0.5e-6,
-            F1=self.Writer.F1,
-            F2=self.Writer.F2,
+            F0=self.Writer.F0 + 0.5e-2,
+            F1=0,
+            F2=0,
             Alpha=self.Writer.Alpha,
             Delta=self.Writer.Delta,
             h0=10 * self.Writer.h0,
@@ -1398,8 +1398,8 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         thetas = {
             "F0": {
                 "type": "unif",
-                "lower": self.F0 - 1e-6,
-                "upper": self.F0 + 1e-6,
+                "lower": self.F0 - 1e-2,
+                "upper": self.F0 + 1e-2,
             },
             "F1": self.F1,
             "F2": self.F2,
@@ -1421,12 +1421,14 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         )
         self.search.run(plot_walkers=True)
         self.search.print_summary()
-        # The tests here are expected to fail,
-        # as the F-search will get confused by the line.
+        # The standard checks here are expected to fail,
+        # as the F-search will get confused by the line
+        # and recover a much higher maxTwoF than predicted.
         self._check_twoF_predicted(assertTrue=False)
         mode_F0_Fsearch = self.max_dict["F0"]
         maxTwoF_Fsearch = self.maxTwoF
         self._check_mcmc_quantiles(assertTrue=False)
+        self.assertTrue(maxTwoF_Fsearch > self.twoF_predicted)
         # also run a BSGL search over the same data
         self.search = pyfstat.MCMCSearch(
             label=self.label + "-BSGL",
@@ -1442,18 +1444,20 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         )
         self.search.run(plot_walkers=True)
         self.search.print_summary()
-        # Still skipping the check on twoF.
+        # Still skipping the standard checks,
+        # as we're using too cheap a MCMC setup here for them to be robust.
         self._check_twoF_predicted(assertTrue=False)
         mode_F0_BSGLsearch = self.max_dict["F0"]
         maxTwoF_BSGLsearch = self.maxTwoF
-        # But this should now pass cleanly.
-        self._check_mcmc_quantiles()
-        # And the BSGL search should find a lower-F mode closer to the true multi-IFO signal.
+        self._check_mcmc_quantiles(assertTrue=False)
+        # But for sure, the BSGL search should find a lower-F mode
+        # closer to the true multi-IFO signal.
         self.assertTrue(maxTwoF_BSGLsearch < maxTwoF_Fsearch)
         self.assertTrue(mode_F0_BSGLsearch < mode_F0_Fsearch)
         self.assertTrue(
             np.abs(mode_F0_BSGLsearch - self.F0) < np.abs(mode_F0_Fsearch - self.F0)
         )
+        self.assertTrue(maxTwoF_BSGLsearch < self.twoF_predicted)
 
 
 class TestMCMCSemiCoherentSearch(BaseForMCMCSearchTests):
