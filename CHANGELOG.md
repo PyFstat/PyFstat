@@ -1,3 +1,10 @@
+## 1.11.1 [26/01/2021]
+
+ - matplotlib will no longer be automatically forced to `agg`,
+   but only if `env["DISPLAY"]` is not set
+ - improved default scaling of MCMC corner plots
+ - fixed missing unit for `tp` binary parameter in MCMC default plot labels
+
 ## 1.11.0 [20/01/2021]
 
  - LALSuite >= 6.80 now required
