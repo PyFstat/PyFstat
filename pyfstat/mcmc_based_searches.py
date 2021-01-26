@@ -96,7 +96,7 @@ class MCMCSearch(BaseSearchClass):
         asini="",
         period=r"s",
         ecc="",
-        tp="",
+        tp=r"s",
         argp="",
     )
     """
