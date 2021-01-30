@@ -6,17 +6,19 @@ built on top of the [LALSuite library](https://doi.org/10.7935/GT1W-FZ16).
 
 Getting started:
 * This README provides information on
-installation,
+[installing](#installation),
 [contributing](#contributors) to 
 and [citing](#citing-this-work) PyFstat.
-* The classes provided by PyFstat and the full API are documented at [pyfstat.readthedocs.io](https://pyfstat.readthedocs.io/) (work in progress)
-* Additional usage documentation will be added to the
-[project wiki](https://github.com/PyFstat/PyFstat/wiki) (work in progress).
+* PyFstat usage and its API are documented at [pyfstat.readthedocs.io](https://pyfstat.readthedocs.io/).
 * We also have a number of [examples](https://github.com/PyFstat/PyFstat/tree/master/examples),
-demonstrating different use cases. Run them as jupyter notebooks with
+demonstrating different use cases.
+You can run them locally, or online as jupyter notebooks with
 [binder](https://mybinder.org/v2/gh/PyFstat/PyFstat/master).
 * New contributors are encouraged to have a look into
 [how to set up a development environment](#contributing-to-pyfstat)
+* The [project wiki](https://github.com/PyFstat/PyFstat/wiki) is mainly used for developer information.
+* A [changelog](https://github.com/PyFstat/PyFstat/blob/master/CHANGELOG.md)
+is also available.
 
 [![PyPI version](https://badge.fury.io/py/PyFstat.svg)](https://badge.fury.io/py/PyFstat)
 ![Conda version](https://anaconda.org/conda-forge/pyfstat/badges/version.svg)
@@ -25,9 +27,6 @@ demonstrating different use cases. Run them as jupyter notebooks with
 ![Docker](https://github.com/PyFstat/PyFstat/workflows/Docker/badge.svg)
 [![Documentation Status](https://readthedocs.org/projects/pyfstat/badge/?version=latest)](https://pyfstat.readthedocs.io/en/latest/?badge=latest)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PyFstat/PyFstat/master)
-
-A [changelog](https://github.com/PyFstat/PyFstat/blob/master/CHANGELOG.md)
-is also available (only maintained from v1.2 onwards).
 
 ## Installation
 
@@ -41,7 +40,7 @@ Latest development versions can
 or [from a local git clone](#install-pyfstat-from-source-zenodo-or-git-clone).
 
 If you don't have a recent `python` installation (`3.6+`) on your system,
-then Docker or conda are the easiest paths.
+then `Docker` or `conda` are the easiest paths.
 
 In either case, be sure to also check out the notes on
 [dependencies](#dependencies),
@@ -51,8 +50,9 @@ and [citing this work](#citing-this-work).
 ### Docker container
 
 Ready-to-use PyFstat containers are available at the [Packages](https://github.com/PyFstat/PyFstat/packages)
-page. A git-hub account together with a personal access token is required. [Go to the wiki page](https://github.com/PyFstat/PyFstat/wiki/Containers) to learn how to pull them from the git-hub
-registry using Docker or Singularity.
+page. A GitHub account together with a personal access token is required.
+[Go to the wiki page](https://github.com/PyFstat/PyFstat/wiki/Containers)
+to learn how to pull them from the GitHub registry using `Docker` or `Singularity`.
 
 ### conda installation
 
@@ -87,7 +87,7 @@ If you are not installing into a [venv](https://docs.python.org/3/library/venv.h
 or [conda environment](#conda-installation),
 on many systems you may need to use the `--user` flag.
 
-Note that, if using pip, you **need to [install phemerides files](#ephemerides-installation) manually**.
+Note that, if using pip, you **need to [install ephemerides files](#ephemerides-installation) manually**.
 
 ### pip install from github
 
@@ -102,7 +102,7 @@ or, if you have an ssh key installed in github:
 pip install git+ssh://git@github.com/PyFstat/PyFstat
 ```
 
-In this case, you also **need to [install phemerides files](#ephemerides-installation) manually**.
+In this case, you also **need to [install ephemerides files](#ephemerides-installation) manually**.
 
 ### install PyFstat from source (Zenodo or git clone)
 
@@ -139,7 +139,7 @@ python -c 'import pyfstat'
 if no error message is output, then you have installed `pyfstat`. Note that
 the module will be installed to whichever python executable you call it from.
 
-In this case, you also **need to [install phemerides files](#ephemerides-installation) manually**.
+In this case, you also **need to [install ephemerides files](#ephemerides-installation) manually**.
 
 ### Dependencies
 
