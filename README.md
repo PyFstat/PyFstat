@@ -212,7 +212,7 @@ or by creating a `~/.pyfstat.conf` file as described further below.
 If you are working with a virtual environment,
 you should be able to get a full working ephemerides installation with these commands:
 ```
-mkdir $VIRTUAL_ENV/share/lalpulsar
+mkdir -p $VIRTUAL_ENV/share/lalpulsar
 wget https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/earth00-40-DE405.dat.gz -P $VIRTUAL_ENV/share/lalpulsar
 wget https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/sun00-40-DE405.dat.gz -P $VIRTUAL_ENV/share/lalpulsar
 echo 'export LALPULSAR_DATADIR=$VIRTUAL_ENV/share/lalpulsar' >> ${VIRTUAL_ENV}/bin/activate
