@@ -282,24 +282,27 @@ Other contributors:
 
 ## Citing this work
 
-If you use `PyFstat` in a publication we would appreciate if you cite both a DOI for the software itself (see below)
-and the original paper introducing the code:
+If you use `PyFstat` in a publication we would appreciate if you cite both a release DOI for the software itself (see below)
+and one or more of the following scientific papers:
+* The recent paper summarising the package:
+[Keitel, Tenorio, Ashton & Prix 2021](https://arxiv.org/abs/2101.10915)
+([inspire:1842895](https://inspirehep.net/literature/1842895)
+/ [ADS:2021arXiv210110915K](https://ui.adsabs.harvard.edu/abs/2021arXiv210110915K/)).
+(under review for JOSS)
+* The original paper introducing the package and the MCMC functionality:
 [Ashton&Prix 2018](https://doi.org/10.1103/PhysRevD.97.103020)
 ([inspire:1655200](https://inspirehep.net/literature/1655200)
 / [ADS:2018PhRvD..97j3020A](https://ui.adsabs.harvard.edu/abs/2018PhRvD..97j3020A/)).
-This is also the main reference for the MCMC approach.
-In addition, parts of the package are based on the following papers:
-* For transient searches, please also cite:
+* For transient searches:
 [Keitel&Ashton 2018](https://doi.org/10.1088/1361-6382/aade34)
 ([inspire:1673205](https://inspirehep.net/literature/1673205)
 / [ADS:2018CQGra..35t5003K](https://ui.adsabs.harvard.edu/abs/2018CQGra..35t5003K/)).
-* For glitch-robust searches, please also cite:
+* For glitch-robust searches:
 [Ashton, Prix & Jones 2018](https://doi.org/10.1103/PhysRevD.98.063011)
 ([inspire:1672396](https://inspirehep.net/literature/1672396)
 / [ADS:2018PhRvD..98f3011A](https://ui.adsabs.harvard.edu/abs/2018PhRvD..98f3011A/)
 
-If you'd like to cite the `PyFstat` package in general,
-or versions from 1.5.x upwards,
+If you'd additionally like to cite the `PyFstat` package in general,
 please refer to the [version-independent Zenodo listing](https://doi.org/10.5281/zenodo.3967045)
 or use directly the following BibTeX entry:
 ```
@@ -317,7 +320,7 @@ or use directly the following BibTeX entry:
   note         = {\url{https://doi.org/10.5281/zenodo.3967045}}
 }
 ```
-You can also obtain DOIs for individual versioned releases
+You can also obtain DOIs for individual versioned releases (from 1.5.x upward)
 from the right sidebar at [Zenodo](https://doi.org/10.5281/zenodo.3967045).
 
 Alternatively, if you've used PyFstat up to version 1.4.x in your works,
