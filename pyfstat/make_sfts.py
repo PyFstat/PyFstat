@@ -203,12 +203,16 @@ class Writer(BaseSearchClass):
         "psi",
         "phi",
         "transientWindowType",
+        "transientStartTime",
+        "transientTau",
     ]
     """Default convention of labels for the various signal parameters."""
 
     gps_time_and_string_formats_as_LAL = {
         "refTime": ":10.9f",
         "transientWindowType": ":s",
+        "transientStartTime": ":10.9f",
+        "transientTau": ":10.9f",
     }
     """Dictionary to ensure proper format handling for some special parameters.
 
@@ -941,6 +945,116 @@ class BinaryModulatedWriter(Writer):
             transientStartTime=transientStartTime,
             transientTau=transientTau,
         )
+
+
+class TransientLineWriter(Writer):
+    """Inject a transient line into some data.
+
+    A transient line is defined as a constant amplitude and frequency excess power lasting
+    for a (not necesarilly) finite time span of an observing run.
+
+    In practice, it corresponds to a CW without Doppler or antenna-patern-induced amplitude modulation.
+
+    This uses MFD_v4
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        if self.detectors is None:
+            raise ValueError("MakeFakeData_v4 requires detector name to be given")
+        elif len(self.detectors.split(",")) > 1:
+            raise NotImplementedError(
+                "MakeFakeData_v4 does not support more than one detector at a time. "
+                "Please, do it properly"
+            )
+
+    def calculate_fmin_Band(self):
+        # MakeFakeData_v4 *requires* fmin and Band to be given.
+        # This overriding prevents Writer.calculate_fmin_Band from
+        # not setting them due to self.noiseSFTs being truthy.
+        hide_noiseSFTs, self.noiseSFTs = self.noiseSFTs, None
+        super().calculate_fmin_Band()
+        self.noiseSFTs = hide_noiseSFTs
+
+    def run_makefakedata(self):
+        """Generate the SFT data calling lalapps_Makefakedata_v5.
+
+        This first builds the full commandline,
+        then calls `check_cached_data_okay_to_use()`
+        to see if equivalent data files already exist,
+        and else runs the actual generation code.
+        """
+
+        mfd = "lalapps_Makefakedata_v4"
+        cl_mfd = [mfd]
+
+        cl_mfd.append("--lineFeature=TRUE")
+        cl_mfd.append("--outSingleSFT=TRUE")
+        cl_mfd.append('--outSFTbname="{}"'.format(self.sftfilenames[0]))
+        cl_mfd.append("--IFO={}".format(self.detectors))
+
+        if self.noiseSFTs is not None and self.SFTWindowType is None:
+            raise ValueError(
+                "SFTWindowType is required when using noiseSFTs. "
+                "Please, make sure you understand the window function used "
+                "to produce noiseSFTs."
+            )
+        elif self.noiseSFTs is not None:
+            if self.sqrtSX and np.any(
+                [s > 0 for s in helper_functions.parse_list_of_numbers(self.sqrtSX)]
+            ):
+                logging.warning(
+                    "In addition to using noiseSFTs, you are adding "
+                    "Gaussian noise with sqrtSX={} "
+                    "Please, make sure this is what you intend to do.".format(
+                        self.sqrtSX
+                    )
+                )
+            cl_mfd.append('--noiseSFTs="{}"'.format(self.noiseSFTs))
+        if self.sqrtSX:
+            cl_mfd.append('--noiseSqrtSh="{}"'.format(self.sqrtSX))
+
+        if self.SFTWindowType is not None:
+            cl_mfd.append('--window="{}"'.format(self.SFTWindowType))
+            cl_mfd.append("--tukeyBeta={}".format(self.SFTWindowBeta))
+        cl_mfd.append("--startTime={}".format(self.tstart))
+        cl_mfd.append("--duration={}".format(self.duration))
+        if hasattr(self, "fmin") and self.fmin:
+            cl_mfd.append("--fmin={:.16g}".format(self.fmin))
+        if hasattr(self, "Band") and self.Band:
+            cl_mfd.append("--Band={:.16g}".format(self.Band))
+        cl_mfd.append("--Tsft={}".format(self.Tsft))
+        if self.h0:
+            cl_mfd.append(
+                " ".join(
+                    f"--{key} {value}" for key, value in self.signal_parameters.items()
+                )
+            )
+
+        earth_ephem = getattr(self, "earth_ephem", None)
+        sun_ephem = getattr(self, "sun_ephem", None)
+        if earth_ephem is not None:
+            cl_mfd.append('--ephemEarth="{}"'.format(earth_ephem))
+        if sun_ephem is not None:
+            cl_mfd.append('--ephemSun="{}"'.format(sun_ephem))
+        if self.randSeed:
+            cl_mfd.append("--randSeed={}".format(self.randSeed))
+
+        cl_mfd = " ".join(cl_mfd)
+        check_ok = self.check_cached_data_okay_to_use(cl_mfd)
+        if check_ok is False:
+            helper_functions.run_commandline(cl_mfd)
+            if not np.all([os.path.isfile(f) for f in self.sftfilenames]):
+                raise IOError(
+                    f"It seems we successfully ran {mfd},"
+                    f" but did not get the expected SFT file path(s): {self.sftfilepath}."
+                )
+            logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
+            logging.info("Now validating each SFT file...")
+            for sft in self.sftfilenames:
+                lalpulsar.ValidateSFTFile(sft)
 
 
 class GlitchWriter(SearchForSignalWithJumps, Writer):

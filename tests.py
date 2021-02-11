@@ -5,6 +5,7 @@ import shutil
 import pyfstat
 import lalpulsar
 import logging
+import pytest
 import time
 from scipy.stats import chi2
 
@@ -196,6 +197,7 @@ class TestWriter(BaseForTestsWithData):
     label = "TestWriter"
     writer_class_to_test = pyfstat.Writer
     signal_parameters = default_signal_params
+    noiseSFT_detectors = "H1,L1"
 
     def test_make_cff(self):
         self.Writer.make_cff(verbose=True)
@@ -244,7 +246,6 @@ class TestWriter(BaseForTestsWithData):
 
     def test_noise_sfts(self):
         randSeed = 69420
-        detectors = "H1,L1"
 
         # create SFTs with both noise and a signal in them
         noise_and_signal_writer = self.writer_class_to_test(
@@ -253,7 +254,7 @@ class TestWriter(BaseForTestsWithData):
             duration=self.duration,
             Tsft=self.Tsft,
             tstart=self.tstart,
-            detectors=detectors,
+            detectors=self.noiseSFT_detectors,
             randSeed=randSeed,
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
@@ -282,7 +283,7 @@ class TestWriter(BaseForTestsWithData):
             duration=self.duration,
             Tsft=self.Tsft,
             tstart=self.tstart,
-            detectors=detectors,
+            detectors=self.noiseSFT_detectors,
             randSeed=randSeed,
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
@@ -428,6 +429,27 @@ class TestWriter(BaseForTestsWithData):
             ),
         )
         self.assertTrue(os.path.isfile(expected_SFT_filepath))
+
+
+class TestTransientLineWriter(TestWriter):
+    label = "TestTransientLineWriter"
+    writer_class_to_test = pyfstat.make_sfts.TransientLineWriter
+    noiseSFT_detectors = "H1"
+
+    def test_multi_ifo_fails(self):
+        detectors = "H1,L1"
+        with pytest.raises(NotImplementedError):
+            self.writer_class_to_test(
+                label="test_noiseSFTs_noise_and_signal",
+                outdir=self.outdir,
+                duration=self.duration,
+                Tsft=self.Tsft,
+                tstart=self.tstart,
+                detectors=detectors,
+                sqrtSX=self.sqrtSX,
+                Band=0.5,
+                **self.signal_parameters,
+            )
 
 
 class TestWriterOtherTsft(TestWriter):
