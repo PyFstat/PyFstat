@@ -2,6 +2,7 @@
 
  - pinned numpy dependency to <1.20 to fix incompatibility with lalsuite 6.81
  - updated ephemerides instructions and citation requests in README
+ - fixed setup of FrequencyModulatedArtifactWriter class
 
 ## 1.11.1 [26/01/2021]
 

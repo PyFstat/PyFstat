@@ -1262,7 +1262,18 @@ class FrequencyModulatedArtifactWriter(Writer):
         self.phi = 0
         self.F2 = 0
 
+        self.cosi = 0
+        self.noiseSFTs = None
+        # The _basic_setup() method inherited from Writer
+        # requires additional CW signal parameters if h0>0,
+        # which an artifact doesn't need to have,
+        # hence we temporarily unset it here as a workaround
+        # and restore it after the method call.
+        h0_value = self.h0
+        self.h0 = None
         self._basic_setup()
+        self.h0 = h0_value
+
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.tstart = int(tstart)
         self.duration = int(duration)
@@ -1275,7 +1286,6 @@ class FrequencyModulatedArtifactWriter(Writer):
         self.nsfts = int(np.ceil(self.duration / self.Tsft))
         self.calculate_fmin_Band()
 
-        self.cosi = 0
         self.Fmax = F0
 
         if Alpha is not None and Delta is not None:
