@@ -1264,7 +1264,11 @@ class FrequencyModulatedArtifactWriter(Writer):
 
         self.cosi = 0
         self.noiseSFTs = None
-
+# The _basic_setup() method inherited from Writer
+# requires additional CW signal parameters if h0>0,
+# which an artifact doesn't need to have,
+# hence we temporarily unset it here as a workaround
+# and restore it after the method call.
         h0_value = self.h0
         self.h0 = None
         self._basic_setup()
