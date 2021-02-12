@@ -211,8 +211,8 @@ class Writer(BaseSearchClass):
     gps_time_and_string_formats_as_LAL = {
         "refTime": ":10.9f",
         "transientWindowType": ":s",
-        "transientStartTime": ":10.9f",
-        "transientTau": ":10.9f",
+        "transientStartTime": ":10.0f",
+        "transientTau": ":10.0f",
     }
     """Dictionary to ensure proper format handling for some special parameters.
 

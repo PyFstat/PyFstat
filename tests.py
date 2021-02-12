@@ -530,7 +530,7 @@ class TestTransientLineWriter(TestWriter):
 
     def test_cosi_scaling(self):
         basic_power, corrected_power = self._compare_corrected_powers(
-            use_efective_h0=True
+            use_effective_h0=True
         )
         self.assertTrue(
             np.allclose(corrected_power / basic_power, np.sqrt(8), rtol=0, atol=1e-2)
