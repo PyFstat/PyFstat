@@ -562,6 +562,22 @@ class TestGlitchWriter(TestWriter):
         self.assertTrue(max_freq_glitch[-1] > max_freq_noglitch[-1])
 
 
+class TestFrequencyModulatedArtifactWriter(BaseForTestsWithOutdir):
+    label = "TestFrequencyModulatedArtifactWriter"
+
+    def test(self):
+        writer = pyfstat.FrequencyModulatedArtifactWriter(
+            label=self.label,
+            duration=3600,
+            detectors="H1",
+            tref=700000000,
+            outdir=self.outdir,
+            Band=0.1,
+        )
+        writer.make_data()
+        self.assertTrue(lalpulsar.ValidateSFTFile(writer.sftfilepath) == 0)
+
+
 class TestReadParFile(BaseForTestsWithOutdir):
     label = "TestReadParFile"
 

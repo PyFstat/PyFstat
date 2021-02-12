@@ -1264,6 +1264,10 @@ class FrequencyModulatedArtifactWriter(Writer):
 
         self.cosi = 0
         self.noiseSFTs = None
+
+        if type(self.detectors) is not str or len(self.detectors.split(",")) > 1:
+            raise ValueError("'detectors' must be  a single-IFO string")
+
         # The _basic_setup() method inherited from Writer
         # requires additional CW signal parameters if h0>0,
         # which an artifact doesn't need to have,
@@ -1340,7 +1344,9 @@ class FrequencyModulatedArtifactWriter(Writer):
                 Lambda = lal.LLO_4K_DETECTOR_LATITUDE_RAD
             else:
                 raise ValueError(
-                    "This class currently only supports detectors H1 or L1."
+                    "Simulated orbital modulation"
+                    " (triggered by Alpha, Delta parameters)"
+                    " is currently only supported for detectors H1 or L1."
                 )
 
             DeltaFSpin = (
@@ -1378,39 +1384,40 @@ class FrequencyModulatedArtifactWriter(Writer):
         return self.h0
 
     def concatenate_sft_files(self):
-        """Deals with multiple SFT files via lalapps_splitSFTs executable."""
-        SFTFilename = lalpulsar.OfficialSFTFilename(
-            self.detectors[0],
-            self.detectors[1],
-            self.nsfts,
-            self.Tsft,
-            int(self.tstart),
-            int(self.duration),
-            self.label,
+        """Merges the individual SFT files via lalapps_splitSFTs executable."""
+
+        SFTFilename = (
+            f"{self.detectors[0]}-{self.nsfts}_{self.detectors}_{self.Tsft}SFT"
         )
+        # We don't try to reproduce the NB filename convention exactly,
+        # as there could be always rounding offsets with the number of bins,
+        # instead we use wildcards there.
+        outfreq = int(np.floor(self.fmin))
+        outwidth = int(np.floor(self.Band))
+        SFTFilename += f"_NB_F{outfreq:04d}Hz*_W{outwidth:04d}Hz*"
+        SFTFilename += f"-{self.tstart}-{self.duration}.sft"
         SFTFile_fullpath = os.path.join(self.outdir, SFTFilename)
 
-        # If the file already exists, simply remove it for now (no caching
-        # implemented)
-        helper_functions.run_commandline(
-            "rm {}".format(SFTFile_fullpath), raise_error=False, log_level=10
-        )
+        if os.path.isfile(SFTFile_fullpath):
+            logging.info(
+                f"Removing previous file(s) {SFTFile_fullpath} (no caching implemented)."
+            )
+            helper_functions.run_commandline(f"rm {SFTFile_fullpath}")
 
         inpattern = os.path.join(self.tmp_outdir, "*sft")
-        cl_splitSFTS = "lalapps_splitSFTs -fs {} -fb {} -fe {} -o {} -i {}".format(
-            self.fmin, self.Band, self.fmin + self.Band, SFTFile_fullpath, inpattern
+        cl_splitSFTS = "lalapps_splitSFTs -fs {} -fb {} -fe {} -n {} -- {}".format(
+            self.fmin, self.Band, self.fmin + self.Band, self.outdir, inpattern
         )
         helper_functions.run_commandline(cl_splitSFTS)
-        helper_functions.run_commandline("rm {} -r".format(self.tmp_outdir))
-        files = glob.glob(SFTFile_fullpath + "*")
-        if len(files) == 1:
-            fn = files[0]
-            fn_new = fn.split(".")[0] + ".sft"
-            helper_functions.run_commandline("mv {} {}".format(fn, fn_new))
-        else:
+        helper_functions.run_commandline(f"rm -r {self.tmp_outdir}")
+        outglob = glob.glob(SFTFile_fullpath)
+        if len(outglob) != 1:
             raise IOError(
-                "Attempted to rename file, but multiple files found: {}".format(files)
+                f"Expected to produce exactly 1 merged file matching pattern '{SFTFile_fullpath}',"
+                f" but got {len(outglob)} matches: {outglob}. Something went wrong!"
             )
+        self.sftfilepath = outglob[0]
+        logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
 
     def pre_compute_evolution(self):
         """Precomputes evolution parameters for the artifact.
@@ -1458,7 +1465,6 @@ class FrequencyModulatedArtifactWriter(Writer):
         This loops over SFTs and generate them serially or in parallel,
         then contatenates the results together at the end.
         """
-        self.duration = self.Tsft
 
         self.tmp_outdir = os.path.join(self.outdir, self.label + "_tmp")
         if os.path.isdir(self.tmp_outdir) is True:
@@ -1508,7 +1514,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         cl_mfd.append('--noiseSqrtSh="{}"'.format(self.sqrtSX))
         cl_mfd.append("--startTime={:0.0f}".format(mid_time - self.Tsft / 2.0))
         cl_mfd.append("--refTime={:0.0f}".format(mid_time))
-        cl_mfd.append("--duration={}".format(self.duration))
+        cl_mfd.append("--duration={}".format(self.Tsft))
         cl_mfd.append("--fmin={:.16g}".format(self.fmin))
         cl_mfd.append("--Band={:.16g}".format(self.Band))
         cl_mfd.append("--Tsft={}".format(self.Tsft))
