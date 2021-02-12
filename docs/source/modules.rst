@@ -14,4 +14,3 @@ other general information.
    :maxdepth: 4
 
    pyfstat
-   tests
