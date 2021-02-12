@@ -458,7 +458,7 @@ class TestTransientLineWriter(TestWriter):
                 **self.signal_parameters,
             )
 
-    def _check_maximum_power_consistency(self, writer):
+    def _check_maximum_power_consistency(self, writer, return_line_power=False):
         times, freqs, data = pyfstat.helper_functions.get_sft_array(writer.sftfilepath)
         max_power_freq_index = np.argmax(data, axis=0)
         line_active_mask = (writer.transientStartTime <= times) & (
@@ -472,10 +472,14 @@ class TestTransientLineWriter(TestWriter):
         )
         self.assertTrue(np.allclose(freqs[max_power_freq_index_with_line], writer.F0))
 
+        if return_line_power:
+            return np.max(data, axis=0)[line_active_mask]
+
     def test_transient_line_injection(self):
 
         # Create data with a line
         writer = self.writer_class_to_test(
+            outdir=self.outdir,
             **default_Writer_params,
             **default_signal_params,
             **default_transient_params,
@@ -487,6 +491,7 @@ class TestTransientLineWriter(TestWriter):
     def test_noise_sfts(self):
         # Create data with a line
         writer = self.writer_class_to_test(
+            outdir=self.outdir,
             **default_signal_params,
             **default_transient_params,
             SFTWindowType="tukey",
@@ -496,6 +501,56 @@ class TestTransientLineWriter(TestWriter):
         writer.make_data(verbose=True)
 
         self._check_maximum_power_consistency(writer)
+
+    def _compare_corrected_powers(
+        self, use_effective_h0=False, scale_by_duration=False
+    ):
+        signal_params = default_signal_params.copy()
+        signal_params["cosi"] = 1.0
+        writer = self.writer_class_to_test(
+            outdir=self.outdir,
+            **default_Writer_params,
+            **signal_params,
+            **default_transient_params,
+        )
+
+        writer.make_data()
+        basic_power = self._check_maximum_power_consistency(
+            writer, return_line_power=True
+        )
+
+        writer.correct_line_amplitude(
+            use_effective_h0=use_effective_h0, scale_by_duration=scale_by_duration
+        )
+        writer.make_data()
+        corrected_power = self._check_maximum_power_consistency(
+            writer, return_line_power=True
+        )
+        return basic_power, corrected_power
+
+    def test_cosi_scaling(self):
+        basic_power, corrected_power = self._compare_corrected_powers(
+            use_efective_h0=True
+        )
+        self.assertTrue(
+            np.allclose(corrected_power / basic_power, np.sqrt(8), rtol=0, atol=1e-2)
+        )
+
+    def test_duration_scaling(self):
+        basic_power, corrected_power = self._compare_corrected_powers(
+            scale_by_duration=True
+        )
+        self.assertTrue(
+            np.allclose(
+                corrected_power / basic_power,
+                np.sqrt(
+                    default_Writer_params["duration"]
+                    / default_transient_params["transientTau"]
+                ),
+                rtol=0,
+                atol=1e-2,
+            )
+        )
 
 
 class TestWriterOtherTsft(TestWriter):

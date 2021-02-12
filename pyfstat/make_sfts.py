@@ -975,7 +975,22 @@ class TransientLineWriter(Writer):
             )
 
     def correct_line_amplitude(self, use_effective_h0, scale_by_duration):
-        pass
+        """
+        Modify the amplitude parameter h0 to include effects from polarization (cosi)
+        or account for shorter signals.
+
+        use_effective_h0: bool
+            If true, use h0_eff = h0 * sqrt(cosi^4 + 6 * cosi^2 + 1)
+        scale_by_duration: bool
+            If true, scale h0 up by sqrt(t_obs/tau)
+        """
+
+        if use_effective_h0:
+            eta = self.signal_parameters["cosi"]
+            eta2 = eta * eta
+            self.signal_parameters["h0"] *= np.sqrt(eta2 * eta2 + 6 * eta2 + 1)
+        if scale_by_duration:
+            self.signal_parameters["h0"] *= np.sqrt(self.duration / self.transientTau)
 
     def _parse_args_consistent_with_mfd(self):
         """
