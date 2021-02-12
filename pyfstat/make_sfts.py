@@ -1264,6 +1264,10 @@ class FrequencyModulatedArtifactWriter(Writer):
 
         self.cosi = 0
         self.noiseSFTs = None
+
+        if type(self.detectors) is not str or len(self.detectors.split(",")) > 1:
+            raise ValueError("'detectors' must be  a single-IFO string")
+
         # The _basic_setup() method inherited from Writer
         # requires additional CW signal parameters if h0>0,
         # which an artifact doesn't need to have,
@@ -1340,7 +1344,9 @@ class FrequencyModulatedArtifactWriter(Writer):
                 Lambda = lal.LLO_4K_DETECTOR_LATITUDE_RAD
             else:
                 raise ValueError(
-                    "This class currently only supports detectors H1 or L1."
+                    "Simulated orbital modulation"
+                    " (triggered by Alpha, Delta parameters)"
+                    " is currently only supported for detectors H1 or L1."
                 )
 
             DeltaFSpin = (
