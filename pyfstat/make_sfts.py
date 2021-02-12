@@ -513,12 +513,6 @@ class Writer(BaseSearchClass):
             for key in self.signal_parameters
         }
 
-        if self.signal_parameters["transientWindowType"] != "none":
-            self.signal_parameters["transientStartTime"] = self.transientStartTime
-            self.signal_formats["transientStartTime"] = ":10.0f"
-            self.signal_parameters["transientTau"] = self.transientTau
-            self.signal_formats["transientTau"] = ":10.0f"
-
     def calculate_fmin_Band(self):
         """Set fmin and Band for the output SFTs to cover.
 
@@ -958,6 +952,16 @@ class TransientLineWriter(Writer):
     This uses MFD_v4
     """
 
+    required_mfd_line_parameters = [
+        "Freq",
+        "phi0",
+        "h0",
+        "cosi",
+        "transientWindowType",
+        "transientStartTime",
+        "transientTau",
+    ]
+
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -968,6 +972,40 @@ class TransientLineWriter(Writer):
             raise NotImplementedError(
                 "MakeFakeData_v4 does not support more than one detector at a time. "
                 "Please, do it properly"
+            )
+
+    def correct_line_amplitude(self, use_effective_h0, scale_by_duration):
+        pass
+
+    def _parse_args_consistent_with_mfd(self):
+        """
+        Adapt input arguments.
+        Take care of minor inconsistencies between MFD_v4 and MFD_v5
+        """
+        super()._parse_args_consistent_with_mfd()
+
+        if any(
+            key not in self.required_mfd_line_parameters
+            for key in self.signal_parameters
+        ):
+            logging.warning(
+                "Transient lines only require the following parameters:\n"
+                f"{self.required_mfd_line_parameters}.\n"
+                "Any other parameter will be purged from this class now"
+            )
+            params_to_purge = list(
+                set(self.signal_parameters) - set(self.required_mfd_line_parameters)
+            )
+            print("Purging: {}".format(params_to_purge))
+            for key in params_to_purge:
+                self.signal_parameters.pop(key)
+
+        if "transientTau" in self.signal_parameters:
+            self.signal_parameters["transientTauDays"] = (
+                self.signal_parameters.pop("transientTau") / 86400.0
+            )
+            self.signal_formats["transientTauDays"] = self.signal_formats.pop(
+                "transientTau"
             )
 
     def calculate_fmin_Band(self):

@@ -46,7 +46,7 @@ default_Writer_params = {
 }
 
 default_signal_params = {
-    "F0": 30,
+    "F0": 30.0,
     "F1": -1e-10,
     "F2": 0,
     "h0": 5.0,
@@ -64,6 +64,13 @@ default_binary_params = {
     "tp": default_Writer_params["tstart"] + 0.25 * default_Writer_params["duration"],
     "ecc": 0.5,
     "argp": 0.3,
+}
+
+default_transient_params = {
+    "transientWindowType": "rect",
+    "transientStartTime": default_Writer_params["Tsft"]
+    + default_Writer_params["tstart"],
+    "transientTau": 2 * default_Writer_params["Tsft"],
 }
 
 
@@ -450,6 +457,45 @@ class TestTransientLineWriter(TestWriter):
                 Band=0.5,
                 **self.signal_parameters,
             )
+
+    def _check_maximum_power_consistency(self, writer):
+        times, freqs, data = pyfstat.helper_functions.get_sft_array(writer.sftfilepath)
+        max_power_freq_index = np.argmax(data, axis=0)
+        line_active_mask = (writer.transientStartTime <= times) & (
+            times < (writer.transientStartTime + writer.transientTau)
+        )
+        max_power_freq_index_with_line = max_power_freq_index[line_active_mask]
+
+        # Maximum power should be a the transient line whenever that's on
+        self.assertTrue(
+            np.all(max_power_freq_index_with_line == max_power_freq_index_with_line[0])
+        )
+        self.assertTrue(np.allclose(freqs[max_power_freq_index_with_line], writer.F0))
+
+    def test_transient_line_injection(self):
+
+        # Create data with a line
+        writer = self.writer_class_to_test(
+            **default_Writer_params,
+            **default_signal_params,
+            **default_transient_params,
+        )
+        writer.make_data(verbose=True)
+
+        self._check_maximum_power_consistency(writer)
+
+    def test_noise_sfts(self):
+        # Create data with a line
+        writer = self.writer_class_to_test(
+            **default_signal_params,
+            **default_transient_params,
+            SFTWindowType="tukey",
+            SFTWindowBeta=0.001,
+            noiseSFTs=self.Writer.sftfilepath,
+        )
+        writer.make_data(verbose=True)
+
+        self._check_maximum_power_consistency(writer)
 
 
 class TestWriterOtherTsft(TestWriter):
