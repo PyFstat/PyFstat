@@ -438,9 +438,9 @@ class TestWriter(BaseForTestsWithData):
         self.assertTrue(os.path.isfile(expected_SFT_filepath))
 
 
-class TestTransientLineWriter(TestWriter):
-    label = "TestTransientLineWriter"
-    writer_class_to_test = pyfstat.make_sfts.TransientLineWriter
+class TestLineWriter(TestWriter):
+    label = "TestLineWriter"
+    writer_class_to_test = pyfstat.make_sfts.LineWriter
     noiseSFT_detectors = "H1"
 
     def test_multi_ifo_fails(self):

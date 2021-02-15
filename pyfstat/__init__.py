@@ -13,6 +13,7 @@ from .make_sfts import (
     GlitchWriter,
     FrequencyModulatedArtifactWriter,
     FrequencyAmplitudeModulatedArtifactWriter,
+    LineWriter,
 )
 from .mcmc_based_searches import (
     MCMCSearch,

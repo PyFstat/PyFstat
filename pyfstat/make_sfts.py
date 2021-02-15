@@ -945,14 +945,14 @@ class BinaryModulatedWriter(Writer):
         )
 
 
-class TransientLineWriter(Writer):
-    """Inject <tbd> into SFT data.
+class LineWriter(Writer):
+    """Inject an line into SFT data.
 
-    WIP
+    A (transient) line is defined as a constant amplitude and constant excess power artifact in the data.
 
     In practice, it corresponds to a CW without Doppler or antenna-patern-induced amplitude modulation.
 
-    This functionality is implemented through `lalapps_MakeFakeData_v4`.
+    This functionality is implemented via `lalapps_MakeFakeData_v4`'s `lineFeature` option.
     This version of MFD only supports one interferometer at a time.
     """
 
