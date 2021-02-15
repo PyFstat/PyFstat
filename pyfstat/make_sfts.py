@@ -192,6 +192,7 @@ class Writer(BaseSearchClass):
     """
 
     mfd = "lalapps_Makefakedata_v5"
+    """The executable; can be overridden by child classes."""
 
     signal_parameter_labels = [
         "tref",
@@ -946,17 +947,21 @@ class BinaryModulatedWriter(Writer):
 
 
 class LineWriter(Writer):
-    """Inject an line into SFT data.
+    """Inject a simulated line-like detector artifact into SFT data.
 
     A (transient) line is defined as a constant amplitude and constant excess power artifact in the data.
 
     In practice, it corresponds to a CW without Doppler or antenna-patern-induced amplitude modulation.
 
-    This functionality is implemented via `lalapps_MakeFakeData_v4`'s `lineFeature` option.
+    NOTE: This functionality is implemented via `lalapps_MakeFakeData_v4`'s `lineFeature` option.
     This version of MFD only supports one interferometer at a time.
+
+    NOTE: All signal parameters except for `h0` and `cosi` will be ignored.
+    `cosi` is used to rescale `h0` with the usual `sqrt(cosi**4 + 6*cosi**2 + 1)` relation.
     """
 
     mfd = "lalapps_Makefakedata_v4"
+    """The executable (older version that supports the `--lineFeature` option)."""
 
     required_mfd_line_parameters = [
         "Freq",
@@ -967,6 +972,7 @@ class LineWriter(Writer):
         "transientStartTime",
         "transientTau",
     ]
+    """Other signal parameters will be removed before passing to MFDv4."""
 
     def __init__(self, *args, **kwargs):
 
@@ -993,7 +999,7 @@ class LineWriter(Writer):
             for key in self.signal_parameters
         ):
             logging.warning(
-                "Transient lines only uses the following parameters:\n"
+                "Injection of line artifacts only uses the following parameters:\n"
                 f"{self.required_mfd_line_parameters}.\n"
                 "Any other parameter will be purged from this class now"
             )
