@@ -1035,9 +1035,16 @@ class LineWriter(Writer):
             )
 
     def calculate_fmin_Band(self):
-        # MakeFakeData_v4 *requires* fmin and Band to be given.
-        # This overriding prevents Writer.calculate_fmin_Band from
-        # not setting them due to self.noiseSFTs being truthy.
+        """Set fmin and Band for the output SFTs to cover.
+
+        This method adapts Writer.calculate_fmin_Band to work with MakeFakeData_v4,
+        as MakeFakeData_v4 *requires* fmin and Band to be given.
+
+        The overriding prevents (fmin, Band) from not being set when self.noiseSFTs
+        evaluates to true.
+
+        See Writer.calculate_fmin_Band for further details.
+        """
         hide_noiseSFTs, self.noiseSFTs = self.noiseSFTs, None
         super().calculate_fmin_Band()
         self.noiseSFTs = hide_noiseSFTs
