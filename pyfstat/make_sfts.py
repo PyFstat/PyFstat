@@ -942,14 +942,14 @@ class BinaryModulatedWriter(Writer):
 
 
 class TransientLineWriter(Writer):
-    """Inject a transient line into some data.
+    """Inject <tbd> into SFT data.
 
-    A transient line is defined as a constant amplitude and frequency excess power lasting
-    for a (not necesarilly) finite time span of an observing run.
+    WIP
 
     In practice, it corresponds to a CW without Doppler or antenna-patern-induced amplitude modulation.
 
-    This uses MFD_v4
+    This functionality is implemented through `lalapps_MakeFakeData_v4`.
+    This version of MFD only supports one interferometer at a time.
     """
 
     required_mfd_line_parameters = [
@@ -971,7 +971,8 @@ class TransientLineWriter(Writer):
         elif len(self.detectors.split(",")) > 1:
             raise NotImplementedError(
                 "MakeFakeData_v4 does not support more than one detector at a time. "
-                "Please, do it properly"
+                "Multi-detector behaviour can be reproduced by calling the procedure "
+                "on single-detector SFT sets once at a time."
             )
 
     def correct_line_amplitude(self, use_effective_h0, scale_by_duration):
@@ -1011,7 +1012,11 @@ class TransientLineWriter(Writer):
             params_to_purge = list(
                 set(self.signal_parameters) - set(self.required_mfd_line_parameters)
             )
-            print("Purging: {}".format(params_to_purge))
+            logging.info(
+                "Purging input parameters that are not meaningful for <tbd>: {}".format(
+                    params_to_purge
+                )
+            )
             for key in params_to_purge:
                 self.signal_parameters.pop(key)
 
@@ -1032,7 +1037,7 @@ class TransientLineWriter(Writer):
         self.noiseSFTs = hide_noiseSFTs
 
     def run_makefakedata(self):
-        """Generate the SFT data calling lalapps_Makefakedata_v5.
+        """Generate the SFT data calling lalapps_Makefakedata_v4.
 
         This first builds the full commandline,
         then calls `check_cached_data_okay_to_use()`
