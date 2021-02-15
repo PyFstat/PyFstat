@@ -191,6 +191,8 @@ class Writer(BaseSearchClass):
     for more detailed help with some of the parameters.
     """
 
+    mfd = "lalapps_Makefakedata_v5"
+
     signal_parameter_labels = [
         "tref",
         "F0",
@@ -747,9 +749,23 @@ class Writer(BaseSearchClass):
         to see if equivalent data files already exist,
         and else runs the actual generation code.
         """
+        cl_mfd = self._build_MFD_command_line()
 
-        mfd = "lalapps_Makefakedata_v5"
-        cl_mfd = [mfd]
+        check_ok = self.check_cached_data_okay_to_use(cl_mfd)
+        if check_ok is False:
+            helper_functions.run_commandline(cl_mfd)
+            if not np.all([os.path.isfile(f) for f in self.sftfilenames]):
+                raise IOError(
+                    f"It seems we successfully ran {self.mfd},"
+                    f" but did not get the expected SFT file path(s): {self.sftfilepath}."
+                )
+            logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
+            logging.info("Now validating each SFT file...")
+            for sft in self.sftfilenames:
+                lalpulsar.ValidateSFTFile(sft)
+
+    def _build_MFD_command_line(self):
+        cl_mfd = [self.mfd]
         cl_mfd.append("--outSingleSFT=TRUE")
         cl_mfd.append('--outSFTdir="{}"'.format(self.outdir))
         cl_mfd.append('--outLabel="{}"'.format(self.label))
@@ -802,19 +818,7 @@ class Writer(BaseSearchClass):
         if self.randSeed:
             cl_mfd.append("--randSeed={}".format(self.randSeed))
 
-        cl_mfd = " ".join(cl_mfd)
-        check_ok = self.check_cached_data_okay_to_use(cl_mfd)
-        if check_ok is False:
-            helper_functions.run_commandline(cl_mfd)
-            if not np.all([os.path.isfile(f) for f in self.sftfilenames]):
-                raise IOError(
-                    f"It seems we successfully ran {mfd},"
-                    f" but did not get the expected SFT file path(s): {self.sftfilepath}."
-                )
-            logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
-            logging.info("Now validating each SFT file...")
-            for sft in self.sftfilenames:
-                lalpulsar.ValidateSFTFile(sft)
+        return " ".join(cl_mfd)
 
     def predict_fstat(self, assumeSqrtSX=None):
         """Predict the expected F-statistic value for the injection parameters.
@@ -952,6 +956,8 @@ class TransientLineWriter(Writer):
     This version of MFD only supports one interferometer at a time.
     """
 
+    mfd = "lalapps_Makefakedata_v4"
+
     required_mfd_line_parameters = [
         "Freq",
         "phi0",
@@ -1036,14 +1042,8 @@ class TransientLineWriter(Writer):
         super().calculate_fmin_Band()
         self.noiseSFTs = hide_noiseSFTs
 
-    def run_makefakedata(self):
-        """Generate the SFT data calling lalapps_Makefakedata_v4.
-
-        This first builds the full commandline,
-        then calls `check_cached_data_okay_to_use()`
-        to see if equivalent data files already exist,
-        and else runs the actual generation code.
-        """
+    def _build_MFD_command_line(self):
+        """Generate the SFT data calling lalapps_Makefakedata_v4."""
 
         mfd = "lalapps_Makefakedata_v4"
         cl_mfd = [mfd]
@@ -1100,19 +1100,7 @@ class TransientLineWriter(Writer):
         if self.randSeed:
             cl_mfd.append("--randSeed={}".format(self.randSeed))
 
-        cl_mfd = " ".join(cl_mfd)
-        check_ok = self.check_cached_data_okay_to_use(cl_mfd)
-        if check_ok is False:
-            helper_functions.run_commandline(cl_mfd)
-            if not np.all([os.path.isfile(f) for f in self.sftfilenames]):
-                raise IOError(
-                    f"It seems we successfully ran {mfd},"
-                    f" but did not get the expected SFT file path(s): {self.sftfilepath}."
-                )
-            logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
-            logging.info("Now validating each SFT file...")
-            for sft in self.sftfilenames:
-                lalpulsar.ValidateSFTFile(sft)
+        return " ".join(cl_mfd)
 
 
 class GlitchWriter(SearchForSignalWithJumps, Writer):
