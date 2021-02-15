@@ -981,24 +981,6 @@ class LineWriter(Writer):
                 "on single-detector SFT sets once at a time."
             )
 
-    def correct_line_amplitude(self, use_effective_h0, scale_by_duration):
-        """
-        Modify the amplitude parameter h0 to include effects from polarization (cosi)
-        or account for shorter signals.
-
-        use_effective_h0: bool
-            If true, use h0_eff = h0 * sqrt(cosi^4 + 6 * cosi^2 + 1)
-        scale_by_duration: bool
-            If true, scale h0 up by sqrt(t_obs/tau)
-        """
-
-        if use_effective_h0:
-            eta = self.signal_parameters["cosi"]
-            eta2 = eta * eta
-            self.signal_parameters["h0"] *= np.sqrt(eta2 * eta2 + 6 * eta2 + 1)
-        if scale_by_duration:
-            self.signal_parameters["h0"] *= np.sqrt(self.duration / self.transientTau)
-
     def _parse_args_consistent_with_mfd(self):
         """
         Adapt input arguments.
@@ -1011,7 +993,7 @@ class LineWriter(Writer):
             for key in self.signal_parameters
         ):
             logging.warning(
-                "Transient lines only require the following parameters:\n"
+                "Transient lines only uses the following parameters:\n"
                 f"{self.required_mfd_line_parameters}.\n"
                 "Any other parameter will be purged from this class now"
             )
@@ -1019,7 +1001,7 @@ class LineWriter(Writer):
                 set(self.signal_parameters) - set(self.required_mfd_line_parameters)
             )
             logging.info(
-                "Purging input parameters that are not meaningful for <tbd>: {}".format(
+                "Purging input parameters that are not meaningful for LineWriter: {}".format(
                     params_to_purge
                 )
             )
@@ -1033,6 +1015,16 @@ class LineWriter(Writer):
             self.signal_formats["transientTauDays"] = self.signal_formats.pop(
                 "transientTau"
             )
+
+        if "cosi" in self.signal_parameters:
+            logging.info(
+                "Computing h0_eff from h0 and cosi. "
+                "This value will be stored in h0, "
+                "as cosi is *not* used by lineFeature"
+            )
+            eta = self.signal_parameters["cosi"]
+            eta2 = eta * eta
+            self.signal_parameters["h0"] *= np.sqrt(eta2 * eta2 + 6 * eta2 + 1)
 
     def calculate_fmin_Band(self):
         """Set fmin and Band for the output SFTs to cover.

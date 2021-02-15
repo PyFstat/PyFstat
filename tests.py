@@ -502,11 +502,8 @@ class TestLineWriter(TestWriter):
 
         self._check_maximum_power_consistency(writer)
 
-    def _compare_corrected_powers(
-        self, use_effective_h0=False, scale_by_duration=False
-    ):
+    def test_cosi_scaling(self):
         signal_params = default_signal_params.copy()
-        signal_params["cosi"] = 1.0
         writer = self.writer_class_to_test(
             outdir=self.outdir,
             **default_Writer_params,
@@ -519,37 +516,19 @@ class TestLineWriter(TestWriter):
             writer, return_line_power=True
         )
 
-        writer.correct_line_amplitude(
-            use_effective_h0=use_effective_h0, scale_by_duration=scale_by_duration
+        signal_params["cosi"] = 1.0
+        writer = self.writer_class_to_test(
+            outdir=self.outdir,
+            **default_Writer_params,
+            **signal_params,
+            **default_transient_params,
         )
         writer.make_data()
         corrected_power = self._check_maximum_power_consistency(
             writer, return_line_power=True
         )
-        return basic_power, corrected_power
-
-    def test_cosi_scaling(self):
-        basic_power, corrected_power = self._compare_corrected_powers(
-            use_effective_h0=True
-        )
         self.assertTrue(
             np.allclose(corrected_power / basic_power, np.sqrt(8), rtol=0, atol=1e-2)
-        )
-
-    def test_duration_scaling(self):
-        basic_power, corrected_power = self._compare_corrected_powers(
-            scale_by_duration=True
-        )
-        self.assertTrue(
-            np.allclose(
-                corrected_power / basic_power,
-                np.sqrt(
-                    default_Writer_params["duration"]
-                    / default_transient_params["transientTau"]
-                ),
-                rtol=0,
-                atol=1e-2,
-            )
         )
 
 
