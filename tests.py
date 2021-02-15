@@ -5,6 +5,7 @@ import shutil
 import pyfstat
 import lalpulsar
 import logging
+import pytest
 import time
 from scipy.stats import chi2
 
@@ -45,7 +46,7 @@ default_Writer_params = {
 }
 
 default_signal_params = {
-    "F0": 30,
+    "F0": 30.0,
     "F1": -1e-10,
     "F2": 0,
     "h0": 5.0,
@@ -63,6 +64,13 @@ default_binary_params = {
     "tp": default_Writer_params["tstart"] + 0.25 * default_Writer_params["duration"],
     "ecc": 0.5,
     "argp": 0.3,
+}
+
+default_transient_params = {
+    "transientWindowType": "rect",
+    "transientStartTime": default_Writer_params["Tsft"]
+    + default_Writer_params["tstart"],
+    "transientTau": 2 * default_Writer_params["Tsft"],
 }
 
 
@@ -196,6 +204,7 @@ class TestWriter(BaseForTestsWithData):
     label = "TestWriter"
     writer_class_to_test = pyfstat.Writer
     signal_parameters = default_signal_params
+    noiseSFT_detectors = "H1,L1"
 
     def test_make_cff(self):
         self.Writer.make_cff(verbose=True)
@@ -244,7 +253,6 @@ class TestWriter(BaseForTestsWithData):
 
     def test_noise_sfts(self):
         randSeed = 69420
-        detectors = "H1,L1"
 
         # create SFTs with both noise and a signal in them
         noise_and_signal_writer = self.writer_class_to_test(
@@ -253,7 +261,7 @@ class TestWriter(BaseForTestsWithData):
             duration=self.duration,
             Tsft=self.Tsft,
             tstart=self.tstart,
-            detectors=detectors,
+            detectors=self.noiseSFT_detectors,
             randSeed=randSeed,
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
@@ -282,7 +290,7 @@ class TestWriter(BaseForTestsWithData):
             duration=self.duration,
             Tsft=self.Tsft,
             tstart=self.tstart,
-            detectors=detectors,
+            detectors=self.noiseSFT_detectors,
             randSeed=randSeed,
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
@@ -428,6 +436,100 @@ class TestWriter(BaseForTestsWithData):
             ),
         )
         self.assertTrue(os.path.isfile(expected_SFT_filepath))
+
+
+class TestLineWriter(TestWriter):
+    label = "TestLineWriter"
+    writer_class_to_test = pyfstat.make_sfts.LineWriter
+    noiseSFT_detectors = "H1"
+
+    def test_multi_ifo_fails(self):
+        detectors = "H1,L1"
+        with pytest.raises(NotImplementedError):
+            self.writer_class_to_test(
+                label="test_noiseSFTs_noise_and_signal",
+                outdir=self.outdir,
+                duration=self.duration,
+                Tsft=self.Tsft,
+                tstart=self.tstart,
+                detectors=detectors,
+                sqrtSX=self.sqrtSX,
+                Band=0.5,
+                **self.signal_parameters,
+            )
+
+    def _check_maximum_power_consistency(self, writer, return_line_power=False):
+        times, freqs, data = pyfstat.helper_functions.get_sft_array(writer.sftfilepath)
+        max_power_freq_index = np.argmax(data, axis=0)
+        line_active_mask = (writer.transientStartTime <= times) & (
+            times < (writer.transientStartTime + writer.transientTau)
+        )
+        max_power_freq_index_with_line = max_power_freq_index[line_active_mask]
+
+        # Maximum power should be a the transient line whenever that's on
+        self.assertTrue(
+            np.all(max_power_freq_index_with_line == max_power_freq_index_with_line[0])
+        )
+        self.assertTrue(np.allclose(freqs[max_power_freq_index_with_line], writer.F0))
+
+        if return_line_power:
+            return np.max(data, axis=0)[line_active_mask]
+
+    def test_transient_line_injection(self):
+
+        # Create data with a line
+        writer = self.writer_class_to_test(
+            outdir=self.outdir,
+            **default_Writer_params,
+            **default_signal_params,
+            **default_transient_params,
+        )
+        writer.make_data(verbose=True)
+
+        self._check_maximum_power_consistency(writer)
+
+    def test_noise_sfts(self):
+        # Create data with a line
+        writer = self.writer_class_to_test(
+            outdir=self.outdir,
+            **default_signal_params,
+            **default_transient_params,
+            SFTWindowType="tukey",
+            SFTWindowBeta=0.001,
+            noiseSFTs=self.Writer.sftfilepath,
+        )
+        writer.make_data(verbose=True)
+
+        self._check_maximum_power_consistency(writer)
+
+    def test_cosi_scaling(self):
+        signal_params = default_signal_params.copy()
+        writer = self.writer_class_to_test(
+            outdir=self.outdir,
+            **default_Writer_params,
+            **signal_params,
+            **default_transient_params,
+        )
+
+        writer.make_data()
+        basic_power = self._check_maximum_power_consistency(
+            writer, return_line_power=True
+        )
+
+        signal_params["cosi"] = 1.0
+        writer = self.writer_class_to_test(
+            outdir=self.outdir,
+            **default_Writer_params,
+            **signal_params,
+            **default_transient_params,
+        )
+        writer.make_data()
+        corrected_power = self._check_maximum_power_consistency(
+            writer, return_line_power=True
+        )
+        self.assertTrue(
+            np.allclose(corrected_power / basic_power, np.sqrt(8), rtol=0, atol=1e-2)
+        )
 
 
 class TestWriterOtherTsft(TestWriter):
