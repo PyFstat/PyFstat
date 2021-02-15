@@ -1020,7 +1020,7 @@ class LineWriter(Writer):
             logging.info(
                 "Computing h0_eff from h0 and cosi. "
                 "This value will be stored in h0, "
-                "as cosi is *not* used by lineFeature"
+                "as cosi is *not* used by lineFeature."
             )
             eta = self.signal_parameters["cosi"]
             eta2 = eta * eta
