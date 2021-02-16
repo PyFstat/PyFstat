@@ -1,3 +1,7 @@
+## 1.11.3 [16/02/2021]
+
+ - added LineWriter class for simulating unmodulated noise artifacts
+
 ## 1.11.2 [12/02/2021]
 
  - pinned numpy dependency to <1.20 to fix incompatibility with lalsuite 6.81
