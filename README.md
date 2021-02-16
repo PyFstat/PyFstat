@@ -21,7 +21,7 @@ You can run them locally, or online as jupyter notebooks with
 is also available.
 
 [![PyPI version](https://badge.fury.io/py/PyFstat.svg)](https://badge.fury.io/py/PyFstat)
-![Conda version](https://anaconda.org/conda-forge/pyfstat/badges/version.svg)
+[![Conda version](https://anaconda.org/conda-forge/pyfstat/badges/version.svg)](https://anaconda.org/conda-forge/pyfstat)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3967045.svg)](https://doi.org/10.5281/zenodo.3967045)
 ![Integration Tests](https://github.com/PyFstat/PyFstat/workflows/Integration%20Tests/badge.svg)
 ![Docker](https://github.com/PyFstat/PyFstat/workflows/Docker/badge.svg)
