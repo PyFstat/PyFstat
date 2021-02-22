@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 MCMC search v.s. grid search
 ============================
