@@ -1035,15 +1035,20 @@ class LineWriter(Writer):
     mfd = "lalapps_Makefakedata_v4"
     """The executable (older version that supports the `--lineFeature` option)."""
 
-    required_mfd_line_parameters = [
+    required_signal_params = [
         "Freq",
         "phi0",
         "h0",
+    ]
+    """Required parameters for Makefakedata_v4 to success. Any other parameter is
+    silently given a default value by Makefakedata_v4.
+    """
+    signal_parameters_labels = required_signal_params + [
         "transientWindowType",
         "transientStartTime",
         "transientTau",
     ]
-    """Other signal parameters will be removed before passing to MFDv4."""
+    """Other signal parameters will be removed before passing to Makefakedata_v4."""
 
     def __init__(self, *args, **kwargs):
 
@@ -1066,8 +1071,7 @@ class LineWriter(Writer):
         super()._parse_args_consistent_with_mfd()
 
         if any(
-            key not in self.required_mfd_line_parameters
-            for key in self.signal_parameters
+            key not in self.required_signal_params for key in self.signal_parameters
         ):
             logging.warning(
                 "Injection of line artifacts only uses the following parameters:\n"
@@ -1075,7 +1079,7 @@ class LineWriter(Writer):
                 "Any other parameter will be purged from this class now"
             )
             params_to_purge = list(
-                set(self.signal_parameters) - set(self.required_mfd_line_parameters)
+                set(self.signal_parameters) - set(self.required_signal_params)
             )
             logging.info(
                 "Purging input parameters that are not meaningful for LineWriter: {}".format(
