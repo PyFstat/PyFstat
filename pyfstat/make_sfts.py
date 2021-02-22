@@ -1024,8 +1024,7 @@ class LineWriter(Writer):
     NOTE: This functionality is implemented via `lalapps_MakeFakeData_v4`'s `lineFeature` option.
     This version of MFD only supports one interferometer at a time.
 
-    NOTE: All signal parameters except for `h0` and `cosi` will be ignored.
-    `cosi` is used to rescale `h0` with the usual `sqrt(cosi**4 + 6*cosi**2 + 1)` relation.
+    NOTE: All signal parameters except for `h0`, `Freq`, `phi0` and transient parameters will be ignored.
     """
 
     mfd = "lalapps_Makefakedata_v4"
@@ -1035,7 +1034,6 @@ class LineWriter(Writer):
         "Freq",
         "phi0",
         "h0",
-        "cosi",
         "transientWindowType",
         "transientStartTime",
         "transientTau",
@@ -1089,16 +1087,6 @@ class LineWriter(Writer):
             self.signal_formats["transientTauDays"] = self.signal_formats.pop(
                 "transientTau"
             )
-
-        if "cosi" in self.signal_parameters:
-            logging.info(
-                "Computing h0_eff from h0 and cosi. "
-                "This value will be stored in h0, "
-                "as cosi is *not* used by lineFeature."
-            )
-            eta = self.signal_parameters["cosi"]
-            eta2 = eta * eta
-            self.signal_parameters["h0"] *= np.sqrt(eta2 * eta2 + 6 * eta2 + 1)
 
     def calculate_fmin_Band(self):
         """Set fmin and Band for the output SFTs to cover.
