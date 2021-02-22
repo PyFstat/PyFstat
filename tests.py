@@ -520,6 +520,9 @@ class TestLineWriter(TestWriter):
                 **self.signal_parameters,
             )
 
+    def test_makefakedata_usecached(self):
+        pass
+
     def _check_maximum_power_consistency(self, writer, return_line_power=False):
         times, freqs, data = pyfstat.helper_functions.get_sft_array(writer.sftfilepath)
         max_power_freq_index = np.argmax(data, axis=0)
@@ -563,35 +566,6 @@ class TestLineWriter(TestWriter):
         writer.make_data(verbose=True)
 
         self._check_maximum_power_consistency(writer)
-
-    def test_cosi_scaling(self):
-        signal_params = default_signal_params.copy()
-        writer = self.writer_class_to_test(
-            outdir=self.outdir,
-            **default_Writer_params,
-            **signal_params,
-            **default_transient_params,
-        )
-
-        writer.make_data()
-        basic_power = self._check_maximum_power_consistency(
-            writer, return_line_power=True
-        )
-
-        signal_params["cosi"] = 1.0
-        writer = self.writer_class_to_test(
-            outdir=self.outdir,
-            **default_Writer_params,
-            **signal_params,
-            **default_transient_params,
-        )
-        writer.make_data()
-        corrected_power = self._check_maximum_power_consistency(
-            writer, return_line_power=True
-        )
-        self.assertTrue(
-            np.allclose(corrected_power / basic_power, np.sqrt(8), rtol=0, atol=1e-2)
-        )
 
 
 class TestWriterOtherTsft(TestWriter):

@@ -223,7 +223,7 @@ class Writer(BaseSearchClass):
     LAL routines would silently parse them wrongly.
     """
 
-    required_signal_params = [
+    required_signal_parameters = [
         # leaving out "F1","F2","psi","phi","tref" as they have defaults
         "F0",
         "Alpha",
@@ -514,11 +514,11 @@ class Writer(BaseSearchClass):
         self.theta = np.array([self.phi, self.F0, self.F1, self.F2])
 
         if self.h0 and np.any(
-            [getattr(self, k, None) is None for k in self.required_signal_params]
+            [getattr(self, k, None) is None for k in self.required_signal_parameters]
         ):
             raise ValueError(
                 "If h0>0, also need all of ({:s})".format(
-                    ",".join(self.required_signal_params)
+                    ",".join(self.required_signal_parameters)
                 )
             )
 
@@ -1035,15 +1035,15 @@ class LineWriter(Writer):
     mfd = "lalapps_Makefakedata_v4"
     """The executable (older version that supports the `--lineFeature` option)."""
 
-    required_signal_params = [
-        "Freq",
-        "phi0",
+    required_signal_parameters = [
+        "F0",
+        "phi",
         "h0",
     ]
     """Required parameters for Makefakedata_v4 to success. Any other parameter is
     silently given a default value by Makefakedata_v4.
     """
-    signal_parameters_labels = required_signal_params + [
+    signal_parameters_labels = required_signal_parameters + [
         "transientWindowType",
         "transientStartTime",
         "transientTau",
@@ -1070,16 +1070,26 @@ class LineWriter(Writer):
         """
         super()._parse_args_consistent_with_mfd()
 
+        # FIXME: There should be a smoother way to translate keys
+        lal_required_signal_parameters = self.translate_keys_to_lal(
+            dict(
+                zip(
+                    self.required_signal_parameters,
+                    [0] * len(self.required_signal_parameters),
+                )
+            )
+        )
+
         if any(
-            key not in self.required_signal_params for key in self.signal_parameters
+            key not in lal_required_signal_parameters for key in self.signal_parameters
         ):
             logging.warning(
                 "Injection of line artifacts only uses the following parameters:\n"
-                f"{self.required_mfd_line_parameters}.\n"
+                f"{self.required_signal_parameters}.\n"
                 "Any other parameter will be purged from this class now"
             )
             params_to_purge = list(
-                set(self.signal_parameters) - set(self.required_signal_params)
+                set(self.signal_parameters) - set(lal_required_signal_parameters)
             )
             logging.info(
                 "Purging input parameters that are not meaningful for LineWriter: {}".format(
@@ -1160,6 +1170,7 @@ class LineWriter(Writer):
                     f"--{key} {value}" for key, value in self.signal_parameters.items()
                 )
             )
+            cl_mfd.append("--cosi=0")  # Required by MFDv4
 
         earth_ephem = getattr(self, "earth_ephem", None)
         sun_ephem = getattr(self, "sun_ephem", None)
