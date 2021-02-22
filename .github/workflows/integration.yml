@@ -21,7 +21,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Linting with flake8
       run: |
-        pip install flake8
+        pip install flake8 flake8-docstrings flake8-executable
         flake8 --count --statistics .
     - name: Style check with black
       run: |
