@@ -223,6 +223,18 @@ class Writer(BaseSearchClass):
     LAL routines would silently parse them wrongly.
     """
 
+    required_signal_params = [
+        # leaving out "F1","F2","psi","phi","tref" as they have defaults
+        "F0",
+        "Alpha",
+        "Delta",
+        "cosi",
+    ]
+    """List of parameters required for a successful execution of Makefakedata_v5.
+    The rest of available parameters are not required as they have default values
+    silently given by Makefakedata_v5
+    """
+
     @helper_functions.initializer
     def __init__(
         self,
@@ -501,19 +513,12 @@ class Writer(BaseSearchClass):
         self.config_file_name = os.path.join(self.outdir, self.label + ".cff")
         self.theta = np.array([self.phi, self.F0, self.F1, self.F2])
 
-        required_signal_params = [
-            # leaving out "F1","F2","psi","phi","tref" as they have defaults
-            "F0",
-            "Alpha",
-            "Delta",
-            "cosi",
-        ]
         if self.h0 and np.any(
-            [getattr(self, k, None) is None for k in required_signal_params]
+            [getattr(self, k, None) is None for k in self.required_signal_params]
         ):
             raise ValueError(
                 "If h0>0, also need all of ({:s})".format(
-                    ",".join(required_signal_params)
+                    ",".join(self.required_signal_params)
                 )
             )
 
