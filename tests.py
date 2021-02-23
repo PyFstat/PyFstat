@@ -521,7 +521,28 @@ class TestLineWriter(TestWriter):
             )
 
     def test_makefakedata_usecached(self):
-        pass
+
+        # Make everything from scratch
+        writer = self.writer_class_to_test(
+            outdir=self.outdir,
+            **default_Writer_params,
+            **default_signal_params,
+            **default_transient_params,
+        )
+        writer.make_data(verbose=True)
+        first_time = os.path.getmtime(writer.sftfilepath)
+
+        # Re-run, and should be unchanged
+        writer.make_data(verbose=True)
+        second_time = os.path.getmtime(writer.sftfilepath)
+        self.assertTrue(first_time == second_time)
+
+        # third run: touch the .cff to force regeneration
+        time.sleep(1)  # make sure timestamp is actually different!
+        os.system("touch {}".format(writer.config_file_name))
+        writer.run_makefakedata()
+        third_time = os.path.getmtime(writer.sftfilepath)
+        self.assertFalse(first_time == third_time)
 
     def _check_maximum_power_consistency(self, writer, return_line_power=False):
         times, freqs, data = pyfstat.helper_functions.get_sft_array(writer.sftfilepath)

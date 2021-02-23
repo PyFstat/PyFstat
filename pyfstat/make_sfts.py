@@ -712,36 +712,34 @@ class Writer(BaseSearchClass):
                 return False
         logging.info("...OK: file(s) found matching '{}'.".format(sftfile))
 
-        if "injectionSources" in cl_mfd:
-            if os.path.isfile(self.config_file_name):
-                if np.any(
-                    [
-                        os.path.getmtime(sftfile)
-                        < os.path.getmtime(self.config_file_name)
-                        for sftfile in self.sftfilenames
-                    ]
-                ):
-                    logging.info(
-                        (
-                            "...the config file '{}' has been modified since"
-                            " creation of the SFT file(s) '{}'. {}"
-                        ).format(self.config_file_name, self.sftfilepath, need_new)
-                    )
-                    return False
-                else:
-                    logging.info(
-                        "...OK: The config file '{}' is older than the SFT file(s)"
-                        " '{}'.".format(self.config_file_name, self.sftfilepath)
-                    )
-                    # NOTE: at this point we assume it's safe to re-use, since
-                    # _check_if_cff_file_needs_rewriting()
-                    # should have already been called before
-            else:
-                raise RuntimeError(
-                    "Commandline requires file '{}' but it is missing.".format(
-                        self.config_file_name
-                    )
+        if os.path.isfile(self.config_file_name):
+            if np.any(
+                [
+                    os.path.getmtime(sftfile) < os.path.getmtime(self.config_file_name)
+                    for sftfile in self.sftfilenames
+                ]
+            ):
+                logging.info(
+                    (
+                        "...the config file '{}' has been modified since"
+                        " creation of the SFT file(s) '{}'. {}"
+                    ).format(self.config_file_name, self.sftfilepath, need_new)
                 )
+                return False
+            else:
+                logging.info(
+                    "...OK: The config file '{}' is older than the SFT file(s)"
+                    " '{}'.".format(self.config_file_name, self.sftfilepath)
+                )
+                # NOTE: at this point we assume it's safe to re-use, since
+                # _check_if_cff_file_needs_rewriting()
+                # should have already been called before
+        elif "injectionSources" in cl_mfd:
+            raise RuntimeError(
+                "Commandline requires file '{}' but it is missing.".format(
+                    self.config_file_name
+                )
+            )
 
         logging.info("...checking new commandline against existing SFT header(s)...")
         # here we check one SFT header from each SFT file,
@@ -1125,13 +1123,12 @@ class LineWriter(Writer):
     def _build_MFD_command_line(self):
         """Generate the SFT data calling lalapps_Makefakedata_v4."""
 
-        mfd = "lalapps_Makefakedata_v4"
-        cl_mfd = [mfd]
+        cl_mfd = [self.mfd]
 
         cl_mfd.append("--lineFeature=TRUE")
         cl_mfd.append("--outSingleSFT=TRUE")
         cl_mfd.append('--outSFTbname="{}"'.format(self.sftfilenames[0]))
-        cl_mfd.append("--IFO={}".format(self.detectors))
+        cl_mfd.append('--IFO="{}"'.format(self.detectors))
 
         if self.noiseSFTs is not None and self.SFTWindowType is None:
             raise ValueError(
@@ -1152,22 +1149,23 @@ class LineWriter(Writer):
                 )
             cl_mfd.append('--noiseSFTs="{}"'.format(self.noiseSFTs))
         if self.sqrtSX:
-            cl_mfd.append('--noiseSqrtSh="{}"'.format(self.sqrtSX))
+            cl_mfd.append("--noiseSqrtSh={}".format(self.sqrtSX))
 
         if self.SFTWindowType is not None:
             cl_mfd.append('--window="{}"'.format(self.SFTWindowType))
             cl_mfd.append("--tukeyBeta={}".format(self.SFTWindowBeta))
         cl_mfd.append("--startTime={}".format(self.tstart))
         cl_mfd.append("--duration={}".format(self.duration))
-        if hasattr(self, "fmin") and self.fmin:
+        if getattr(self, "fmin", None):
             cl_mfd.append("--fmin={:.16g}".format(self.fmin))
-        if hasattr(self, "Band") and self.Band:
+        if getattr(self, "Band", None):
             cl_mfd.append("--Band={:.16g}".format(self.Band))
         cl_mfd.append("--Tsft={}".format(self.Tsft))
         if self.h0:
             cl_mfd.append(
                 " ".join(
-                    f"--{key} {value}" for key, value in self.signal_parameters.items()
+                    f"--{key}={value:.16g}"
+                    for key, value in self.signal_parameters.items()
                 )
             )
             cl_mfd.append("--cosi=0")  # Required by MFDv4
