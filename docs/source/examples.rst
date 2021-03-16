@@ -14,8 +14,11 @@ after
 and downloading the example itself from these pages
 (or from `github <https://github.com/PyFstat/PyFstat/tree/master/examples>`_).
 
-The complete set of examples can be run by downloading and executing 
-`this script <https://github.com/PyFstat/PyFstat/blob/master/examples/run_all_examples.py>`_.
+The complete set of examples can be accessed by cloning or downloading the PyFstat repository
+from `github`_ or `Zenodo <https://doi.org/10.5281/zenodo.4542822>`_ 
+(make sure to target the proper PyFstat version).
+After that, `run_all_examples.py <https://github.com/PyFstat/PyFstat/blob/master/examples/run_all_examples.py>`_,
+included in the package, can be executed to run all examples one by one.
 This can be useful to have a general view of all the tools provided by PyFstat.
 
 Alternatively, they can be run interactively through Binder:
