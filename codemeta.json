@@ -1,0 +1,59 @@
+{
+    "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+    "@type": "SoftwareSourceCode",
+    "name": "PyFstat: Continuous gravitational-wave data analysis",
+    "description": "PyFstat performs F-statistic-based continuous gravitational wave (CW) searches and other CW data analysis tasks. It is built on top of the LALSuite library, making its functionality more accessible through a Python interface. It also provides an MCMC-based followup of promising candidates from wide-parameter-space searches.",
+   
+    "identifier": "https://doi.org/10.5281/zenodo.3967045",
+    "author": [
+        {
+            "@type": "Person",
+            "givenName": "Gregory",
+            "familyName": "Ashton",
+            "@id": "https://orcid.org/0000-0001-7288-2231"
+        },
+        {
+            "@type": "Person",
+            "givenName": "David",
+            "familyName": "Keitel",
+            "@id": "https://orcid.org/0000-0002-2824-626X"
+        },
+        {
+            "@type": "Person",
+            "givenName": "Rodrigo",
+            "familyName": "Tenorio",
+            "@id": "https://orcid.org/0000-0002-3582-2587"
+        },
+        {
+            "@type": "Person",
+            "givenName": "Reinhard",
+            "familyName": "Prix",
+            "@id": "https://orcid.org/0000-0002-3789-6424"
+        }
+    ],
+    "citation": "Please see citation information here: https://github.com/PyFstat/PyFstat/#citing-this-work",
+    "codeRepository": "https://github.com/PyFstat/PyFstat/",
+    "referencePublication": [
+        {
+            "@type": "ScholarlyArticle",
+            "url": "https://arxiv.org/abs/2101.10915",
+            "@id": "https://arxiv.org/abs/2101.10915"
+        },
+        {
+            "@type": "ScholarlyArticle",
+            "url": "https://ui.adsabs.harvard.edu/abs/2018PhRvD..97j3020A/",
+            "@id": "https://doi.org/10.1103/PhysRevD.97.103020"
+        },
+        {
+            "@type": "ScholarlyArticle",
+            "url": "https://ui.adsabs.harvard.edu/abs/2018CQGra..35t5003K/",
+            "@id": "https://doi.org/10.1088/1361-6382/aade34"
+        },
+        {
+            "@type": "ScholarlyArticle",
+            "url": "https://ui.adsabs.harvard.edu/abs/2018PhRvD..98f3011A/",
+            "@id": "https://doi.org/10.1103/PhysRevD.98.063011"
+        }
+    ],
+    "license": "https://spdx.org/licenses/MIT.html"
+}
