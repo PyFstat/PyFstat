@@ -10,6 +10,7 @@ jobs:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     env:
       PYTHON: '3.8'
+      LALPULSAR_DATADIR: ${{ github.workspace }}/ephem
     steps:
     - uses: actions/checkout@master
     - name: Setup Python
