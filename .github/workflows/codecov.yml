@@ -34,11 +34,11 @@ jobs:
       run: |
         pip install pytest
         pip install pytest-cov
-        pytest tests.py --cov=./ --cov-report=xml
+        pytest tests.py::TestWriter --cov=./ --cov-report=xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
-        files: ./coverage1.xml,./coverage2.xml
+        files: ./coverage.xml
         directory: ./coverage/reports/
         flags: unittests
         env_vars: PYTHON
