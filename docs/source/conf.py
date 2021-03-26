@@ -12,6 +12,7 @@
 #
 import os
 import sys
+import pyfstat
 
 sys.path.insert(0, os.path.abspath("../../"))
 sys.path.insert(0, os.path.abspath("../../pyfstat/"))
@@ -23,7 +24,8 @@ copyright = "2020, Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio"
 author = "Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio"
 
 # The full version, including alpha/beta/rc tags
-release = "master"
+version = pyfstat.__version__
+release = version
 
 
 # -- General configuration ---------------------------------------------------
