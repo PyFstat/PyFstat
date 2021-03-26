@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Long transient search examples: Make data
 =========================================

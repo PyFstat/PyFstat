@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Short transient grid search
 ===========================

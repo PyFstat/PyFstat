@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Binary CW example: Comparison between MCMC and grid search
 ==========================================================
