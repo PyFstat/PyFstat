@@ -110,6 +110,7 @@ and pull requests are always welcome.
 Documentation in html and pdf formats is available from [readthedocs.org](https://readthedocs.org/projects/pyfstat/)
 and installation instructions can be found there
 or in the [README](https://github.com/PyFstat/PyFstat/blob/master/README.md) file.
+PyFstat is also listed in the Astrophysics Source Code Library [@2021ascl.soft02027K].
 
 
 # Statement of need
