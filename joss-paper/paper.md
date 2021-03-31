@@ -143,7 +143,7 @@ see @Covas:2020nwy and @Abbott:2020mev;
 # Acknowledgements
 
 We acknowledge contributions to the package from Karl Wette, Sylvia Zhu and Dan Foreman-Mackey;
-as well as helpful suggestions by John T. Whelan and Luca Rei
+as well as helpful suggestions by John T. Whelan, Luca Rei,
 and the LIGO-Virgo-KAGRA Continuous Wave working group.
 D.K. and R.T. are supported by European Union FEDER funds, the Ministry of Science, 
 Innovation and Universities and the Spanish Agencia Estatal de Investigación grants
