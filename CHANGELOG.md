@@ -1,3 +1,11 @@
+## 1.11.4 [31/03/2021]
+
+ - python 3.9 now supported
+ - improvements to documentation and examples
+ - for developers: flake8-docstrings and flake8-executable rules now enforced
+ - added a codemeta.json file
+ - started tracking test coverage with codecov
+
 ## 1.11.3 [16/02/2021]
 
  - added LineWriter class for simulating unmodulated noise artifacts
