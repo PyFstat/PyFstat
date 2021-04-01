@@ -145,19 +145,20 @@ see @Covas:2020nwy and @Abbott:2020mev;
 We acknowledge contributions to the package from Karl Wette, Sylvia Zhu and Dan Foreman-Mackey;
 as well as helpful suggestions by John T. Whelan, Luca Rei,
 and the LIGO-Virgo-KAGRA Continuous Wave working group.
-D.K. and R.T. are supported by European Union FEDER funds, the Ministry of Science, 
-Innovation and Universities and the Spanish Agencia Estatal de Investigación grants
+D.K. and R.T. are supported by European Union FEDER funds;
+the Spanish Ministerio de Ciencia, Innovación y Universidades and Agencia Estatal de Investigación grants
 PID2019-106416GB-I00/AEI/10.13039/501100011033,
-FPA2016-76821-P,
 RED2018-102661-T,
 RED2018-102573-E,
-FPA2017-90687-REDC,
-Comunitat Autonoma de les Illes Balears through the Direcció General de Política Universitaria i Recerca with funds from the Tourist Stay Tax Law ITS 2017-006 (PRD2018/24),
-Generalitat Valenciana (PROMETEO/2019/071),
-EU COST Actions CA18108, CA17137, CA16214, and CA16104,
-and the Spanish Ministerio de Ciencia, Innovación y Universidades
-(R.T.: ref. FPU 18/00694;
-D.K.: ref. BEAGAL 18/00148, cofinanced by the Universitat de les Illes Balears).
+FPA2017-90687-REDC
+FPU 18/00694,
+and BEAGAL 18/00148 (cofinanced by the Universitat de les Illes Balears);
+the Comunitat Autonoma de les Illes Balears
+through the Direcció General de Política Universitaria i Recerca with funds from the Tourist Stay Tax Law ITS 2017-006 (PRD2018/24)
+and the Conselleria de Fons Europeus, Universitat i Cultura;
+the Generalitat Valenciana (PROMETEO/2019/071);
+and
+EU COST Actions CA18108, CA17137, CA16214, and CA16104.
 This paper has been assigned document number LIGO-P2100008.
 
 # References
