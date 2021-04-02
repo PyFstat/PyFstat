@@ -1,3 +1,9 @@
+## 1.11.5 [02/04/2021]
+
+ - PyPI source tarball for v1.11.4 didn't include files needed to build conda package
+ - improved codecov setup
+ - no actual changes to package
+
 ## 1.11.4 [31/03/2021]
 
  - python 3.9 now supported
