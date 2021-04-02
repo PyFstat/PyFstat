@@ -36,5 +36,13 @@
   "license": "MIT",
   "upload_type": "software",
   "language": "eng",
-  "notes": "See record https://doi.org/10.5281/zenodo.1243930 for previous versions of PyFstat up to v1.4.1."
+  "notes": "See record https://doi.org/10.5281/zenodo.1243930 for previous versions of PyFstat up to v1.4.1.",
+  "related_identifiers": [
+        {
+           "scheme": "url", 
+           "identifier": "https://pyfstat.readthedocs.io/en/stable/",
+           "relation": "isDocumentedBy",
+           "resource_type": "publication-softwaredocumentation"
+        }
+    ]
 }
