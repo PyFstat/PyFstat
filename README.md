@@ -24,10 +24,11 @@ is also available.
 [![Conda version](https://anaconda.org/conda-forge/pyfstat/badges/version.svg)](https://anaconda.org/conda-forge/pyfstat)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3967045.svg)](https://doi.org/10.5281/zenodo.3967045)
 [![ASCL](https://img.shields.io/badge/ascl-2102.027-blue.svg?colorB=262255)](https://ascl.net/2102.027)
-![Integration Tests](https://github.com/PyFstat/PyFstat/workflows/Integration%20Tests/badge.svg)
 ![Docker](https://github.com/PyFstat/PyFstat/workflows/Docker/badge.svg)
-[![Documentation Status](https://readthedocs.org/projects/pyfstat/badge/?version=latest)](https://pyfstat.readthedocs.io/en/latest/?badge=latest)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PyFstat/PyFstat/master)
+![Integration Tests](https://github.com/PyFstat/PyFstat/workflows/Integration%20Tests/badge.svg)
+[![codecov](https://codecov.io/gh/PyFstat/PyFstat/branch/master/graph/badge.svg?token=P0W8MIIUGD)](https://codecov.io/gh/PyFstat/PyFstat)
+[![Documentation Status](https://readthedocs.org/projects/pyfstat/badge/?version=latest)](https://pyfstat.readthedocs.io/en/latest/?badge=latest)
 
 ## Installation
 
