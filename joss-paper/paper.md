@@ -52,7 +52,7 @@ first introduced by @Jaranowski:1998qm:
 a matched-filter detection statistic for CW signals
 described by a set of frequency evolution parameters
 and maximized over amplitude parameters.
-It has been one of the standard methods for LIGO-Virgo CW searches for two decades.
+This has been one of the standard methods for LIGO-Virgo CW searches for two decades.
 `PyFstat` is built on top of established routines
 in `LALSuite` [@lalsuite]
 but through its more modern `Python` interface
@@ -61,16 +61,16 @@ it enables a flexible approach to designing new search strategies.
 Classes for various search strategies and target signals
 are contained in three main submodules:
 
-- `core` : The basic wrappers to `LALSuite`'s $\mathcal{F}$-statistic algorithm.
+- `core`: The basic wrappers to `LALSuite`'s $\mathcal{F}$-statistic algorithm.
 End-users should rarely need to access these directly.
-- `grid_based_searches` : Classes to search over regular parameter-space grids.
-- `mcmc_based_searches` : Classes to cover promising parameter-space regions
+- `grid_based_searches`: Classes to search over regular parameter-space grids.
+- `mcmc_based_searches`: Classes to cover promising parameter-space regions
 through stochastic template placement with the Markov Chain Monte Carlo (MCMC) sampler `ptemcee` [@Vousden:2015pte].
 
 Besides standard CWs from isolated neutron stars, `PyFstat` can also be used
 to search for CWs from sources in binary systems (including the additional orbital parameters),
 for CWs with a discontinuity at a pulsar glitch,
-and for CW-like long-duration transient signals e.g. from _after_ a pulsar glitch.
+and for CW-like long-duration transient signals, e.g., from _after_ a pulsar glitch.
 Specialized versions of both grid-based and MCMC-based search classes
 are provided for these scenarios.
 Both fully-coherent and semi-coherent searches
@@ -86,13 +86,13 @@ its main scientific use cases so far are for the MCMC exploration
 of interesting parameter-space regions
 and for the long-duration transient case.
 
-`PyFstat` was first introduced in @Ashton:2018ure which remains the main reference
+`PyFstat` was first introduced in @Ashton:2018ure, which remains the main reference
 for the MCMC-based analysis implemented in the package.
 The extension to transient signals, which uses `PyCUDA` [@Kloeckner:2012pyc] for speedup,
 is discussed in detail in @Keitel:2018pxz,
 and the glitch-robust search approaches in @Ashton:2018qth.
 
-Additional helper classes, utility functions and internals are included for
+Additional helper classes, utility functions, and internals are included for
 handling the common Short Fourier Transform (SFT) data format for LIGO data,
 simulating artificial data with noise and signals in them,
 and plotting results and diagnostics.
