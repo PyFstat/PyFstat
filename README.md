@@ -24,6 +24,7 @@ is also available.
 [![Conda version](https://anaconda.org/conda-forge/pyfstat/badges/version.svg)](https://anaconda.org/conda-forge/pyfstat)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3967045.svg)](https://doi.org/10.5281/zenodo.3967045)
 [![ASCL](https://img.shields.io/badge/ascl-2102.027-blue.svg?colorB=262255)](https://ascl.net/2102.027)
+[![JOSS](https://joss.theoj.org/papers/10.21105/joss.03000/status.svg)](https://doi.org/10.21105/joss.03000)
 ![Docker](https://github.com/PyFstat/PyFstat/workflows/Docker/badge.svg)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PyFstat/PyFstat/master)
 ![Integration Tests](https://github.com/PyFstat/PyFstat/workflows/Integration%20Tests/badge.svg)
@@ -286,11 +287,10 @@ Other contributors:
 
 If you use `PyFstat` in a publication we would appreciate if you cite both a release DOI for the software itself (see below)
 and one or more of the following scientific papers:
-* The recent paper summarising the package:
-[Keitel, Tenorio, Ashton & Prix 2021](https://arxiv.org/abs/2101.10915)
+* The recent JOSS (Journal of Open Source Software) paper summarising the package:
+[Keitel, Tenorio, Ashton & Prix 2021](https://doi.org/10.21105/joss.03000)
 ([inspire:1842895](https://inspirehep.net/literature/1842895)
 / [ADS:2021arXiv210110915K](https://ui.adsabs.harvard.edu/abs/2021arXiv210110915K/)).
-(under review for JOSS)
 * The original paper introducing the package and the MCMC functionality:
 [Ashton&Prix 2018](https://doi.org/10.1103/PhysRevD.97.103020)
 ([inspire:1655200](https://inspirehep.net/literature/1655200)
