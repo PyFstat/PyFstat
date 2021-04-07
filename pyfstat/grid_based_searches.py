@@ -115,8 +115,7 @@ class GridSearch(BaseSearchClass):
         """
 
         self._set_init_params_dict(locals())
-        if os.path.isdir(outdir) is False:
-            os.mkdir(outdir)
+        os.makedirs(outdir, exist_ok=True)
         self.set_out_file()
         self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         for k in self.search_keys:
@@ -915,8 +914,7 @@ class TransientGridSearch(GridSearch):
 
         self._set_init_params_dict(locals())
         self.nsegs = 1
-        if os.path.isdir(outdir) is False:
-            os.mkdir(outdir)
+        os.makedirs(outdir, exist_ok=True)
         self.set_out_file()
         self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         for k in self.search_keys:
@@ -1185,8 +1183,7 @@ class GridGlitchSearch(GridSearch):
         """
 
         self._set_init_params_dict(locals())
-        if os.path.isdir(outdir) is False:
-            os.mkdir(outdir)
+        os.makedirs(outdir, exist_ok=True)
         self.set_out_file()
         self.BSGL = False
         self.input_arrays = False

@@ -233,8 +233,7 @@ class MCMCSearch(BaseSearchClass):
         self.tCWFstatMapVersion = tCWFstatMapVersion
         self.set_ephemeris_files(earth_ephem, sun_ephem)
 
-        if os.path.isdir(outdir) is False:
-            os.mkdir(outdir)
+        os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
         self._add_log_file(self.output_file_header)
         logging.info("Set-up MCMC search for model {}".format(self.label))
@@ -2384,8 +2383,7 @@ class MCMCGlitchSearch(MCMCSearch):
             too theta (and not just from)
         """
         self._set_init_params_dict(locals())
-        if os.path.isdir(outdir) is False:
-            os.mkdir(outdir)
+        os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
         self._add_log_file(self.output_file_header)
         logging.info(
@@ -2732,8 +2730,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         self.nsegs = nsegs
         self.set_ephemeris_files(earth_ephem, sun_ephem)
 
-        if os.path.isdir(outdir) is False:
-            os.mkdir(outdir)
+        os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
         self._add_log_file(self.output_file_header)
         logging.info(
@@ -2884,8 +2881,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         self.nsegs = None
         self.set_ephemeris_files(earth_ephem, sun_ephem)
 
-        if os.path.isdir(outdir) is False:
-            os.mkdir(outdir)
+        os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
         self._add_log_file(self.output_file_header)
         logging.info(
