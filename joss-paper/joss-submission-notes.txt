@@ -1,0 +1,5 @@
+PyFstat provides tools to perform a range of data analysis tasks in searches for continuous gravitational waves, built on established algorithms but enabling development of novel strategies through a Python interface and containing several ready-to-use analysis methods, in particular MCMC candidate followup methods.
+
+The package was introduced along with the general MCMC approach in the research paper Ashton&Prix 2018 [doi:10.1103/PhysRevD.97.103020]. Other papers cited in this submission have covered the scientific aspects of other ideas implemented in PyFstat, as well as several applications to LIGO-Virgo data, but this is the first paper describing the scope of the package as a whole. We'll be submitting to arXiv in parallel.
+
+Technical note: the paper builds successfully in our repo with the recommended github action. Two weeks or so ago I also managed to compile it with the online Whedon service, but now while it gives me a green "Paper compilation complete!" message, the download preview link just goes to https://whedon.theoj.org/%7B%7D and "not found".
