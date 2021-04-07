@@ -872,6 +872,8 @@ class MCMCSearch(BaseSearchClass):
                     np.reshape(kwargs["truths"], (1, -1)), self.theta_keys
                 ).ravel()
 
+            kwargs["truth_color"] = "orange"
+
         if self.ndim < 2:
             with plt.rc_context(rc_context):
                 if fig_and_axes is None:
@@ -933,6 +935,8 @@ class MCMCSearch(BaseSearchClass):
                 range=_range,
                 hist_kwargs=hist_kwargs,
                 show_titles=True,
+                title_fmt=".2g",
+                fill_contours=True,
                 quantiles=[0.05, 0.95]
                 if "quantiles" not in kwargs
                 else kwargs.pop("quantiles"),
