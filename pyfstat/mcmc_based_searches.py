@@ -872,8 +872,6 @@ class MCMCSearch(BaseSearchClass):
                     np.reshape(kwargs["truths"], (1, -1)), self.theta_keys
                 ).ravel()
 
-            kwargs["truth_color"] = "orange"
-
         if self.ndim < 2:
             with plt.rc_context(rc_context):
                 if fig_and_axes is None:
@@ -894,7 +892,7 @@ class MCMCSearch(BaseSearchClass):
                 fig, axes = fig_and_axes
 
             samples_plt = copy.copy(self.samples)
-            labels = self._get_labels(newline_units=True)
+            labels = self._get_labels(newline_units=False)
 
             samples_plt = self._scale_samples(samples_plt, self.theta_keys)
 
@@ -941,6 +939,7 @@ class MCMCSearch(BaseSearchClass):
                 if "quantiles" not in kwargs
                 else kwargs.pop("quantiles"),
                 verbose=True if "verbose" not in kwargs else kwargs.pop("verbose"),
+                truth_color="orange",
                 **kwargs,
             )
 
