@@ -794,7 +794,11 @@ class MCMCSearch(BaseSearchClass):
                     "_{glitch}", r"_\mathrm{glitch}"
                 )
                 u = self.unit_dictionary[key]
-                label = f"{s} " + ("\n" if newline_units else " ") + f"[{u}]"
+                label = (
+                    f"{s}"
+                    + ("\n" if newline_units else " ")
+                    + (f"[{u}]" if u != "" else "")
+                )
 
             labels.append(label)
 
