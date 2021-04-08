@@ -928,6 +928,7 @@ class MCMCSearch(BaseSearchClass):
             fig_triangle = corner.corner(
                 samples_plt,
                 labels=labels,
+                color="darkslateblue",
                 fig=fig,
                 bins=50,
                 max_n_ticks=4,
@@ -938,7 +939,6 @@ class MCMCSearch(BaseSearchClass):
                 range=_range,
                 hist_kwargs=hist_kwargs,
                 show_titles=True,
-                title_fmt=".2g",
                 fill_contours=True,
                 quantiles=[0.05, 0.95]
                 if "quantiles" not in kwargs
