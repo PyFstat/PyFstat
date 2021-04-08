@@ -1814,6 +1814,8 @@ class SemiCoherentSearch(ComputeFstat):
         if record_segments:
             self.twoF_per_segment = twoF_per_segment
 
+        return self.twoF
+
     def get_semicoherent_single_IFO_twoFs(self, record_segments=False):
         """Computes the semi-coherent single-detector F-statss at a single point.
 
