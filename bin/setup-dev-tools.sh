@@ -12,8 +12,8 @@ this_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Check whether you are running inside a virtual environment (you'd better do so!)
 python ${this_dir}/check_if_virtual_environment.py
 
-# Install development tools
-pip install -r ${this_dir}/../requirements-dev.txt
+# Install PyFstat including development tools
+pip install -e ${this_dir}/..[dev]
 
 # Set up pre-commit hooks
 pre-commit install
