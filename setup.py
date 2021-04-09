@@ -20,6 +20,25 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
+# Extra dependencies
+extras_require = {
+    "dev": [
+        "pre-commit",
+    ],
+    "chainconsumer": ["chainconsumer"],
+    "pycuda": ["pycuda"],
+    "style": [
+        "black",
+        "flake8",
+        "flake8-docstrings",
+        "flake8-executable",
+    ],
+    "test": ["pytest", "pytest-cov"],
+    "wheel": ["wheel", "check-wheel-contents"],
+}
+for key in ["style", "test", "wheel"]:
+    extras_require["dev"] += extras_require[key]
+
 setup(
     name="PyFstat",
     version=versioneer.get_version(),
@@ -65,4 +84,5 @@ setup(
         "tqdm",
         "versioneer",
     ],
+    extras_require=extras_require,
 )
