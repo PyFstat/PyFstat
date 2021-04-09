@@ -14,8 +14,6 @@ ARG EPHEMERIDES_SUN=sun00-40-DE405.dat.gz
 ENV LALPULSAR_DATADIR=${EPHEMERIDES_FOLDER}
 
 # Install PyFstat and dependencies
-COPY requirements.txt .
-RUN pip install -r requirements.txt
 COPY . .
 RUN pip install .
 

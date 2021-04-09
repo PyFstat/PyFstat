@@ -162,11 +162,6 @@ which should all be pulled in automatically if you use `pip`:
 * [lalsuite](https://pypi.org/project/lalsuite/)
 * [versioneer](https://pypi.org/project/versioneer/)
 
-In case the automatic install doesn't properly pull in all dependencies,
-to install all of these modules manually, you can also run
-```
-pip install -r /PATH/TO/THIS/DIRECTORY/requirements.txt
-```
 For a general introduction to installing modules, see
 [here](https://docs.python.org/3/installing/index.html).
 
