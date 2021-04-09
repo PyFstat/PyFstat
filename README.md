@@ -188,6 +188,7 @@ plotting methods and some of the [example scripts](./examples).
   (`python -m pytest tests.py`).
 * `wheel`: Includes `wheel` and `check-wheel-contents`.
 * `dev`: Collects `style`, `test` and `wheel`.
+* `docs`: Required dependencies to build the documentation.
 
 Installation can be done by adding one or more of the aforementioned tags to the installation command.
 

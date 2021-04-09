@@ -25,6 +25,13 @@ extras_require = {
     "dev": [
         "pre-commit",
     ],
+    "docs": [
+        "sphinx==3.4.3",
+        "sphinx_rtd_theme==0.5.1",
+        "sphinx_gallery==0.8.2",
+        "m2r2==0.2.7",
+        "Pillow==8.1.2",
+    ],
     "chainconsumer": ["chainconsumer"],
     "pycuda": ["pycuda"],
     "style": [
