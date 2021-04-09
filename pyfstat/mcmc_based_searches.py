@@ -877,6 +877,9 @@ class MCMCSearch(BaseSearchClass):
                     np.reshape(kwargs["truths"], (1, -1)), self.theta_keys
                 ).ravel()
 
+                if "truth_color" not in kwargs:
+                    kwargs["truth_color"] = "black"
+
         if self.ndim < 2:
             with plt.rc_context(rc_context):
                 if fig_and_axes is None:
@@ -928,7 +931,6 @@ class MCMCSearch(BaseSearchClass):
             fig_triangle = corner.corner(
                 samples_plt,
                 labels=labels,
-                color="darkslateblue",
                 fig=fig,
                 bins=50,
                 max_n_ticks=4,
@@ -944,7 +946,6 @@ class MCMCSearch(BaseSearchClass):
                 if "quantiles" not in kwargs
                 else kwargs.pop("quantiles"),
                 verbose=True if "verbose" not in kwargs else kwargs.pop("verbose"),
-                truth_color="orange",
                 **kwargs,
             )
 
