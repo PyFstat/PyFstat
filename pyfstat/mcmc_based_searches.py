@@ -781,19 +781,16 @@ class MCMCSearch(BaseSearchClass):
         labels = []
         for key in self.theta_keys:
 
-            if key in self.transform_dictionary.keys():
-                val = self.transform_dictionary[key]
-                s, label, u = [
-                    val.get(slu_key, None) for slu_key in ["symbol", "label", "unit"]
-                ]
-            else:
-                label = None
+            values = self.transform_dictionary.get(key, {})
+            s, label, u = [
+                values.get(slu_key, None) for slu_key in ["symbol", "label", "unit"]
+            ]
 
             if label is None:
-                s = self.symbol_dictionary[key].replace(
+                s = s or self.symbol_dictionary[key].replace(
                     "_{glitch}", r"_\mathrm{glitch}"
                 )
-                u = self.unit_dictionary[key]
+                u = u or self.unit_dictionary[key]
                 label = (
                     f"{s}"
                     + ("\n" if newline_units else " ")
