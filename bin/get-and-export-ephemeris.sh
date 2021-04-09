@@ -4,6 +4,8 @@
 # to ../.ephemeris.
 # This script does NOT alter any other bash script.
 
+EPHEM_SRC=https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/
+
 if [ -z $1 ]
 then
     this_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -16,6 +18,10 @@ else
 fi
 
 mkdir -p ${out_dir}
-wget -nc https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/earth00-40-DE405.dat.gz -P ${out_dir} 
-wget -nc https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/sun00-40-DE405.dat.gz -P ${out_dir}
+wget -nc ${EPHEM_SRC}earth00-40-DE405.dat.gz -P ${out_dir}
+wget -nc ${EPHEM_SRC}sun00-40-DE405.dat.gz -P ${out_dir}
 export LALPULSAR_DATADIR=${out_dir}
+echo "Successfully downloaded ephemerides"
+echo "LALPULSAR_DATADIR: $LALPULSAR_DATADIR"
+echo "ls -l ${LALPULSAR_DATADIR}"
+ls -l ${LALPULSAR_DATADIR}
