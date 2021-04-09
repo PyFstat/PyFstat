@@ -1,6 +1,5 @@
 include versioneer.py
 include pyfstat/_version.py
 include CHANGELOG.md
-include requirements.txt
 include tests.py
 recursive-include examples/ *.py

@@ -19,36 +19,22 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Install package and development dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ${GITHUB_WORKSPACE}[style,test,wheel]
     - name: Linting with flake8
       run: |
-        pip install flake8 flake8-docstrings flake8-executable
         flake8 --count --statistics .
     - name: Style check with black
       run: |
-        pip install black
         black --check --diff .
-    - name: Install dependencies
+    - name: Set up ephemerides and test with pytest
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    - name: Set up ephemerides
-      run: |
-        export EPHEM_SRC=https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib
-        echo "LALPULSAR_DATADIR: $LALPULSAR_DATADIR"
-        mkdir $LALPULSAR_DATADIR
-        wget $EPHEM_SRC/earth00-40-DE405.dat.gz -P $LALPULSAR_DATADIR
-        wget $EPHEM_SRC/sun00-40-DE405.dat.gz -P $LALPULSAR_DATADIR
-        echo "Successfully downloaded ephemerides:"
-        ls -l $LALPULSAR_DATADIR
-    - name: Test with pytest
-      run: |
-        pip install pytest
-        # make sure to test *installed* version of pyFstat
-        pip install -e $GITHUB_WORKSPACE
+        source bin/get-and-export-ephemeris.sh
         (cd .. && pytest --durations=0 $GITHUB_WORKSPACE/tests.py --log-file=$GITHUB_WORKSPACE/tests.log)
     - name: Build package
       run: |
-        pip install wheel check-wheel-contents
         python setup.py sdist bdist_wheel
         check-wheel-contents dist/*.whl
     - name: Publish package to TestPyPI

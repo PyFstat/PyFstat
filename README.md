@@ -162,33 +162,38 @@ which should all be pulled in automatically if you use `pip`:
 * [lalsuite](https://pypi.org/project/lalsuite/)
 * [versioneer](https://pypi.org/project/versioneer/)
 
-In case the automatic install doesn't properly pull in all dependencies,
-to install all of these modules manually, you can also run
-```
-pip install -r /PATH/TO/THIS/DIRECTORY/requirements.txt
-```
 For a general introduction to installing modules, see
 [here](https://docs.python.org/3/installing/index.html).
 
-*Optional dependencies*:
-* [pycuda](https://pypi.org/project/pycuda/),
-  required for the `tCWFstatMapVersion=pycuda`
-  option of the `TransientGridSearch` class.
-  (Note: `pip install pycuda` requires a working `nvcc` compiler in your path.)
-* [pytest](https://docs.pytest.org) for running the test suite locally
-  (`python -m pytest tests.py`)
-* Developers are also highly encouraged to use
-  the [flake8](https://flake8.pycqa.org/en/latest/) linter
-  and [black](https://black.readthedocs.io) style checker
-  locally,
-  as these checks are required to pass by the online integration pipeline.
-* Some optional plotting methods depend on the additional package
-  [chainconsumer](https://github.com/Samreay/ChainConsumer)
-  and some of the [example scripts](./examples) require this to run.
-  For `pip` users, this is most conveniently installed by
+### Optional dependencies
+
+PyFstat manages optional dependencies through setuptool's `extras_require`.
+
+Available sets of optional dependencies are:
+
+* [`chainconsumer`](https://github.com/Samreay/ChainConsumer): Required to run some optional 
+plotting methods and some of the [example scripts](./examples).
+* [`pycuda`](https://pypi.org/project/pycuda/): Required for the `tCWFstatMapVersion=pycuda`
+  option of the `TransientGridSearch` class. (Note: Installing `pycuda` requires a working 
+  `nvcc` compiler in your path.)
+* `style`: Includes the [flake8](https://flake8.pycqa.org/en/latest/) linter
+  and [black](https://black.readthedocs.io) style checker. These checks are required to pass
+  by the online integration pipeline.
+* `test`: For running the test suite locally using [pytest](https://docs.pytest.org) 
+  (`python -m pytest tests.py`).
+* `wheel`: Includes `wheel` and `check-wheel-contents`.
+* `dev`: Collects `style`, `test` and `wheel`.
+* `docs`: Required dependencies to build the documentation.
+
+Installation can be done by adding one or more of the aforementioned tags to the installation command.
+
+For example, installing PyFstat including `chainconsumer`, `pycuda` and `style` dependencies would look like
+(mind the lack of whitespaces!)
 ```
-pip install chainconsumer
+pip install pyfstat[chainconsumer,pycuda,style]
 ```
+This command accepts the "development mode" tag `-e`.
+
 * If you prefer to make your own LALSuite installation
 [from source](https://git.ligo.org/lscsoft/lalsuite/),
 make sure it is **swig-enabled** and contains at least the `lalpulsar` and `lalapps` packages.
