@@ -780,23 +780,28 @@ class MCMCSearch(BaseSearchClass):
 
         labels = []
         for key in self.theta_keys:
-            label = None
-            s = self.symbol_dictionary[key]
-            s.replace("_{glitch}", r"_\mathrm{glitch}")
-            u = self.unit_dictionary[key]
-            if key in self.transform_dictionary:
-                if "symbol" in self.transform_dictionary[key]:
-                    s = self.transform_dictionary[key]["symbol"]
-                if "label" in self.transform_dictionary[key]:
-                    label = self.transform_dictionary[key]["label"]
-                if "unit" in self.transform_dictionary[key]:
-                    u = self.transform_dictionary[key]["unit"]
+
+            if key in self.transform_dictionary.keys():
+                val = self.transform_dictionary[key]
+                s, label, u = [
+                    val.get(slu_key, None) for slu_key in ["symbol", "label", "unit"]
+                ]
+            else:
+                label = None
+
             if label is None:
-                if newline_units:
-                    label = "{} \n [{}]".format(s, u)
-                else:
-                    label = "{} [{}]".format(s, u)
+                s = self.symbol_dictionary[key].replace(
+                    "_{glitch}", r"_\mathrm{glitch}"
+                )
+                u = self.unit_dictionary[key]
+                label = (
+                    f"{s}"
+                    + ("\n" if newline_units else " ")
+                    + (f"[{u}]" if u != "" else "")
+                )
+
             labels.append(label)
+
         return labels
 
     def plot_corner(
@@ -872,6 +877,9 @@ class MCMCSearch(BaseSearchClass):
                     np.reshape(kwargs["truths"], (1, -1)), self.theta_keys
                 ).ravel()
 
+                if "truth_color" not in kwargs:
+                    kwargs["truth_color"] = "black"
+
         if self.ndim < 2:
             with plt.rc_context(rc_context):
                 if fig_and_axes is None:
@@ -892,7 +900,7 @@ class MCMCSearch(BaseSearchClass):
                 fig, axes = fig_and_axes
 
             samples_plt = copy.copy(self.samples)
-            labels = self._get_labels(newline_units=True)
+            labels = self._get_labels(newline_units=False)
 
             samples_plt = self._scale_samples(samples_plt, self.theta_keys)
 
@@ -933,6 +941,7 @@ class MCMCSearch(BaseSearchClass):
                 range=_range,
                 hist_kwargs=hist_kwargs,
                 show_titles=True,
+                fill_contours=True,
                 quantiles=[0.05, 0.95]
                 if "quantiles" not in kwargs
                 else kwargs.pop("quantiles"),
