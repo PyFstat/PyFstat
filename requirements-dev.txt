@@ -1,7 +1,0 @@
-black
-flake8
-flake8-docstrings
-flake8-executable
-pre-commit
-pytest
-wheel
