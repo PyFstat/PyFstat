@@ -1508,6 +1508,20 @@ class ComputeFstat(BaseSearchClass):
                 alpha=0.2,
             )
 
+        if "transient_tstart" in CFS_input and "transient_duration" in CFS_input:
+            ax.axvspan(
+                (CFS_input["transient_tstart"] - actual_tstart_CFS) / 86400.0,
+                (
+                    CFS_input["transient_tstart"]
+                    + CFS_input["transient_duration"]
+                    - actual_tstart_CFS
+                )
+                / 86400.0,
+                color="lightgrey",
+                alpha=0.5,
+                label="transient duration",
+            )
+
         ax.legend(loc="best")
         if savefig:
             plt.tight_layout()
