@@ -1,3 +1,16 @@
+## 1.11.6 [TBD]
+
+ - new reference paper for PyFstat: https://doi.org/10.21105/joss.03000
+ - all requirements are now handled through setup.py,
+   e.g. instead of `pip install -r requirements.txt`
+   and manually installing optional dependencies,
+   just use `pip install pyfstat[optionalpackage]`
+ - improved formatting of MCMC corner plots
+ - extended cumulative 2F plots for the transient case
+ - ComputeFstat.get_semicoherent_twoF() now returns its value
+ - minor internal cleanups
+ - test coverage improvements
+
 ## 1.11.5 [02/04/2021]
 
  - PyPI source tarball for v1.11.4 didn't include files needed to build conda package
