@@ -1256,6 +1256,8 @@ class ComputeFstat(BaseSearchClass):
         argp=None,
         tstart=None,
         tend=None,
+        transient_tstart=None,
+        transient_duration=None,
         num_segments=1000,
     ):
         """Calculate the cumulative twoF over subsets of the observation span.
@@ -1277,7 +1279,9 @@ class ComputeFstat(BaseSearchClass):
             If outside those: auto-truncated.
         num_segments: int
             Number of segments to split [tstart,tend] into.
-
+        transient_tstart, transient_duration: float or None
+            These are not actually used by this function,
+            but just included so a parameters dict can be safely passed.
         Returns
         -------
         cumulative_durations : ndarray of shape (num_segments,)
