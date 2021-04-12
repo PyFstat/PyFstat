@@ -1756,7 +1756,7 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
         self.search.print_summary()
         self._check_twoF_predicted()
         self._check_mcmc_quantiles(transient=True)
-        # self._test_plots()
+        self._test_plots()
 
     def test_transient_MCMC_tauonly(self):
 
@@ -1782,7 +1782,7 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
         self.search.print_summary()
         self._check_twoF_predicted()
         self._check_mcmc_quantiles(transient=True)
-        # self._test_plots()
+        self._test_plots()
 
     def test_transient_MCMC_t0_tau(self):
 
@@ -1812,7 +1812,7 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
         self.search.print_summary()
         self._check_twoF_predicted()
         self._check_mcmc_quantiles(transient=True)
-        # self._test_plots()
+        self._test_plots()
 
 
 class TestGridSearch(BaseForTestsWithData):

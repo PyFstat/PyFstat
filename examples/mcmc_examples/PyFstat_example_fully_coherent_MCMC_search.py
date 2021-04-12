@@ -9,6 +9,7 @@ fully coherent F-statistic.
 import pyfstat
 import numpy as np
 import os
+from pyfstat.helper_functions import get_predict_fstat_parameters_from_dict
 
 label = "PyFstat_example_fully_coherent_MCMC_search"
 outdir = os.path.join("PyFstat_example_data", label)
@@ -96,3 +97,14 @@ mcmc.run(
 mcmc.print_summary()
 mcmc.plot_corner(add_prior=True, truths=signal_parameters)
 mcmc.plot_prior_posterior(injection_parameters=signal_parameters)
+
+# plot cumulative 2F, first building a dict as required for PredictFStat
+d, maxtwoF = mcmc.get_max_twoF()
+for key, val in mcmc.theta_prior.items():
+    if key not in d:
+        d[key] = val
+d["h0"] = data.h0
+d["cosi"] = data.cosi
+d["psi"] = data.psi
+PFS_input = get_predict_fstat_parameters_from_dict(d)
+mcmc.plot_cumulative_max(PFS_input=PFS_input)

@@ -7,27 +7,28 @@ MCMC search for a long transient CW signal.
 import pyfstat
 import os
 import numpy as np
+import PyFstat_example_make_data_for_long_transient_search as data
+from pyfstat.helper_functions import get_predict_fstat_parameters_from_dict
 
-outdir = os.path.join("PyFstat_example_data", "PyFstat_example_long_transient_search")
-if not os.path.isdir(outdir) or not np.any(
-    [f.endswith(".sft") for f in os.listdir(outdir)]
+if not os.path.isdir(data.outdir) or not np.any(
+    [f.endswith(".sft") for f in os.listdir(data.outdir)]
 ):
     raise RuntimeError(
         "Please first run PyFstat_example_make_data_for_long_transient_search.py !"
     )
 
-tstart = 1000000000
-duration = 200 * 86400
+tstart = data.tstart
+duration = data.duration
 
 inj = {
-    "tref": tstart,
-    "F0": 30.0,
-    "F1": -1e-10,
-    "F2": 0,
-    "Alpha": 0.5,
-    "Delta": 1,
-    "transient_tstart": tstart + 0.25 * duration,
-    "transient_duration": 0.5 * duration,
+    "tref": data.tstart,
+    "F0": data.F0,
+    "F1": data.F1,
+    "F2": data.F2,
+    "Alpha": data.Alpha,
+    "Delta": data.Delta,
+    "transient_tstart": data.transient_tstart,
+    "transient_duration": data.transient_duration,
 }
 
 DeltaF0 = 6e-7
@@ -62,19 +63,34 @@ log10beta_min = -1
 nwalkers = 100
 nsteps = [100, 100]
 
+transientWindowType = "rect"
+
 mcmc = pyfstat.MCMCTransientSearch(
     label="transient_search",
-    outdir=outdir,
-    sftfilepattern=os.path.join(outdir, "*simulated_transient_signal*sft"),
+    outdir=data.outdir,
+    sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
     theta_prior=theta_prior,
     tref=inj["tref"],
     nsteps=nsteps,
     nwalkers=nwalkers,
     ntemps=ntemps,
     log10beta_min=log10beta_min,
-    transientWindowType="rect",
+    transientWindowType=transientWindowType,
 )
 mcmc.run(walker_plot_args={"plot_det_stat": True, "injection_parameters": inj})
 mcmc.print_summary()
 mcmc.plot_corner(add_prior=True, truths=inj)
 mcmc.plot_prior_posterior(injection_parameters=inj)
+
+# plot cumulative 2F, first building a dict as required for PredictFStat
+d, maxtwoF = mcmc.get_max_twoF()
+for key, val in mcmc.theta_prior.items():
+    if key not in d:
+        d[key] = val
+d["h0"] = data.h0
+d["cosi"] = data.cosi
+d["psi"] = data.psi
+PFS_input = get_predict_fstat_parameters_from_dict(
+    d, transientWindowType=transientWindowType
+)
+mcmc.plot_cumulative_max(PFS_input=PFS_input)

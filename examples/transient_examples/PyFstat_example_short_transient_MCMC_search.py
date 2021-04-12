@@ -9,6 +9,7 @@ import pyfstat
 import os
 import numpy as np
 import PyFstat_example_make_data_for_short_transient_search as data
+from pyfstat.helper_functions import get_predict_fstat_parameters_from_dict
 
 if __name__ == "__main__":
 
@@ -65,6 +66,7 @@ nwalkers = 100
 nsteps = [200, 200]
 
 BSGL = False
+transientWindowType = "rect"
 
 mcmc = pyfstat.MCMCTransientSearch(
     label="transient_search" + ("_BSGL" if BSGL else ""),
@@ -76,10 +78,23 @@ mcmc = pyfstat.MCMCTransientSearch(
     nwalkers=nwalkers,
     ntemps=ntemps,
     log10beta_min=log10beta_min,
-    transientWindowType="rect",
+    transientWindowType=transientWindowType,
     BSGL=BSGL,
 )
 mcmc.run(walker_plot_args={"plot_det_stat": True, "injection_parameters": inj})
 mcmc.print_summary()
 mcmc.plot_corner(add_prior=True, truths=inj)
 mcmc.plot_prior_posterior(injection_parameters=inj)
+
+# plot cumulative 2F, first building a dict as required for PredictFStat
+d, maxtwoF = mcmc.get_max_twoF()
+for key, val in mcmc.theta_prior.items():
+    if key not in d:
+        d[key] = val
+d["h0"] = data.h0
+d["cosi"] = data.cosi
+d["psi"] = data.psi
+PFS_input = get_predict_fstat_parameters_from_dict(
+    d, transientWindowType=transientWindowType
+)
+mcmc.plot_cumulative_max(PFS_input=PFS_input)

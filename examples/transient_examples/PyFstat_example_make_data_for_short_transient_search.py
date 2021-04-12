@@ -27,10 +27,13 @@ duration = 2 * 86400
 
 transient_tstart = tstart + 0.25 * duration
 transient_duration = 0.5 * duration
+transientWindowType = "rect"
 tref = tstart
 
 h0 = 1e-23
 cosi = 0
+psi = 0
+phi = 0
 sqrtSX = 1e-22
 detectors = "H1,L1"
 
@@ -55,8 +58,9 @@ if __name__ == "__main__":
         sqrtSX=sqrtSX,
         transientStartTime=transient_tstart,
         transientTau=transient_duration,
-        transientWindowType="rect",
+        transientWindowType=transientWindowType,
         Tsft=Tsft,
         Band=0.1,
     )
     transient.make_data()
+    print("Predicted 2F from injection Writer:", transient.predict_fstat())
