@@ -1255,6 +1255,8 @@ class ComputeFstat(BaseSearchClass):
         argp=None,
         tstart=None,
         tend=None,
+        transient_tstart=None,
+        transient_duration=None,
         num_segments=1000,
     ):
         """Calculate the cumulative twoF over subsets of the observation span.
@@ -1276,7 +1278,9 @@ class ComputeFstat(BaseSearchClass):
             If outside those: auto-truncated.
         num_segments: int
             Number of segments to split [tstart,tend] into.
-
+        transient_tstart, transient_duration: float or None
+            These are not actually used by this function,
+            but just included so a parameters dict can be safely passed.
         Returns
         -------
         cumulative_durations : ndarray of shape (num_segments,)
@@ -1450,7 +1454,7 @@ class ComputeFstat(BaseSearchClass):
         # Set up plot-related objects
         axis_kwargs = {
             "xlabel": f"Days from $t_\\mathrm{{start}}={actual_tstart_CFS:.0f}$",
-            "ylabel": "$\\log_{10}(\\mathrm{BSGL})_{\\mathrm{cumulative}$"
+            "ylabel": "$\\log_{10}(\\mathrm{BSGL})_{\\mathrm{cumulative}}$"
             if self.BSGL
             else "$\\widetilde{2\\mathcal{F}}_{\\mathrm{cumulative}}$",
             "xlim": (0, taus_CFS_days[-1]),
@@ -1501,6 +1505,20 @@ class ComputeFstat(BaseSearchClass):
                 ),
                 zorder=-10,
                 alpha=0.2,
+            )
+
+        if "transient_tstart" in CFS_input and "transient_duration" in CFS_input:
+            ax.axvspan(
+                (CFS_input["transient_tstart"] - actual_tstart_CFS) / 86400.0,
+                (
+                    CFS_input["transient_tstart"]
+                    + CFS_input["transient_duration"]
+                    - actual_tstart_CFS
+                )
+                / 86400.0,
+                color="lightgrey",
+                alpha=0.5,
+                label="transient duration",
             )
 
         ax.legend(loc="best")

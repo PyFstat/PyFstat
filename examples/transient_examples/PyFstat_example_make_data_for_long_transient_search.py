@@ -25,30 +25,36 @@ duration = 200 * 86400
 
 transient_tstart = tstart + 0.25 * duration
 transient_duration = 0.5 * duration
+transientWindowType = "rect"
 tref = tstart
 
 h0 = 1e-23
 cosi = 0
+psi = 0
+phi = 0
 sqrtSX = 1e-22
 detectors = "H1,L1"
 
-transient = pyfstat.Writer(
-    label="simulated_transient_signal",
-    outdir=outdir,
-    tref=tref,
-    tstart=tstart,
-    duration=duration,
-    F0=F0,
-    F1=F1,
-    F2=F2,
-    Alpha=Alpha,
-    Delta=Delta,
-    h0=h0,
-    cosi=cosi,
-    detectors=detectors,
-    sqrtSX=sqrtSX,
-    transientStartTime=transient_tstart,
-    transientTau=transient_duration,
-    transientWindowType="rect",
-)
-transient.make_data()
+if __name__ == "__main__":
+
+    transient = pyfstat.Writer(
+        label="simulated_transient_signal",
+        outdir=outdir,
+        tref=tref,
+        tstart=tstart,
+        duration=duration,
+        F0=F0,
+        F1=F1,
+        F2=F2,
+        Alpha=Alpha,
+        Delta=Delta,
+        h0=h0,
+        cosi=cosi,
+        detectors=detectors,
+        sqrtSX=sqrtSX,
+        transientStartTime=transient_tstart,
+        transientTau=transient_duration,
+        transientWindowType=transientWindowType,
+    )
+    transient.make_data()
+    print("Predicted 2F from injection Writer:", transient.predict_fstat())

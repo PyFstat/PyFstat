@@ -740,6 +740,7 @@ class TestPredictFstat(BaseForTestsWithOutdir):
         self.assertAlmostEqual(twoF_sigma, chi2.std(df=4), places=5)
 
     def test_PFS_signal(self):
+        duration = 10 * default_Writer_params["duration"]
         twoF_expected, twoF_sigma = pyfstat.helper_functions.predict_fstat(
             h0=1,
             cosi=0,
@@ -747,15 +748,56 @@ class TestPredictFstat(BaseForTestsWithOutdir):
             Alpha=0,
             Delta=0,
             minStartTime=default_Writer_params["tstart"],
-            duration=default_Writer_params["duration"],
+            duration=duration,
+            IFOs=default_Writer_params["detectors"],
+            assumeSqrtSX=1,
+        )
+        print("predict_fstat() returned:" f" E[2F]={twoF_expected}+-{twoF_sigma}")
+        self.assertTrue(twoF_expected > 4)
+        self.assertTrue(twoF_sigma > 0)
+        # call again but this time using a dictionary of parameters
+        params = {
+            "h0": 1,
+            "cosi": 0,
+            "psi": 0,
+            "Alpha": 0,
+            "Delta": 0,
+            "F0": 0,
+            "F1": 0,
+        }
+        params = pyfstat.helper_functions.get_predict_fstat_parameters_from_dict(params)
+        twoF_expected_dict, twoF_sigma_dict = pyfstat.helper_functions.predict_fstat(
+            **params,
+            minStartTime=default_Writer_params["tstart"],
+            duration=duration,
             IFOs=default_Writer_params["detectors"],
             assumeSqrtSX=1,
         )
         print(
-            "predict_fstat() returned: E[2F]={}+-{}".format(twoF_expected, twoF_sigma)
+            "predict_fstat() called with a dict returned:"
+            f" E[2F]={twoF_expected_dict}+-{twoF_sigma_dict}"
         )
-        self.assertTrue(twoF_expected > 4)
-        self.assertTrue(twoF_sigma > 0)
+        self.assertEqual(twoF_expected_dict, twoF_expected)
+        # add transient parameters
+        params["transientWindowType"] = "rect"
+        params["transient_tstart"] = default_Writer_params["tstart"]
+        params["transient_duration"] = 0.5 * duration
+        params = pyfstat.helper_functions.get_predict_fstat_parameters_from_dict(params)
+        (
+            twoF_expected_transient,
+            twoF_sigma_transient,
+        ) = pyfstat.helper_functions.predict_fstat(
+            **params,
+            minStartTime=default_Writer_params["tstart"],
+            duration=duration,
+            IFOs=default_Writer_params["detectors"],
+            assumeSqrtSX=1,
+        )
+        print(
+            "predict_fstat() called with a dict including a transient returned:"
+            f" E[2F]={twoF_expected_transient}+-{twoF_sigma_transient}"
+        )
+        self.assertTrue(twoF_expected_transient < twoF_expected)
 
 
 class TestBaseSearchClass(unittest.TestCase):
@@ -1790,7 +1832,7 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
         self.search.print_summary()
         self._check_twoF_predicted()
         self._check_mcmc_quantiles(transient=True)
-        # self._test_plots()
+        self._test_plots()
 
     def test_transient_MCMC_tauonly(self):
 
@@ -1816,7 +1858,7 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
         self.search.print_summary()
         self._check_twoF_predicted()
         self._check_mcmc_quantiles(transient=True)
-        # self._test_plots()
+        self._test_plots()
 
     def test_transient_MCMC_t0_tau(self):
 
@@ -1846,7 +1888,7 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
         self.search.print_summary()
         self._check_twoF_predicted()
         self._check_mcmc_quantiles(transient=True)
-        # self._test_plots()
+        self._test_plots()
 
 
 class TestGridSearch(BaseForTestsWithData):
