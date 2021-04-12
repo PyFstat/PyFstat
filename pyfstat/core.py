@@ -1455,7 +1455,7 @@ class ComputeFstat(BaseSearchClass):
         # Set up plot-related objects
         axis_kwargs = {
             "xlabel": f"Days from $t_\\mathrm{{start}}={actual_tstart_CFS:.0f}$",
-            "ylabel": "$\\log_{10}(\\mathrm{BSGL})_{\\mathrm{cumulative}$"
+            "ylabel": "$\\log_{10}(\\mathrm{BSGL})_{\\mathrm{cumulative}}$"
             if self.BSGL
             else "$\\widetilde{2\\mathcal{F}}_{\\mathrm{cumulative}}$",
             "xlim": (0, taus_CFS_days[-1]),
