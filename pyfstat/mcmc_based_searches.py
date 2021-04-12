@@ -1239,16 +1239,20 @@ class MCMCSearch(BaseSearchClass):
         `pyfstat.core.ComputeFstat.plot_twoF_cumulative` as they are, using their default argument
         otherwise.
 
-        Keep in mind that one has to explicitely set `savefig=True` to output the figure!
-
         See `pyfstat.core.ComputeFstat.plot_twoF_cumulative` for a comprehensive list of accepted
         arguments and their default values.
+
+        Unlike the core function, here savefig=True is the default,
+        for consistency with other MCMC plotting functions.
         """
         logging.info("Getting cumulative 2F")
         d, maxtwoF = self.get_max_twoF()
         for key, val in self.theta_prior.items():
             if key not in d:
                 d[key] = val
+
+        if kwargs.get("savefig") is None:
+            kwargs["savefig"] = True
 
         self.search.plot_twoF_cumulative(
             CFS_input=d, label=self.label, outdir=self.outdir, **kwargs
@@ -2577,10 +2581,10 @@ class MCMCGlitchSearch(MCMCSearch):
             p0[:, :, -self.nglitch :] = np.sort(p0[:, :, -self.nglitch :], axis=2)
         return p0
 
-    def plot_cumulative_max(self, savefig=False):
+    def plot_cumulative_max(self, savefig=True):
         """
-        Override MCMCSearch.plot_cumulative_max implementation to dea with the
-        split at gltiches.
+        Override MCMCSearch.plot_cumulative_max implementation to deal with the
+        split at glitches.
 
         Parameters
         ----------
