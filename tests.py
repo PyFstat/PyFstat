@@ -974,7 +974,9 @@ class TestComputeFstat(BaseForTestsWithData):
         print(
             "2F from get_fullycoherent_detstat() is {:.4f}"
             " while last value from calculate_twoF_cumulative() is {:.4f};"
-            " relative difference: {:g}".format(twoF, twoF_cumulative[-1], reldiff)
+            " relative difference: {:.2f}".format(
+                twoF, twoF_cumulative[-1], 100 * reldiff
+            )
         )
         self.assertTrue(reldiff < 0.1)
         idx = int(Nsft / 2)
@@ -985,15 +987,47 @@ class TestComputeFstat(BaseForTestsWithData):
         print(
             "Middle 2F value from calculate_twoF_cumulative() is {:.4f}"
             " while from duration ratio we'd expect {:.4f}*{:.4f}={:.4f};"
-            " relative difference: {:g}".format(
+            " relative difference: {:.2f}%".format(
                 twoF_cumulative[idx],
                 taus[idx] / taus[-1],
                 twoF,
                 partial_2F_expected,
-                reldiff,
+                100 * reldiff,
             )
         )
         self.assertTrue(reldiff < 0.1)
+        _, _, pfs, pfs_sigma = search.predict_twoF_cumulative(
+            F0=self.Writer.F0,
+            Alpha=self.Writer.Alpha,
+            Delta=self.Writer.Delta,
+            h0=self.Writer.h0,
+            cosi=self.Writer.cosi,
+            psi=self.Writer.psi,
+            tstart=self.tstart,
+            tend=self.tstart + Nsft * self.Tsft,
+            IFOs=self.detectors,
+            assumeSqrtSX=self.sqrtSX,
+            num_segments=3,  # this is slow, so only do start,mid,end
+        )
+        reldiffmid = 100 * (twoF_cumulative[idx] - pfs[1]) / pfs[1]
+        reldiffend = 100 * (twoF_cumulative[-1] - pfs[2]) / pfs[2]
+        print(
+            "Predicted 2F values from predict_twoF_cumulative() are"
+            " {:.4f}+-{:.4f}(+-{:.2f}%) at midpoint of data"
+            " and {:.4f}+-{:.4f}(+-{:.2f}%) after full data,"
+            " , relative differences: {:.2f}% and {:.2f}%".format(
+                pfs[1],
+                pfs_sigma[1],
+                100 * pfs_sigma[1] / pfs[1],
+                pfs[2],
+                pfs_sigma[2],
+                100 * pfs_sigma[2] / pfs[2],
+                reldiffmid,
+                reldiffend,
+            )
+        )
+        self.assertTrue(reldiffmid < 0.25)
+        self.assertTrue(reldiffend < 0.25)
 
 
 class TestComputeFstatNoNoise(BaseForTestsWithData):
