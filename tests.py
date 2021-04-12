@@ -1901,9 +1901,33 @@ class TestGridSearch(BaseForTestsWithData):
     Band = 0.5
     BSGL = False
 
-    def test_grid_search(self):
-        search = pyfstat.GridSearch(
-            "grid_search",
+    def _test_plots(self, search_keys):
+        for key in search_keys:
+            self.search.plot_1D(xkey=key, savefig=True)
+        if len(search_keys) == 2:
+            self.search.plot_2D(xkey=search_keys[0], ykey=search_keys[1], colorbar=True)
+        vals = [
+            np.unique(self.search.data[key]) - getattr(self.Writer, key)
+            for key in search_keys
+        ]
+        twoF = self.search.data["twoF"].reshape([len(kval) for kval in vals])
+        corner_labels = [f"${key} - {key}_0$" for key in search_keys]
+        corner_labels.append("2F")
+        gridcorner_fig, gridcorner_axes = pyfstat.gridcorner(
+            twoF,
+            vals,
+            projection="log_mean",
+            labels=corner_labels,
+            whspace=0.1,
+            factor=1.8,
+        )
+        gridcorner_fig.savefig(
+            os.path.join(self.search.outdir, self.search.label + "_corner.png")
+        )
+
+    def test_grid_search_1D(self):
+        self.search = pyfstat.GridSearch(
+            "grid_search_F0",
             self.outdir,
             self.Writer.sftfilepath,
             F0s=self.F0s,
@@ -1914,13 +1938,35 @@ class TestGridSearch(BaseForTestsWithData):
             tref=self.tref,
             BSGL=self.BSGL,
         )
-        search.run()
-        self.assertTrue(os.path.isfile(search.out_file))
-        max2F_point = search.get_max_twoF()
-        self.assertTrue(np.all(max2F_point["twoF"] >= search.data["twoF"]))
+        self.search.run()
+        self.assertTrue(os.path.isfile(self.search.out_file))
+        max2F_point = self.search.get_max_twoF()
+        self.assertTrue(np.all(max2F_point["twoF"] >= self.search.data["twoF"]))
+        search_keys = ["F0"]  # only the ones that aren't 0-width
+        self._test_plots(search_keys)
+
+    def test_grid_search_2D(self):
+        self.search = pyfstat.GridSearch(
+            "grid_search_F0F1",
+            self.outdir,
+            self.Writer.sftfilepath,
+            F0s=self.F0s,
+            F1s=self.F1s,
+            F2s=[self.Writer.F2],
+            Alphas=[self.Writer.Alpha],
+            Deltas=[self.Writer.Delta],
+            tref=self.tref,
+            BSGL=self.BSGL,
+        )
+        self.search.run()
+        self.assertTrue(os.path.isfile(self.search.out_file))
+        max2F_point = self.search.get_max_twoF()
+        self.assertTrue(np.all(max2F_point["twoF"] >= self.search.data["twoF"]))
+        search_keys = ["F0", "F1"]  # only the ones that aren't 0-width
+        self._test_plots(search_keys)
 
     def test_grid_search_against_CFSv2(self):
-        search = pyfstat.GridSearch(
+        self.search = pyfstat.GridSearch(
             "grid_search",
             self.outdir,
             self.Writer.sftfilepath,
@@ -1931,10 +1977,10 @@ class TestGridSearch(BaseForTestsWithData):
             Deltas=[self.Writer.Delta],
             tref=self.tref,
         )
-        search.run()
-        self.assertTrue(os.path.isfile(search.out_file))
+        self.search.run()
+        self.assertTrue(os.path.isfile(self.search.out_file))
         pyfstat_out = pyfstat.helper_functions.read_txt_file_with_header(
-            search.out_file, comments="#"
+            self.search.out_file, comments="#"
         )
         CFSv2_out_file = os.path.join(self.outdir, "CFSv2_Fstat_out.txt")
         CFSv2_loudest_file = os.path.join(self.outdir, "CFSv2_Fstat_loudest.txt")
@@ -1975,7 +2021,7 @@ class TestGridSearch(BaseForTestsWithData):
 
     def test_semicoherent_grid_search(self):
         # FIXME this one doesn't check the results at all yet
-        search = pyfstat.GridSearch(
+        self.search = pyfstat.GridSearch(
             "sc_grid_search",
             self.outdir,
             self.Writer.sftfilepath,
@@ -1988,12 +2034,14 @@ class TestGridSearch(BaseForTestsWithData):
             nsegs=2,
             BSGL=self.BSGL,
         )
-        search.run()
-        self.assertTrue(os.path.isfile(search.out_file))
+        self.search.run()
+        self.assertTrue(os.path.isfile(self.search.out_file))
+        search_keys = ["F0"]  # only the ones that aren't 0-width
+        self._test_plots(search_keys)
 
     def test_glitch_grid_search(self):
-        search = pyfstat.GridGlitchSearch(
-            "grid_grid_search",
+        self.search = pyfstat.GridGlitchSearch(
+            "grid_glitch_search",
             self.outdir,
             self.Writer.sftfilepath,
             F0s=self.F0s,
@@ -2005,8 +2053,10 @@ class TestGridSearch(BaseForTestsWithData):
             tglitchs=[self.tref],
             # BSGL=self.BSGL,  # not supported by this class
         )
-        search.run()
-        self.assertTrue(os.path.isfile(search.out_file))
+        self.search.run()
+        self.assertTrue(os.path.isfile(self.search.out_file))
+        search_keys = ["F0", "F1"]  # only the ones that aren't 0-width
+        self._test_plots(search_keys)
 
 
 class TestGridSearchBSGL(TestGridSearch):
