@@ -1,4 +1,4 @@
-## 1.11.6 [TBD]
+## 1.11.6 [14/04/2021]
 
  - new reference paper for PyFstat: https://doi.org/10.21105/joss.03000
  - all requirements are now handled through setup.py,
