@@ -335,7 +335,15 @@ the DOIs for those versions can be found from the sidebar at
 [this older Zenodo record](https://doi.org/10.5281/zenodo.1243930)
 and please amend the BibTeX entry accordingly.
 
-PyFstat makes generous use of functionality from the LALSuite library
+
+PyFstat uses the [`ptemcee` sampler](https://github.com/willvousden/ptemcee), which can be 
+cited as 
+[Vousden, Far & Mandel 2015](https://doi.org/10.1093/mnras/stv2422)
+([ADS:2016MNRAS.455.1919V](https://ui.adsabs.harvard.edu/abs/2016MNRAS.455.1919V/abstract))
+and [Foreman-Mackey, Hogg, Lang, and Goodman 2012](https://doi.org/10.1086/670067)
+([2013PASP..125..306F](https://ui.adsabs.harvard.edu/abs/2013PASP..125..306F/abstract)).
+
+PyFstat also makes generous use of functionality from the LALSuite library
 and it will usually be appropriate to also cite that project
 (see [this recommended bibtex entry](https://git.ligo.org/lscsoft/lalsuite/#acknowledgment))
 and also [Wette 2020](https://doi.org/10.1016/j.softx.2020.100634)
