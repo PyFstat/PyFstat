@@ -59,6 +59,11 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/PyFstat/PyFstat",
+    project_urls={
+        "Changelog": "https://github.com/PyFstat/PyFstat/blob/master/CHANGELOG.md",
+        "Documentation": "https://pyfstat.readthedocs.io/",
+        "Issue tracker": "https://github.com/PyFstat/PyFstat/issues",
+    },
     packages=find_packages(),
     package_data={
         "pyfstat": [
