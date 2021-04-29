@@ -83,7 +83,7 @@ setup(
         "dill",
         "lalsuite>=6.80",
         "matplotlib>=2.1",
-        "numpy<1.20",
+        "numpy",
         "pathos",
         "peakutils",
         "ptemcee",
