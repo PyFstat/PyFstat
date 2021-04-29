@@ -52,7 +52,7 @@ labels["max2F"] = "$\\max\\,$" + labels["2F"]
 
 
 def plot_grid_vs_samples(grid_res, mcmc_res, xkey, ykey):
-    """ local plotting function to avoid code duplication in the 4D case """
+    """local plotting function to avoid code duplication in the 4D case"""
     plt.plot(grid_res[xkey], grid_res[ykey], ".", label="grid")
     plt.plot(mcmc_res[xkey], mcmc_res[ykey], ".", label="mcmc")
     plt.plot(inj[xkey], inj[ykey], "*k", label="injection")
@@ -83,7 +83,7 @@ def plot_grid_vs_samples(grid_res, mcmc_res, xkey, ykey):
 
 
 def plot_2F_scatter(res, label, xkey, ykey):
-    """ local plotting function to avoid code duplication in the 4D case """
+    """local plotting function to avoid code duplication in the 4D case"""
     markersize = 3 if label == "grid" else 1
     sc = plt.scatter(res[xkey], res[ykey], c=res["twoF"], s=markersize)
     cb = plt.colorbar(sc)

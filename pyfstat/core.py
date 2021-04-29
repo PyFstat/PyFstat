@@ -50,7 +50,7 @@ class BaseSearchClass:
         return instance
 
     def _add_log_file(self, header=None):
-        """ Log output to a file, requires class to have outdir and label """
+        """Log output to a file, requires class to have outdir and label"""
         header = [] if header is None else header
         logfilename = os.path.join(self.outdir, self.label + ".log")
         with open(logfilename, "w") as fp:
@@ -66,7 +66,7 @@ class BaseSearchClass:
         logging.getLogger().addHandler(fh)
 
     def _get_list_of_matching_sfts(self):
-        """ Returns a list of sfts matching the attribute sftfilepattern """
+        """Returns a list of sfts matching the attribute sftfilepattern"""
         sftfilepatternlist = np.atleast_1d(self.sftfilepattern.split(";"))
         matches = [glob.glob(p) for p in sftfilepatternlist]
         matches = [item for sublist in matches for item in sublist]
@@ -99,7 +99,7 @@ class BaseSearchClass:
             self.sun_ephem = sun_ephem
 
     def _set_init_params_dict(self, argsdict):
-        """ Store the initial input arguments, e.g. for logging output. """
+        """Store the initial input arguments, e.g. for logging output."""
         argsdict.pop("self")
         self.init_params_dict = argsdict
 

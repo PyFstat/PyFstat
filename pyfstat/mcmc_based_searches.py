@@ -294,7 +294,7 @@ class MCMCSearch(BaseSearchClass):
         logging.info("log10beta_min = {}".format(self.log10beta_min))
 
     def _get_search_ranges(self):
-        """ take prior widths as proxy "search ranges" to allow covering band estimate """
+        """take prior widths as proxy "search ranges" to allow covering band estimate"""
         if (self.minCoverFreq is None) or (self.maxCoverFreq is None):
             normal_stds = 3  # this might not always be enough
             prior_bounds, norm_trunc_warn = self._get_prior_bounds(normal_stds)
@@ -762,7 +762,7 @@ class MCMCSearch(BaseSearchClass):
         return subtractor
 
     def _scale_samples(self, samples, theta_keys):
-        """ Scale the samples using the transform_dictionary """
+        """Scale the samples using the transform_dictionary"""
         for key in theta_keys:
             if key in self.transform_dictionary:
                 idx = theta_keys.index(key)
@@ -776,7 +776,7 @@ class MCMCSearch(BaseSearchClass):
         return samples
 
     def _get_labels(self, newline_units=False):
-        """ Combine the units, symbols and rescaling to give labels """
+        """Combine the units, symbols and rescaling to give labels"""
 
         labels = []
         for key in self.theta_keys:
@@ -1377,7 +1377,7 @@ class MCMCSearch(BaseSearchClass):
         context="ggplot",
         labelpad=5,
     ):
-        """ Plot all the chains from a sampler """
+        """Plot all the chains from a sampler"""
         if injection_parameters is not None:
             if not isinstance(injection_parameters, dict):
                 raise ValueError("injection_parameters is not a dictionary")
@@ -1557,11 +1557,11 @@ class MCMCSearch(BaseSearchClass):
         return fig, axes
 
     def _apply_corrections_to_p0(self, p0):
-        """ Apply any correction to the initial p0 values """
+        """Apply any correction to the initial p0 values"""
         return p0
 
     def _generate_scattered_p0(self, p):
-        """ Generate a set of p0s scattered about p """
+        """Generate a set of p0s scattered about p"""
         p0 = [
             [
                 p + self.scatter_val * p * np.random.randn(self.ndim)
@@ -1572,7 +1572,7 @@ class MCMCSearch(BaseSearchClass):
         return p0
 
     def _generate_initial_p0(self):
-        """ Generate a set of init vals for the walkers """
+        """Generate a set of init vals for the walkers"""
 
         if type(self.theta_initial) == dict:
             logging.info("Generate initial values from initial dictionary")
@@ -1990,7 +1990,7 @@ class MCMCSearch(BaseSearchClass):
                     f.write("{} = {:1.16e}\n".format(key, val))
 
     def generate_loudest(self):
-        """ Use lalapps_ComputeFstatistic_v2 to produce a .loudest file """
+        """Use lalapps_ComputeFstatistic_v2 to produce a .loudest file"""
         logging.info("Running CFSv2 to get .loudest file")
         self.write_par(method="twoFmax")
         params = self.read_par(label=self.label + "_max2F")
@@ -2047,7 +2047,7 @@ class MCMCSearch(BaseSearchClass):
         helper_functions.run_commandline(cmd, return_output=False)
 
     def write_prior_table(self):
-        """ Generate a .tex file of the prior """
+        """Generate a .tex file of the prior"""
         with open(os.path.join(self.outdir, self.label + "_prior.tex"), "w") as f:
             f.write(
                 r"\begin{tabular}{c l c} \hline" + "\n"
@@ -2079,7 +2079,7 @@ class MCMCSearch(BaseSearchClass):
             f.write("\n\\end{tabular}\n")
 
     def print_summary(self):
-        """ Prints a summary of the max twoF found to the terminal """
+        """Prints a summary of the max twoF found to the terminal"""
         max_twoFd, max_twoF = self.get_max_twoF()
         summary_stats = self.get_summary_stats()
         logging.info("Summary:")
