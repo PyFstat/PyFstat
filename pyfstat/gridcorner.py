@@ -75,7 +75,7 @@ def log_mean(loga, axis):
 
 
 def max_slice(D, axis):
-    """ Return the slice along the given axis """
+    """Return the slice along the given axis"""
     idxs = [range(D.shape[j]) for j in range(D.ndim)]
     max_idx = list(np.unravel_index(D.argmax(), D.shape))
     for k in np.atleast_1d(axis):
@@ -85,7 +85,7 @@ def max_slice(D, axis):
 
 
 def idx_array_slice(D, axis, slice_idx):
-    """ Return the slice along the given axis """
+    """Return the slice along the given axis"""
     idxs = [range(D.shape[j]) for j in range(D.ndim)]
     for k in np.atleast_1d(axis):
         idxs[k] = [slice_idx[k]]
