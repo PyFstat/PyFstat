@@ -172,13 +172,13 @@ PyFstat manages optional dependencies through setuptool's `extras_require`.
 
 Available sets of optional dependencies are:
 
-* [`chainconsumer`](https://github.com/Samreay/ChainConsumer): Required to run some optional 
+* `chainconsumer` ([Samreay/Chainconsumer](https://github.com/Samreay/ChainConsumer)): Required to run some optional 
 plotting methods and some of the [example scripts](./examples).
-* [`pycuda`](https://pypi.org/project/pycuda/): Required for the `tCWFstatMapVersion=pycuda`
+* `pycuda` ([PyPI](https://pypi.org/project/pycuda/)): Required for the `tCWFstatMapVersion=pycuda`
   option of the `TransientGridSearch` class. (Note: Installing `pycuda` requires a working 
   `nvcc` compiler in your path.)
-* `style`: Includes the [flake8](https://flake8.pycqa.org/en/latest/) linter
-  and [black](https://black.readthedocs.io) style checker. These checks are required to pass
+* `style`: Includes the `flake8` linter ([flake8.pycqa](https://flake8.pycqa.org/en/latest))
+  and `black` style checker ([black.readthedocs](https://black.readthedocs.io)). These checks are required to pass
   by the online integration pipeline.
 * `test`: For running the test suite locally using [pytest](https://docs.pytest.org) 
   (`python -m pytest tests.py`).
