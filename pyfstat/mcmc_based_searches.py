@@ -138,6 +138,7 @@ class MCMCSearch(BaseSearchClass):
         tCWFstatMapVersion="lal",
         earth_ephem=None,
         sun_ephem=None,
+        allowedMismatchFromSFTLength=None,
     ):
         """
         Parameters
@@ -204,7 +205,9 @@ class MCMCSearch(BaseSearchClass):
         tCWFstatMapVersion: str
             Choose between standard 'lal' implementation,
             'pycuda' for gpu, and some others for devel/debug.
-
+        allowedMismatchFromSFTLength: float
+            Maximum allowed mismatch from SFTs being too long
+            [Default: what's hardcoded in XLALFstatMaximumSFTLength].
         """
         self._set_init_params_dict(locals())
         self.theta_prior = theta_prior
@@ -232,6 +235,7 @@ class MCMCSearch(BaseSearchClass):
         self.transientWindowType = transientWindowType
         self.tCWFstatMapVersion = tCWFstatMapVersion
         self.set_ephemeris_files(earth_ephem, sun_ephem)
+        self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
 
         os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
@@ -341,6 +345,7 @@ class MCMCSearch(BaseSearchClass):
             tCWFstatMapVersion=self.tCWFstatMapVersion,
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
+            allowedMismatchFromSFTLength=self.allowedMismatchFromSFTLength,
         )
         if self.minStartTime is None:
             self.minStartTime = self.search.minStartTime
@@ -2378,6 +2383,7 @@ class MCMCGlitchSearch(MCMCSearch):
         nglitch=1,
         earth_ephem=None,
         sun_ephem=None,
+        allowedMismatchFromSFTLength=0,
     ):
         """
         Parameters
@@ -2415,6 +2421,7 @@ class MCMCGlitchSearch(MCMCSearch):
         self._log_input()
         self._set_likelihoodcoef()
         self.set_ephemeris_files(earth_ephem, sun_ephem)
+        self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
 
     def _set_likelihoodcoef(self):
         """Additional constant terms to turn a detection statistic into a likelihood.
@@ -2446,6 +2453,7 @@ class MCMCGlitchSearch(MCMCSearch):
             injectSources=self.injectSources,
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
+            allowedMismatchFromSFTLength=self.allowedMismatchFromSFTLength,
         )
         if self.minStartTime is None:
             self.minStartTime = self.search.minStartTime
@@ -2706,6 +2714,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         nsegs=None,
         earth_ephem=None,
         sun_ephem=None,
+        allowedMismatchFromSFTLength=None,
     ):
         """
         Parameters
@@ -2739,6 +2748,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         self.assumeSqrtSX = assumeSqrtSX
         self.nsegs = nsegs
         self.set_ephemeris_files(earth_ephem, sun_ephem)
+        self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
 
         os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
@@ -2811,6 +2821,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             assumeSqrtSX=self.assumeSqrtSX,
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
+            allowedMismatchFromSFTLength=self.allowedMismatchFromSFTLength,
         )
         if self.minStartTime is None:
             self.minStartTime = self.search.minStartTime
@@ -2863,6 +2874,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         assumeSqrtSX=None,
         earth_ephem=None,
         sun_ephem=None,
+        allowedMismatchFromSFTLength=None,
     ):
 
         self._set_init_params_dict(locals())
@@ -2890,6 +2902,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         self.assumeSqrtSX = assumeSqrtSX
         self.nsegs = None
         self.set_ephemeris_files(earth_ephem, sun_ephem)
+        self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
 
         os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
@@ -3376,6 +3389,7 @@ class MCMCTransientSearch(MCMCSearch):
             tCWFstatMapVersion=self.tCWFstatMapVersion,
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
+            allowedMismatchFromSFTLength=self.allowedMismatchFromSFTLength,
         )
         if self.minStartTime is None:
             self.minStartTime = self.search.minStartTime
