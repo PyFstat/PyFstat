@@ -403,6 +403,7 @@ class ComputeFstat(BaseSearchClass):
         self.init_computefstatistic()
         self.output_file_header = self.get_output_file_header()
         self.get_det_stat = self.get_fullycoherent_detstat
+        self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
 
     def _get_SFTCatalog(self):
         """Load the SFTCatalog
@@ -1640,6 +1641,7 @@ class SemiCoherentSearch(ComputeFstat):
         self.computeAtoms = True  # for semicoh 2F from ComputeTransientFstatMap()
         self.tCWFstatMapVersion = "lal"
         self.cudaDeviceName = None
+        self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
         self.init_computefstatistic()
         self.init_semicoherent_parameters()
         if self.BSGL:

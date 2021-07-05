@@ -2383,7 +2383,7 @@ class MCMCGlitchSearch(MCMCSearch):
         nglitch=1,
         earth_ephem=None,
         sun_ephem=None,
-        allowedMismatchFromSFTLength=0,
+        allowedMismatchFromSFTLength=None,
     ):
         """
         Parameters
