@@ -278,6 +278,7 @@ class ComputeFstat(BaseSearchClass):
         computeAtoms=False,
         earth_ephem=None,
         sun_ephem=None,
+        allowedMismatchFromSFTLength=None,
     ):
         """
         Parameters
@@ -392,6 +393,9 @@ class ComputeFstat(BaseSearchClass):
             Sun ephemeris file path.
             If None, will check standard sources as per
             helper_functions.get_ephemeris_files().
+        allowedMismatchFromSFTLength: float
+            Maximum allowed mismatch from SFTs being too long
+            [Default: what's hardcoded in XLALFstatMaximumSFTLength]
         """
 
         self._set_init_params_dict(locals())
@@ -565,6 +569,8 @@ class ComputeFstat(BaseSearchClass):
             FstatOAs.assumeSqrtSX = mnf
         FstatOAs.prevInput = lalpulsar.FstatOptionalArgsDefaults.prevInput
         FstatOAs.collectTiming = lalpulsar.FstatOptionalArgsDefaults.collectTiming
+        if self.allowedMismatchFromSFTLength:
+            FstatOAs.allowedMismatchFromSFTLength = self.allowedMismatchFromSFTLength
 
         if hasattr(self, "injectSources") and type(self.injectSources) == dict:
             logging.info("Injecting source with params: {}".format(self.injectSources))
@@ -1601,6 +1607,7 @@ class SemiCoherentSearch(ComputeFstat):
         RngMedWindow=None,
         earth_ephem=None,
         sun_ephem=None,
+        allowedMismatchFromSFTLength=None,
     ):
         """
         Only parameters with a special meaning for SemiCoherentSearch itself
@@ -2059,6 +2066,7 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         injectSources=None,
         earth_ephem=None,
         sun_ephem=None,
+        allowedMismatchFromSFTLength=None,
     ):
         """
         Only parameters with a special meaning for SemiCoherentGlitchSearch itself
