@@ -884,6 +884,36 @@ class TestComputeFstat(BaseForTestsWithData):
         diff = np.abs(twoF2 - twoF) / twoF
         self.assertTrue(diff < 0.001)
 
+    def test_run_computefstatistic_allowedMismatchFromSFTLength(self):
+
+        long_Tsft_params = default_Writer_params.copy()
+        long_Tsft_params["Tsft"] = 3600
+        long_Tsft_params["duration"] = 4 * long_Tsft_params["Tsft"]
+        long_Tsft_params["label"] = "long_Tsft"
+        long_Tsft_params["F0"] = 1500
+        long_Tsft_params["Band"] = 2.0
+        long_Tsft_Writer = pyfstat.Writer(**long_Tsft_params)
+        long_Tsft_Writer.run_makefakedata()
+
+        search = pyfstat.ComputeFstat(
+            tref=long_Tsft_Writer.tref,
+            sftfilepattern=long_Tsft_Writer.sftfilepath,
+            minCoverFreq=1499.5,
+            maxCoverFreq=1500.5,
+            allowedMismatchFromSFTLength=0.1,
+        )
+        with pytest.raises(RuntimeError):
+            search.get_fullycoherent_twoF(F0=1500, F1=0, F2=0, Alpha=0, Delta=0)
+
+        search = pyfstat.ComputeFstat(
+            tref=long_Tsft_Writer.tref,
+            sftfilepattern=long_Tsft_Writer.sftfilepath,
+            minCoverFreq=1499.5,
+            maxCoverFreq=1500.5,
+            allowedMismatchFromSFTLength=0.5,
+        )
+        search.get_fullycoherent_twoF(F0=1500, F1=0, F2=0, Alpha=0, Delta=0)
+
     def test_run_computefstatistic_single_point_injectSources(self):
 
         predicted_FS = self.Writer.predict_fstat()
@@ -1259,6 +1289,42 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
             record_segments=True,
         )
         self.assertTrue(BSGL > 0)
+
+    def test_get_semicoherent_twoF_allowedMismatchFromSFTLength(self):
+
+        long_Tsft_params = default_Writer_params.copy()
+        long_Tsft_params["Tsft"] = 3600
+        long_Tsft_params["duration"] = 4 * long_Tsft_params["Tsft"]
+        long_Tsft_params["label"] = "long_Tsft"
+        long_Tsft_params["F0"] = 1500
+        long_Tsft_params["Band"] = 2.0
+        long_Tsft_Writer = pyfstat.Writer(**long_Tsft_params)
+        long_Tsft_Writer.run_makefakedata()
+
+        search = pyfstat.SemiCoherentSearch(
+            label=self.label,
+            outdir=self.outdir,
+            tref=long_Tsft_Writer.tref,
+            sftfilepattern=long_Tsft_Writer.sftfilepath,
+            nsegs=self.nsegs,
+            minCoverFreq=1499.5,
+            maxCoverFreq=1500.5,
+            allowedMismatchFromSFTLength=0.1,
+        )
+        with pytest.raises(RuntimeError):
+            search.get_semicoherent_twoF(F0=1500, F1=0, F2=0, Alpha=0, Delta=0)
+
+        search = pyfstat.SemiCoherentSearch(
+            label=self.label,
+            outdir=self.outdir,
+            tref=long_Tsft_Writer.tref,
+            sftfilepattern=long_Tsft_Writer.sftfilepath,
+            nsegs=self.nsegs,
+            minCoverFreq=1499.5,
+            maxCoverFreq=1500.5,
+            allowedMismatchFromSFTLength=0.5,
+        )
+        search.get_semicoherent_twoF(F0=1500, F1=0, F2=0, Alpha=0, Delta=0)
 
 
 class TestSemiCoherentGlitchSearch(BaseForTestsWithData):

@@ -278,6 +278,7 @@ class ComputeFstat(BaseSearchClass):
         computeAtoms=False,
         earth_ephem=None,
         sun_ephem=None,
+        allowedMismatchFromSFTLength=None,
     ):
         """
         Parameters
@@ -392,6 +393,9 @@ class ComputeFstat(BaseSearchClass):
             Sun ephemeris file path.
             If None, will check standard sources as per
             helper_functions.get_ephemeris_files().
+        allowedMismatchFromSFTLength: float
+            Maximum allowed mismatch from SFTs being too long
+            [Default: what's hardcoded in XLALFstatMaximumSFTLength]
         """
 
         self._set_init_params_dict(locals())
@@ -399,6 +403,7 @@ class ComputeFstat(BaseSearchClass):
         self.init_computefstatistic()
         self.output_file_header = self.get_output_file_header()
         self.get_det_stat = self.get_fullycoherent_detstat
+        self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
 
     def _get_SFTCatalog(self):
         """Load the SFTCatalog
@@ -565,6 +570,8 @@ class ComputeFstat(BaseSearchClass):
             FstatOAs.assumeSqrtSX = mnf
         FstatOAs.prevInput = lalpulsar.FstatOptionalArgsDefaults.prevInput
         FstatOAs.collectTiming = lalpulsar.FstatOptionalArgsDefaults.collectTiming
+        if self.allowedMismatchFromSFTLength:
+            FstatOAs.allowedMismatchFromSFTLength = self.allowedMismatchFromSFTLength
 
         if hasattr(self, "injectSources") and type(self.injectSources) == dict:
             logging.info("Injecting source with params: {}".format(self.injectSources))
@@ -1601,6 +1608,7 @@ class SemiCoherentSearch(ComputeFstat):
         RngMedWindow=None,
         earth_ephem=None,
         sun_ephem=None,
+        allowedMismatchFromSFTLength=None,
     ):
         """
         Only parameters with a special meaning for SemiCoherentSearch itself
@@ -1633,6 +1641,7 @@ class SemiCoherentSearch(ComputeFstat):
         self.computeAtoms = True  # for semicoh 2F from ComputeTransientFstatMap()
         self.tCWFstatMapVersion = "lal"
         self.cudaDeviceName = None
+        self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
         self.init_computefstatistic()
         self.init_semicoherent_parameters()
         if self.BSGL:
@@ -2059,6 +2068,7 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         injectSources=None,
         earth_ephem=None,
         sun_ephem=None,
+        allowedMismatchFromSFTLength=None,
     ):
         """
         Only parameters with a special meaning for SemiCoherentGlitchSearch itself
