@@ -1,6 +1,11 @@
 name: Integration Tests
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron:  '42 9 * * 1'
 
 jobs:
   build:
