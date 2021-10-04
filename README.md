@@ -301,6 +301,10 @@ and one or more of the following scientific papers:
 [Ashton&Prix 2018](https://doi.org/10.1103/PhysRevD.97.103020)
 ([inspire:1655200](https://inspirehep.net/literature/1655200)
 / [ADS:2018PhRvD..97j3020A](https://ui.adsabs.harvard.edu/abs/2018PhRvD..97j3020A/)).
+* The methods paper introducing a Bayes factor to evaluate the multi-stage follow-up:
+[Tenorio, Keitel, Sintes 2021](https://doi.org/10.1103/PhysRevD.104.084012)
+([inspire:1865975](https://inspirehep.net/literature/1865975)
+/ [ADS:2021PhRvD.104h4012T](https://ui.adsabs.harvard.edu/abs/2021PhRvD.104h4012T/))
 * For transient searches:
 [Keitel&Ashton 2018](https://doi.org/10.1088/1361-6382/aade34)
 ([inspire:1673205](https://inspirehep.net/literature/1673205)
