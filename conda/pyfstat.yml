@@ -4,3 +4,6 @@ channels:
     - defaults
 dependencies:
     - pyfstat
+    # Uncomment to enable developer-mode installation
+    #- pip: 
+    #    - -e .
