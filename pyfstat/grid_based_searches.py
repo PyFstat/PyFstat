@@ -689,7 +689,13 @@ class GridSearch(BaseSearchClass):
                 cm = plt.cm.viridis
 
         pax = ax.pcolormesh(
-            X * xrescale, Y * yrescale, Z, cmap=cm, vmin=vmin, vmax=vmax
+            X * xrescale,
+            Y * yrescale,
+            Z,
+            cmap=cm,
+            vmin=vmin,
+            vmax=vmax,
+            shading="auto",
         )
         if colorbar:
             cb = plt.colorbar(pax, ax=ax, **cbarkwargs)
