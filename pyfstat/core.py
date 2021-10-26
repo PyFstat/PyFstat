@@ -1079,7 +1079,7 @@ class ComputeFstat(BaseSearchClass):
         )
         # We operate on a single frequency bin, so we grab the 0 component
         # of what is internally a twoF array.
-        self.twoF = np.float(self.FstatResults.twoF[0])
+        self.twoF = float(self.FstatResults.twoF[0])
         return self.twoF
 
     def get_fullycoherent_single_IFO_twoFs(self):
