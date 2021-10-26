@@ -236,7 +236,7 @@ def projection_2D(ax, x, y, D, xidx, yidx, projection, lines=None, **kwargs):
     flat_idxs.remove(yidx)
     D2D = projection(D, axis=tuple(flat_idxs), **kwargs)
     X, Y = np.meshgrid(x, y, indexing="ij")
-    pax = ax.pcolormesh(Y, X, D2D.T, vmin=D.min(), vmax=D.max())
+    pax = ax.pcolormesh(Y, X, D2D.T, vmin=D.min(), vmax=D.max(), shading="auto")
     if lines:
         ax.axhline(lines[xidx], lw=0.5, color="w")
         ax.axvline(lines[yidx], lw=0.5, color="w")
