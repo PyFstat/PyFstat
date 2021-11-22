@@ -1576,6 +1576,9 @@ class FrequencyModulatedArtifactWriter(Writer):
         helper_functions.run_commandline(cl_splitSFTS)
         helper_functions.run_commandline(f"rm -r {self.tmp_outdir}")
         outglob = glob.glob(SFTFile_fullpath)
+        print("concatenate_sft_files: self.sftfilepath is", self.sftfilepath)
+        print("concatenate_sft_files: self.outdir is", self.outdir)
+        print("concatenate_sft_files: self.outdir contains", os.listdir(self.outdir))
         if len(outglob) != 1:
             raise IOError(
                 f"Expected to produce exactly 1 merged file matching pattern '{SFTFile_fullpath}',"
