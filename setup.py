@@ -4,7 +4,7 @@ import sys
 import versioneer
 
 # check python version
-min_python_version = (3, 6, 0)  # (major,minor,micro)
+min_python_version = (3, 7, 0)  # (major,minor,micro)
 python_version = sys.version_info
 print("Running Python version %s.%s.%s" % python_version[:3])
 if python_version < min_python_version:
@@ -86,7 +86,7 @@ setup(
         "bashplotlib",
         "corner",
         "dill",
-        "lalsuite>=6.80",
+        "lalsuite>=7.1",
         "matplotlib>=2.1",
         "numpy",
         "pathos",
