@@ -95,6 +95,7 @@ setup(
         "lalsuite>=7.2",
         "matplotlib>=2.1",
         "numpy",
+        "pandas",
         "pathos",
         "peakutils",
         "ptemcee",

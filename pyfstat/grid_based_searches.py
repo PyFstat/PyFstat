@@ -6,9 +6,11 @@ import logging
 import os
 import re
 
+import lalpulsar
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 import pyfstat.helper_functions as helper_functions
 from pyfstat.core import (
@@ -1194,6 +1196,215 @@ class TransientGridSearch(GridSearch):
     def __del__(self):
         if hasattr(self, "search"):
             self.search.__del__()
+
+
+class SearchOverGridFile(TransientGridSearch):
+    """A search over a grid defined in an input text file.
+
+    Such a file can be generated for example with
+    lalapps_ComputeFstatistic_v2 using the --outputGrid option.
+
+    WARNING: The header file of the grid file is NOT yet parsed
+    for consistency of CFSv2 options (such as reference time)
+    with the PyFstat options,
+    so please ensure yourself that these match!
+
+    Most parameters are the same as for `GridSearch`, `TransientGridSearch`
+    and the `core.ComputeFstat` class,
+    only the additional ones are documented here.
+
+    NOTE: `nsegs>1` is incompatible with transient options.
+    """
+
+    @helper_functions.initializer
+    def __init__(
+        self,
+        label,
+        outdir,
+        sftfilepattern,
+        gridfile,
+        tref,
+        minStartTime=None,
+        maxStartTime=None,
+        nsegs=1,
+        BSGL=False,
+        minCoverFreq=None,
+        maxCoverFreq=None,
+        detectors=None,
+        SSBprec=None,
+        RngMedWindow=None,
+        injectSources=None,
+        input_arrays=False,
+        assumeSqrtSX=None,
+        transientWindowType=None,
+        t0Band=None,
+        tauBand=None,
+        tauMin=None,
+        dt0=None,
+        dtau=None,
+        outputTransientFstatMap=False,
+        outputAtoms=False,
+        tCWFstatMapVersion="lal",
+        cudaDeviceName=None,
+        earth_ephem=None,
+        sun_ephem=None,
+    ):
+        """
+        Parameters
+        ----------
+        gridfile: str
+            filename of the grid file to load
+        """
+
+        self._set_init_params_dict(locals())
+        if self.nsegs > 1 and self.transientWindowType is not None:
+            raise ValueError(
+                f"nsegs={self.nsegs} is incompatible with transient options (transientWindowType={self.transientWindowType})."
+            )
+        os.makedirs(outdir, exist_ok=True)
+        self.set_out_file()
+        self._read_grid_with_numpy()
+        self.search_keys = list(self.grid.dtype.names)
+        if self.BSGL:
+            self.detstat = "log10BSGL"
+        elif self.transientWindowType is not None:
+            self.detstat = "maxTwoF"
+        else:
+            self.detstat = "twoF"
+        self._initiate_search_object()
+        self._set_output_keys()
+        self.output_file_header = self.get_output_file_header()
+        if self.outputTransientFstatMap:
+            self.tCWfilebase = os.path.splitext(self.out_file)[0] + "_tCW_"
+            logging.info(
+                "Will save per-Doppler Fstatmap"
+                " results to {}*.dat".format(self.tCWfilebase)
+            )
+
+    def _read_grid_with_pandas(self):
+        """FIXME!!!"""
+        logging.info(f"Loading grid from file: {self.gridfile}")
+        grid = pd.read_csv(
+            self.gridfile,
+            comment="%",
+            delim_whitespace=True,
+            engine="c",
+            header=0,
+            names=[
+                "F0",
+                "Alpha",
+                "Delta",
+                "F1",
+                "F2",
+                "F3",
+            ],
+        )
+        self.grid = np.array(
+            grid,
+            dtype=np.dtype(list(zip(grid.dtypes.index, grid.dtypes))),
+        )
+        # logging.info ("Full pandas dataframe is:")
+        # logging.info(grid)
+        logging.info(
+            f"Successfully loaded grid of size {np.shape(self.grid)}"
+            " with the following dtype:"
+        )
+        logging.info(self.grid.dtype)
+        self.grid.dtype.names = self.translate_keys_from_cfsv2(self.grid.dtype.names)
+        logging.info("Updated dtype to:")
+        logging.info(self.grid.dtype)
+        logging.info("Full grid is:")
+        logging.info(self.grid)
+
+    def _read_grid_with_numpy(self):
+        logging.info(f"Loading grid from file: {self.gridfile}")
+        nhead = 0
+        with open(self.gridfile, "r") as fp:
+            for line in fp:
+                if not line.startswith("%%"):
+                    break
+                nhead += 1
+        self.grid = np.genfromtxt(
+            self.gridfile,
+            comments="%",
+            skip_header=nhead - 1,
+            names=True,
+        )
+        if len(self.grid) == 0:
+            raise IOError("Got 0-length grid.")
+        logging.info(
+            f"Successfully loaded grid of length {len(self.grid)},"
+            f" size {np.shape(self.grid)},"
+            " with the following dtype:"
+        )
+        logging.info(self.grid.dtype)
+        self.grid.dtype.names = self.translate_keys_from_cfsv2(self.grid.dtype.names)
+        logging.info("Updated dtype to match PyFstat parameter naming convention:")
+        logging.info(self.grid.dtype)
+
+    def translate_keys_from_cfsv2(self, keylist):
+        """Convert grid column heading keys into PyFstat convention.
+
+        In our convention, input keys (search parameter names)
+        are F0, F1, F2, ...,
+        while CFSv2 grid file headers are freq, f1dot, f2dot, ....
+
+        This is sort of an inverse to core's translate_keys_to_lal(),
+        just for a list instead of a dict.
+        Also unfortunately, in this type of files parameters are all lower-cased,
+        inconsistent with other parts of lalpulsar/lalapps.
+
+        Parameters
+        ----------
+        keylist: list
+            List of parameters to translate. A copy will be returned.
+
+        Returns
+        -------
+        translated: list
+            Copy of "keylist" with new keys according to PyFstat convention.
+        """
+
+        translation = {
+            "freq": "F0",
+            "alpha": "Alpha",
+            "delta": "Delta",
+        }
+        translation.update(
+            {f"f{k+1}dot": f"F{k+1}" for k in range(lalpulsar.PULSAR_MAX_SPINS - 1)}
+        )
+
+        translated = [
+            translation[key] if key in translation.keys() else key for key in keylist
+        ]
+
+        return translated
+
+    def _get_search_ranges(self):
+        logging.info("Getting search ranges...")
+        if (self.minCoverFreq is None) or (self.maxCoverFreq is None):
+            minmaxdict = {
+                key: [np.min(self.grid[key]), np.max(self.grid[key])]
+                for key in self.search_keys
+            }
+            logging.info(f"Search ranges span: {minmaxdict}")
+            return minmaxdict
+        else:
+            return None
+
+    def _get_input_data_array(self):
+        """Set up an input data array from the previously loaded grid.
+
+        This is a numpy structured array with named columns
+        and explicit dtype (cannot have named columns without that).
+        """
+
+        logging.info("Generating input data array from loaded grid.")
+        self.coord_arrays = self.grid
+        self.total_iterations = len(self.grid)
+        logging.info(f"self.total_iterations={self.total_iterations}")
+        if args.clean is False:
+            self.input_data = self.grid
 
 
 class SliceGridSearch(DefunctClass):

@@ -12,6 +12,7 @@ from .grid_based_searches import (
     GridGlitchSearch,
     GridSearch,
     GridUniformPriorSearch,
+    SearchOverGridFile,
     SliceGridSearch,
     TransientGridSearch,
 )
