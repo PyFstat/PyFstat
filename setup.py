@@ -35,6 +35,7 @@ requires = [
     "dill",
     "matplotlib>=3.3",
     "numpy<2.0",
+    "pandas",
     "pathos",
     "ptemcee",
     "scipy",
