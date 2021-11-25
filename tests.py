@@ -204,7 +204,7 @@ class TestWriter(BaseForTestsWithData):
     label = "TestWriter"
     writer_class_to_test = pyfstat.Writer
     signal_parameters = default_signal_params
-    noiseSFT_detectors = "H1,L1"
+    multi_detectors = "H1,L1"  # this needs to be overwritable by child test classes that don't support multi-IFOs
 
     def test_make_cff(self):
         self.Writer.make_cff(verbose=True)
@@ -261,7 +261,7 @@ class TestWriter(BaseForTestsWithData):
             duration=self.duration,
             Tsft=self.Tsft,
             tstart=self.tstart,
-            detectors=self.noiseSFT_detectors,
+            detectors=self.multi_detectors,
             randSeed=randSeed,
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
@@ -290,7 +290,7 @@ class TestWriter(BaseForTestsWithData):
             duration=self.duration,
             Tsft=self.Tsft,
             tstart=self.tstart,
-            detectors=self.noiseSFT_detectors,
+            detectors=self.multi_detectors,
             randSeed=randSeed,
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
@@ -437,11 +437,59 @@ class TestWriter(BaseForTestsWithData):
         )
         self.assertTrue(os.path.isfile(expected_SFT_filepath))
 
+    def test_timestampsFiles(self):
+        IFOs = self.multi_detectors.split(",")
+        tsfiles = [os.path.join(self.outdir, f"timestamps_{IFO}.txt") for IFO in IFOs]
+        for tsfile in tsfiles:
+            with open(tsfile, "w") as fp:
+                k = 0
+                while k * self.Tsft < self.duration:
+                    fp.write(f"{self.tstart + k*self.Tsft} 0\n")
+                    k += 1
+        tsWriter = self.writer_class_to_test(
+            label="TestWriterWithTSFiles",
+            tref=self.tref,
+            Tsft=self.Tsft,
+            outdir=self.outdir,
+            sqrtSX=self.sqrtSX,
+            Band=self.Band,
+            detectors=self.multi_detectors,
+            SFTWindowType=self.SFTWindowType,
+            SFTWindowBeta=self.SFTWindowBeta,
+            randSeed=self.randSeed,
+            timestampsFiles=",".join(tsfiles),
+            **self.signal_parameters,
+        )
+        tsWriter.make_data(verbose=True)
+        numSFTs = int(np.ceil(self.duration / self.Tsft))
+        for IFO in IFOs:
+            expected_outfile = os.path.join(
+                tsWriter.outdir,
+                "{:1s}-{:d}_{:2s}_{:d}SFT_{:s}-{:d}-{:d}.sft".format(
+                    IFO[0],
+                    numSFTs,
+                    IFO,
+                    self.Tsft,
+                    tsWriter.label,
+                    tsWriter.tstart,
+                    numSFTs * self.Tsft,
+                ),
+            )
+            self.assertTrue(os.path.isfile(expected_outfile))
+            self.assertTrue(lalpulsar.ValidateSFTFile(expected_outfile) == 0)
+        # test only first IFO's SFT against standard (tstart,duration) run
+        SFTnamesplit = tsWriter.sftfilepath.split(";")[0].split("Test")
+        self.assertTrue(self.Writer.sftfilepath.split("Test")[0] == SFTnamesplit[0])
+        self.assertTrue(
+            self.Writer.sftfilepath.split("Test")[1].split("-")[1:]
+            == SFTnamesplit[1].split("-")[1:]
+        )
+
 
 class TestLineWriter(TestWriter):
     label = "TestLineWriter"
     writer_class_to_test = pyfstat.make_sfts.LineWriter
-    noiseSFT_detectors = "H1"
+    multi_detectors = "H1"
 
     def test_multi_ifo_fails(self):
         detectors = "H1,L1"

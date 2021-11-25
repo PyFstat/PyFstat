@@ -253,6 +253,7 @@ class Writer(BaseSearchClass):
         transientStartTime=None,
         transientTau=None,
         randSeed=None,
+        timestampsFiles=None,
     ):
         """
         Parameters
@@ -261,8 +262,10 @@ class Writer(BaseSearchClass):
             A human-readable label to be used in naming the output files.
         tstart: int
             Starting GPS epoch of the data set.
+            NOTE: mutually exclusive with `timestampsFiles`.
         duration: int
             Duration (in GPS seconds) of the total data set.
+            NOTE: mutually exclusive with `timestampsFiles`.
         tref: float or None
             Reference time for simulated signals.
             Default is `None`, which sets the reference time to `tstart`.
@@ -291,6 +294,7 @@ class Writer(BaseSearchClass):
             Existing SFT files on top of which signals will be injected.
             If not `None`, additional constraints can be applied
             using the arguments `tstart` and `duration`.
+            NOTE: mutually exclusive with `timestampsFiles`.
         SFTWindowType: str or None
             LAL name of the windowing function to apply to the data.
         SFTWindowBeta: float
@@ -319,6 +323,12 @@ class Writer(BaseSearchClass):
         randSeed: int or None
             Optionally fix the random seed of Gaussian noise generation
             for reproducibility.
+        timestampsFiles: str or None
+            Comma-separated list of per-detector timestamps files
+            (simple text files, lines with <seconds> <nanoseconds>).
+            NOTE: mutually exclusive with [`tstart`,`duration`]
+            and with `noiseSFTs`.
+            WARNING: order must match that of `detectors`!
         """
 
         self.set_ephemeris_files(earth_ephem, sun_ephem)
@@ -446,6 +456,29 @@ class Writer(BaseSearchClass):
         self.duration = max(tend) - self.tstart
         self.detectors = ",".join(IFOs)
 
+    def _get_setup_from_timestampsFiles(self):
+        """
+        If timestampsFiles are given, use them to obtain relevant data parameters
+        (tstart, duration; but not detectors and Tsft as in the noiseSFTs case).
+        """
+        IFOs = self.detectors.split(",")
+        tsfiles = self.timestampsFiles.split(",")
+        if len(IFOs) != len(tsfiles):
+            raise ValueError(
+                f"Length of detectors=='{self.detectors}'"
+                f" does not match that of timestampsFiles=='{self.timestampsFiles}'"
+                f" ({len(IFOs)}!={len(tsfiles)})"
+            )
+        tstart = []
+        tlast = []
+        for X, IFO in enumerate(IFOs):
+            tsX = np.genfromtxt(tsfiles[X], comments="%")
+            tstart.append(tsX[0, 0])
+            tlast.append(tsX[-1, 0])
+        self.tstart = min(tstart)
+        self.duration = max(tlast) + self.Tsft - self.tstart
+        self._get_setup_from_tstart_duration()
+
     def _basic_setup(self):
         """Basic parameters handling, path setup etc."""
 
@@ -469,8 +502,22 @@ class Writer(BaseSearchClass):
                 )
             )
 
-        no_noiseSFTs_options = ["tstart", "duration", "detectors"]
-        if self.noiseSFTs is not None:
+        incompatible_with_TS = ["tstart", "duration", "noiseSFTs"]
+        TS_required_options = ["Tsft", "detectors"]
+        no_noiseSFTs_options = ["tstart", "duration", "Tsft", "detectors"]
+        if getattr(self, "timestampsFiles", None) is not None:
+            if np.any([getattr(self, k) is not None for k in incompatible_with_TS]):
+                raise ValueError(
+                    "timestampsFiles option is incompatible with"
+                    f" ({','.join(incompatible_with_TS)})."
+                )
+            if np.any([getattr(self, k) is None for k in TS_required_options]):
+                raise ValueError(
+                    "With timestampsFiles option, need also all of"
+                    f" ({','.join(TS_required_options)})."
+                )
+            self._get_setup_from_timestampsFiles()
+        elif self.noiseSFTs is not None:
             logging.warning(
                 "noiseSFTs is not None: Inferring tstart, duration, Tsft. "
                 "Input tstart and duration will be treated as SFT constraints "
@@ -480,7 +527,7 @@ class Writer(BaseSearchClass):
             self._get_setup_from_noiseSFTs()
         elif np.any([getattr(self, k) is None for k in no_noiseSFTs_options]):
             raise ValueError(
-                "Need either noiseSFTs or all of ({:s}).".format(
+                "Need either noiseSFTs, timestampsFiles or all of ({:s}).".format(
                     ",".join(no_noiseSFTs_options)
                 )
             )
@@ -801,8 +848,11 @@ class Writer(BaseSearchClass):
         if self.SFTWindowType is not None:
             cl_mfd.append('--SFTWindowType="{}"'.format(self.SFTWindowType))
             cl_mfd.append("--SFTWindowBeta={}".format(self.SFTWindowBeta))
-        cl_mfd.append("--startTime={}".format(self.tstart))
-        cl_mfd.append("--duration={}".format(self.duration))
+        if getattr(self, "timestampsFiles", None) is not None:
+            cl_mfd.append("--timestampsFiles={}".format(self.timestampsFiles))
+        else:
+            cl_mfd.append("--startTime={}".format(self.tstart))
+            cl_mfd.append("--duration={}".format(self.duration))
         if hasattr(self, "fmin") and self.fmin:
             cl_mfd.append("--fmin={:.16g}".format(self.fmin))
         if hasattr(self, "Band") and self.Band:
@@ -897,6 +947,7 @@ class BinaryModulatedWriter(Writer):
         transientStartTime=None,
         transientTau=None,
         randSeed=None,
+        timestampsFiles=None,
     ):
         """
         Most parameters are the same as for the basic `Writer` class,
@@ -1144,6 +1195,7 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
         sun_ephem=None,
         transientWindowType="rect",
         randSeed=None,
+        timestampsFiles=None,
     ):
         """
         Most parameters are the same as for the basic `Writer` class,
