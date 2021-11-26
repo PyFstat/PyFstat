@@ -470,14 +470,27 @@ class Writer(BaseSearchClass):
                 f" ({len(IFOs)}!={len(tsfiles)})"
             )
         tstart = []
-        tlast = []
+        tend = []
+        self.sftfilenames = []  # This refers to the MFD output!
         for X, IFO in enumerate(IFOs):
             tsX = np.genfromtxt(tsfiles[X], comments="%")
-            tstart.append(tsX[0, 0])
-            tlast.append(tsX[-1, 0])
+            this_start_time = int(tsX[0, 0])
+            this_end_time = int(tsX[-1, 0]) + self.Tsft
+            tstart.append(this_start_time)
+            tend.append(this_end_time)
+            self.sftfilenames.append(
+                lalpulsar.OfficialSFTFilename(
+                    IFO[0],
+                    IFO[1],
+                    len(tsX),
+                    self.Tsft,
+                    this_start_time,
+                    this_end_time - this_start_time,
+                    self.label,
+                )
+            )
         self.tstart = min(tstart)
-        self.duration = max(tlast) + self.Tsft - self.tstart
-        self._get_setup_from_tstart_duration()
+        self.duration = max(tend) - self.tstart
 
     def _basic_setup(self):
         """Basic parameters handling, path setup etc."""

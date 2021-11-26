@@ -371,7 +371,7 @@ class TestWriter(BaseForTestsWithData):
             )
         )
 
-    def test_data_with_gaps(self):
+    def test_noise_sfts_with_gaps(self):
         duration = 10 * self.Tsft
         gap_time = 4 * self.Tsft
         window = "tukey"
@@ -437,15 +437,25 @@ class TestWriter(BaseForTestsWithData):
         )
         self.assertTrue(os.path.isfile(expected_SFT_filepath))
 
-    def test_timestampsFiles(self):
+    def _test_writer_with_tsfiles(self, gaps=False):
+        """helper function to rerun with/without gaps"""
         IFOs = self.multi_detectors.split(",")
         tsfiles = [os.path.join(self.outdir, f"timestamps_{IFO}.txt") for IFO in IFOs]
-        for tsfile in tsfiles:
+        numSFTs = []
+        for X, tsfile in enumerate(tsfiles):
             with open(tsfile, "w") as fp:
                 k = 0
                 while k * self.Tsft < self.duration:
-                    fp.write(f"{self.tstart + k*self.Tsft} 0\n")
+                    if (
+                        not gaps or not k == X + 1
+                    ):  # add gaps at different points for each IFO
+                        fp.write(f"{self.tstart + k*self.Tsft} 0\n")
                     k += 1
+            if gaps:
+                numSFTs.append(k - 1)
+            else:
+                numSFTs.append(k)
+            total_duration = k * self.Tsft
         tsWriter = self.writer_class_to_test(
             label="TestWriterWithTSFiles",
             tref=self.tref,
@@ -461,29 +471,33 @@ class TestWriter(BaseForTestsWithData):
             **self.signal_parameters,
         )
         tsWriter.make_data(verbose=True)
-        numSFTs = int(np.ceil(self.duration / self.Tsft))
-        for IFO in IFOs:
+        for X, IFO in enumerate(IFOs):
             expected_outfile = os.path.join(
                 tsWriter.outdir,
                 "{:1s}-{:d}_{:2s}_{:d}SFT_{:s}-{:d}-{:d}.sft".format(
                     IFO[0],
-                    numSFTs,
+                    numSFTs[X],
                     IFO,
                     self.Tsft,
                     tsWriter.label,
-                    tsWriter.tstart,
-                    numSFTs * self.Tsft,
+                    self.tstart,
+                    total_duration,
                 ),
             )
             self.assertTrue(os.path.isfile(expected_outfile))
             self.assertTrue(lalpulsar.ValidateSFTFile(expected_outfile) == 0)
-        # test only first IFO's SFT against standard (tstart,duration) run
-        SFTnamesplit = tsWriter.sftfilepath.split(";")[0].split("Test")
-        self.assertTrue(self.Writer.sftfilepath.split("Test")[0] == SFTnamesplit[0])
-        self.assertTrue(
-            self.Writer.sftfilepath.split("Test")[1].split("-")[1:]
-            == SFTnamesplit[1].split("-")[1:]
-        )
+        if not gaps:
+            # test only first IFO's SFT against standard (tstart,duration) run
+            SFTnamesplit = tsWriter.sftfilepath.split(";")[0].split("Test")
+            self.assertTrue(self.Writer.sftfilepath.split("Test")[0] == SFTnamesplit[0])
+            self.assertTrue(
+                self.Writer.sftfilepath.split("Test")[1].split("-")[1:]
+                == SFTnamesplit[1].split("-")[1:]
+            )
+
+    def test_timestampsFiles(self):
+        self._test_writer_with_tsfiles(gaps=False)
+        self._test_writer_with_tsfiles(gaps=True)
 
 
 class TestLineWriter(TestWriter):
