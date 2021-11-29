@@ -257,6 +257,7 @@ class ComputeFstat(BaseSearchClass):
         maxStartTime=None,
         Tsft=1800,
         binary=False,
+        singleFstats=False,
         BSGL=False,
         transientWindowType=None,
         t0Band=None,
@@ -298,10 +299,13 @@ class ComputeFstat(BaseSearchClass):
             generated on the fly.
         binary : bool
             If true, search over binary parameters.
+        singleFstats : bool
+            If true, also compute the single-detector twoF values.
         BSGL : bool
             If true, compute the log10BSGL statistic rather than the twoF value.
             For details, see Keitel et al (PRD 89, 064023, 2014):
             https://arxiv.org/abs/1311.5738
+            Note this automatically sets `singleFstats=True` as well.
             Tuning parameters are currently hardcoded:
 
             * `Fstar0=15` for coherent searches.
@@ -649,6 +653,13 @@ class ComputeFstat(BaseSearchClass):
         logging.info("Initialising FstatResults")
         self.FstatResults = lalpulsar.FstatResults()
 
+        # always initialise the twoFX array,
+        # but only actually compute it if requested
+        self.twoFX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
+        self.singleFstats = self.singleFstats or self.BSGL  # BSGL implies twoFX
+        if self.singleFstats:
+            self.whatToCompute += lalpulsar.FSTATQ_2F_PER_DET
+
         if self.BSGL:
             if len(self.detector_names) < 2:
                 raise ValueError("Can't use BSGL with single detectors data")
@@ -679,8 +690,6 @@ class ComputeFstat(BaseSearchClass):
                 useLogCorrection=True,
                 numSegments=getattr(self, "nsegs", 1),
             )
-            self.twoFX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
-            self.whatToCompute += lalpulsar.FSTATQ_2F_PER_DET
 
         if self.transientWindowType:
             logging.info("Initialising transient parameters")
@@ -982,8 +991,8 @@ class ComputeFstat(BaseSearchClass):
 
         These are also stored to `self.twoF` and `self.log10BSGL` respectively.
         As the basic statistic of this class, `self.twoF` is always computed.
-        If `self.BSGL`, additionally the single-detector 2F-stat values are saved
-        in `self.twoFX`.
+        If `self.singleFstats`, additionally the single-detector
+        2F-stat values are saved in `self.twoFX`.
 
         If transient parameters are enabled (`self.transientWindowType` is set),
         the full transient-F-stat map will also be computed here,
@@ -1012,9 +1021,10 @@ class ComputeFstat(BaseSearchClass):
             F0, F1, F2, Alpha, Delta, asini, period, ecc, tp, argp
         )
         if not self.transientWindowType:
+            if self.singleFstats:
+                self.get_fullycoherent_single_IFO_twoFs()
             if self.BSGL is False:
                 return self.twoF
-            self.get_fullycoherent_single_IFO_twoFs()
             self.get_fullycoherent_log10BSGL()
             return self.log10BSGL
         self.get_transient_maxTwoFstat(tstart, tend)
@@ -1093,6 +1103,10 @@ class ComputeFstat(BaseSearchClass):
             A list of the single-detector detection statistics twoF.
             Also stored as `self.twoFX`.
         """
+        if not self.singleFstats:
+            raise RuntimeError(
+                "This function is available only if singleFstats or BSGL options were set."
+            )
         self.twoFX[: self.FstatResults.numDetectors] = [
             self.FstatResults.twoFPerDet(X)
             for X in range(self.FstatResults.numDetectors)
@@ -1594,6 +1608,7 @@ class SemiCoherentSearch(ComputeFstat):
         nsegs=None,
         sftfilepattern=None,
         binary=False,
+        singleFstats=False,
         BSGL=False,
         minStartTime=None,
         maxStartTime=None,
@@ -1644,7 +1659,7 @@ class SemiCoherentSearch(ComputeFstat):
         self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
         self.init_computefstatistic()
         self.init_semicoherent_parameters()
-        if self.BSGL:
+        if self.singleFstats:
             self.twoFX_per_segment = np.zeros(
                 (lalpulsar.PULSAR_MAX_DETECTORS, self.nsegs)
             )
@@ -1742,8 +1757,8 @@ class SemiCoherentSearch(ComputeFstat):
         """Computes the detection statistic (twoF or log10BSGL) semi-coherently at a single point.
 
         As the basic statistic of this class, `self.twoF` is always computed.
-        If `self.BSGL`, additionally the single-detector 2F-stat values are saved
-        in `self.twoFX`.
+        If `self.singleFstats`, additionally the single-detector 2F-stat values
+        are saved in `self.twoFX` and (optionally) `self.twoFX_per_segment`.
 
         Parameters
         ----------
@@ -1753,7 +1768,7 @@ class SemiCoherentSearch(ComputeFstat):
             Optional: Binary parameters at which to compute the statistic.
         record_segments: boolean
             If True, store the per-segment F-stat values as `self.twoF_per_segment`
-            and (if `self.BSGL=True`) the per-detector per-segment F-stats
+            and (if `self.singleFstats`) the per-detector per-segment F-stats
             as `self.twoFX_per_segment`.
 
         Returns
@@ -1768,10 +1783,11 @@ class SemiCoherentSearch(ComputeFstat):
             F0, F1, F2, Alpha, Delta, asini, period, ecc, tp, argp, record_segments
         )
 
+        if self.singleFstats:
+            self.get_semicoherent_single_IFO_twoFs(record_segments)
         if self.BSGL is False:
             return self.twoF
         else:
-            self.get_semicoherent_single_IFO_twoFs(record_segments)
             return self.get_semicoherent_log10BSGL()
 
     def get_semicoherent_twoF(
@@ -1860,6 +1876,10 @@ class SemiCoherentSearch(ComputeFstat):
             A list of the single-detector detection statistics twoF.
             Also stored as `self.twoFX`.
         """
+        if not self.singleFstats:
+            raise RuntimeError(
+                "This function is available only if singleFstats or BSGL options were set."
+            )
         for X in range(self.FstatResults.numDetectors):
             # For each detector, we need to build a MultiFstatAtomVector
             # because that's what the Fstat map function expects.
@@ -2057,6 +2077,7 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
         nglitch=1,
         sftfilepattern=None,
         theta0_idx=0,
+        singleFstats=False,
         BSGL=False,
         minCoverFreq=None,
         maxCoverFreq=None,

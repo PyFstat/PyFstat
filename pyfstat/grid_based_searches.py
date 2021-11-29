@@ -131,7 +131,7 @@ class GridSearch(BaseSearchClass):
     def _set_output_keys(self):
         self.output_keys = self.search_keys.copy()
         self.output_keys.append("twoF")
-        if hasattr(self.search, "twoFX"):
+        if self.search.singleFstats:
             self.output_keys += [f"twoF{IFO}" for IFO in self.search.detector_names]
         if self.BSGL:
             self.output_keys.append(self.detstat)
@@ -389,7 +389,7 @@ class GridSearch(BaseSearchClass):
             thisCand = list(vals)
             detstat = self.search.get_det_stat(*vals)
             thisCand.append(self.search.twoF)
-            if hasattr(self.search, "twoFX"):
+            if self.search.singleFstats:
                 thisCand += list(self.search.twoFX[: self.search.numDetectors])
             if self.detstat != "twoF":
                 thisCand.append(detstat)
@@ -406,7 +406,7 @@ class GridSearch(BaseSearchClass):
         """Define the output precision for each parameter and computed quantity."""
         fmt_dict = helper_functions.get_doppler_params_output_format(self.output_keys)
         fmt_dict["twoF"] = self.fmt_detstat
-        if hasattr(self.search, "twoFX"):
+        if self.search.singleFstats:
             for IFO in self.search.detector_names:
                 fmt_dict[f"twoF{IFO}"] = self.fmt_detstat
         if self.BSGL:
@@ -942,7 +942,7 @@ class TransientGridSearch(GridSearch):
     def _set_output_keys(self):
         self.output_keys = self.search_keys.copy()
         self.output_keys.append("twoF")
-        if hasattr(self.search, "twoFX"):
+        if self.search.singleFstats:
             self.output_keys += [f"twoF{IFO}" for IFO in self.search.detector_names]
         self.output_keys.append("maxTwoF")
         if hasattr(self.search, "twoFXatMaxTwoF"):
@@ -1038,7 +1038,7 @@ class TransientGridSearch(GridSearch):
             windowRange = getattr(self.search, "windowRange", None)
             self.timingFstatMap += getattr(self.search, "timingFstatMap", 0.0)
             thisCand.append(self.search.twoF)
-            if hasattr(self.search, "twoFX"):
+            if self.search.singleFstats:
                 thisCand += list(self.search.twoFX[: self.search.numDetectors])
             thisCand.append(self.search.maxTwoF)
             if hasattr(self.search, "twoFXatMaxTwoF"):
@@ -1109,7 +1109,7 @@ class TransientGridSearch(GridSearch):
         """Define the output precision for each parameter and computed quantity."""
         fmt_dict = helper_functions.get_doppler_params_output_format(self.output_keys)
         fmt_dict["twoF"] = self.fmt_detstat
-        if hasattr(self.search, "twoFX"):
+        if self.search.singleFstats:
             for IFO in self.search.detector_names:
                 fmt_dict[f"twoF{IFO}"] = self.fmt_detstat
         fmt_dict["maxTwoF"] = self.fmt_detstat
