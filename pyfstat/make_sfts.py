@@ -325,7 +325,9 @@ class Writer(BaseSearchClass):
             for reproducibility.
         timestampsFiles: str or None
             Comma-separated list of per-detector timestamps files
-            (simple text files, lines with <seconds> <nanoseconds>).
+            (simple text files, lines with <seconds> <nanoseconds>,
+            comments should use `%`, each time stamp gives the
+            start time of one SFT).
             NOTE: mutually exclusive with [`tstart`,`duration`]
             and with `noiseSFTs`.
             WARNING: order must match that of `detectors`!
