@@ -1093,10 +1093,12 @@ class ComputeFstat(BaseSearchClass):
             A list of the single-detector detection statistics twoF.
             Also stored as `self.twoFX`.
         """
-        self.twoFX[: self.FstatResults.numDetectors] = [
-            self.FstatResults.twoFPerDet(X)
-            for X in range(self.FstatResults.numDetectors)
-        ]
+        self.twoFX[: self.FstatResults.numDetectors] = np.concatenate(
+            [
+                self.FstatResults.twoFPerDet(X)
+                for X in range(self.FstatResults.numDetectors)
+            ]
+        )
         return self.twoFX
 
     def get_fullycoherent_log10BSGL(self):
