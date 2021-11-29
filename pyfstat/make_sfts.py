@@ -1559,7 +1559,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         # instead we use wildcards there.
         outfreq = int(np.floor(self.fmin))
         outwidth = int(np.floor(self.Band))
-        SFTFilename += f"_NB_F{outfreq:04d}Hz*_W{outwidth:04d}Hz*"
+        SFTFilename += f"_NBF{outfreq:04d}Hz*W{outwidth:04d}Hz*"
         SFTFilename += f"-{self.tstart}-{self.duration}.sft"
         SFTFile_fullpath = os.path.join(self.outdir, SFTFilename)
 

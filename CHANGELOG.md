@@ -1,3 +1,12 @@
+## 1.12 [in preparation]
+
+ - drop python 3.6 support
+ - require LALSuite >= 7.1
+ - no longer pinning numpy
+ - resolved various deprecation warnings
+ - new `allowedMismatchFromSFTLength` option
+   for core and MCMC classes
+
 ## 1.11.6 [14/04/2021]
 
  - new reference paper for PyFstat: https://doi.org/10.21105/joss.03000

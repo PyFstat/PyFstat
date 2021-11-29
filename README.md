@@ -43,7 +43,7 @@ Latest development versions can
 [also be installed with pip](#pip-install-from-github)
 or [from a local git clone](#install-pyfstat-from-source-zenodo-or-git-clone).
 
-If you don't have a recent `python` installation (`3.6+`) on your system,
+If you don't have a recent `python` installation (`3.7+`) on your system,
 then `Docker` or `conda` are the easiest paths.
 
 In either case, be sure to also check out the notes on
@@ -259,7 +259,7 @@ for advice or just jump in and submit an
 [pull request](https://github.com/PyFstat/PyFstat/compare).
 
 Here's what you need to know:
-* The github automated tests currently run on `python` [3.6,3.7,3.8] and new PRs need to pass all these.
+* The github automated tests currently run on `python` [3.7,3.8,3.9] and new PRs need to pass all these.
 * The automated test also runs
   the [black](https://black.readthedocs.io) style checker
   and the [flake8](https://flake8.pycqa.org/en/latest/) linter.
