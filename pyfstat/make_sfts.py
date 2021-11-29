@@ -521,12 +521,14 @@ class Writer(BaseSearchClass):
         TS_required_options = ["Tsft", "detectors"]
         no_noiseSFTs_options = ["tstart", "duration", "Tsft", "detectors"]
         if getattr(self, "timestampsFiles", None) is not None:
-            if np.any([getattr(self, k) is not None for k in incompatible_with_TS]):
+            if np.any(
+                [getattr(self, k, None) is not None for k in incompatible_with_TS]
+            ):
                 raise ValueError(
                     "timestampsFiles option is incompatible with"
                     f" ({','.join(incompatible_with_TS)})."
                 )
-            if np.any([getattr(self, k) is None for k in TS_required_options]):
+            if np.any([getattr(self, k, None) is None for k in TS_required_options]):
                 raise ValueError(
                     "With timestampsFiles option, need also all of"
                     f" ({','.join(TS_required_options)})."
@@ -540,7 +542,7 @@ class Writer(BaseSearchClass):
                 "internal consistency accross input SFTs."
             )
             self._get_setup_from_noiseSFTs()
-        elif np.any([getattr(self, k) is None for k in no_noiseSFTs_options]):
+        elif np.any([getattr(self, k, None) is None for k in no_noiseSFTs_options]):
             raise ValueError(
                 "Need either noiseSFTs, timestampsFiles or all of ({:s}).".format(
                     ",".join(no_noiseSFTs_options)
