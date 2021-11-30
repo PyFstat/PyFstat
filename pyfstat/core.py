@@ -1023,7 +1023,7 @@ class ComputeFstat(BaseSearchClass):
         if not self.transientWindowType:
             if self.singleFstats:
                 self.get_fullycoherent_single_IFO_twoFs()
-            if self.BSGL is False:
+            if not self.BSGL:
                 return self.twoF
             self.get_fullycoherent_log10BSGL()
             return self.log10BSGL
@@ -1785,7 +1785,7 @@ class SemiCoherentSearch(ComputeFstat):
 
         if self.singleFstats:
             self.get_semicoherent_single_IFO_twoFs(record_segments)
-        if self.BSGL is False:
+        if not self.BSGL:
             return self.twoF
         else:
             return self.get_semicoherent_log10BSGL()
