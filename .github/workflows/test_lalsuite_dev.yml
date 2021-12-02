@@ -1,0 +1,36 @@
+name: LALSuite-dev test
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron:  '42 9 * * 1'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8, 3.9]
+    env:
+      LALPULSAR_DATADIR: ${{ github.workspace }}/ephem
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install package and development dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ${GITHUB_WORKSPACE}[style,test,wheel]
+        pip install --upgrade --pre lalsuite
+    - name: Linting with flake8
+      run: |
+        flake8 --count --statistics .
+    - name: Style check with black
+      run: |
+        black --check --diff .
+    - name: Set up ephemerides and test with pytest
+      run: |
+        source bin/get-and-export-ephemeris.sh
+        (cd .. && pytest --durations=0 $GITHUB_WORKSPACE/tests.py --log-file=$GITHUB_WORKSPACE/tests.log)

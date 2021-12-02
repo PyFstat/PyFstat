@@ -963,10 +963,10 @@ class MCMCSearch(BaseSearchClass):
                 ax.set_rasterization_zorder(-10)
 
                 for tick in ax.xaxis.get_major_ticks():
-                    # tick.label.set_fontsize(8)
+                    # tick.label1.set_fontsize(8)
                     tick.label.set_rotation(30)
                 for tick in ax.yaxis.get_major_ticks():
-                    # tick.label.set_fontsize(8)
+                    # tick.label1.set_fontsize(8)
                     tick.label.set_rotation(30)
 
             plt.tight_layout()
