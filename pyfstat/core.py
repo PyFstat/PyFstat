@@ -1119,10 +1119,12 @@ class ComputeFstat(BaseSearchClass):
             raise RuntimeError(
                 "This function is available only if singleFstats or BSGL options were set."
             )
-        self.twoFX[: self.FstatResults.numDetectors] = [
-            self.FstatResults.twoFPerDet(X)
-            for X in range(self.FstatResults.numDetectors)
-        ]
+        self.twoFX[: self.FstatResults.numDetectors] = np.concatenate(
+            [
+                self.FstatResults.twoFPerDet(X)
+                for X in range(self.FstatResults.numDetectors)
+            ]
+        )
         return self.twoFX
 
     def get_fullycoherent_log10BSGL(self):
