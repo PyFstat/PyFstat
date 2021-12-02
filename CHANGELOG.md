@@ -4,8 +4,14 @@
  - require LALSuite >= 7.1
  - no longer pinning numpy
  - resolved various deprecation warnings
+ - follow updated "narrowband" SFT file name convention
+   from lalapps_splitSFTs
+ - new `timestampsFiles` option for `Writer` classes
  - new `allowedMismatchFromSFTLength` option
    for core and MCMC classes
+ - new `singleFstats` option for `ComputeFstat` and derived classes
+ - new `randSeed` option for `ComputeFstat` and derived classes
+   for reproducible on-the-fly Gaussian noise generation
 
 ## 1.11.6 [14/04/2021]
 
