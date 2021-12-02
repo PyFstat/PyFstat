@@ -369,6 +369,7 @@ class ComputeFstat(BaseSearchClass):
         randSeed : int or None
             random seed for on-the-fly noise generation using `injectSqrtSX`.
             Setting this to 0 or None is equivalent; both will randomise the seed,
+            following the behaviour of XLALAddGaussianNoise(),
             while any number not equal to 0 will produce a reproducible noise realisation.
         assumeSqrtSX : float or list or str
             Don't estimate noise-floors but assume this (stationary) single-sided PSD.
