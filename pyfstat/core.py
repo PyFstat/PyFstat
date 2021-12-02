@@ -674,19 +674,19 @@ class ComputeFstat(BaseSearchClass):
                 p_val_threshold = 1e-6
                 Fstar0s = np.linspace(0, 1000, 10000)
                 p_vals = scipy.special.gammaincc(2 * nsegs_eff, Fstar0s)
-                Fstar0 = Fstar0s[np.argmin(np.abs(p_vals - p_val_threshold))]
-                if Fstar0 == Fstar0s[-1]:
+                self.Fstar0 = Fstar0s[np.argmin(np.abs(p_vals - p_val_threshold))]
+                if self.Fstar0 == Fstar0s[-1]:
                     raise ValueError("Max Fstar0 exceeded")
             else:
-                Fstar0 = 15.0
-            logging.info("Using Fstar0 of {:1.2f}".format(Fstar0))
+                self.Fstar0 = 15.0
+            logging.info("Using Fstar0 of {:1.2f}".format(self.Fstar0))
             # assume uniform per-detector prior line-vs-Gaussian odds
-            oLGX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
-            oLGX[: self.numDetectors] = 1.0 / self.numDetectors
+            self.oLGX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
+            self.oLGX[: self.numDetectors] = 1.0 / self.numDetectors
             self.BSGLSetup = lalpulsar.CreateBSGLSetup(
                 numDetectors=self.numDetectors,
-                Fstar0sc=Fstar0,
-                oLGX=oLGX,
+                Fstar0sc=self.Fstar0,
+                oLGX=self.oLGX,
                 useLogCorrection=True,
                 numSegments=getattr(self, "nsegs", 1),
             )
