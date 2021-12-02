@@ -271,6 +271,7 @@ class ComputeFstat(BaseSearchClass):
         search_ranges=None,
         injectSources=None,
         injectSqrtSX=None,
+        randSeed=None,
         assumeSqrtSX=None,
         SSBprec=None,
         RngMedWindow=None,
@@ -365,6 +366,8 @@ class ComputeFstat(BaseSearchClass):
             List or comma-separated string: must match len(detectors)
             and/or the data in sftfilepattern.
             Detectors will be paired to list elements following alphabetical order.
+        randSeed : int or None
+            random seed for on-the-fly noise generation using `injectSqrtSX`.
         assumeSqrtSX : float or list or str
             Don't estimate noise-floors but assume this (stationary) single-sided PSD.
             Single float or str value: use same for all IFOs.
@@ -550,7 +553,6 @@ class ComputeFstat(BaseSearchClass):
             self.whatToCompute += lalpulsar.FSTATQ_ATOMS_PER_DET
 
         FstatOAs = lalpulsar.FstatOptionalArgs()
-        FstatOAs.randSeed = lalpulsar.FstatOptionalArgsDefaults.randSeed
         if self.SSBprec:
             logging.info("Using SSBprec={}".format(self.SSBprec))
             FstatOAs.SSBprec = self.SSBprec
@@ -630,6 +632,10 @@ class ComputeFstat(BaseSearchClass):
             ] = self.injectSqrtSX
         else:
             FstatOAs.injectSqrtSX = lalpulsar.FstatOptionalArgsDefaults.injectSqrtSX
+        if hasattr(self, "randSeed") and self.randSeed is not None:
+            FstatOAs.randSeed = self.randSeed
+        else:
+            FstatOAs.randSeed = lalpulsar.FstatOptionalArgsDefaults.randSeed
         self._set_min_max_cover_freqs()
 
         logging.info("Initialising FstatInput")
@@ -1618,6 +1624,8 @@ class SemiCoherentSearch(ComputeFstat):
         search_ranges=None,
         detectors=None,
         injectSources=None,
+        injectSqrtSX=None,
+        randSeed=None,
         assumeSqrtSX=None,
         SSBprec=None,
         RngMedWindow=None,
