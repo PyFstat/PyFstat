@@ -368,6 +368,8 @@ class ComputeFstat(BaseSearchClass):
             Detectors will be paired to list elements following alphabetical order.
         randSeed : int or None
             random seed for on-the-fly noise generation using `injectSqrtSX`.
+            Setting this to 0 or None is equivalent; both will randomise the seed,
+            while any number not equal to 0 will produce a reproducible noise realisation.
         assumeSqrtSX : float or list or str
             Don't estimate noise-floors but assume this (stationary) single-sided PSD.
             Single float or str value: use same for all IFOs.
@@ -632,10 +634,13 @@ class ComputeFstat(BaseSearchClass):
             ] = self.injectSqrtSX
         else:
             FstatOAs.injectSqrtSX = lalpulsar.FstatOptionalArgsDefaults.injectSqrtSX
-        if hasattr(self, "randSeed") and self.randSeed is not None:
-            FstatOAs.randSeed = self.randSeed
-        else:
-            FstatOAs.randSeed = lalpulsar.FstatOptionalArgsDefaults.randSeed
+        # Here we are treating 0 and None as equivalent
+        # (use default, which is 0 and means "randomise the seed").
+        # See XLALAddGaussianNoise().
+        FstatOAs.randSeed = (
+            getattr(self, "randSeed", None)
+            or lalpulsar.FstatOptionalArgsDefaults.randSeed
+        )
         self._set_min_max_cover_freqs()
 
         logging.info("Initialising FstatInput")
