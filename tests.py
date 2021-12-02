@@ -1388,19 +1388,31 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
         )
         self.assertTrue(diff < 0.3)
 
-    def test_get_semicoherent_BSGL(self):
-
-        search = pyfstat.SemiCoherentSearch(
+    def _test_get_semicoherent_BSGL(self, **dataopts):
+        search_noBSGL = pyfstat.SemiCoherentSearch(
             label=self.label,
             outdir=self.outdir,
             nsegs=self.nsegs,
-            sftfilepattern=self.Writer.sftfilepath,
-            tref=self.Writer.tref,
-            search_ranges=self.search_ranges,
-            BSGL=True,
+            BSGL=False,
+            singleFstats=True,
+            **dataopts,
         )
-
-        BSGL = search.get_semicoherent_det_stat(
+        twoF = search_noBSGL.get_semicoherent_det_stat(
+            self.Writer.F0,
+            self.Writer.F1,
+            self.Writer.F2,
+            self.Writer.Alpha,
+            self.Writer.Delta,
+        )
+        twoFX = search_noBSGL.get_semicoherent_single_IFO_twoFs()
+        search_BSGL = pyfstat.SemiCoherentSearch(
+            label=self.label,
+            outdir=self.outdir,
+            nsegs=self.nsegs,
+            BSGL=True,
+            **dataopts,
+        )
+        log10BSGL = search_BSGL.get_semicoherent_det_stat(
             self.Writer.F0,
             self.Writer.F1,
             self.Writer.F2,
@@ -1408,7 +1420,32 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
             self.Writer.Delta,
             record_segments=True,
         )
-        self.assertTrue(BSGL > 0)
+        self.assertTrue(log10BSGL > 0)
+        self.assertTrue(
+            log10BSGL == lalpulsar.ComputeBSGL(twoF, twoFX, search_BSGL.BSGLSetup)
+        )
+
+    def test_get_semicoherent_BSGL_SFTs(self):
+        dataopts = {
+            "sftfilepattern": self.Writer.sftfilepath,
+            "tref": self.Writer.tref,
+            "search_ranges": self.search_ranges,
+        }
+        self._test_get_semicoherent_BSGL(**dataopts)
+
+    def test_get_semicoherent_BSGL_inject(self):
+        dataopts = {
+            "tref": self.tref,
+            "minStartTime": self.tstart,
+            "maxStartTime": self.tstart + self.duration,
+            "detectors": "H1,L1",
+            "injectSqrtSX": np.repeat(self.sqrtSX, 2),
+            "minCoverFreq": self.F0 - 0.1,
+            "maxCoverFreq": self.F0 + 0.1,
+            "injectSources": self.Writer.config_file_name,
+            "randSeed": self.randSeed,
+        }
+        self._test_get_semicoherent_BSGL(**dataopts)
 
     def test_get_semicoherent_twoF_allowedMismatchFromSFTLength(self):
 
