@@ -1,4 +1,4 @@
-## 1.12 [03/12/2021]
+## 1.12.0 [03/12/2021]
 
  - drop python 3.6 support
  - require LALSuite >= 7.1
