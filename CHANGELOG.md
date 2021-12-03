@@ -1,4 +1,4 @@
-## 1.12 [in preparation]
+## 1.12 [03/12/2021]
 
  - drop python 3.6 support
  - require LALSuite >= 7.1
@@ -12,6 +12,8 @@
  - new `singleFstats` option for `ComputeFstat` and derived classes
  - new `randSeed` option for `ComputeFstat` and derived classes
    for reproducible on-the-fly Gaussian noise generation
+ - fix data-from-disk reuse in `LineWriter`
+   and some internal cleanup to `Writer` and derived classes in general
 
 ## 1.11.6 [14/04/2021]
 
