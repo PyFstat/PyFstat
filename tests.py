@@ -45,7 +45,7 @@ default_Writer_params = {
     "Band": None,
 }
 
-default_signal_params = {
+default_signal_params_no_sky = {
     "F0": 30.0,
     "F1": -1e-10,
     "F2": 0,
@@ -53,8 +53,11 @@ default_signal_params = {
     "cosi": 0,
     "psi": 0,
     "phi": 0,
-    "Alpha": 5e-1,
-    "Delta": 1.2,
+}
+
+default_signal_params = {
+    **default_signal_params_no_sky,
+    **{"Alpha": 5e-1, "Delta": 1.2},
 }
 
 
@@ -235,21 +238,29 @@ class TestWriter(BaseForTestsWithData):
             os.remove(self.Writer.config_file_name)
         if os.path.isfile(self.Writer.sftfilepath):
             os.remove(self.Writer.sftfilepath)
+
         # first run: make everything from scratch
         self.Writer.make_cff(verbose=True)
         self.Writer.run_makefakedata()
         time_first = os.path.getmtime(self.Writer.sftfilepath)
+
         # second run: should re-use .cff and .sft
         self.Writer.make_cff(verbose=True)
         self.Writer.run_makefakedata()
         time_second = os.path.getmtime(self.Writer.sftfilepath)
         self.assertTrue(time_first == time_second)
+
         # third run: touch the .cff to force regeneration
         time.sleep(1)  # make sure timestamp is actually different!
         os.system("touch {}".format(self.Writer.config_file_name))
         self.Writer.run_makefakedata()
         time_third = os.path.getmtime(self.Writer.sftfilepath)
         self.assertFalse(time_first == time_third)
+
+        # fourth run: delete .cff and expect a RuntimeError
+        os.remove(self.Writer.config_file_name)
+        with pytest.raises(RuntimeError):
+            self.Writer.run_makefakedata()
 
     def test_noise_sfts(self):
         randSeed = 69420
@@ -503,6 +514,7 @@ class TestWriter(BaseForTestsWithData):
 class TestLineWriter(TestWriter):
     label = "TestLineWriter"
     writer_class_to_test = pyfstat.make_sfts.LineWriter
+    signal_parameters = default_signal_params_no_sky
     multi_detectors = "H1"
 
     def test_multi_ifo_fails(self):
@@ -519,6 +531,30 @@ class TestLineWriter(TestWriter):
                 Band=0.5,
                 **self.signal_parameters,
             )
+
+    def test_makefakedata_usecached(self):
+
+        # Make everything from scratch
+        writer = self.writer_class_to_test(
+            outdir=self.outdir,
+            **default_Writer_params,
+            **default_signal_params,
+            **default_transient_params,
+        )
+        writer.make_data(verbose=True)
+        first_time = os.path.getmtime(writer.sftfilepath)
+
+        # Re-run, and should be unchanged
+        writer.make_data(verbose=True)
+        second_time = os.path.getmtime(writer.sftfilepath)
+        self.assertTrue(first_time == second_time)
+
+        # third run: touch the .cff to force regeneration
+        time.sleep(1)  # make sure timestamp is actually different!
+        os.system("touch {}".format(writer.config_file_name))
+        writer.run_makefakedata()
+        third_time = os.path.getmtime(writer.sftfilepath)
+        self.assertFalse(first_time == third_time)
 
     def _check_maximum_power_consistency(self, writer, return_line_power=False):
         times, freqs, data = pyfstat.helper_functions.get_sft_array(writer.sftfilepath)
@@ -563,35 +599,6 @@ class TestLineWriter(TestWriter):
         writer.make_data(verbose=True)
 
         self._check_maximum_power_consistency(writer)
-
-    def test_cosi_scaling(self):
-        signal_params = default_signal_params.copy()
-        writer = self.writer_class_to_test(
-            outdir=self.outdir,
-            **default_Writer_params,
-            **signal_params,
-            **default_transient_params,
-        )
-
-        writer.make_data()
-        basic_power = self._check_maximum_power_consistency(
-            writer, return_line_power=True
-        )
-
-        signal_params["cosi"] = 1.0
-        writer = self.writer_class_to_test(
-            outdir=self.outdir,
-            **default_Writer_params,
-            **signal_params,
-            **default_transient_params,
-        )
-        writer.make_data()
-        corrected_power = self._check_maximum_power_consistency(
-            writer, return_line_power=True
-        )
-        self.assertTrue(
-            np.allclose(corrected_power / basic_power, np.sqrt(8), rtol=0, atol=1e-2)
-        )
 
 
 class TestWriterOtherTsft(TestWriter):

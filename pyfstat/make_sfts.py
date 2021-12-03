@@ -223,6 +223,18 @@ class Writer(BaseSearchClass):
     LAL routines would silently parse them wrongly.
     """
 
+    required_signal_parameters = [
+        # leaving out "F1","F2","psi","phi","tref" as they have defaults
+        "F0",
+        "Alpha",
+        "Delta",
+        "cosi",
+    ]
+    """List of parameters required for a successful execution of Makefakedata_v5.
+    The rest of available parameters are not required as they have default values
+    silently given by Makefakedata_v5
+    """
+
     @helper_functions.initializer
     def __init__(
         self,
@@ -501,19 +513,12 @@ class Writer(BaseSearchClass):
         self.config_file_name = os.path.join(self.outdir, self.label + ".cff")
         self.theta = np.array([self.phi, self.F0, self.F1, self.F2])
 
-        required_signal_params = [
-            # leaving out "F1","F2","psi","phi","tref" as they have defaults
-            "F0",
-            "Alpha",
-            "Delta",
-            "cosi",
-        ]
         if self.h0 and np.any(
-            [getattr(self, k, None) is None for k in required_signal_params]
+            [getattr(self, k, None) is None for k in self.required_signal_parameters]
         ):
             raise ValueError(
                 "If h0>0, also need all of ({:s})".format(
-                    ",".join(required_signal_params)
+                    ",".join(self.required_signal_parameters)
                 )
             )
 
@@ -707,36 +712,34 @@ class Writer(BaseSearchClass):
                 return False
         logging.info("...OK: file(s) found matching '{}'.".format(sftfile))
 
-        if "injectionSources" in cl_mfd:
-            if os.path.isfile(self.config_file_name):
-                if np.any(
-                    [
-                        os.path.getmtime(sftfile)
-                        < os.path.getmtime(self.config_file_name)
-                        for sftfile in self.sftfilenames
-                    ]
-                ):
-                    logging.info(
-                        (
-                            "...the config file '{}' has been modified since"
-                            " creation of the SFT file(s) '{}'. {}"
-                        ).format(self.config_file_name, self.sftfilepath, need_new)
-                    )
-                    return False
-                else:
-                    logging.info(
-                        "...OK: The config file '{}' is older than the SFT file(s)"
-                        " '{}'.".format(self.config_file_name, self.sftfilepath)
-                    )
-                    # NOTE: at this point we assume it's safe to re-use, since
-                    # _check_if_cff_file_needs_rewriting()
-                    # should have already been called before
-            else:
-                raise RuntimeError(
-                    "Commandline requires file '{}' but it is missing.".format(
-                        self.config_file_name
-                    )
+        if os.path.isfile(self.config_file_name):
+            if np.any(
+                [
+                    os.path.getmtime(sftfile) < os.path.getmtime(self.config_file_name)
+                    for sftfile in self.sftfilenames
+                ]
+            ):
+                logging.info(
+                    (
+                        "...the config file '{}' has been modified since"
+                        " creation of the SFT file(s) '{}'. {}"
+                    ).format(self.config_file_name, self.sftfilepath, need_new)
                 )
+                return False
+            else:
+                logging.info(
+                    "...OK: The config file '{}' is older than the SFT file(s)"
+                    " '{}'.".format(self.config_file_name, self.sftfilepath)
+                )
+                # NOTE: at this point we assume it's safe to re-use, since
+                # _check_if_cff_file_needs_rewriting()
+                # should have already been called before
+        elif "injectionSources" in cl_mfd:
+            raise RuntimeError(
+                "Commandline requires file '{}' but it is missing.".format(
+                    self.config_file_name
+                )
+            )
 
         logging.info("...checking new commandline against existing SFT header(s)...")
         # here we check one SFT header from each SFT file,
@@ -1024,23 +1027,26 @@ class LineWriter(Writer):
     NOTE: This functionality is implemented via `lalapps_MakeFakeData_v4`'s `lineFeature` option.
     This version of MFD only supports one interferometer at a time.
 
-    NOTE: All signal parameters except for `h0` and `cosi` will be ignored.
-    `cosi` is used to rescale `h0` with the usual `sqrt(cosi**4 + 6*cosi**2 + 1)` relation.
+    NOTE: All signal parameters except for `h0`, `Freq`, `phi0` and transient parameters will be ignored.
     """
 
     mfd = "lalapps_Makefakedata_v4"
     """The executable (older version that supports the `--lineFeature` option)."""
 
-    required_mfd_line_parameters = [
-        "Freq",
-        "phi0",
+    required_signal_parameters = [
+        "F0",
+        "phi",
         "h0",
-        "cosi",
+    ]
+    """Required parameters for Makefakedata_v4 to success. Any other parameter is
+    silently given a default value by Makefakedata_v4.
+    """
+    signal_parameters_labels = required_signal_parameters + [
         "transientWindowType",
         "transientStartTime",
         "transientTau",
     ]
-    """Other signal parameters will be removed before passing to MFDv4."""
+    """Other signal parameters will be removed before passing to Makefakedata_v4."""
 
     def __init__(self, *args, **kwargs):
 
@@ -1062,17 +1068,26 @@ class LineWriter(Writer):
         """
         super()._parse_args_consistent_with_mfd()
 
+        # FIXME: There should be a smoother way to translate keys
+        lal_required_signal_parameters = self.translate_keys_to_lal(
+            dict(
+                zip(
+                    self.required_signal_parameters,
+                    [0] * len(self.required_signal_parameters),
+                )
+            )
+        )
+
         if any(
-            key not in self.required_mfd_line_parameters
-            for key in self.signal_parameters
+            key not in lal_required_signal_parameters for key in self.signal_parameters
         ):
             logging.warning(
                 "Injection of line artifacts only uses the following parameters:\n"
-                f"{self.required_mfd_line_parameters}.\n"
+                f"{self.required_signal_parameters}.\n"
                 "Any other parameter will be purged from this class now"
             )
             params_to_purge = list(
-                set(self.signal_parameters) - set(self.required_mfd_line_parameters)
+                set(self.signal_parameters) - set(lal_required_signal_parameters)
             )
             logging.info(
                 "Purging input parameters that are not meaningful for LineWriter: {}".format(
@@ -1089,16 +1104,6 @@ class LineWriter(Writer):
             self.signal_formats["transientTauDays"] = self.signal_formats.pop(
                 "transientTau"
             )
-
-        if "cosi" in self.signal_parameters:
-            logging.info(
-                "Computing h0_eff from h0 and cosi. "
-                "This value will be stored in h0, "
-                "as cosi is *not* used by lineFeature."
-            )
-            eta = self.signal_parameters["cosi"]
-            eta2 = eta * eta
-            self.signal_parameters["h0"] *= np.sqrt(eta2 * eta2 + 6 * eta2 + 1)
 
     def calculate_fmin_Band(self):
         """Set fmin and Band for the output SFTs to cover.
@@ -1118,13 +1123,12 @@ class LineWriter(Writer):
     def _build_MFD_command_line(self):
         """Generate the SFT data calling lalapps_Makefakedata_v4."""
 
-        mfd = "lalapps_Makefakedata_v4"
-        cl_mfd = [mfd]
+        cl_mfd = [self.mfd]
 
         cl_mfd.append("--lineFeature=TRUE")
         cl_mfd.append("--outSingleSFT=TRUE")
         cl_mfd.append('--outSFTbname="{}"'.format(self.sftfilenames[0]))
-        cl_mfd.append("--IFO={}".format(self.detectors))
+        cl_mfd.append('--IFO="{}"'.format(self.detectors))
 
         if self.noiseSFTs is not None and self.SFTWindowType is None:
             raise ValueError(
@@ -1145,24 +1149,26 @@ class LineWriter(Writer):
                 )
             cl_mfd.append('--noiseSFTs="{}"'.format(self.noiseSFTs))
         if self.sqrtSX:
-            cl_mfd.append('--noiseSqrtSh="{}"'.format(self.sqrtSX))
+            cl_mfd.append("--noiseSqrtSh={}".format(self.sqrtSX))
 
         if self.SFTWindowType is not None:
             cl_mfd.append('--window="{}"'.format(self.SFTWindowType))
             cl_mfd.append("--tukeyBeta={}".format(self.SFTWindowBeta))
         cl_mfd.append("--startTime={}".format(self.tstart))
         cl_mfd.append("--duration={}".format(self.duration))
-        if hasattr(self, "fmin") and self.fmin:
+        if getattr(self, "fmin", None):
             cl_mfd.append("--fmin={:.16g}".format(self.fmin))
-        if hasattr(self, "Band") and self.Band:
+        if getattr(self, "Band", None):
             cl_mfd.append("--Band={:.16g}".format(self.Band))
         cl_mfd.append("--Tsft={}".format(self.Tsft))
         if self.h0:
             cl_mfd.append(
                 " ".join(
-                    f"--{key} {value}" for key, value in self.signal_parameters.items()
+                    f"--{key}={value:.16g}"
+                    for key, value in self.signal_parameters.items()
                 )
             )
+            cl_mfd.append("--cosi=0")  # Required by MFDv4
 
         earth_ephem = getattr(self, "earth_ephem", None)
         sun_ephem = getattr(self, "sun_ephem", None)
