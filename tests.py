@@ -45,7 +45,7 @@ default_Writer_params = {
     "Band": None,
 }
 
-default_signal_params = {
+default_signal_params_no_sky = {
     "F0": 30.0,
     "F1": -1e-10,
     "F2": 0,
@@ -53,8 +53,11 @@ default_signal_params = {
     "cosi": 0,
     "psi": 0,
     "phi": 0,
-    "Alpha": 5e-1,
-    "Delta": 1.2,
+}
+
+default_signal_params = {
+    **default_signal_params_no_sky,
+    **{"Alpha": 5e-1, "Delta": 1.2},
 }
 
 
@@ -503,6 +506,7 @@ class TestWriter(BaseForTestsWithData):
 class TestLineWriter(TestWriter):
     label = "TestLineWriter"
     writer_class_to_test = pyfstat.make_sfts.LineWriter
+    signal_parameters = default_signal_params_no_sky
     multi_detectors = "H1"
 
     def test_multi_ifo_fails(self):
