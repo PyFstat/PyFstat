@@ -238,21 +238,29 @@ class TestWriter(BaseForTestsWithData):
             os.remove(self.Writer.config_file_name)
         if os.path.isfile(self.Writer.sftfilepath):
             os.remove(self.Writer.sftfilepath)
+
         # first run: make everything from scratch
         self.Writer.make_cff(verbose=True)
         self.Writer.run_makefakedata()
         time_first = os.path.getmtime(self.Writer.sftfilepath)
+
         # second run: should re-use .cff and .sft
         self.Writer.make_cff(verbose=True)
         self.Writer.run_makefakedata()
         time_second = os.path.getmtime(self.Writer.sftfilepath)
         self.assertTrue(time_first == time_second)
+
         # third run: touch the .cff to force regeneration
         time.sleep(1)  # make sure timestamp is actually different!
         os.system("touch {}".format(self.Writer.config_file_name))
         self.Writer.run_makefakedata()
         time_third = os.path.getmtime(self.Writer.sftfilepath)
         self.assertFalse(time_first == time_third)
+
+        # fourth run: delete .cff and expect a RuntimeError
+        os.remove(self.Writer.config_file_name)
+        with pytest.raises(RuntimeError):
+            self.Writer.run_makefakedata()
 
     def test_noise_sfts(self):
         randSeed = 69420
