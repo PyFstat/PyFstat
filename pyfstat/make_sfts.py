@@ -1632,17 +1632,22 @@ class FrequencyModulatedArtifactWriter(Writer):
         # We don't try to reproduce the NB filename convention exactly,
         # as there could be always rounding offsets with the number of bins,
         # instead we use wildcards there.
+        # FIXME: `_old` versions added for backwards compatibility
+        # while https://git.ligo.org/lscsoft/lalsuite/-/merge_requests/1687
+        # has not made it into the conda-forge lalapps package yet,
+        # to be dropped later
         outfreq = int(np.floor(self.fmin))
         outwidth = int(np.floor(self.Band))
+        SFTFilename_old = SFTFilename + f"_NB_F{outfreq:04d}Hz*_W{outwidth:04d}Hz*"
         SFTFilename += f"_NBF{outfreq:04d}Hz*W{outwidth:04d}Hz*"
         SFTFilename += f"-{self.tstart}-{self.duration}.sft"
+        SFTFilename_old += f"-{self.tstart}-{self.duration}.sft"
+        SFTFile_fullpath_old = os.path.join(self.outdir, SFTFilename_old)
         SFTFile_fullpath = os.path.join(self.outdir, SFTFilename)
-
-        if os.path.isfile(SFTFile_fullpath):
-            logging.info(
-                f"Removing previous file(s) {SFTFile_fullpath} (no caching implemented)."
-            )
-            helper_functions.run_commandline(f"rm {SFTFile_fullpath}")
+        for f in [SFTFile_fullpath, SFTFile_fullpath_old]:
+            if os.path.isfile(f):
+                logging.info(f"Removing previous file(s) {f} (no caching implemented).")
+                helper_functions.run_commandline(f"rm {f}")
 
         inpattern = os.path.join(self.tmp_outdir, "*sft")
         cl_splitSFTS = "lalapps_splitSFTs -fs {} -fb {} -fe {} -n {} -- {}".format(
@@ -1651,12 +1656,17 @@ class FrequencyModulatedArtifactWriter(Writer):
         helper_functions.run_commandline(cl_splitSFTS)
         helper_functions.run_commandline(f"rm -r {self.tmp_outdir}")
         outglob = glob.glob(SFTFile_fullpath)
-        if len(outglob) != 1:
+        outglob_old = glob.glob(SFTFile_fullpath_old)
+        if len(outglob) + len(outglob_old) != 1:
             raise IOError(
-                f"Expected to produce exactly 1 merged file matching pattern '{SFTFile_fullpath}',"
-                f" but got {len(outglob)} matches: {outglob}. Something went wrong!"
+                "Expected to produce exactly 1 merged file"
+                f" matching pattern '{SFTFile_fullpath}',"
+                f" or '{SFTFile_fullpath_old}',"
+                f" but got {len(outglob)+len(outglob_old)} matches:"
+                f" {outglob if len(outglob)>0 else outglob_old}."
+                " Something went wrong!"
             )
-        self.sftfilepath = outglob[0]
+        self.sftfilepath = outglob[0] if len(outglob) > 0 else outglob_old[0]
         logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
 
     def pre_compute_evolution(self):
