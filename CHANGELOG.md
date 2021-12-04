@@ -1,3 +1,9 @@
+## 1.12.1 [04/12/2021]
+
+ - add backwards compatibility workaround
+   for lalapps 7.3.0 in `FrequencyModulatedArtifactWriter`
+   to fix running with conda dependencies
+
 ## 1.12.0 [03/12/2021]
 
  - drop python 3.6 support
