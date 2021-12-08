@@ -89,14 +89,8 @@ class BaseSearchClass:
             respectively at evenly spaced times, as passed to CreateFstatInput
         """
         earth_ephem_default, sun_ephem_default = helper_functions.get_ephemeris_files()
-        if earth_ephem is None:
-            self.earth_ephem = earth_ephem_default
-        else:
-            self.earth_ephem = earth_ephem
-        if sun_ephem is None:
-            self.sun_ephem = sun_ephem_default
-        else:
-            self.sun_ephem = sun_ephem
+        self.earth_ephem = earth_ephem or earth_ephem_default
+        self.sun_ephem = sun_ephem or sun_ephem_default
 
     def _set_init_params_dict(self, argsdict):
         """Store the initial input arguments, e.g. for logging output."""
