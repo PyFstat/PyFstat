@@ -16,8 +16,6 @@ jobs:
     strategy:
       matrix:
         python-version: [3.7, 3.8, 3.9]
-    env:
-      LALPULSAR_DATADIR: ${{ github.workspace }}/ephem
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -34,9 +32,8 @@ jobs:
     - name: Style check with black
       run: |
         black --check --diff .
-    - name: Set up ephemerides and test with pytest
+    - name: Run test suite with pytest
       run: |
-        source bin/get-and-export-ephemeris.sh
         (cd .. && pytest --durations=0 $GITHUB_WORKSPACE/tests.py --log-file=$GITHUB_WORKSPACE/tests.log)
     - name: Build package
       run: |

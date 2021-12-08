@@ -24,7 +24,6 @@ jobs:
         pip install -e ${GITHUB_WORKSPACE}[chainconsumer]
     - name: Run all the examples
       run: |
-        source bin/get-and-export-ephemeris.sh
         python $GITHUB_WORKSPACE/examples/run_all_examples.py
     - name: Save output files as artifacts (*.sft files excluded!)
       uses: actions/upload-artifact@v2
