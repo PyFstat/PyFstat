@@ -826,6 +826,8 @@ class Writer(BaseSearchClass):
                 raise IOError(
                     f"It seems we successfully ran {self.mfd},"
                     f" but did not get the expected SFT file path(s): {self.sftfilepath}."
+                    f" What we have in the output directory '{self.outdir}' is:"
+                    f" {os.listdir(self.outdir)}"
                 )
             logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
             logging.info("Now validating each SFT file...")
