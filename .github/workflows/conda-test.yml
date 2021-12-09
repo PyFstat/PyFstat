@@ -1,0 +1,31 @@
+name: Conda Integration Tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  conda-test:
+    name: conda test
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: 3.9
+          mamba-version: "*"
+          channels: conda-forge
+          channel-priority: true
+          activate-environment: pyfstat-dev
+          environment-file: etc/pyfstat-dev.yml
+          auto-activate-base: false
+      - name: check conda
+        shell: bash -l {0}
+        run: |
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show
+          printenv | sort
+      - name: test with pytest
+        run: |
+        (cd .. && pytest --durations=0 $GITHUB_WORKSPACE/tests.py --log-file=$GITHUB_WORKSPACE/tests.log)
