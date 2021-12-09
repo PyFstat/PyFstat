@@ -448,6 +448,41 @@ class TestWriter(BaseForTestsWithData):
         )
         self.assertTrue(os.path.isfile(expected_SFT_filepath))
 
+    def test_noise_sfts_narrowbanded(self):
+
+        # create some broad SFTs
+        writer = self.writer_class_to_test(
+            label="test_noiseSFTs_broad",
+            outdir=self.outdir,
+            duration=self.duration,
+            Tsft=self.Tsft,
+            tstart=self.tstart,
+            detectors="H1",
+            SFTWindowType=self.SFTWindowType,
+            SFTWindowBeta=self.SFTWindowBeta,
+            sqrtSX=self.sqrtSX,
+            Band=3,
+            F0=self.signal_parameters["F0"],
+        )
+        writer.make_data(verbose=True)
+        # split them by frequency
+        cl_split = "lalapps_splitSFTs --frequency-bandwidth 1"
+        cl_split += f" --start-frequency {writer.fmin}"
+        cl_split += f" --end-frequency {writer.fmin+writer.Band}"
+        cl_split += f" --output-directory {self.outdir}"
+        cl_split += f" -- {writer.sftfilepath}"
+        pyfstat.helper_functions.run_commandline(cl_split)
+        # reuse the split SFTs as noiseSFTs
+        NB_recycling_writer = self.writer_class_to_test(
+            label="test_noiseSFTs_recycle",
+            outdir=self.outdir,
+            SFTWindowType=self.SFTWindowType,
+            SFTWindowBeta=self.SFTWindowBeta,
+            noiseSFTs=os.path.join(self.outdir, "*NB*"),
+            # **self.signal_parameters, # FIXME this will fail, need MFDv5 fix
+        )
+        NB_recycling_writer.make_data(verbose=True)
+
     def _test_writer_with_tsfiles(self, gaps=False):
         """helper function to rerun with/without gaps"""
         IFOs = self.multi_detectors.split(",")
