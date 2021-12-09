@@ -133,13 +133,25 @@ def get_ephemeris_files():
     """Set the ephemeris files to use for the Earth and Sun.
 
     This looks first for a configuration file `~/.pyfstat.conf`
-    and next in the $LALPULSAR_DATADIR environment variable.
+    giving individual earth/sun file paths like this:
+    ```
+    earth_ephem = '/my/path/earth00-40-DE405.dat.gz'
+    sun_ephem = '/my/path/sun00-40-DE405.dat.gz'
+    ```
 
-    If neither source provides the necessary files,
-    a warning is emitted and the user can still run PyFstat searches,
-    but must then include ephemeris options manually on each class instantiation.
+    If such a file is not found or does not conform to that format,
+    then the `$LALPULSAR_DATADIR` environment variable is checked
+    for the default `[earth/sun]00-40-DE405` ephemerides.
+    NOTE that this solution is deprecated
+    and will no longer be supported in future versions!
 
-    The 'DE405' ephemerides version provided with lalpulsar is expected.
+    If that also fails,
+    a warning is emitted.
+    However, the user can still continue,
+    by either relying on lal's recently improved ability to find proper
+    default fallback paths for the `[earth/sun]00-40-DE405` ephemerides
+    with both pip- and conda-installed packages,
+    or by setting the ephemeris options manually on each class instantiation.
 
     Returns
     ----------
@@ -148,7 +160,12 @@ def get_ephemeris_files():
     """
     config_file = os.path.join(os.path.expanduser("~"), ".pyfstat.conf")
     env_var = "LALPULSAR_DATADIR"
-    please = "Please provide the ephemerides paths when initialising searches."
+    ephem_version = "DE405"
+    earth_ephem = f"earth00-40-{ephem_version}.dat.gz"
+    sun_ephem = f"sun00-40-{ephem_version}.dat.gz"
+    please = "Will fall back to lal's automatic path resolution for files"
+    please += f" [{earth_ephem},{sun_ephem}]."
+    please += " Alternatively, set 'earth_ephem' and 'sun_ephem' class options."
     if os.path.isfile(config_file):
         d = {}
         with open(config_file, "r") as f:
@@ -162,40 +179,28 @@ def get_ephemeris_files():
             earth_ephem = d["earth_ephem"]
             sun_ephem = d["sun_ephem"]
         except KeyError:
-            logging.warning(
-                "No [earth/sun]_ephem found in " + config_file + ". " + please
-            )
-            earth_ephem = None
-            sun_ephem = None
+            logging.warning(f"No [earth/sun]_ephem found in {config_file}. {please}")
     elif env_var in list(os.environ.keys()):
-        ephem_version = "DE405"
-        earth_ephem = os.path.join(
-            os.environ[env_var], "earth00-40-{:s}.dat.gz".format(ephem_version)
-        )
-        sun_ephem = os.path.join(
-            os.environ[env_var], "sun00-40-{:s}.dat.gz".format(ephem_version)
-        )
-        if not (os.path.isfile(earth_ephem) and os.path.isfile(sun_ephem)):
-            earth_ephem = os.path.join(
-                os.environ[env_var], "earth00-19-{:s}.dat.gz".format(ephem_version)
+        earth_ephem = os.path.join(os.environ[env_var], earth_ephem)
+        sun_ephem = os.path.join(os.environ[env_var], sun_ephem)
+        if os.path.isfile(earth_ephem) and os.path.isfile(sun_ephem):
+            logging.warning(
+                f"Relying on ${env_var} for ephemerides is deprecated"
+                " and will no longer be supported in future versions!"
+                " You can instead rely on lal's automatic path resolution,"
+                " use a '.pyfstat.conf' file,"
+                " or provide 'earth_ephem' and 'sun_ephem' class options."
             )
-            sun_ephem = os.path.join(
-                os.environ[env_var], "sun00-19-{:s}.dat.gz".format(ephem_version)
+        else:
+            logging.warning(
+                f"Default ephemerides [{earth_ephem},{sun_ephem}]"
+                f" not found in the {os.environ[env_var]} directory. {please}"
             )
-            if not (os.path.isfile(earth_ephem) and os.path.isfile(sun_ephem)):
-                logging.warning(
-                    "Default [earth/sun]00-[19/40]-" + ephem_version + " ephemerides "
-                    "not found in the " + os.environ[env_var] + " directory. " + please
-                )
-                earth_ephem = None
-                sun_ephem = None
     else:
         logging.warning(
-            "No " + config_file + " file or $" + env_var + " environment "
-            "variable found. " + please
+            f"No {config_file} file or ${env_var} environment"
+            f" variable found. {please}"
         )
-        earth_ephem = None
-        sun_ephem = None
     return earth_ephem, sun_ephem
 
 
