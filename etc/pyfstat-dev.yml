@@ -1,0 +1,22 @@
+name: pyfstat-dev
+
+channels:
+  - conda-forge
+
+dependencies:
+  - pip
+  - numpy
+  - matplotlib-base >=2.1
+  - scipy
+  - ptemcee
+  - corner
+  - dill
+  - tqdm
+  - bashplotlib
+  - peakutils
+  - pathos
+  - python-lal >=7.1.0
+  - python-lalpulsar >=3.1.0
+  - lalapps >=7.3.0
+  - pytest
+  
