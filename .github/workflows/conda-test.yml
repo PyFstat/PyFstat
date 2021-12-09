@@ -27,5 +27,6 @@ jobs:
           conda config --show
           printenv | sort
       - name: test with pytest
+        shell: bash -l {0}
         run: |
           (cd .. && pytest --durations=0 $GITHUB_WORKSPACE/tests.py --log-file=$GITHUB_WORKSPACE/tests.log)
