@@ -443,7 +443,7 @@ class Writer(BaseSearchClass):
                 lalpulsar.OfficialSFTFilename(
                     ifo_name[0],
                     ifo_name[1],
-                    ifo_catalog.length,
+                    time_stamps.length,  # ifo_catalog.length fails for NB case
                     this_Tsft,
                     this_start_time,
                     this_end_time - this_start_time,
@@ -588,28 +588,33 @@ class Writer(BaseSearchClass):
     def calculate_fmin_Band(self):
         """Set fmin and Band for the output SFTs to cover.
 
-        Either uses the user-provided `Band` and puts `F0` in the middle,
-        does nothing to later reuse the full bandwidth of `noiseSFTs`,
+        Either uses the user-provided `Band` and puts `F0` in the middle;
+        does nothing to later reuse the full bandwidth of `noiseSFTs`
+        (only if using MFDv5);
         or if `F0!=None`, `noiseSFTs=None` and `Band=None`
         it estimates a minimal band for just the injected signal:
         F-stat covering band plus extra bins for demod default parameters.
         This way a perfectly matched single-template `ComputeFstat` analysis
         should run through perfectly on the returned SFTs.
         For any wider-band or mismatched search, one needs to set `Band` manually.
-
-        If you want to use `noiseSFTs` but auto-estimate a minimal band,
-        call `helper_functions.get_covering_band()` yourself
-        and pass the results to `Writer` as `fmin`, `Band`.
+        If using MFDv4, at least `F0` is required even if `noiseSFTs!=None`.
         """
-        if self.F0 is not None and self.Band is not None:
+        if self.F0 is None and self.Band is not None:
+            raise ValueError("Band option can only be set if F0 is also given.")
+        elif self.F0 is not None and self.Band is not None:
             self.fmin = self.F0 - 0.5 * self.Band
-        elif self.noiseSFTs:
+        elif self.noiseSFTs and not self.mfd.endswith("v4"):
             logging.info("Generating SFTs with full bandwidth from noiseSFTs.")
         elif self.F0 is None:
-            raise ValueError(
-                "Need F0 and Band, or one of (F0 or noiseSFTs)"
-                " to auto-estimate bandwidth."
-            )
+            err_msg = "Need F0 and Band,"
+            if not self.mfd.endswith("v4"):
+                err_msg += " or noiseSFTs,"
+            err_msg += " or at least F0 to auto-estimate bandwidth around it."
+            if self.mfd.endswith("v4"):
+                err_msg += (
+                    f" Since we are using {self.mfd}, we need this even with noiseSFTs."
+                )
+            raise ValueError(err_msg)
         else:
             extraBins = (
                 # matching extraBinsFull in XLALCreateFstatInput():
@@ -826,6 +831,8 @@ class Writer(BaseSearchClass):
                 raise IOError(
                     f"It seems we successfully ran {self.mfd},"
                     f" but did not get the expected SFT file path(s): {self.sftfilepath}."
+                    f" What we have in the output directory '{self.outdir}' is:"
+                    f" {os.listdir(self.outdir)}"
                 )
             logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
             logging.info("Now validating each SFT file...")
@@ -1104,21 +1111,6 @@ class LineWriter(Writer):
             self.signal_formats["transientTauDays"] = self.signal_formats.pop(
                 "transientTau"
             )
-
-    def calculate_fmin_Band(self):
-        """Set fmin and Band for the output SFTs to cover.
-
-        This method adapts Writer.calculate_fmin_Band to work with MakeFakeData_v4,
-        as MakeFakeData_v4 *requires* fmin and Band to be given.
-
-        The overriding prevents (fmin, Band) from not being set when self.noiseSFTs
-        evaluates to true.
-
-        See Writer.calculate_fmin_Band for further details.
-        """
-        hide_noiseSFTs, self.noiseSFTs = self.noiseSFTs, None
-        super().calculate_fmin_Band()
-        self.noiseSFTs = hide_noiseSFTs
 
     def _build_MFD_command_line(self):
         """Generate the SFT data calling lalapps_Makefakedata_v4."""
