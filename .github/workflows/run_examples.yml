@@ -10,8 +10,6 @@ on:
 jobs:
   examples:
     runs-on: ubuntu-latest
-    env:
-      LALPULSAR_DATADIR: ${{ github.workspace }}/ephem
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.8
