@@ -2286,6 +2286,24 @@ class TestGridSearch(BaseForTestsWithData):
         self.assertTrue(np.max(np.abs(CFSv2_out["freq"] - pyfstat_out["F0"]) < 1e-16))
         self.assertTrue(np.max(np.abs(CFSv2_out["2F"] - pyfstat_out["twoF"]) < 1))
         self.assertTrue(np.max(CFSv2_out["2F"]) == np.max(pyfstat_out["twoF"]))
+        self.search.generate_loudest()
+        self.assertTrue(os.path.isfile(self.search.loudest_file))
+        loudest = {}
+        for run, f in zip(
+            ["CFSv2", "PyFstat"], [CFSv2_loudest_file, self.search.loudest_file]
+        ):
+            loudest[run] = pyfstat.helper_functions.read_par(
+                filename=f,
+                suffix="loudest",
+                raise_error=False,
+            )
+        for key in ["Alpha", "Delta", "Freq", "f1dot", "f2dot", "f3dot"]:
+            self.assertTrue(
+                np.abs(loudest["CFSv2"][key] - loudest["PyFstat"][key]) < 1e-16
+            )
+        self.assertTrue(
+            np.abs(loudest["CFSv2"]["twoF"] - loudest["PyFstat"]["twoF"]) < 1
+        )
 
     def test_semicoherent_grid_search(self):
         # FIXME this one doesn't check the results at all yet

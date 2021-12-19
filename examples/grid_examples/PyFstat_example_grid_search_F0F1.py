@@ -85,6 +85,7 @@ print(
         ),
     )
 )
+search.generate_loudest()
 
 print("Plotting 2F(F0)...")
 search.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")

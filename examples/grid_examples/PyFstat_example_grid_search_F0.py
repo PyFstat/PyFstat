@@ -84,6 +84,7 @@ print(
         ),
     )
 )
+search.generate_loudest()
 
 print("Plotting 2F(F0)...")
 fig, ax = plt.subplots()

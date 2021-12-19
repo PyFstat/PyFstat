@@ -780,6 +780,24 @@ class GridSearch(BaseSearchClass):
         for k, v in d.items():
             print("  {}={}".format(k, v))
 
+    def generate_loudest(self):
+        """Use lalapps_ComputeFstatistic_v2 to produce a .loudest file"""
+        max_params = self.get_max_twoF()
+        max_params.pop("twoF")
+        max_params = self.translate_keys_to_lal(max_params)
+        self.loudest_file = helper_functions.generate_loudest_file(
+            max_params=max_params,
+            tref=self.tref,
+            outdir=self.outdir,
+            label=self.label,
+            sftfilepattern=self.sftfilepattern,
+            minStartTime=self.minStartTime,
+            maxStartTime=self.maxStartTime,
+            transientWindowType=getattr(self, "transientWindowType", None),
+            earth_ephem=self.earth_ephem,
+            sun_ephem=self.sun_ephem,
+        )
+
     def set_out_file(self, extra_label=None):
         """Set (or reset) the name of the main output file.
 

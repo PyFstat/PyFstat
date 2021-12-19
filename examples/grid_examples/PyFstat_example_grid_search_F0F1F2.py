@@ -85,6 +85,7 @@ print(
         ),
     )
 )
+search.generate_loudest()
 
 # FIXME: workaround for matplotlib "Exceeded cell block limit" errors
 agg_chunksize = 10000
