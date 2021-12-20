@@ -964,10 +964,10 @@ class MCMCSearch(BaseSearchClass):
 
                 for tick in ax.xaxis.get_major_ticks():
                     # tick.label1.set_fontsize(8)
-                    tick.label.set_rotation(30)
+                    tick.label1.set_rotation(30)
                 for tick in ax.yaxis.get_major_ticks():
                     # tick.label1.set_fontsize(8)
-                    tick.label.set_rotation(30)
+                    tick.label1.set_rotation(30)
 
             plt.tight_layout()
             fig.subplots_adjust(hspace=0.1, wspace=0.1)
