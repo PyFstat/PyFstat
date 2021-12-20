@@ -246,7 +246,8 @@ for advice or just jump in and submit an
 [pull request](https://github.com/PyFstat/PyFstat/compare).
 
 Here's what you need to know:
-* The github automated tests currently run on `python` [3.7,3.8,3.9] and new PRs need to pass all these.
+* The github automated tests currently run on `python` [3.7,3.8,3.9,3.10]
+  and new PRs need to pass all these.
 * The automated test also runs
   the [black](https://black.readthedocs.io) style checker
   and the [flake8](https://flake8.pycqa.org/en/latest/) linter.
