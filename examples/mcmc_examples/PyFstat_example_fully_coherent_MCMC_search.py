@@ -98,6 +98,8 @@ mcmc.print_summary()
 mcmc.plot_corner(add_prior=True, truths=signal_parameters)
 mcmc.plot_prior_posterior(injection_parameters=signal_parameters)
 
+mcmc.generate_loudest()
+
 # plot cumulative 2F, first building a dict as required for PredictFStat
 d, maxtwoF = mcmc.get_max_twoF()
 for key, val in mcmc.theta_prior.items():

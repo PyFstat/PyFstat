@@ -166,6 +166,7 @@ if __name__ == "__main__":
     )
     gridsearch.run()
     gridsearch.print_max_twoF()
+    gridsearch.generate_loudest()
 
     # do some plots of the GridSearch results
     if not sky:  # this plotter can't currently deal with too large result arrays

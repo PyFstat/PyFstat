@@ -1996,60 +1996,45 @@ class MCMCSearch(BaseSearchClass):
 
     def generate_loudest(self):
         """Use lalapps_ComputeFstatistic_v2 to produce a .loudest file"""
-        logging.info("Running CFSv2 to get .loudest file")
-        self.write_par(method="twoFmax")
-        params = self.read_par(label=self.label + "_max2F")
-        if np.any([key in params for key in ["delta_F0", "delta_F1", "tglitch"]]):
-            raise RuntimeError(
-                "CFSv2 --outputLoudest cannot deal with glitch parameters."
-            )
-        if getattr(self, "transientWindowType", None) is not None:
-            logging.warning(
-                "CFSv2 --outputLoudest always reports the maximum of the"
-                " standard CW 2F-statistic, not the transient max2F."
-            )
+        max_params, max_twoF = self.get_max_twoF()
         for key in self.theta_prior:
-            if key not in params:
-                params[key] = self.theta_prior[key]
-        params_sanitised = self.translate_keys_to_lal(params)
+            if key not in max_params:
+                max_params[key] = self.theta_prior[key]
+        max_params = self.translate_keys_to_lal(max_params)
         for key in ["transient-t0Epoch", "transient-t0Offset", "transient-tau"]:
-            if (
-                key in params_sanitised
-                and not int(params_sanitised[key]) == params_sanitised[key]
-            ):
-                rounded = int(round(params_sanitised[key]))
+            if key in max_params and not int(max_params[key]) == max_params[key]:
+                rounded = int(round(max_params[key]))
                 logging.warning(
                     "Rounding {:s}={:f} to {:d} for CFSv2 call.".format(
-                        key, params_sanitised[key], rounded
+                        key, max_params[key], rounded
                     )
                 )
-                params_sanitised[key] = rounded
-        signal_parameter_keys = self.translate_keys_to_lal(self.theta_prior).keys()
-
-        self.loudest_file = os.path.join(self.outdir, self.label + ".loudest")
-        cmd = "lalapps_ComputeFstatistic_v2 "
-        cmd += (
-            '-D "{}" --outputLoudest="{}" --minStartTime={} --maxStartTime={} --refTime={} '
-        ).format(
-            self.sftfilepattern,
-            self.loudest_file,
-            self.minStartTime,
-            self.maxStartTime,
-            self.tref,
+                max_params[key] = rounded
+        signal_parameter_keys = list(
+            self.translate_keys_to_lal(self.theta_prior).keys()
         )
-        cmd += " ".join(
-            [
-                "--{0} {1}".format(key, params_sanitised[key])
-                for key in signal_parameter_keys
-            ]
+        par_keys = list(max_params.keys())
+        pardiff = np.setdiff1d(par_keys, signal_parameter_keys)
+        if len(pardiff) > 0:
+            raise RuntimeError(
+                f"Dictionary for parameters at max2F point {par_keys}"
+                " did include keys"
+                # " (other than refTime)"
+                " not expected from signal parameters being searched over:"
+                f" {pardiff} not in {signal_parameter_keys}."
+            )
+        self.loudest_file = helper_functions.generate_loudest_file(
+            max_params=max_params,
+            tref=self.tref,
+            outdir=self.outdir,
+            label=self.label,
+            sftfilepattern=self.sftfilepattern,
+            minStartTime=self.minStartTime,
+            maxStartTime=self.maxStartTime,
+            transientWindowType=getattr(self, "transientWindowType", None),
+            earth_ephem=self.earth_ephem,
+            sun_ephem=self.sun_ephem,
         )
-        if getattr(self, "transientWindowType", None) is not None:
-            cmd += " --transient-WindowType='{}'".format(self.transientWindowType)
-        if getattr(self, "earth_ephem", None) is not None:
-            cmd += " --ephemEarth='{}'".format(self.earth_ephem)
-        if getattr(self, "sun_ephem", None) is not None:
-            cmd += " --ephemSun='{}'".format(self.sun_ephem)
-        helper_functions.run_commandline(cmd, return_output=False)
 
     def write_prior_table(self):
         """Generate a .tex file of the prior"""
