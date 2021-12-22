@@ -1176,7 +1176,7 @@ def generate_loudest_file(
         "ephemEarth": earth_ephem,
         "ephemSun": sun_ephem,
     }
-    CFSv2_params.update({par: key for par, key in opt_params.items() if key})
+    CFSv2_params.update({key: val for key, val in opt_params.items() if val})
     cmd += " ".join([f"--{key}={val}" for key, val in CFSv2_params.items()])
 
     run_commandline(cmd, return_output=False)
