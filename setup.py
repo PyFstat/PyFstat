@@ -87,7 +87,7 @@ setup(
         "bashplotlib",
         "corner",
         "dill",
-        "lalsuite>=7.1",
+        "lalsuite>=7.2",
         "matplotlib>=2.1",
         "numpy",
         "pathos",

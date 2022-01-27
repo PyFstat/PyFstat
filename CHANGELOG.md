@@ -1,3 +1,17 @@
+## 1.13.0 [TBD]
+
+ - simplify ephemerides files handling:
+   - lalsuite >= 7.2.0 (lalpulsar >= 3.1.1)
+     now includes a sufficient minimal set by default
+     and has gotten much better at resolving default paths
+   - no manual setup should be required any more for `pip` installs
+   - remove download script
+   - deprecate using $LALPULSAR_DATADIR
+ - bump LALSuite version requirements correspondingly
+ - `Writer` classes: fix bug with spurious expected filename mismatch
+   if given `noiseSFTs` including multiple frequency-segmented SFTs
+
+
 ## 1.12.1 [04/12/2021]
 
  - add backwards compatibility workaround

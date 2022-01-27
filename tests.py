@@ -2262,11 +2262,6 @@ class TestGridSearch(BaseForTestsWithData):
         cl_CFSv2.append("--f1dot {} --f1dotBand 0".format(self.F1))
         cl_CFSv2.append("--DataFiles '{}'".format(self.Writer.sftfilepath))
         cl_CFSv2.append("--refTime {}".format(self.tref))
-        earth_ephem, sun_ephem = pyfstat.helper_functions.get_ephemeris_files()
-        if earth_ephem is not None:
-            cl_CFSv2.append('--ephemEarth="{}"'.format(earth_ephem))
-        if sun_ephem is not None:
-            cl_CFSv2.append('--ephemSun="{}"'.format(sun_ephem))
         cl_CFSv2.append("--outputFstat " + CFSv2_out_file)
         cl_CFSv2.append("--outputLoudest " + CFSv2_loudest_file)
         # to match ComputeFstat default (and hence PyFstat) defaults on older

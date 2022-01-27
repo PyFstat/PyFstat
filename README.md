@@ -70,9 +70,9 @@ conda install -c conda-forge pyfstat
 
 If getting PyFstat from conda-forge, it already includes the required ephemerides files.
 
-### pip install from PyPi
+### pip install from PyPI
 
-PyPi releases are available from https://pypi.org/project/PyFstat/.
+PyPI releases are available from https://pypi.org/project/PyFstat/.
 
 Note that the PyFstat installation will fail at the
 LALSuite dependency stage
@@ -91,7 +91,7 @@ If you are not installing into a [venv](https://docs.python.org/3/library/venv.h
 or [conda environment](#conda-installation),
 on many systems you may need to use the `--user` flag.
 
-Note that, if using pip, you **need to [install ephemerides files](#ephemerides-installation) manually**.
+Recent releases now also include a sufficient minimal set of ephemerides files.
 
 ### pip install from github
 
@@ -106,7 +106,8 @@ or, if you have an ssh key installed in github:
 pip install git+ssh://git@github.com/PyFstat/PyFstat
 ```
 
-In this case, you also **need to [install ephemerides files](#ephemerides-installation) manually**.
+This should pull in all dependencies in the same way as installing from PyPI,
+and recent lalsuite dependencies will include ephemerides files too.
 
 ### install PyFstat from source (Zenodo or git clone)
 
@@ -143,7 +144,8 @@ python -c 'import pyfstat'
 if no error message is output, then you have installed `pyfstat`. Note that
 the module will be installed to whichever python executable you call it from.
 
-In this case, you also **need to [install ephemerides files](#ephemerides-installation) manually**.
+This should pull in all dependencies in the same way as installing from PyPI,
+and recent lalsuite dependencies will include ephemerides files too.
 
 ### Dependencies
 
@@ -207,59 +209,45 @@ A minimal configuration line to use would be e.g.:
 
 PyFstat requires paths to earth and sun ephemerides files
 in order to use the `lalpulsar.ComputeFstat` module and various `lalapps` tools.
+Recent releases of the `lal` and `lalpulsar` dependencies from `conda`
+or `lalsuite` from PyPI
+include a sufficient minimal set of such files
+(the `[earth/sun]00-40-DE405` default versions)
+and no further setup should be needed.
+The same should be true if you have built and installed LALSuite from source,
+and set your paths up properly through something like
+`source $MYLALPATH/etc/lalsuite-user-env.sh`.
 
-If you have done `pip install lalsuite`
-(or it got pulled in automatically as a dependency),
-you need to manually download at least these two files:
-*  [earth00-40-DE405.dat.gz](https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/earth00-40-DE405.dat.gz)
-*  [sun00-40-DE405.dat.gz](https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/sun00-40-DE405.dat.gz)
-
-(Other ephemerides versions exist, but these two files should be sufficient for most applications.)
+However, if you run into errors with these files not found,
+or want to use different versions,
+you can manually download files from
+[this directory](https://git.ligo.org/lscsoft/lalsuite/-/tree/master/lalpulsar/lib).
 You then need to tell PyFstat where to find these files,
-by either setting an environment variable `$LALPULSAR_DATADIR`
-or by creating a `~/.pyfstat.conf` file as described further below.
-If you are working with a virtual environment,
-you should be able to get a full working ephemerides installation with these commands:
-```
-mkdir -p $VIRTUAL_ENV/share/lalpulsar
-wget https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/earth00-40-DE405.dat.gz -P $VIRTUAL_ENV/share/lalpulsar
-wget https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/sun00-40-DE405.dat.gz -P $VIRTUAL_ENV/share/lalpulsar
-echo 'export LALPULSAR_DATADIR=$VIRTUAL_ENV/share/lalpulsar' >> ${VIRTUAL_ENV}/bin/activate
-deactivate
-source path/to/venv/bin/activate
-```
-An executable version of this snippet is readily accessible by **sourcing** `bin/get-and-export-ephemeris.sh`. 
-Mind that this script does **not** include an `export` command anywhere, so you will have to source it every time
-in order to properly set `LALPULSAR_DATADIR` variable.
-
-If instead you have built and installed lalsuite from source,
-and set your path up properly through something like
-`source $MYLALPATH/etc/lalsuite-user-env.sh`,
-then the ephemerides path should be automatically picked up from
-the `$LALPULSAR_DATADIR` environment variable.
-Similarly, if you have installed lalsuite from conda-forge,
-it should come with ephemerides included and properly set up.
-
-Alternatively, you can place a file
-`~/.pyfstat.conf` into your home directory which looks like
-
+by creating a `~/.pyfstat.conf` file in your home directory which looks like
 ```
 earth_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/earth00-19-DE405.dat.gz'
 sun_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/sun00-19-DE405.dat.gz'
 ```
-Paths set in this way will take precedence over the environment variable.
+Paths set in this way will take precedence over lal's default resolution logic.
 
-Finally, you can manually specify ephemerides files when initialising
-each PyFstat search (as one of the arguments).
+You can also manually specify ephemerides files when initialising
+each PyFstat class with the `earth_ephem` and `sun_ephem` arguments.
+
+The alternative of relying on environment variables
+(as previously recommended by PyFstat's documentation)
+is considered deprecated by LALSuite maintainers
+and will no longer be supported by PyFstat in future versions.
 
 ## Contributing to PyFstat
+
 This project is open to development, please feel free to contact us
 for advice or just jump in and submit an
 [issue](https://github.com/PyFstat/PyFstat/issues/new/choose) or
 [pull request](https://github.com/PyFstat/PyFstat/compare).
 
 Here's what you need to know:
-* The github automated tests currently run on `python` [3.7,3.8,3.9] and new PRs need to pass all these.
+* The github automated tests currently run on `python` [3.7,3.8,3.9,3.10]
+  and new PRs need to pass all these.
 * The automated test also runs
   the [black](https://black.readthedocs.io) style checker
   and the [flake8](https://flake8.pycqa.org/en/latest/) linter.
