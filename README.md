@@ -223,7 +223,7 @@ or want to use different versions,
 you can manually download files from
 [this directory](https://git.ligo.org/lscsoft/lalsuite/-/tree/master/lalpulsar/lib).
 You then need to tell PyFstat where to find these files,
-by either creating a `~/.pyfstat.conf` file in your home directory which looks like
+by creating a `~/.pyfstat.conf` file in your home directory which looks like
 ```
 earth_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/earth00-19-DE405.dat.gz'
 sun_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/sun00-19-DE405.dat.gz'
