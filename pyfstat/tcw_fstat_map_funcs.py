@@ -253,7 +253,7 @@ def init_transient_fstat_map_features(wantCuda=False, cudaDeviceName=None):
             devnames[n] = devn.name().replace(" ", "-").replace("_", "-")
             logging.debug(
                 "device {}: model: {}, RAM: {}MB".format(
-                    n, devnames[n], devn.total_memory() / (2.0 ** 20)
+                    n, devnames[n], devn.total_memory() / (2.0**20)
                 )
             )
 
@@ -438,8 +438,8 @@ def _get_absolute_kernel_path(kernel):
 
 
 def _print_GPU_memory_MB(key):
-    mem_used_MB = drv.mem_get_info()[0] / (2.0 ** 20)
-    mem_total_MB = drv.mem_get_info()[1] / (2.0 ** 20)
+    mem_used_MB = drv.mem_get_info()[0] / (2.0**20)
+    mem_total_MB = drv.mem_get_info()[1] / (2.0**20)
     logging.debug(
         "{} GPU memory: {:.4f} / {:.4f} MB free".format(key, mem_used_MB, mem_total_MB)
     )

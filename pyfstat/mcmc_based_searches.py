@@ -288,7 +288,7 @@ class MCMCSearch(BaseSearchClass):
             # https://arxiv.org/abs/1802.05450
             # Also need to go from twoF to F.
             self.likelihooddetstatmultiplier = 0.5
-            self.likelihoodcoef = np.log(70.0 / self.rhohatmax ** 4)
+            self.likelihoodcoef = np.log(70.0 / self.rhohatmax**4)
 
     def _log_input(self):
         logging.info("theta_prior = {}".format(self.theta_prior))
@@ -1202,7 +1202,7 @@ class MCMCSearch(BaseSearchClass):
             ax.set(xlabel=self.theta_symbols[i], yticks=[])
 
             s = self.samples[:, i]
-            while len(s) > 10 ** 4:
+            while len(s) > 10**4:
                 # random downsample to avoid slow calculation of kde
                 s = np.random.choice(s, size=int(len(s) / 2.0))
             kde = gaussian_kde(s)
@@ -1307,7 +1307,7 @@ class MCMCSearch(BaseSearchClass):
                 return -np.inf
             else:
                 return -0.5 * (
-                    (x - loc) ** 2 / scale ** 2 + np.log(0.5 * np.pi * scale ** 2)
+                    (x - loc) ** 2 / scale**2 + np.log(0.5 * np.pi * scale**2)
                 )
 
         def cauchy(x, x0, gamma):

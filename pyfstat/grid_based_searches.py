@@ -439,7 +439,7 @@ class GridSearch(BaseSearchClass):
             elif f.endswith("f"):
                 decimals = int(re.findall(r"\d+", f)[-1])
                 rtol[key] = 0
-                atol[key] = 10 ** -decimals
+                atol[key] = 10**-decimals
             else:
                 raise ValueError(
                     "Cannot parse fprintf format '{:s}' to obtain recommended tolerance.".format(
@@ -488,7 +488,7 @@ class GridSearch(BaseSearchClass):
 
     def _convert_F1_to_mismatch(self, F1, F1hat, Tseg):
         DeltaF1 = F1[1] - F1[0]
-        m_spacing = (np.pi * Tseg ** 2 * DeltaF1) ** 2 / 720.0
+        m_spacing = (np.pi * Tseg**2 * DeltaF1) ** 2 / 720.0
         N = len(F1)
         return np.arange(-N * m_spacing / 2.0, N * m_spacing / 2.0, m_spacing)
 

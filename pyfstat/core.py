@@ -584,7 +584,7 @@ class ComputeFstat(BaseSearchClass):
             cosi = self.injectSources["cosi"]
             use_aPlus = "aPlus" in dir(PP.Amp)
             if use_aPlus:  # lalsuite interface changed in aff93c45
-                PP.Amp.aPlus = 0.5 * h0 * (1.0 + cosi ** 2)
+                PP.Amp.aPlus = 0.5 * h0 * (1.0 + cosi**2)
                 PP.Amp.aCross = h0 * cosi
             else:
                 PP.Amp.h0 = h0

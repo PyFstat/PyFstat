@@ -223,7 +223,7 @@ def round_to_n(x, n):
     if not x:
         return 0
     power = -int(np.floor(np.log10(abs(x)))) + (n - 1)
-    factor = 10 ** power
+    factor = 10**power
     return round(x * factor) / factor
 
 
@@ -256,7 +256,7 @@ def texify_float(x, d=2):
         return str(x)
     else:
         power = int(np.floor(np.log10(abs(x))))
-        stem = np.round(x / 10 ** power, d)
+        stem = np.round(x / 10**power, d)
         if d == 1:
             stem = int(stem)
         return r"${}{{\times}}10^{{{}}}$".format(stem, power)
