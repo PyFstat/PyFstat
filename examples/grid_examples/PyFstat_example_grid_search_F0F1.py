@@ -46,7 +46,7 @@ data.make_data()
 
 m = 0.01
 dF0 = np.sqrt(12 * m) / (np.pi * duration)
-dF1 = np.sqrt(180 * m) / (np.pi * duration ** 2)
+dF1 = np.sqrt(180 * m) / (np.pi * duration**2)
 dF2 = 1e-17
 N = 100
 DeltaF0 = N * dF0

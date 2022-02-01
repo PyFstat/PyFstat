@@ -29,7 +29,7 @@ label = "PyFstat_example_glitch_robust_directed_MCMC_search_on_1_glitch"
 
 Nstar = 1000
 F0_width = np.sqrt(Nstar) * np.sqrt(12) / (np.pi * duration)
-F1_width = np.sqrt(Nstar) * np.sqrt(180) / (np.pi * duration ** 2)
+F1_width = np.sqrt(Nstar) * np.sqrt(180) / (np.pi * duration**2)
 
 theta_prior = {
     "F0": {"type": "unif", "lower": F0 - F0_width / 2.0, "upper": F0 + F0_width / 2.0},

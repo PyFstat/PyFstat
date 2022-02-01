@@ -52,7 +52,7 @@ data.make_data()
 print("Loading SFT data and computing normalized power...")
 times, freqs, sft_data = pyfstat.helper_functions.get_sft_array(data.sftfilepath)
 normalized_power = (
-    2 * sft_data ** 2 / (data_parameters["Tsft"] * data_parameters["sqrtSX"] ** 2)
+    2 * sft_data**2 / (data_parameters["Tsft"] * data_parameters["sqrtSX"] ** 2)
 )
 
 plotfile = os.path.join(outdir, label + ".png")

@@ -94,7 +94,7 @@ twoF = search.data["twoF"]
 ax.plot(frequencies, twoF, "k", lw=1)
 DeltaF = frequencies - inj["F0"]
 sinc = np.sin(np.pi * DeltaF * duration) / (np.pi * DeltaF * duration)
-A = np.abs((np.max(twoF) - 4) * sinc ** 2 + 4)
+A = np.abs((np.max(twoF) - 4) * sinc**2 + 4)
 ax.plot(frequencies, A, "-r", lw=1)
 ax.set_ylabel("$\\widetilde{2\\mathcal{F}}$")
 ax.set_xlabel("Frequency")

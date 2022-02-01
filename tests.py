@@ -1330,10 +1330,10 @@ class TestSearchForSignalWithJumps(TestBaseSearchClass):
                 [
                     1,
                     2 * np.pi * dT,
-                    2 * np.pi * dT ** 2 / 2.0,
-                    2 * np.pi * dT ** 3 / 6.0,
+                    2 * np.pi * dT**2 / 2.0,
+                    2 * np.pi * dT**3 / 6.0,
                 ],
-                [0, 1, dT, dT ** 2 / 2.0],
+                [0, 1, dT, dT**2 / 2.0],
                 [0, 0, 1, dT],
                 [0, 0, 0, 1],
             ]
@@ -1349,9 +1349,9 @@ class TestSearchForSignalWithJumps(TestBaseSearchClass):
         thetaB = np.zeros(len(thetaA))
         thetaB[3] = thetaA[3]
         thetaB[2] = thetaA[2] + thetaA[3] * dT
-        thetaB[1] = thetaA[1] + thetaA[2] * dT + 0.5 * thetaA[3] * dT ** 2
+        thetaB[1] = thetaA[1] + thetaA[2] * dT + 0.5 * thetaA[3] * dT**2
         thetaB[0] = thetaA[0] + 2 * np.pi * (
-            thetaA[1] * dT + 0.5 * thetaA[2] * dT ** 2 + thetaA[3] * dT ** 3 / 6.0
+            thetaA[1] * dT + 0.5 * thetaA[2] * dT**2 + thetaA[3] * dT**3 / 6.0
         )
 
         self.assertTrue(np.array_equal(thetaB, search._shift_coefficients(thetaA, dT)))

@@ -130,7 +130,7 @@ if __name__ == "__main__":
     # and (optionally) some ad-hoc sky coverage
     m = 0.001
     dF0 = np.sqrt(12 * m) / (np.pi * duration)
-    dF1 = np.sqrt(180 * m) / (np.pi * duration ** 2)
+    dF1 = np.sqrt(180 * m) / (np.pi * duration**2)
     DeltaF0 = 500 * dF0
     DeltaF1 = 200 * dF1
     if sky:
