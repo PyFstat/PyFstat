@@ -1,16 +1,18 @@
-## 1.13.0 [TBD]
+## 1.13.0 [01/02/2022]
 
- - simplify ephemerides files handling:
+ - now tested for python 3.10
+ - simpler handling of ephemerides files:
    - lalsuite >= 7.2.0 (lalpulsar >= 3.1.1)
      now includes a sufficient minimal set by default
      and has gotten much better at resolving default paths
    - no manual setup should be required any more for `pip` installs
    - remove download script
-   - deprecate using $LALPULSAR_DATADIR
+   - deprecate using `$LALPULSAR_DATADIR`
  - bump LALSuite version requirements correspondingly
  - `Writer` classes: fix bug with spurious expected filename mismatch
    if given `noiseSFTs` including multiple frequency-segmented SFTs
-
+ - `GridSearch` now has `generate_loudest()` method like MCMC classes
+ - fix some deprecation warnings
 
 ## 1.12.1 [04/12/2021]
 
