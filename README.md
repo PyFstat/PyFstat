@@ -311,7 +311,7 @@ or use directly the following BibTeX entry:
                   Keitel, David and
                   Prix, Reinhard
                   and Tenorio, Rodrigo},
-  title        = {PyFstat},
+  title        = {{PyFstat}},
   month        = jul,
   year         = 2020,
   publisher    = {Zenodo},
