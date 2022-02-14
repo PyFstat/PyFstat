@@ -440,18 +440,23 @@ def get_sft_as_arrays(sftfilepattern, fMin=None, fMax=None, constraints=None):
     fMin, fMax: float or None
         Restrict frequency range to `[fMin, fMax]`.
         If None, retreive the full frequency range.
+    constraints: lalpulsar.SFTConstraints() or None
+        Constrains to be fed into XLALSFTdataFind to specify detector,
+        GPS time range or timestamps to be retrieved.
 
     Returns
     ----------
-    times: np.ndarray
-        The SFT start times as a dictionary of 1D arrays, one for each detector.
     freqs: np.ndarray
         The frequency bins in each SFT.
         These will be the same for each SFT,
         so only a single 1D array is returned.
-    data: np.ndarray
+    times: dict of np.ndarray
+        The SFT start times as a dictionary of 1D arrays, one for each detector.
+        Keys correspond to the official detector names as returned by XLALlalpulsar.ListIFOsInCatalog.
+    data: dict of np.ndarray
         A dictionary of 2D arrays of the complex Fourier amplitudes of the SFT data
         for each detector in each frequency bin at each timestamp.
+        Keys correspond to the official detector names as returned by XLALlalpulsar.ListIFOsInCatalog.
     """
 
     constraints = constraints or lalpulsar.SFTConstraints()
