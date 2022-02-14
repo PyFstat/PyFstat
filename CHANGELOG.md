@@ -1,3 +1,11 @@
+## 1.13.1 [14/02/2022]
+
+ - add new helper function `get_sft_as_arrays()`
+ - deprecate `get_sft_array()`
+ - the new one supports multiple IFOs
+   and returns full complex amplitude info
+ - note that the order of returned values is different
+
 ## 1.13.0 [01/02/2022]
 
  - now tested for python 3.10
