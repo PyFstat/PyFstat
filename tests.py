@@ -788,9 +788,13 @@ class TestGlitchWriter(TestWriter):
         ) = pyfstat.helper_functions.get_sft_as_arrays(glitchWriter.sftfilepath)
 
         for ifo in self.detectors.split(","):
-            max_freq_vanilla = freqs_vanilla[np.argmax(data_vanilla[ifo], axis=0)]
-            max_freq_noglitch = freqs_noglitch[np.argmax(data_noglitch[ifo], axis=0)]
-            max_freq_glitch = freqs_glitch[np.argmax(data_glitch[ifo], axis=0)]
+            max_freq_vanilla = freqs_vanilla[
+                np.argmax(np.abs(data_vanilla[ifo]), axis=0)
+            ]
+            max_freq_noglitch = freqs_noglitch[
+                np.argmax(np.abs(data_noglitch[ifo]), axis=0)
+            ]
+            max_freq_glitch = freqs_glitch[np.argmax(np.abs(data_glitch[ifo]), axis=0)]
             print([max_freq_vanilla, max_freq_noglitch, max_freq_glitch])
             self.assertTrue(np.all(times_noglitch[ifo] == times_vanilla[ifo]))
             self.assertTrue(np.all(times_glitch[ifo] == times_vanilla[ifo]))

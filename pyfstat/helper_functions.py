@@ -474,16 +474,16 @@ def get_sft_as_arrays(sftfilepattern, fMin=None, fMax=None, constraints=None):
     multi_sfts = lalpulsar.LoadMultiSFTs(sft_catalog, fMin, fMax)
     logging.info("done!")
 
-    frequencies = []
     times = {}
     amplitudes = {}
 
+    old_frequencies = None
     for ind, ifo in enumerate(ifo_labels.data):
 
         sfts = multi_sfts.data[ind]
 
         times[ifo] = np.array([sft.epoch.gpsSeconds for sft in sfts.data])
-        amplitudes[ifo] = np.array([np.abs(sft.data.data) for sft in sfts.data]).T
+        amplitudes[ifo] = np.array([sft.data.data for sft in sfts.data]).T
 
         nbins, nsfts = amplitudes[ifo].shape
 
@@ -491,13 +491,15 @@ def get_sft_as_arrays(sftfilepattern, fMin=None, fMax=None, constraints=None):
 
         f0 = sfts.data[0].f0
         df = sfts.data[0].deltaF
-        frequencies.append(np.linspace(f0, f0 + (nbins - 1) * df, nbins))
+        frequencies = np.linspace(f0, f0 + (nbins - 1) * df, nbins)
 
-    if not all(
-        np.allclose(frequencies[0], other_freqs) for other_freqs in frequencies[1:]
-    ):
-        raise ValueError("Frequencies don't match across detectors, weird...")
-    frequencies = np.array(frequencies[0])
+        if (old_frequencies is not None) and not np.allclose(
+            frequencies, old_frequencies
+        ):
+            raise ValueError(
+                f"Frequencies don't match between {ifo_labels.data[ind-1]} and {ifo}"
+            )
+        old_frequencies = frequencies
 
     return frequencies, times, amplitudes
 
@@ -532,7 +534,7 @@ def get_sft_array(sftfilepattern, F0=None, dF0=None):
 
         warnings.warn(
             "`get_sft_array` is deprecated and will be removed in a future release. "
-            "Please, use `get_sft_as_numpy_array` to load SFT complex amplitudes."
+            "Please, use `get_sft_as_arrays` to load SFT complex amplitudes."
         )
 
     if F0 is None and dF0 is None:
