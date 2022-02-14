@@ -16,6 +16,9 @@ import pyfstat
 # plt.rcParams["font.size"] = 18
 # plt.rcParams["text.usetex"] = True
 
+# 372 stop the warning
+plt.rcParams["axes.grid"] = False
+
 label = "PyFstat_example_spectrogram"
 outdir = os.path.join("PyFstat_example_data", label)
 
