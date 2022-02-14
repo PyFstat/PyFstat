@@ -429,6 +429,81 @@ def convert_array_to_gsl_matrix(array):
     return gsl_matrix
 
 
+def get_sft_as_arrays(sftfilepattern, fMin=None, fMax=None, constraints=None):
+    """
+
+    Parameters
+    ----------
+    sftfilepattern: str
+            Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
+            multiple patterns can be given separated by colons.
+    fMin, fMax: float or None
+        Restrict frequency range to `[fMin, fMax]`.
+        If None, retreive the full frequency range.
+    constraints: lalpulsar.SFTConstraints() or None
+        Constrains to be fed into XLALSFTdataFind to specify detector,
+        GPS time range or timestamps to be retrieved.
+
+    Returns
+    ----------
+    freqs: np.ndarray
+        The frequency bins in each SFT.
+        These will be the same for each SFT,
+        so only a single 1D array is returned.
+    times: dict of np.ndarray
+        The SFT start times as a dictionary of 1D arrays, one for each detector.
+        Keys correspond to the official detector names as returned by XLALlalpulsar.ListIFOsInCatalog.
+    data: dict of np.ndarray
+        A dictionary of 2D arrays of the complex Fourier amplitudes of the SFT data
+        for each detector in each frequency bin at each timestamp.
+        Keys correspond to the official detector names as returned by XLALlalpulsar.ListIFOsInCatalog.
+    """
+
+    constraints = constraints or lalpulsar.SFTConstraints()
+    if fMin is None and fMax is None:
+        fMin = fMax = -1
+    elif fMin is None or fMax is None:
+        raise ValueError("Need either none or both of fMin, fMax.")
+
+    sft_catalog = lalpulsar.SFTdataFind(sftfilepattern, constraints)
+    ifo_labels = lalpulsar.ListIFOsInCatalog(sft_catalog)
+
+    logging.info(
+        f"Loading {sft_catalog.length} SFTs from {', '.join(ifo_labels.data)}..."
+    )
+    multi_sfts = lalpulsar.LoadMultiSFTs(sft_catalog, fMin, fMax)
+    logging.info("done!")
+
+    times = {}
+    amplitudes = {}
+
+    old_frequencies = None
+    for ind, ifo in enumerate(ifo_labels.data):
+
+        sfts = multi_sfts.data[ind]
+
+        times[ifo] = np.array([sft.epoch.gpsSeconds for sft in sfts.data])
+        amplitudes[ifo] = np.array([sft.data.data for sft in sfts.data]).T
+
+        nbins, nsfts = amplitudes[ifo].shape
+
+        logging.info(f"{nsfts} retrieved from {ifo}.")
+
+        f0 = sfts.data[0].f0
+        df = sfts.data[0].deltaF
+        frequencies = np.linspace(f0, f0 + (nbins - 1) * df, nbins)
+
+        if (old_frequencies is not None) and not np.allclose(
+            frequencies, old_frequencies
+        ):
+            raise ValueError(
+                f"Frequencies don't match between {ifo_labels.data[ind-1]} and {ifo}"
+            )
+        old_frequencies = frequencies
+
+    return frequencies, times, amplitudes
+
+
 def get_sft_array(sftfilepattern, F0=None, dF0=None):
     """Return the raw data (absolute values) from a set of SFTs.
 
@@ -454,6 +529,13 @@ def get_sft_array(sftfilepattern, F0=None, dF0=None):
         A 2D array of the absolute values of the SFT data
         in each frequency bin at each timestamp.
     """
+    if True:  # pragma: no cover
+        import warnings
+
+        warnings.warn(
+            "`get_sft_array` is deprecated and will be removed in a future release. "
+            "Please, use `get_sft_as_arrays` to load SFT complex amplitudes."
+        )
 
     if F0 is None and dF0 is None:
         fMin = -1

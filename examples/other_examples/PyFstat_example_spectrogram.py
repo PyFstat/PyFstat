@@ -50,9 +50,10 @@ data = pyfstat.BinaryModulatedWriter(
 data.make_data()
 
 print("Loading SFT data and computing normalized power...")
-times, freqs, sft_data = pyfstat.helper_functions.get_sft_array(data.sftfilepath)
+freqs, times, sft_data = pyfstat.helper_functions.get_sft_as_arrays(data.sftfilepath)
+sft_power = sft_data["H1"].real ** 2 + sft_data["H1"].imag ** 2
 normalized_power = (
-    2 * sft_data**2 / (data_parameters["Tsft"] * data_parameters["sqrtSX"] ** 2)
+    2 * sft_power / (data_parameters["Tsft"] * data_parameters["sqrtSX"] ** 2)
 )
 
 plotfile = os.path.join(outdir, label + ".png")
@@ -61,7 +62,7 @@ fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))
 ax.grid(which="both")
 ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]", ylim=(99.98, 100.02))
 c = ax.pcolormesh(
-    (times - times[0]) / 86400,
+    (times["H1"] - times["H1"][0]) / 86400,
     freqs,
     normalized_power,
     cmap="inferno_r",

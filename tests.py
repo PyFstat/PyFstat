@@ -281,18 +281,6 @@ class TestWriter(BaseForTestsWithData):
             **self.signal_parameters,
         )
         noise_and_signal_writer.make_data(verbose=True)
-        # FIXME: here and everywhere below,
-        # get_sft_array() only looks at first detector
-        times, freqs, data = pyfstat.helper_functions.get_sft_array(
-            noise_and_signal_writer.sftfilepath
-        )
-        # Store the maximum SFT values for later comparison
-        max_values_noise_and_signal = np.max(data, axis=0)
-        max_freqs_noise_and_signal = freqs[np.argmax(data, axis=0)]
-        self.assertTrue(len(times) == int(np.ceil(self.duration / self.Tsft)))
-        # FIXME: CW signals don't have to peak at the same frequency, but there
-        # are some consistency criteria which may be useful to implement here.
-        # self.assertTrue(len(np.unique(max_freqs_noise_and_signal)) == 1)
 
         # create noise-only SFTs
         noise_writer = self.writer_class_to_test(
@@ -310,15 +298,6 @@ class TestWriter(BaseForTestsWithData):
             F0=self.signal_parameters["F0"],
         )
         noise_writer.make_data(verbose=True)
-        times, freqs, data = pyfstat.helper_functions.get_sft_array(
-            noise_writer.sftfilepath
-        )
-        max_values_noise = np.max(data, axis=0)
-        max_freqs_noise = freqs[np.argmax(data, axis=0)]
-        self.assertEqual(len(max_freqs_noise), len(max_freqs_noise_and_signal))
-        # pure noise: random peak freq in each SFT, lower max values
-        self.assertFalse(len(np.unique(max_freqs_noise)) == 1)
-        self.assertTrue(np.all(max_values_noise < max_values_noise_and_signal))
 
         # inject into noise-only SFTs without additional SFT loading constraints
         add_signal_writer = self.writer_class_to_test(
@@ -330,20 +309,6 @@ class TestWriter(BaseForTestsWithData):
             **self.signal_parameters,
         )
         add_signal_writer.make_data(verbose=True)
-        times, freqs, data = pyfstat.helper_functions.get_sft_array(
-            add_signal_writer.sftfilepath
-        )
-        max_values_added_signal = np.max(data, axis=0)
-        max_freqs_added_signal = freqs[np.argmax(data, axis=0)]
-        self.assertEqual(len(max_freqs_added_signal), len(max_freqs_noise_and_signal))
-        # peak freqs expected exactly equal to first case,
-        # peak values can have a bit of numerical diff
-        self.assertTrue(np.all(max_freqs_added_signal == max_freqs_noise_and_signal))
-        self.assertTrue(
-            np.allclose(
-                max_values_added_signal, max_values_noise_and_signal, rtol=1e-6, atol=0
-            )
-        )
 
         # same again but with explicit (tstart,duration) to build constraints
         add_signal_writer_constr = self.writer_class_to_test(
@@ -359,28 +324,88 @@ class TestWriter(BaseForTestsWithData):
             **self.signal_parameters,
         )
         add_signal_writer_constr.make_data(verbose=True)
-        times, freqs, data = pyfstat.helper_functions.get_sft_array(
+
+        (
+            noise_and_signal_freqs,
+            times,
+            noise_and_signal_data,
+        ) = pyfstat.helper_functions.get_sft_as_arrays(
+            noise_and_signal_writer.sftfilepath
+        )
+
+        noise_freqs, _, noise_data = pyfstat.helper_functions.get_sft_as_arrays(
+            noise_writer.sftfilepath
+        )
+
+        (
+            add_signal_freqs,
+            _,
+            add_signal_data,
+        ) = pyfstat.helper_functions.get_sft_as_arrays(add_signal_writer.sftfilepath)
+
+        constr_freqs, _, constr_data = pyfstat.helper_functions.get_sft_as_arrays(
             add_signal_writer_constr.sftfilepath
         )
-        max_values_added_signal_constr = np.max(data, axis=0)
-        max_freqs_added_signal_constr = freqs[np.argmax(data, axis=0)]
-        self.assertEqual(
-            2 * len(max_freqs_added_signal_constr), len(max_freqs_noise_and_signal)
-        )
-        # peak freqs and values expected to be exactly equal
-        # regardless of read-in constraints
-        self.assertTrue(
-            np.all(
-                max_freqs_added_signal_constr
-                == max_freqs_added_signal[: len(max_freqs_added_signal_constr)]
+
+        for ifo in self.multi_detectors.split(","):
+            ns_data = np.abs(noise_and_signal_data[ifo])
+            max_values_noise_and_signal = np.max(ns_data, axis=0)
+            max_freqs_noise_and_signal = noise_and_signal_freqs[
+                np.argmax(ns_data, axis=0)
+            ]
+            self.assertTrue(len(times[ifo]) == int(np.ceil(self.duration / self.Tsft)))
+            # FIXME: CW signals don't have to peak at the same frequency, but there
+            # are some consistency criteria which may be useful to implement here.
+            # self.assertTrue(len(np.unique(max_freqs_noise_and_signal)) == 1)
+
+            n_data = np.abs(noise_data[ifo])
+            max_values_noise = np.max(n_data, axis=0)
+            max_freqs_noise = noise_freqs[np.argmax(n_data, axis=0)]
+            self.assertEqual(len(max_freqs_noise), len(max_freqs_noise_and_signal))
+            # pure noise: random peak freq in each SFT, lower max values
+            self.assertFalse(len(np.unique(max_freqs_noise)) == 1)
+            self.assertTrue(np.all(max_values_noise < max_values_noise_and_signal))
+
+            as_data = np.abs(add_signal_data[ifo])
+            max_values_added_signal = np.max(as_data, axis=0)
+            max_freqs_added_signal = add_signal_freqs[np.argmax(as_data, axis=0)]
+            self.assertEqual(
+                len(max_freqs_added_signal), len(max_freqs_noise_and_signal)
             )
-        )
-        self.assertTrue(
-            np.all(
-                max_values_added_signal_constr
-                == max_values_added_signal[: len(max_values_added_signal_constr)]
+            # peak freqs expected exactly equal to first case,
+            # peak values can have a bit of numerical diff
+            self.assertTrue(
+                np.all(max_freqs_added_signal == max_freqs_noise_and_signal)
             )
-        )
+            self.assertTrue(
+                np.allclose(
+                    max_values_added_signal,
+                    max_values_noise_and_signal,
+                    rtol=1e-6,
+                    atol=0,
+                )
+            )
+
+            c_data = np.abs(constr_data[ifo])
+            max_values_added_signal_constr = np.max(c_data, axis=0)
+            max_freqs_added_signal_constr = constr_freqs[np.argmax(c_data, axis=0)]
+            self.assertEqual(
+                2 * len(max_freqs_added_signal_constr), len(max_freqs_noise_and_signal)
+            )
+            # peak freqs and values expected to be exactly equal
+            # regardless of read-in constraints
+            self.assertTrue(
+                np.all(
+                    max_freqs_added_signal_constr
+                    == max_freqs_added_signal[: len(max_freqs_added_signal_constr)]
+                )
+            )
+            self.assertTrue(
+                np.all(
+                    max_values_added_signal_constr
+                    == max_values_added_signal[: len(max_values_added_signal_constr)]
+                )
+            )
 
     def test_noise_sfts_with_gaps(self):
         duration = 10 * self.Tsft
@@ -594,22 +619,26 @@ class TestLineWriter(TestWriter):
         third_time = os.path.getmtime(writer.sftfilepath)
         self.assertFalse(first_time == third_time)
 
-    def _check_maximum_power_consistency(self, writer, return_line_power=False):
-        times, freqs, data = pyfstat.helper_functions.get_sft_array(writer.sftfilepath)
-        max_power_freq_index = np.argmax(data, axis=0)
-        line_active_mask = (writer.transientStartTime <= times) & (
-            times < (writer.transientStartTime + writer.transientTau)
+    def _check_maximum_power_consistency(self, writer):
+        freqs, times, data = pyfstat.helper_functions.get_sft_as_arrays(
+            writer.sftfilepath
         )
-        max_power_freq_index_with_line = max_power_freq_index[line_active_mask]
+        for ifo in times.keys():
+            max_power_freq_index = np.argmax(np.abs(data[ifo]), axis=0)
+            line_active_mask = (writer.transientStartTime <= times[ifo]) & (
+                times[ifo] < (writer.transientStartTime + writer.transientTau)
+            )
+            max_power_freq_index_with_line = max_power_freq_index[line_active_mask]
 
-        # Maximum power should be a the transient line whenever that's on
-        self.assertTrue(
-            np.all(max_power_freq_index_with_line == max_power_freq_index_with_line[0])
-        )
-        self.assertTrue(np.allclose(freqs[max_power_freq_index_with_line], writer.F0))
-
-        if return_line_power:
-            return np.max(data, axis=0)[line_active_mask]
+            # Maximum power should be a the transient line whenever that's on
+            self.assertTrue(
+                np.all(
+                    max_power_freq_index_with_line == max_power_freq_index_with_line[0]
+                )
+            )
+            self.assertTrue(
+                np.allclose(freqs[max_power_freq_index_with_line], writer.F0)
+            )
 
     def test_transient_line_injection(self):
 
@@ -743,32 +772,38 @@ class TestGlitchWriter(TestWriter):
         glitchWriter.make_cff(verbose=True)
         glitchWriter.run_makefakedata()
         (
-            times_vanilla,
             freqs_vanilla,
+            times_vanilla,
             data_vanilla,
-        ) = pyfstat.helper_functions.get_sft_array(vanillaWriter.sftfilepath)
+        ) = pyfstat.helper_functions.get_sft_as_arrays(vanillaWriter.sftfilepath)
         (
-            times_noglitch,
             freqs_noglitch,
+            times_noglitch,
             data_noglitch,
-        ) = pyfstat.helper_functions.get_sft_array(noGlitchWriter.sftfilepath)
+        ) = pyfstat.helper_functions.get_sft_as_arrays(noGlitchWriter.sftfilepath)
         (
-            times_glitch,
             freqs_glitch,
+            times_glitch,
             data_glitch,
-        ) = pyfstat.helper_functions.get_sft_array(glitchWriter.sftfilepath)
-        max_freq_vanilla = freqs_vanilla[np.argmax(data_vanilla, axis=0)]
-        max_freq_noglitch = freqs_noglitch[np.argmax(data_noglitch, axis=0)]
-        max_freq_glitch = freqs_glitch[np.argmax(data_glitch, axis=0)]
-        print([max_freq_vanilla, max_freq_noglitch, max_freq_glitch])
-        self.assertTrue(np.all(times_noglitch == times_vanilla))
-        self.assertTrue(np.all(times_glitch == times_vanilla))
-        self.assertEqual(len(np.unique(max_freq_vanilla)), 1)
-        self.assertEqual(len(np.unique(max_freq_noglitch)), 1)
-        self.assertEqual(len(np.unique(max_freq_glitch)), 2)
-        self.assertEqual(max_freq_noglitch[0], max_freq_vanilla[0])
-        self.assertEqual(max_freq_glitch[0], max_freq_noglitch[0])
-        self.assertTrue(max_freq_glitch[-1] > max_freq_noglitch[-1])
+        ) = pyfstat.helper_functions.get_sft_as_arrays(glitchWriter.sftfilepath)
+
+        for ifo in self.detectors.split(","):
+            max_freq_vanilla = freqs_vanilla[
+                np.argmax(np.abs(data_vanilla[ifo]), axis=0)
+            ]
+            max_freq_noglitch = freqs_noglitch[
+                np.argmax(np.abs(data_noglitch[ifo]), axis=0)
+            ]
+            max_freq_glitch = freqs_glitch[np.argmax(np.abs(data_glitch[ifo]), axis=0)]
+            print([max_freq_vanilla, max_freq_noglitch, max_freq_glitch])
+            self.assertTrue(np.all(times_noglitch[ifo] == times_vanilla[ifo]))
+            self.assertTrue(np.all(times_glitch[ifo] == times_vanilla[ifo]))
+            self.assertEqual(len(np.unique(max_freq_vanilla)), 1)
+            self.assertEqual(len(np.unique(max_freq_noglitch)), 1)
+            self.assertEqual(len(np.unique(max_freq_glitch)), 2)
+            self.assertEqual(max_freq_noglitch[0], max_freq_vanilla[0])
+            self.assertEqual(max_freq_glitch[0], max_freq_noglitch[0])
+            self.assertTrue(max_freq_glitch[-1] > max_freq_noglitch[-1])
 
 
 class TestFrequencyModulatedArtifactWriter(BaseForTestsWithOutdir):
