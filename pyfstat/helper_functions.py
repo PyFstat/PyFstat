@@ -429,7 +429,7 @@ def convert_array_to_gsl_matrix(array):
     return gsl_matrix
 
 
-def get_sft_as_numpy_array(sftfilepattern, fMin=None, fMax=None, constraints=None):
+def get_sft_as_arrays(sftfilepattern, fMin=None, fMax=None, constraints=None):
     """
 
     Parameters

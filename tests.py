@@ -329,11 +329,11 @@ class TestWriter(BaseForTestsWithData):
             noise_and_signal_freqs,
             times,
             noise_and_signal_data,
-        ) = pyfstat.helper_functions.get_sft_as_numpy_array(
+        ) = pyfstat.helper_functions.get_sft_as_arrays(
             noise_and_signal_writer.sftfilepath
         )
 
-        noise_freqs, _, noise_data = pyfstat.helper_functions.get_sft_as_numpy_array(
+        noise_freqs, _, noise_data = pyfstat.helper_functions.get_sft_as_arrays(
             noise_writer.sftfilepath
         )
 
@@ -341,11 +341,9 @@ class TestWriter(BaseForTestsWithData):
             add_signal_freqs,
             _,
             add_signal_data,
-        ) = pyfstat.helper_functions.get_sft_as_numpy_array(
-            add_signal_writer.sftfilepath
-        )
+        ) = pyfstat.helper_functions.get_sft_as_arrays(add_signal_writer.sftfilepath)
 
-        constr_freqs, _, constr_data = pyfstat.helper_functions.get_sft_as_numpy_array(
+        constr_freqs, _, constr_data = pyfstat.helper_functions.get_sft_as_arrays(
             add_signal_writer_constr.sftfilepath
         )
 
@@ -622,7 +620,7 @@ class TestLineWriter(TestWriter):
         self.assertFalse(first_time == third_time)
 
     def _check_maximum_power_consistency(self, writer):
-        freqs, times, data = pyfstat.helper_functions.get_sft_as_numpy_array(
+        freqs, times, data = pyfstat.helper_functions.get_sft_as_arrays(
             writer.sftfilepath
         )
         for ifo in times.keys():
@@ -777,17 +775,17 @@ class TestGlitchWriter(TestWriter):
             freqs_vanilla,
             times_vanilla,
             data_vanilla,
-        ) = pyfstat.helper_functions.get_sft_as_numpy_array(vanillaWriter.sftfilepath)
+        ) = pyfstat.helper_functions.get_sft_as_arrays(vanillaWriter.sftfilepath)
         (
             freqs_noglitch,
             times_noglitch,
             data_noglitch,
-        ) = pyfstat.helper_functions.get_sft_as_numpy_array(noGlitchWriter.sftfilepath)
+        ) = pyfstat.helper_functions.get_sft_as_arrays(noGlitchWriter.sftfilepath)
         (
             freqs_glitch,
             times_glitch,
             data_glitch,
-        ) = pyfstat.helper_functions.get_sft_as_numpy_array(glitchWriter.sftfilepath)
+        ) = pyfstat.helper_functions.get_sft_as_arrays(glitchWriter.sftfilepath)
 
         for ifo in self.detectors.split(","):
             max_freq_vanilla = freqs_vanilla[np.argmax(data_vanilla[ifo], axis=0)]
