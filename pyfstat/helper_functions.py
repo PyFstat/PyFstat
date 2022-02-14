@@ -522,6 +522,13 @@ def get_sft_array(sftfilepattern, F0=None, dF0=None):
         A 2D array of the absolute values of the SFT data
         in each frequency bin at each timestamp.
     """
+    if True:  # pragma: no cover
+        import warnings
+
+        warnings.warn(
+            "`get_sft_array` is deprecated and will be removed in a future release. "
+            "Please, use `get_sft_as_numpy_array` to load SFT complex amplitudes."
+        )
 
     if F0 is None and dF0 is None:
         fMin = -1
