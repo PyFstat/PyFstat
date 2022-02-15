@@ -24,7 +24,7 @@ jobs:
       run: |
         pytest tests.py --cov=pyfstat --cov-report=xml
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v2
       with:
         files: ./coverage.xml
         directory: ./coverage/reports/
