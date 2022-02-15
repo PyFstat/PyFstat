@@ -16,7 +16,8 @@ import pyfstat
 # plt.rcParams["font.size"] = 18
 # plt.rcParams["text.usetex"] = True
 
-# 372 stop the warning
+# workaround deprecation warning
+# see https://github.com/matplotlib/matplotlib/issues/21723
 plt.rcParams["axes.grid"] = False
 
 label = "PyFstat_example_spectrogram"
