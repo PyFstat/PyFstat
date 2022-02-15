@@ -16,6 +16,10 @@ import pyfstat
 # plt.rcParams["font.size"] = 18
 # plt.rcParams["text.usetex"] = True
 
+# workaround deprecation warning
+# see https://github.com/matplotlib/matplotlib/issues/21723
+plt.rcParams["axes.grid"] = False
+
 label = "PyFstat_example_spectrogram"
 outdir = os.path.join("PyFstat_example_data", label)
 
