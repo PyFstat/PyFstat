@@ -718,7 +718,7 @@ class TestBinaryModulatedWriter(TestWriter):
             theta_prior=theta_prior,
             tref=this_writer.tstart,
             minStartTime=this_writer.tstart,
-            maxStartTime=this_writer.tend(),
+            maxStartTime=this_writer.tend,
             **mcmc_kwargs,
         )
         mcmc.run(plot_walkers=False)
@@ -1068,7 +1068,7 @@ class TestComputeFstat(BaseForTestsWithData):
             minCoverFreq=28,
             maxCoverFreq=32,
             minStartTime=self.Writer.tstart,
-            maxStartTime=self.Writer.tend(),
+            maxStartTime=self.Writer.tend,
             detectors=self.Writer.detectors,
         )
         FS_from_file = search.get_fullycoherent_twoF(
@@ -1092,7 +1092,7 @@ class TestComputeFstat(BaseForTestsWithData):
             minCoverFreq=28,
             maxCoverFreq=32,
             minStartTime=self.Writer.tstart,
-            maxStartTime=self.Writer.tend(),
+            maxStartTime=self.Writer.tend,
             detectors=self.Writer.detectors,
         )
         FS_from_dict = search.get_fullycoherent_twoF(
@@ -1647,7 +1647,7 @@ class TestSemiCoherentGlitchSearch(BaseForTestsWithData):
             sftfilepattern=Writer.sftfilepath,
             tref=Writer.tref,
             minStartTime=Writer.tstart,
-            maxStartTime=Writer.tend(),
+            maxStartTime=Writer.tend,
             nglitch=1,
             search_ranges=search_ranges,
         )
@@ -2118,7 +2118,7 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
             "transient_tstart": {
                 "type": "unif",
                 "lower": self.Writer.tstart,
-                "upper": self.Writer.tend() - 2 * self.Writer.Tsft,
+                "upper": self.Writer.tend - 2 * self.Writer.Tsft,
             },
             "transient_duration": self.transientTau,
         }
@@ -2170,7 +2170,7 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
             "transient_tstart": {
                 "type": "unif",
                 "lower": self.Writer.tstart,
-                "upper": self.Writer.tend() - 2 * self.Writer.Tsft,
+                "upper": self.Writer.tend - 2 * self.Writer.Tsft,
             },
             "transient_duration": {
                 "type": "unif",
@@ -2475,7 +2475,7 @@ class TestTransientGridSearch(BaseForTestsWithData):
             Deltas=[self.Writer.Delta],
             tref=self.tref,
             minStartTime=self.Writer.tstart,
-            maxStartTime=self.Writer.tend(),
+            maxStartTime=self.Writer.tend,
             transientWindowType="rect",
             t0Band=self.Writer.duration - 2 * self.Writer.Tsft,
             tauBand=self.Writer.duration,
