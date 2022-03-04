@@ -558,8 +558,10 @@ class Writer(BaseSearchClass):
         if self.tref is None:
             self.tref = self.tstart
 
+    @property
     def tend(self):
-        """Simple method to return `tstart+duration`.
+        """`
+        Defined as `self.start + self.duration`.
 
         If stored as an attribute, there would be the risk of it going out of
         sync with the other two values.
@@ -627,7 +629,7 @@ class Writer(BaseSearchClass):
             minCoverFreq, maxCoverFreq = helper_functions.get_covering_band(
                 tref=self.tref,
                 tstart=self.tstart,
-                tend=self.tend(),
+                tend=self.tend,
                 F0=self.F0,
                 F1=self.F1,
                 F2=self.F2,
@@ -1239,11 +1241,11 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
                 d = np.atleast_1d(d)
 
         if self.dtglitch is None:
-            self.tbounds = [self.tstart, self.tend()]
+            self.tbounds = [self.tstart, self.tend]
         else:
             self.dtglitch = np.atleast_1d(self.dtglitch)
             self.tglitch = self.tstart + self.dtglitch
-            self.tbounds = np.concatenate(([self.tstart], self.tglitch, [self.tend()]))
+            self.tbounds = np.concatenate(([self.tstart], self.tglitch, [self.tend]))
         logging.info("Using segment boundaries {}".format(self.tbounds))
 
         tbs = np.array(self.tbounds)
