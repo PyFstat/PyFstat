@@ -1,87 +1,73 @@
 """Generate injection parameters drawn from different prior populations"""
-
+from attrs import define, Factory, field
 import logging
 import numpy as np
 import functools
+from typing import Union
+
+isotropic_amplitude_priors = {
+    "cosi": {"uniform": {"low": -1.0, "high": 1.0}},
+    "psi": {"uniform": {"low": -0.25 * np.pi, "high": 0.25 * np.pi}},
+    "phi": {"uniform": {"low": 0, "high": 2 * np.pi}},
+}
 
 
+@define(kw_only=True, slots=False)
 class InjectionParametersGenerator:
     """
     Draw injection parameter samples from priors and return in dictionary format.
+
+    Parameters
+    ----------
+    priors: dict
+        Each key refers to one of the signal's parameters
+        (following the PyFstat convention).
+        Priors can be given as values in three formats
+        (by order of evaluation):
+
+        1. Callable without required arguments:
+        `{"ParameterA": np.random.uniform}`.
+
+        2. Dict containing numpy.random distribution as key and kwargs in a dict as value:
+        `{"ParameterA": {"uniform": {"low": 0, "high":1}}}`.
+
+        3. Constant value to be returned as is:
+        `{"ParameterA": 1.0}`.
+
+    seed: None, int
+        Argument to be fed to numpy.random.default_rng,
+        with all of its accepted types.
+
+    _rng: np.random.Generator
+        Alternatively, this class accepts an already-initialized np.Generator,
+        in which case the `seed` argument will be ignored.
     """
 
-    def __init__(self, priors=None, seed=None):
-        """
-        Parameters
-        ----------
-        priors: dict
-            Each key refers to one of the signal's parameters
-            (following the PyFstat convention).
-            Priors can be given as values in three formats
-            (by order of evaluation):
+    seed: Union[None, int] = field(default=None)
+    _rng: np.random.Generator = field(
+        default=Factory(lambda self: np.random.default_rng(self.seed), takes_self=True)
+    )
+    priors: dict = field(factory=dict)
 
-            1. Callable without required arguments:
-            `{"ParameterA": np.random.uniform}`.
+    def __attrs_post_init__(self):
+        self.priors = self._parse_priors(self.priors)
 
-            2. Dict containing numpy.random distribution as key and kwargs in a dict as value:
-            `{"ParameterA": {"uniform": {"low": 0, "high":1}}}`.
-
-            3. Constant value to be returned as is:
-            `{"ParameterA": 1.0}`.
-
-        seed:
-            Argument to be fed to numpy.random.default_rng,
-            with all of its accepted types.
-        """
-        self.set_seed(seed)
-        self.set_priors(priors or {})
-
-    def set_priors(self, new_priors):
-        """Set priors to draw parameter space points from.
-
-        Parameters
-        ----------
-        new_priors: dict
-            The new set of priors to update the object with.
-        """
-        if type(new_priors) is not dict:
-            raise ValueError(
-                "new_priors is not a dict type.\nPlease, check "
-                "this class' docstring to learn about the expected format: "
-                f"{self.__init__.__doc__}"
-            )
-
-        self.priors = {}
-        self._update_priors(new_priors)
-
-    def set_seed(self, seed):
-        """Set the random seed for subsequent draws.
-
-        Parameters
-        ----------
-        seed:
-            Argument to be fed to numpy.random.default_rng,
-            with all of its accepted types.
-        """
-        self.seed = seed
-        self._rng = np.random.default_rng(self.seed)
-
-    def _update_priors(self, new_priors):
+    def _parse_priors(self, priors_input_format):
         """Internal method to do the actual prior setup."""
-        for parameter_name, parameter_prior in new_priors.items():
+        priors = {}
+
+        for parameter_name, parameter_prior in priors_input_format.items():
             if callable(parameter_prior):
-                self.priors[parameter_name] = parameter_prior
+                priors[parameter_name] = parameter_prior
             elif isinstance(parameter_prior, dict):
                 rng_function_name = next(iter(parameter_prior))
                 rng_function = getattr(self._rng, rng_function_name)
                 rng_kwargs = parameter_prior[rng_function_name]
-                self.priors[parameter_name] = functools.partial(
-                    rng_function, **rng_kwargs
-                )
+                priors[parameter_name] = functools.partial(rng_function, **rng_kwargs)
             else:  # Assume it is something to be returned as is
-                self.priors[parameter_name] = functools.partial(
-                    lambda x: x, parameter_prior
-                )
+                priors[parameter_name] = functools.partial(lambda x: x, parameter_prior)
+
+        return priors
 
     def draw(self):
         """Draw a single multi-dimensional parameter space point from the given priors.
@@ -97,57 +83,36 @@ class InjectionParametersGenerator:
         }
         return injection_parameters
 
-    def __call__(self):
-        return self.draw()
-
 
 class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
-    """Like InjectionParametersGenerator, but with hardcoded all-sky priors.
+    """
+    Draw injection parameter samples from priors and return in dictionary format.
+    This class works in exactly the same way as `InjectionParametersGenerator`,
+    but including by default two extra keys, `Alpha` and `Delta` (sky position's
+    right ascension and declination in radians), which are sample isotropically
+    across the celesetial sphere.
 
-    This ensures uniform coverage of the 2D celestial sphere:
-    uniform distribution in `Alpha` and sine distribution for `Delta`.
+    `Alpha`'s distribution is Uniform(0, 2 pi), and
+    `sin(Delta)`'s distribution is Uniform(-1, 1).
 
-    It assumes 1) PyFstat notation and 2) equatorial coordinates.
-
-    `Alpha` and `Delta` are given 'restricted' status to stop the user from
-    changing them as long as using this special class.
+    The only reason this class exists is because, using the notation we specified
+    in the base class, there is no way to generate arcsine distributed numbers using
+    a specific seed, as numpy does not have such a number generator and hence has to
+    be constructed by applying a function to a uniform number.
     """
 
-    def set_priors(self, new_priors):
-        """Set priors to draw parameter space points from.
-
-        Parameters
-        ----------
-        new_priors: dict
-            The new set of priors to update the object with.
-        """
-        self._check_if_updating_sky_priors(new_priors)
-        super().set_priors({**new_priors, **self.restricted_priors})
-
-    def set_seed(self, seed):
-        """Set the random seed for subsequent draws.
-
-        Parameters
-        ----------
-        seed:
-            Argument to be fed to numpy.random.default_rng,
-            with all of its accepted types.
-        """
-        super().set_seed(seed)
-        self.restricted_priors = {
-            # This is required because numpy has no arcsin distro
+    def _parse_priors(self, priors_input_format):
+        sky_priors = {
             "Alpha": lambda: self._rng.uniform(low=0.0, high=2 * np.pi),
             "Delta": lambda: np.arcsin(self._rng.uniform(low=-1.0, high=1.0)),
         }
 
-    def _check_if_updating_sky_priors(self, new_priors):
-        """Internal method to stop the user from changing the sky prior."""
-        if any(
-            restricted_key in new_priors
-            for restricted_key in self.restricted_priors.keys()
-        ):
-            logging.warning(
-                "Ignoring specified sky priors (Alpha, Delta)."
-                "This class is explicitly coded to prevent that from happening. "
-                "Please instead use InjectionParametersGenerator if that's really what you want to do."
-            )
+        for key in sky_priors:
+            if key in priors_input_format:
+                logging.warning(
+                    f"Found {key} key in input priors with value {priors_input_format[key]}.\n"
+                    "Overwritting to produce uniform samples across the sky."
+                )
+            priors_input_format[key] = sky_priors[key]
+
+        return super()._parse_priors(priors_input_format)

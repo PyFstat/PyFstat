@@ -134,7 +134,7 @@ class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
             "ParameterA": {"uniform": {"low": 0.0, "high": 0.0}},
             "ParameterB": {"uniform": {"low": 1.0, "high": 1.0}},
         }
-        InjectionGenerator = self.class_to_test(numpy_priors)
+        InjectionGenerator = self.class_to_test(priors=numpy_priors)
 
         parameters = InjectionGenerator.draw()
         self.assertTrue(parameters["ParameterA"] == 0.0)
@@ -142,7 +142,7 @@ class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
 
     def test_callable_priors(self):
         callable_priors = {"ParameterA": lambda: 0.0, "ParameterB": lambda: 1.0}
-        InjectionGenerator = self.class_to_test(callable_priors)
+        InjectionGenerator = self.class_to_test(priors=callable_priors)
 
         parameters = InjectionGenerator.draw()
         self.assertTrue(parameters["ParameterA"] == 0.0)
@@ -150,7 +150,7 @@ class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
 
     def test_constant_priors(self):
         constant_priors = {"ParameterA": 0.0, "ParameterB": 1.0}
-        InjectionGenerator = self.class_to_test(constant_priors)
+        InjectionGenerator = self.class_to_test(priors=constant_priors)
 
         parameters = InjectionGenerator.draw()
         self.assertTrue(parameters["ParameterA"] == 0.0)
@@ -177,7 +177,7 @@ class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
 
 
 class TestAllSkyInjectionParametersGenerator(TestInjectionParametersGenerator):
-    label = "TestAllInjectionParametersGenerator"
+    label = "TestAllSkyInjectionParametersGenerator"
 
     class_to_test = pyfstat.AllSkyInjectionParametersGenerator
 
