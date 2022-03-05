@@ -17,6 +17,7 @@ from pyfstat.core import (
     args,
 )
 import pyfstat.helper_functions as helper_functions
+from pyfstat import injection_parameters
 
 
 class Writer(BaseSearchClass):
@@ -1636,3 +1637,23 @@ class FrequencyAmplitudeModulatedArtifactWriter(FrequencyModulatedArtifactWriter
             Amplitude at time `t`.
         """
         return self.h0 * np.sin(2 * np.pi * t / self.Pmod + self.Pmod_phi)
+
+
+class InjectionParametersGenerator(injection_parameters.InjectionParametersGenerator):
+    def __new__(cls, *args, **kwargs):
+        logging.warning(
+            "This class was moved to a different module within this same package (`injection_parameters`) "
+            "and will be removed from this module (`make_sfts`) in a future release. "
+        )
+        super().__new__(cls, *args, **kwargs)
+
+
+class AllSkyInjectionParametersGenerator(
+    injection_parameters.AllSkyInjectionParametersGenerator
+):
+    def __new__(cls, *args, **kwargs):
+        logging.warning(
+            "This class was moved to a different module within this same package (`injection_parameters`) "
+            "and will be removed from this module (`make_sfts`) in a future release. "
+        )
+        super().__new__(cls, *args, **kwargs)
