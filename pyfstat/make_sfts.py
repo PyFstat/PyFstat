@@ -19,12 +19,6 @@ from pyfstat.core import (
 import pyfstat.helper_functions as helper_functions
 
 
-class KeyboardInterruptError(Exception):
-    """Custom exception to allow overriding interrupts."""
-
-    pass
-
-
 class Writer(BaseSearchClass):
     """The main class for generating data in the form of SFTs.
 
@@ -1539,16 +1533,13 @@ class FrequencyModulatedArtifactWriter(Writer):
 
     def make_ith_sft(self, i):
         """Call MFDv4 to create a single SFT with evolved artifact parameters."""
-        try:
-            self.run_makefakedata_v4(
-                self.mid_times[i],
-                self.lineFreqs[i],
-                self.linePhis[i],
-                self.lineh0s[i],
-                self.tmp_outdir,
-            )
-        except KeyboardInterrupt:
-            raise KeyboardInterruptError()
+        self.run_makefakedata_v4(
+            self.mid_times[i],
+            self.lineFreqs[i],
+            self.linePhis[i],
+            self.lineh0s[i],
+            self.tmp_outdir,
+        )
 
     def make_data(self):
         """Create a full multi-SFT data set.
