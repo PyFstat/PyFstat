@@ -37,6 +37,8 @@ from .grid_based_searches import (
 )
 from .gridcorner import gridcorner
 
+from .snr import DetectorStates, SignalToNoiseRatio
+
 from ._version import get_versions
 
 __version__ = get_versions()["version"]

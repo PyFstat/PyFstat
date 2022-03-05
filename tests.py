@@ -942,6 +942,56 @@ class TestPredictFstat(BaseForTestsWithOutdir):
         self.assertTrue(twoF_expected_transient < twoF_expected)
 
 
+@pytest.fixture
+def multi_detector_states():
+    ds = pyfstat.snr.DetectorStates()
+
+    Tsft = default_Writer_params["Tsft"]
+    tstart = default_Writer_params["tstart"]
+    ts = np.arange(tstart, tstart + default_Writer_params["duration"], Tsft)
+    detectors = default_Writer_params["detectors"]
+
+    return ds.multi_detector_states(
+        timestamps=ts, detectors=detectors, time_offset=Tsft / 2
+    )
+
+
+@pytest.fixture
+def snr_object(multi_detector_states):
+    return pyfstat.SignalToNoiseRatio(
+        detector_states=multi_detector_states,
+        Tsft=default_Writer_params["Tsft"],
+        assumeSqrtSX=default_Writer_params["sqrtSX"],
+    )
+
+
+def test_SignalToNoiseRatio(multi_detector_states):
+
+    params = {
+        "h0": 1,
+        "cosi": 0,
+        "psi": 0,
+        "phi0": 0,
+        "Alpha": 0,
+        "Delta": 0,
+    }
+    snr = pyfstat.SignalToNoiseRatio(
+        detector_states=multi_detector_states, assumeSqrtSX=1, Tsft=1800
+    )
+    twoF_from_snr2 = snr.compute_snr2(**params)
+    twoF_from_snr2 += 4
+
+    params.pop("phi0")
+    predicted_twoF, _ = pyfstat.helper_functions.predict_fstat(
+        **params,
+        minStartTime=default_Writer_params["tstart"],
+        duration=default_Writer_params["duration"],
+        IFOs=default_Writer_params["detectors"],
+        assumeSqrtSX=snr.assumeSqrtSX,
+    )
+    np.testing.assert_allclose(twoF_from_snr2, predicted_twoF, rtol=1e-3)
+
+
 class TestBaseSearchClass(unittest.TestCase):
     # TODO test the basic methods
     pass
