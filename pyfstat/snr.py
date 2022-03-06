@@ -118,6 +118,10 @@ class SignalToNoiseRatio:
 
 
 class DetectorStates:
+    """
+    Python interface to XLALGetMultiDetectorStates and XLALGetMultiDetectorStatesFromMultiSFTs.
+    """
+
     def __init__(self):
         self.ephems = lalpulsar.InitBarycenter(*get_ephemeris_files())
 
@@ -158,11 +162,42 @@ class DetectorStates:
         self,
         sftfilepath,
         central_frequency,
-        frequency_wing_bins=1,
         time_offset=0,
+        frequency_wing_bins=1,
         sft_constraint=None,
         return_sfts=False,
     ):
+        """
+        Parameters
+        ----------
+        sftfilepath: str
+            Path to SFT files in a format compatible with XLALSFTdataFind.
+        central_frequency: float
+            Frequency [Hz] around which SFT data will be retrieved.
+            This option is only relevant if further information is to be
+            retrieved from the SFTs (i.e. `return_sfts=True`).
+        time_offset: float
+            Timestamp offset to retrieve detector states.
+        frequency_wing_bins: int
+            Frequency bins around the central frequency to retrieve from
+            SFT data. Bin size is determined using the SFT baseline time
+            as obtained from the catalog.
+            This option is only relevant if further information is to be
+            retrieved from the SFTs (i.e. `return_sfts=True`).
+        sft_constraint: lalpulsar.SFTConstraint
+            Optional argument to specify further constraints in XLALSFTdataFind.
+        return_sfts: bool
+            If True, also return the loaded SFTs. This is useful to compute futher
+            quantities such as noise weights.
+
+        Returns
+        -------
+        multi_detector_states: lalpulsar.MultiDetectorStateSeries
+            Resulting multi-detector states produced by XLALGetMultiDetectorStatesFromMultiSFTs
+        multi_sfts: lalpulsar.MultiSFTVector
+            Only if `return_sfts` is True.
+            MultiSFTVector produced by XLALLoadMultiSFTs along the specified frequency band.
+        """
         # FIXME: Use MultiCatalogView once lalsuite implements the proper
         # SWIG wrapper around XLALLoadMultiSFTsFromView.
         sft_catalog = lalpulsar.SFTdataFind(sftfilepath, sft_constraint)
@@ -173,15 +208,24 @@ class DetectorStates:
             fMin=central_frequency - wing_Hz,
             fMax=central_frequency + wing_Hz,
         )
-        multi_ds = lalpulsar.GetMultiDetectorStatesFromMultiSFTs(
+        multi_detector_states = lalpulsar.GetMultiDetectorStatesFromMultiSFTs(
             multiSFTs=multi_sfts, edat=self.ephems, tOffset=time_offset
         )
         if return_sfts:
-            return multi_ds, multi_sfts
+            return multi_detector_states, multi_sfts
         else:
-            return multi_ds
+            return multi_detector_states
 
     def _parse_timestamps_and_detectors(self, timestamps, detectors):
+        """
+        Checks consistency between timestamps and detectors.
+
+        If `timestamps` is a dictionary, gets detector names from the keys
+        and makes sure `detectors` is None.
+
+        Otherwise, formats `detectors` into a list and makes sure `timestamps`
+        is a 1D array containing numbers.
+        """
 
         if isinstance(timestamps, dict):
 
@@ -214,7 +258,9 @@ class DetectorStates:
 
     @staticmethod
     def _numpy_array_to_LIGOTimeGPSVector(numpy_array):
-        """Pure brute force conversion"""
+        """
+        Maps a numpy array of into a LIGOTimeGPS array using `np.floor`.
+        """
 
         if numpy_array.ndim != 1:
             raise ValueError(
