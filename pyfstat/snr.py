@@ -16,14 +16,6 @@ class SignalToNoiseRatio:
     assumeSqrtSX: float = field(default=None)
     Tsft: float = field(default=None)
 
-    @classmethod
-    def from_sfts(cls):
-        """
-        Allow to include noise weights from SFTs.
-        This will mean detector states will be retrieved from SFTs directly
-        """
-        pass
-
     def __attrs_post_init__(self):
         if self.noise_weights is None:
             if self.assumeSqrtSX is not None and self.Tsft is not None:
@@ -32,6 +24,41 @@ class SignalToNoiseRatio:
                 raise ValueError(
                     "Need either (`assumeSqrtSX`, `Tsft`) or `noise_weights` to account for background noise"
                 )
+        else:
+            # Should add some checks v.s. detector_states?
+            pass
+
+    @classmethod
+    def from_sfts(
+        cls,
+        F0,
+        sftfilepath,
+        time_offset,
+        running_median_window=lalpulsar.FstatOptionalArgsDefaults.runningMedianWindow,
+        sft_constraint=None,
+    ):
+        """
+        Allow to include noise weights from SFTs.
+        This will mean detector states will be retrieved from SFTs directly
+        """
+
+        detector_states, multi_sfts = DetectorStates().multi_detector_states_from_sfts(
+            sftfilepath=sftfilepath,
+            central_frequency=F0,
+            frequency_wing_bins=running_median_window // 2
+            + 10,  # PredictFstat.c:Line 414
+            time_offset=time_offset,
+            sft_constraint=sft_constraint,
+            return_sfts=True,
+        )
+        multi_rng_med = lalpulsar.NormalizeMultiSFTVect(
+            multi_sfts, running_median_window, None
+        )
+        noise_weights = lalpulsar.ComputeMultiNoiseWeights(
+            multi_rng_med, running_median_window, 0
+        )
+
+        return cls(detector_states=detector_states, noise_weights=noise_weights)
 
     def compute_snr2(
         self, Alpha, Delta, psi, phi0, h0=None, cosi=None, aPlus=None, aCross=None
@@ -46,9 +73,7 @@ class SignalToNoiseRatio:
         Aphys.aPlus = aPlus
         Aphys.aCross = aCross
 
-        # FIXME Here as well!!!!!
         M = self.compute_Mmunu(Alpha=Alpha, Delta=Delta)
-        M.Sinv_Tsft = self.Sinv_Tsft
 
         return lalpulsar.ComputeOptimalSNR2FromMmunu(Aphys, M)
 
@@ -66,12 +91,16 @@ class SignalToNoiseRatio:
         sky.system = lal.COORDINATESYSTEM_EQUATORIAL
         lal.NormalizeSkyPosition(sky.longitude, sky.latitude)
 
-        # FIXME Missing Mmunu.Sinv_Tsft = t_sft / psd !!!!!!
-        return lalpulsar.ComputeMultiAMCoeffs(
+        Mmunu = lalpulsar.ComputeMultiAMCoeffs(
             multiDetStates=self.detector_states,
             multiWeights=self.noise_weights,
             skypos=sky,
         ).Mmunu
+
+        if self.noise_weights is None:
+            Mmunu.Sinv_Tsft = self.Sinv_Tsft
+
+        return Mmunu
 
     def _convert_amplitude_parameters(self, h0, cosi, aPlus, aCross):
         h0_cosi = h0 is not None and cosi is not None
@@ -125,8 +154,32 @@ class DetectorStates:
             time_offset,
         )
 
-    def multi_detector_states_from_sfts(self, sftpath, time_offset):
-        pass
+    def multi_detector_states_from_sfts(
+        self,
+        sftfilepath,
+        central_frequency,
+        frequency_wing_bins=1,
+        time_offset=0,
+        sft_constraint=None,
+        return_sfts=False,
+    ):
+        # FIXME: Use MultiCatalogView once lalsuite implements the proper
+        # SWIG wrapper around XLALLoadMultiSFTsFromView.
+        sft_catalog = lalpulsar.SFTdataFind(sftfilepath, sft_constraint)
+        df = sft_catalog.data[0].header.deltaF
+        wing_Hz = df * frequency_wing_bins
+        multi_sfts = lalpulsar.LoadMultiSFTs(
+            sft_catalog,
+            fMin=central_frequency - wing_Hz,
+            fMax=central_frequency + wing_Hz,
+        )
+        multi_ds = lalpulsar.GetMultiDetectorStatesFromMultiSFTs(
+            multiSFTs=multi_sfts, edat=self.ephems, tOffset=time_offset
+        )
+        if return_sfts:
+            return multi_ds, multi_sfts
+        else:
+            return multi_ds
 
     def _parse_timestamps_and_detectors(self, timestamps, detectors):
 
