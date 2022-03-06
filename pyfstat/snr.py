@@ -52,6 +52,12 @@ class SignalToNoiseRatio:
 
         return lalpulsar.ComputeOptimalSNR2FromMmunu(Aphys, M)
 
+    def compute_twoF(self, *args, **kwargs):
+        snr2 = self.compute_snr2(*args, **kwargs)
+        expected_2F = snr2 + 4.0
+        stdev_2F = np.sqrt(8.0 + 4.0 * snr2)
+        return expected_2F, stdev_2F
+
     def compute_Mmunu(self, Alpha, Delta):
 
         sky = lal.SkyPosition()

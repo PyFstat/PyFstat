@@ -978,11 +978,10 @@ def test_SignalToNoiseRatio(multi_detector_states):
     snr = pyfstat.SignalToNoiseRatio(
         detector_states=multi_detector_states, assumeSqrtSX=1, Tsft=1800
     )
-    twoF_from_snr2 = snr.compute_snr2(**params)
-    twoF_from_snr2 += 4
+    twoF_from_snr2, twoF_stdev_from_snr2 = snr.compute_twoF(**params)
 
     params.pop("phi0")
-    predicted_twoF, _ = pyfstat.helper_functions.predict_fstat(
+    predicted_twoF, predicted_stdev_twoF = pyfstat.helper_functions.predict_fstat(
         **params,
         minStartTime=default_Writer_params["tstart"],
         duration=default_Writer_params["duration"],
@@ -990,6 +989,7 @@ def test_SignalToNoiseRatio(multi_detector_states):
         assumeSqrtSX=snr.assumeSqrtSX,
     )
     np.testing.assert_allclose(twoF_from_snr2, predicted_twoF, rtol=1e-3)
+    np.testing.assert_allclose(twoF_stdev_from_snr2, predicted_stdev_twoF, rtol=1e-3)
 
 
 class TestBaseSearchClass(unittest.TestCase):
