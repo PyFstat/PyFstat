@@ -10,6 +10,43 @@ from pyfstat.helper_functions import get_ephemeris_files
 
 @define(kw_only=True, slots=False)
 class SignalToNoiseRatio:
+    """
+    Compute the optimal signal-to-noise ratio (and derived quantities)
+    of a CW signal on Gaussian noise or an arbitrary dataset of SFTs.
+
+    The definition of SNR (shortcut for "optimal signal-to-noise ratio")
+    is taken from Eq. (76) of https://dcc.ligo.org/LIGO-T0900149 and is
+    such that `<2F> = 4 + SNR^2`, where `<2F>` represents the expected
+    value over noise realization of twice the F-statistic of a prefectly
+    matched template to an existing signal in the data.
+
+    Computing SNR^2 requires two quantities:
+        - The M matrix, which depends on the sky position and polarization angle
+        and encodes the effect of the detector's antenna pattern over the course
+        of the observing run.
+        - The JKS amplitude paramaters {A^0, A^1, A^2, A^3}, which are functions
+        of the CW's amplitude parameters (h0, cosi, psi) or, alternatively,
+        (aPlus, aCross, psi).
+
+    Parameters
+    ----------
+    detector_states: lalpulsar.MultiDetectorStateSeries
+        MultiDetectorStateSeries as produced by DetectorStates.
+        Provides the required information to compute the antenna pattern contribution.
+    noise_weights: Union[lalpulsar.MultiNoiseWeights, None]
+        Optional, incompatible with `(assumeSqrtSX, Tsft)`.
+        Can be compute from SFTs using `SignalToNoiseRatio.from_sfts`.
+        Vector of noise weights to account for a varying noise floor or unequal noise
+        floors in different detectors.
+    assumeSqrtSX: float
+        Optional, incompatible with `noise_weights`.
+        *Single-sided* *amplitude* spectral density (ASD) of the detector noise.
+        This value is used for all detectors, meaning it's not possible to manually
+        specify different noise floors without creating SFT files.
+    Tsft: float
+        Optional, incompatible with `noise_weights`.
+        SFT baseline in seconds.
+    """
 
     detector_states: lalpulsar.MultiDetectorStateSeries = field()
     noise_weights: Union[lalpulsar.MultiNoiseWeights, None] = field(default=None)
@@ -17,16 +54,20 @@ class SignalToNoiseRatio:
     Tsft: float = field(default=None)
 
     def __attrs_post_init__(self):
+        have_Tsft_sqrtSX = self.assumeSqrtSX is not None and self.Tsft is not None
+
+        # FIXME: There has to be a simpler logic for this
         if self.noise_weights is None:
-            if self.assumeSqrtSX is not None and self.Tsft is not None:
+            if have_Tsft_sqrtSX:
                 self.Sinv_Tsft = self.Tsft / self.assumeSqrtSX**2
             else:
                 raise ValueError(
                     "Need either (`assumeSqrtSX`, `Tsft`) or `noise_weights` to account for background noise"
                 )
-        else:
-            # Should add some checks v.s. detector_states?
-            pass
+        elif have_Tsft_sqrtSX:
+            raise ValueError(
+                "Need either (`assumeSqrtSX`, `Tsft`) or `noise_weights` to account for background noise"
+            )
 
     @classmethod
     def from_sfts(
@@ -38,8 +79,25 @@ class SignalToNoiseRatio:
         sft_constraint=None,
     ):
         """
-        Allow to include noise weights from SFTs.
-        This will mean detector states will be retrieved from SFTs directly
+        Alternative constructor to retrieve detector states and noise weights from SFT files.
+        This method is based on `DetectorStates.multi_detector_states_from_sfts`.
+        This is currently the other way in which varying / different noise floors can be used
+        when computing SNRs.
+
+        Parameters
+        ----------
+
+        F0: float
+            Central frequency [Hz] to retrieve from the SFT files to compute noise weights.
+        sftfilepath: str
+            Path to SFT files in a format compatible with XLALSFTdataFind.
+        time_offset: float
+            Timestamp offset to retrieve detector states.
+        running_median_window: int
+            Window used to compute the running-median noise floor estimation.
+            Default value is consistent with that used in lalapps_PredictFstat.
+        sft_constraint: lalpulsar.SFTConstraint
+            Optional argument to specify further constraints in XLALSFTdataFind.
         """
 
         detector_states, multi_sfts = DetectorStates().multi_detector_states_from_sfts(
@@ -63,6 +121,47 @@ class SignalToNoiseRatio:
     def compute_snr2(
         self, Alpha, Delta, psi, phi0, h0=None, cosi=None, aPlus=None, aCross=None
     ):
+        """
+        Compute the SNR^2 of a CW signal using XLALComputeOptimalSNR2FromMmunu.
+        Parameters correspond to the standard ones used to describe a CW
+        (see e.g. Eqs. (16), (26), (30) of https://dcc.ligo.org/LIGO-T0900149).
+
+        Mind that this function returns *squared* SNR
+        (Eq. (76) of https://dcc.ligo.org/LIGO-T0900149),
+        which can be directly related to the expected F-statistic as
+        ```
+        <2F> = 4 + SNR^2.
+        ```
+
+        Parameters
+        ----------
+        Alpha: float
+            Right ascension (equatorial longitude) of the signal in radians.
+        Delta: float
+            Declination (equatorial latitude) of the signal in radians.
+        psi: float
+            Polarization angle.
+        h0: float
+            Nominal GW amplitude. Must be given together with `cosi`
+            and conflicts with `aPlus` and `aCross`.
+        cosi: float
+            Cosine of the source inclination w.r.t. line of sight.
+            Must be given together with `h0`
+            and conflicts with `aPlus` and `aCross`.
+        aPlus: float
+            Plus polarization amplitude. Must be given with `aCross`
+            and conflicts with `h0` and `cosi`.
+        aCross: float
+            Cross polarization amplitude. Must be given with `aPlus`
+            and conflicts with `h0` and `cosi`.
+
+        Returns
+        -------
+        SNR^2: float
+            Squared signal-to-noise ratio of a CW signal consistent
+            with the specified parameters in the specified detector
+            network.
+        """
         aPlus, aCross = self._convert_amplitude_parameters(
             h0=h0, cosi=cosi, aPlus=aPlus, aCross=aCross
         )
@@ -78,12 +177,50 @@ class SignalToNoiseRatio:
         return lalpulsar.ComputeOptimalSNR2FromMmunu(Aphys, M)
 
     def compute_twoF(self, *args, **kwargs):
+        """
+        Compute the expected 2F value of a CW signal from the result of `compute_snr2`.
+
+        ```
+        expected_2F = 4 + SNR^2.
+        stdev_2F = sqrt(8 + 4 * SNR^2)
+        ```
+
+        Input parameters are passed untouched to `self.compute_snr2`.
+        See corresponding docstring for a list of valid parameters.
+
+        Returns
+        -------
+        expected_2F:
+            Expected value of a non-central chi-squared distribution with
+            four degrees of freedom and non-centrality parameter given by SNR^2.
+        stdev_2F:
+            Standard deviation of a non-central chi-squared distribution with
+            four degrees of freedom and non-centrality parameter given by SNR^2.
+        """
         snr2 = self.compute_snr2(*args, **kwargs)
         expected_2F = snr2 + 4.0
         stdev_2F = np.sqrt(8.0 + 4.0 * snr2)
         return expected_2F, stdev_2F
 
     def compute_Mmunu(self, Alpha, Delta):
+        """
+        Compute Mmunu matrix at a specific sky position using the detector states
+        (and possible noise weights) given at initialization time.
+        If no noise weigths were given, unit weights are assumed.
+
+        Parameters
+        ----------
+        Alpha: float
+            Right ascension (equatorial longitude) of the signal in radians.
+        Delta: float
+            Declination (equatorial latitude) of the signal in radians.
+
+        Returns
+        -------
+        Mmunu: lalpulsar.AntennaPatternMatrix
+            Mmunu matrix enconding the response of the given detector network
+            to a CW at the specified sky position.
+        """
 
         sky = lal.SkyPosition()
         sky.longitude = Alpha
@@ -103,6 +240,10 @@ class SignalToNoiseRatio:
         return Mmunu
 
     def _convert_amplitude_parameters(self, h0, cosi, aPlus, aCross):
+        """
+        Internal method to check and convert the given amplitude parametrs
+        into the required format.
+        """
         h0_cosi = h0 is not None and cosi is not None
         aPlusCross = aPlus is not None and aCross is not None
 
