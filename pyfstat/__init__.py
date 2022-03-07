@@ -5,9 +5,13 @@ from .core import (
     SemiCoherentSearch,
     SemiCoherentGlitchSearch,
 )
-from .make_sfts import (
+
+from .injection_parameters import (
     InjectionParametersGenerator,
     AllSkyInjectionParametersGenerator,
+)
+
+from .make_sfts import (
     Writer,
     BinaryModulatedWriter,
     GlitchWriter,
