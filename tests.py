@@ -2361,6 +2361,7 @@ class TestGridSearch(BaseForTestsWithData):
         self.search = pyfstat.GridSearch(
             "grid_search",
             self.outdir,
+            self.Writer.sftfilepath,
             F0s=self.F0s,
             F1s=[self.Writer.F1],
             F2s=[self.Writer.F2],
