@@ -52,7 +52,12 @@ def writer_using_fixtures():
     kwargs["F0"] = 10.0
     kwargs["Band"] = 0.1
     kwargs["sqrtSX"] = 1e-23
-    return pyfstat.Writer(**kwargs)
+    kwargs["outdir"] = "TestData/"
+
+    this_writer = pyfstat.Writer(**kwargs)
+    yield this_writer
+    if os.path.isdir(this_writer.outdir):
+        shutil.rmtree(this_writer.outdir)
 
 
 default_signal_params_no_sky = {
