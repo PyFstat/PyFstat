@@ -379,39 +379,28 @@ class Writer(BaseSearchClass):
                     )
             else:
                 ifos = list(self.timestamps.keys())
-                timestamps = self.timestamps.values()
+                input_timestamps = self.timestamps.values()
                 self.detectors = ",".join(ifos)
-        elif hasattr(self.timestamps, "__len__"):
-            # Otherwise, assume it's some sort of list and convert to numpy array
+        else:
+            # Otherwise, assume it's a list and convert into a 1D numpy arra
             if self.detectors is None:
                 raise ValueError(
                     "Detector names must be given either as a key in `timestamps` or explicitly via `detectors`."
                 )
             ifos = self.detectors.split(",")
-
-            self.timestamps = np.array(self.timestamps)
-            if self.timestamps.ndim > 1:
-                if self.timestamps.shape[0] != len(ifos):
-                    raise ValueError(
-                        f"Number of detectors ({self.detectors}) "
-                        f"does not match number of available timestamps ({self.timestamps.shape[0]})."
-                    )
-                timestamps = (ts for ts in self.timestamps)
-            else:
-                # If it's just a list, use the same timestamps for every detector.
-                timestamps = (self.timestamps for i in ifos)
+            input_timestamps = (self.timestamps for i in ifos)
 
         # If this point was reached, it means we should create timestamps files.
-        self.timestamps = []
-        for ind, ts in enumerate(timestamps):
+        timestamp_files = []
+        for ind, ts in enumerate(input_timestamps):
             output_file = os.path.join(
                 self.outdir, f"{self.label}_timestamps_{ifos[ind]}.csv"
             )
             left_column = np.floor(ts).reshape(-1, 1)
-            right_column = np.floor(1e9 * (ts.reshape(-1, 1) - left_column))
+            right_column = np.floor(1e9 * (np.reshape(ts, (-1, 1)) - left_column))
             np.savetxt(output_file, np.hstack((left_column, right_column)), fmt="%d")
-            self.timestamps.append(output_file)
-        self.timestamps = ",".joint(self.timestamps)
+            timestamp_files.append(output_file)
+        self.timestamps = ",".join(timestamp_files)
 
     def _basic_setup(self):
         """Basic parameters handling, path setup etc."""
@@ -430,7 +419,7 @@ class Writer(BaseSearchClass):
             )
 
         incompatible_with_TS = ["tstart", "duration", "noiseSFTs"]
-        TS_required_options = ["Tsft", "detectors"]
+        TS_required_options = ["Tsft"]
         no_noiseSFTs_options = ["tstart", "duration", "Tsft", "detectors"]
 
         # FIXME: Remove after deprecating timestampsFiles
@@ -888,6 +877,7 @@ class BinaryModulatedWriter(Writer):
         transientStartTime=None,
         transientTau=None,
         randSeed=None,
+        timestamps=None,
         timestampsFiles=None,
     ):
         """
@@ -1124,6 +1114,7 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
         sun_ephem=None,
         transientWindowType="rect",
         randSeed=None,
+        timestamps=None,
         timestampsFiles=None,
     ):
         """

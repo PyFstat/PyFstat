@@ -556,7 +556,7 @@ class TestWriter(BaseForTestsWithData):
             SFTWindowType=self.SFTWindowType,
             SFTWindowBeta=self.SFTWindowBeta,
             randSeed=self.randSeed,
-            timestampsFiles=",".join(tsfiles),
+            timestamps=",".join(tsfiles),
             **self.signal_parameters,
         )
         tsWriter.make_data(verbose=True)
@@ -584,9 +584,71 @@ class TestWriter(BaseForTestsWithData):
                 == SFTnamesplit[1].split("-")[1:]
             )
 
-    def test_timestampsFiles(self):
+    def test_timestamps(self):
         self._test_writer_with_tsfiles(gaps=False)
         self._test_writer_with_tsfiles(gaps=True)
+
+    def test_timestamps_file_generation(self):
+
+        # Test dictionary
+        timestamps = {"H1": np.arange(self.tref, self.tref + 4 * self.Tsft, self.Tsft)}
+        if "v4" not in self.writer_class_to_test.mfd:
+            timestamps["L1"] = np.arange(
+                self.tref, self.tref + 8 * self.Tsft, self.Tsft
+            )
+
+        tsWriter = self.writer_class_to_test(
+            label="ts_using_dict",
+            tref=self.tref,
+            Tsft=self.Tsft,
+            outdir=self.outdir,
+            sqrtSX=self.sqrtSX,
+            Band=self.Band,
+            SFTWindowType=self.SFTWindowType,
+            SFTWindowBeta=self.SFTWindowBeta,
+            randSeed=self.randSeed,
+            timestamps=timestamps,
+            **self.signal_parameters,
+        )
+
+        for ifo in timestamps:
+            timestamps_file = os.path.join(
+                tsWriter.outdir, f"{tsWriter.label}_timestamps_{ifo}.csv"
+            )
+            self.assertTrue(os.path.isfile(timestamps_file))
+            ts = np.genfromtxt(timestamps_file)
+            ts = ts[:, 0] + 1e-9 * ts[:, 1]
+            np.testing.assert_almost_equal(ts, timestamps[ifo])
+
+        # Test single list
+        timestamps = np.arange(self.tref, self.tref + 4 * self.Tsft, self.Tsft)
+        detectors = "H1"
+        if "v4" not in self.writer_class_to_test.mfd:
+            detectors += ",L1"
+
+        tsWriter = self.writer_class_to_test(
+            label="ts_using_list",
+            tref=self.tref,
+            Tsft=self.Tsft,
+            outdir=self.outdir,
+            sqrtSX=self.sqrtSX,
+            Band=self.Band,
+            SFTWindowType=self.SFTWindowType,
+            SFTWindowBeta=self.SFTWindowBeta,
+            randSeed=self.randSeed,
+            detectors=detectors,
+            timestamps=timestamps,
+            **self.signal_parameters,
+        )
+
+        for ifo in detectors.split(","):
+            timestamps_file = os.path.join(
+                tsWriter.outdir, f"{tsWriter.label}_timestamps_{ifo}.csv"
+            )
+            self.assertTrue(os.path.isfile(timestamps_file))
+            ts = np.genfromtxt(timestamps_file)
+            ts = ts[:, 0] + 1e-9 * ts[:, 1]
+            np.testing.assert_almost_equal(ts, timestamps)
 
 
 class TestLineWriter(TestWriter):
