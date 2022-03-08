@@ -11,22 +11,22 @@ from pyfstat.helper_functions import get_ephemeris_files
 @define(kw_only=True, slots=False)
 class SignalToNoiseRatio:
     """
-    Compute the optimal signal-to-noise ratio (and derived quantities)
+    Compute the optimal signal-to-noise ratio (and derived quantities, such as the F-statistic)
     of a CW signal on Gaussian noise or an arbitrary dataset of SFTs.
 
     The definition of SNR (shortcut for "optimal signal-to-noise ratio")
-    is taken from Eq. (76) of https://dcc.ligo.org/LIGO-T0900149 and is
+    is taken from Eq. (76) of https://dcc.ligo.org/T0900149-v6/public and is
     such that `<2F> = 4 + SNR^2`, where `<2F>` represents the expected
-    value over noise realization of twice the F-statistic of a prefectly
+    value over noise realizations of twice the F-statistic of a perfectly
     matched template to an existing signal in the data.
 
     Computing SNR^2 requires two quantities:
-        - The M matrix, which depends on the sky position and polarization angle
+        - The antenna pattern matrix `M`, which depends on the sky position and polarization angle
         and encodes the effect of the detector's antenna pattern over the course
         of the observing run.
-        - The JKS amplitude paramaters {A^0, A^1, A^2, A^3}, which are functions
-        of the CW's amplitude parameters (h0, cosi, psi) or, alternatively,
-        (aPlus, aCross, psi).
+        - The JKS amplitude parameters `{A^0, A^1, A^2, A^3}`, which are functions
+        of the CW's amplitude parameters `(h0, cosi, psi)` or, alternatively,
+        `(aPlus, aCross, psi)`.
 
     Parameters
     ----------
@@ -35,7 +35,7 @@ class SignalToNoiseRatio:
         Provides the required information to compute the antenna pattern contribution.
     noise_weights: Union[lalpulsar.MultiNoiseWeights, None]
         Optional, incompatible with `(assumeSqrtSX, Tsft)`.
-        Can be compute from SFTs using `SignalToNoiseRatio.from_sfts`.
+        Can be computed from SFTs using `SignalToNoiseRatio.from_sfts`.
         Vector of noise weights to account for a varying noise floor or unequal noise
         floors in different detectors.
     assumeSqrtSX: float
@@ -124,10 +124,10 @@ class SignalToNoiseRatio:
         """
         Compute the SNR^2 of a CW signal using XLALComputeOptimalSNR2FromMmunu.
         Parameters correspond to the standard ones used to describe a CW
-        (see e.g. Eqs. (16), (26), (30) of https://dcc.ligo.org/LIGO-T0900149).
+        (see e.g. Eqs. (16), (26), (30) of https://dcc.ligo.org/T0900149-v6/public ).
 
         Mind that this function returns *squared* SNR
-        (Eq. (76) of https://dcc.ligo.org/LIGO-T0900149),
+        (Eq. (76) of https://dcc.ligo.org/T0900149-v6/public ),
         which can be directly related to the expected F-statistic as
         ```
         <2F> = 4 + SNR^2.
@@ -241,7 +241,7 @@ class SignalToNoiseRatio:
 
     def _convert_amplitude_parameters(self, h0, cosi, aPlus, aCross):
         """
-        Internal method to check and convert the given amplitude parametrs
+        Internal method to check and convert the given amplitude parameters
         into the required format.
         """
         h0_cosi = h0 is not None and cosi is not None
@@ -273,7 +273,7 @@ class DetectorStates:
         time_stamps: array-like or dict
             GPS timestamps at which detector states will be retrieved.
             If array, use the same set of timestamps for all detectors,
-            which must be explicitly given by the user via`detectors`.
+            which must be explicitly given by the user via `detectors`.
             If dictionary, each key should correspond to a valid detector name
             to be parsed by XLALParseMultiLALDetector and the associated value
             should be an array-like set of GPS timestamps for each individual detector.
@@ -328,7 +328,7 @@ class DetectorStates:
         sft_constraint: lalpulsar.SFTConstraint
             Optional argument to specify further constraints in XLALSFTdataFind.
         return_sfts: bool
-            If True, also return the loaded SFTs. This is useful to compute futher
+            If True, also return the loaded SFTs. This is useful to compute further
             quantities such as noise weights.
 
         Returns
@@ -373,7 +373,7 @@ class DetectorStates:
             if detectors is not None:
                 raise ValueError("`timestamps`' keys are redundant with `detectors`. ")
 
-            logging.debug("Retrieving detectors from tiemstamps dictionary.")
+            logging.debug("Retrieving detectors from timestamps dictionary.")
             detectors = list(timestamps.key())
             timestamps = timestamps.values()
 
