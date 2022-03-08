@@ -218,7 +218,7 @@ class SignalToNoiseRatio:
         Returns
         -------
         Mmunu: lalpulsar.AntennaPatternMatrix
-            Mmunu matrix enconding the response of the given detector network
+            Mmunu matrix encoding the response of the given detector network
             to a CW at the specified sky position.
         """
 
