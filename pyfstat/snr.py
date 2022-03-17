@@ -24,9 +24,10 @@ class SignalToNoiseRatio:
         - The antenna pattern matrix `M`, which depends on the sky position and polarization angle
         and encodes the effect of the detector's antenna pattern over the course
         of the observing run.
-        - The JKS amplitude parameters `{A^0, A^1, A^2, A^3}`, which are functions
-        of the CW's amplitude parameters `(h0, cosi, psi)` or, alternatively,
-        `(aPlus, aCross, psi)`.
+        - The JKS amplitude parameters `{A^0, A^1, A^2, A^3}` 
+        [Jaranowski, Krolak, Schutz Phys. Rev. D 58 063001,(1998)], which are functions
+        of the CW's amplitude parameters `(h0, cosi, psi, phi0)` or, alternatively,
+        `(aPlus, aCross, psi, phi0)`.
 
     Parameters
     ----------
@@ -41,8 +42,10 @@ class SignalToNoiseRatio:
     assumeSqrtSX: float
         Optional, incompatible with `noise_weights`.
         *Single-sided* *amplitude* spectral density (ASD) of the detector noise.
-        This value is used for all detectors, meaning it's not possible to manually
+        This value is used for all detectors, meaning it's not currently possible to manually
         specify different noise floors without creating SFT files.
+        (To be improved in the future; developer note:
+         will require SWIG constructor for MultiNoiseWeights.)
     """
 
     detector_states: lalpulsar.MultiDetectorStateSeries = field()
@@ -275,7 +278,7 @@ class DetectorStates:
             to be parsed by XLALParseMultiLALDetector and the associated value
             should be an array-like set of GPS timestamps for each individual detector.
         Tsft: float
-            Timespan covered by each timestamp. I does not need to coincide with the
+            Timespan covered by each timestamp. It does not need to coincide with the
             separation between consecutive timestamps.
         detectors: list[str] or comma-separated string
             List of detectors to be parsed using XLALParseMultiLALDetector.
