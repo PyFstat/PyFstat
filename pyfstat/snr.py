@@ -279,6 +279,7 @@ class DetectorStates:
             separation between consecutive timestamps.
         detectors: list[str] or comma-separated string
             List of detectors to be parsed using XLALParseMultiLALDetector.
+            Conflicts with dictionary of `time_stamps`, required otherwise.
         time_offset: float
             Timestamp offset to retrieve detector states.
 
@@ -400,7 +401,8 @@ class DetectorStates:
     @staticmethod
     def _numpy_array_to_LIGOTimeGPSVector(numpy_array, Tsft=None):
         """
-        Maps a numpy array of into a LIGOTimeGPS array using `np.floor`.
+        Maps a numpy array of floats into a LIGOTimeGPS array using `np.floor`
+        to separate seconds and nanoseconds.
         """
 
         if numpy_array.ndim != 1:
