@@ -288,7 +288,8 @@ class SignalToNoiseRatio:
 
         return Mmunu
 
-    def _convert_amplitude_parameters(self, h0, cosi, aPlus, aCross):
+    @staticmethod
+    def _convert_amplitude_parameters(h0, cosi, aPlus, aCross):
         """
         Internal method to check and convert the given amplitude parameters
         into the required format.
@@ -346,7 +347,10 @@ class DetectorStates:
         if time_offset is None:
             time_offset = 0.5 * Tsft
 
-        self._parse_timestamps_and_detectors(timestamps, Tsft, detectors)
+        (
+            self.multi_timestamps,
+            self.multi_detector,
+        ) = self.parse_timestamps_and_detectors(timestamps, Tsft, detectors)
         return lalpulsar.GetMultiDetectorStates(
             self.multi_timestamps,
             self.multi_detector,
@@ -417,7 +421,8 @@ class DetectorStates:
         else:
             return multi_detector_states
 
-    def _parse_timestamps_and_detectors(self, timestamps, Tsft, detectors):
+    @staticmethod
+    def parse_timestamps_and_detectors(timestamps, Tsft, detectors):
         """
         Checks consistency between timestamps and detectors.
 
@@ -457,16 +462,15 @@ class DetectorStates:
                 raise ValueError("`timestamps` is not a 1D list of numerical values")
             timestamps = (ts for ifo in detectors)
 
-        self.multi_detector = lalpulsar.MultiLALDetector()
-        lalpulsar.ParseMultiLALDetector(self.multi_detector, detectors)
+        multi_detector = lalpulsar.MultiLALDetector()
+        lalpulsar.ParseMultiLALDetector(multi_detector, detectors)
 
-        self.multi_timestamps = lalpulsar.CreateMultiLIGOTimeGPSVector(
-            self.multi_detector.length
-        )
+        multi_timestamps = lalpulsar.CreateMultiLIGOTimeGPSVector(multi_detector.length)
         for ind, ts in enumerate(timestamps):
-            self.multi_timestamps.data[ind] = self._numpy_array_to_LIGOTimeGPSVector(
-                ts, Tsft
-            )
+            multi_timestamps.data[
+                ind
+            ] = DetectorStates._numpy_array_to_LIGOTimeGPSVector(ts, Tsft)
+        return multi_timestamps, multi_detector
 
     @staticmethod
     def _numpy_array_to_LIGOTimeGPSVector(numpy_array, Tsft=None):
