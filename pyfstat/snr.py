@@ -34,7 +34,7 @@ class SignalToNoiseRatio:
         MultiDetectorStateSeries as produced by DetectorStates.
         Provides the required information to compute the antenna pattern contribution.
     noise_weights: Union[lalpulsar.MultiNoiseWeights, None]
-        Optional, incompatible with `(assumeSqrtSX, Tsft)`.
+        Optional, incompatible with `assumeSqrtSX`.
         Can be computed from SFTs using `SignalToNoiseRatio.from_sfts`.
         Noise weights to account for a varying noise floor or unequal noise
         floors in different detectors.
@@ -43,30 +43,27 @@ class SignalToNoiseRatio:
         *Single-sided* *amplitude* spectral density (ASD) of the detector noise.
         This value is used for all detectors, meaning it's not possible to manually
         specify different noise floors without creating SFT files.
-    Tsft: float
-        Optional, incompatible with `noise_weights`.
-        SFT baseline in seconds.
     """
 
     detector_states: lalpulsar.MultiDetectorStateSeries = field()
     noise_weights: Union[lalpulsar.MultiNoiseWeights, None] = field(default=None)
     assumeSqrtSX: float = field(default=None)
-    Tsft: float = field(default=None)
 
     def __attrs_post_init__(self):
-        have_Tsft_sqrtSX = self.assumeSqrtSX is not None and self.Tsft is not None
+
+        self.Tsft = self.detector_states.data[0].deltaT
 
         # FIXME: There has to be a simpler logic for this
         if self.noise_weights is None:
-            if have_Tsft_sqrtSX:
+            if self.assumeSqrtSX is not None:
                 self.Sinv_Tsft = self.Tsft / self.assumeSqrtSX**2
             else:
                 raise ValueError(
-                    "Need either (`assumeSqrtSX`, `Tsft`) or `noise_weights` to account for background noise"
+                    "Need either `assumeSqrtSX` or `noise_weights` to account for background noise"
                 )
-        elif have_Tsft_sqrtSX:
+        elif self.assumeSqrtSX is not None:
             raise ValueError(
-                "Need either (`assumeSqrtSX`, `Tsft`) or `noise_weights` to account for background noise"
+                "Need either `assumeSqrtSX` or `noise_weights` to account for background noise"
             )
 
     @classmethod
@@ -266,7 +263,7 @@ class DetectorStates:
     def __init__(self):
         self.ephems = lalpulsar.InitBarycenter(*get_ephemeris_files())
 
-    def multi_detector_states(self, timestamps, detectors=None, time_offset=0):
+    def multi_detector_states(self, timestamps, Tsft, detectors=None, time_offset=0):
         """
         Parameters
         ----------
@@ -277,10 +274,11 @@ class DetectorStates:
             If dictionary, each key should correspond to a valid detector name
             to be parsed by XLALParseMultiLALDetector and the associated value
             should be an array-like set of GPS timestamps for each individual detector.
-
+        Tsft: float
+            Timespan covered by each timestamp. I does not need to coincide with the
+            separation between consecutive timestamps.
         detectors: list[str] or comma-separated string
             List of detectors to be parsed using XLALParseMultiLALDetector.
-
         time_offset: float
             Timestamp offset to retrieve detector states.
 
@@ -291,7 +289,7 @@ class DetectorStates:
             Resulting multi-detector states produced by XLALGetMultiDetectorStates
         """
 
-        self._parse_timestamps_and_detectors(timestamps, detectors)
+        self._parse_timestamps_and_detectors(timestamps, Tsft, detectors)
         return lalpulsar.GetMultiDetectorStates(
             self.multi_timestamps,
             self.multi_detector,
@@ -357,7 +355,7 @@ class DetectorStates:
         else:
             return multi_detector_states
 
-    def _parse_timestamps_and_detectors(self, timestamps, detectors):
+    def _parse_timestamps_and_detectors(self, timestamps, Tsft, detectors):
         """
         Checks consistency between timestamps and detectors.
 
@@ -395,10 +393,12 @@ class DetectorStates:
             self.multi_detector.length
         )
         for ind, ts in enumerate(timestamps):
-            self.multi_timestamps.data[ind] = self._numpy_array_to_LIGOTimeGPSVector(ts)
+            self.multi_timestamps.data[ind] = self._numpy_array_to_LIGOTimeGPSVector(
+                ts, Tsft
+            )
 
     @staticmethod
-    def _numpy_array_to_LIGOTimeGPSVector(numpy_array):
+    def _numpy_array_to_LIGOTimeGPSVector(numpy_array, Tsft=None):
         """
         Maps a numpy array of into a LIGOTimeGPS array using `np.floor`.
         """
@@ -416,5 +416,6 @@ class DetectorStates:
             time_gps_vector.data[ind] = lal.LIGOTimeGPS(
                 int(seconds_array[ind]), int(nanoseconds_array[ind])
             )
+            time_gps_vector.deltaT = Tsft or 0
 
         return time_gps_vector

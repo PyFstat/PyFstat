@@ -967,7 +967,7 @@ def multi_detector_states():
     detectors = default_Writer_params["detectors"]
 
     return ds.multi_detector_states(
-        timestamps=ts, detectors=detectors, time_offset=Tsft / 2
+        timestamps=ts, detectors=detectors, Tsft=Tsft, time_offset=Tsft / 2
     )
 
 
@@ -975,7 +975,6 @@ def multi_detector_states():
 def snr_object(multi_detector_states):
     return pyfstat.SignalToNoiseRatio(
         detector_states=multi_detector_states,
-        Tsft=default_Writer_params["Tsft"],
         assumeSqrtSX=default_Writer_params["sqrtSX"],
     )
 
@@ -995,7 +994,6 @@ def test_SignalToNoiseRatio(writer_using_fixtures, multi_detector_states):
     snr = pyfstat.SignalToNoiseRatio(
         detector_states=multi_detector_states,
         assumeSqrtSX=writer_using_fixtures.sqrtSX,
-        Tsft=writer_using_fixtures.Tsft,
     )
     twoF_from_snr2, twoF_stdev_from_snr2 = snr.compute_twoF(**params)
 
