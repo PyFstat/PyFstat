@@ -36,7 +36,7 @@ class SignalToNoiseRatio:
     noise_weights: Union[lalpulsar.MultiNoiseWeights, None]
         Optional, incompatible with `(assumeSqrtSX, Tsft)`.
         Can be computed from SFTs using `SignalToNoiseRatio.from_sfts`.
-        Vector of noise weights to account for a varying noise floor or unequal noise
+        Noise weights to account for a varying noise floor or unequal noise
         floors in different detectors.
     assumeSqrtSX: float
         Optional, incompatible with `noise_weights`.
