@@ -74,7 +74,7 @@ class SignalToNoiseRatio:
         cls,
         F0,
         sftfilepath,
-        time_offset,
+        time_offset=None,
         running_median_window=lalpulsar.FstatOptionalArgsDefaults.runningMedianWindow,
         sft_constraint=None,
     ):
@@ -93,6 +93,7 @@ class SignalToNoiseRatio:
             Path to SFT files in a format compatible with XLALSFTdataFind.
         time_offset: float
             Timestamp offset to retrieve detector states.
+            Defaults to LALSuite's default of using the central time of an STF (SFT's timestamp + Tsft/2).
         running_median_window: int
             Window used to compute the running-median noise floor estimation.
             Default value is consistent with that used in lalapps_PredictFstat.
@@ -270,7 +271,7 @@ class DetectorStates:
         self.ephems = lalpulsar.InitBarycenter(*get_ephemeris_files())
 
     def get_multi_detector_states(
-        self, timestamps, Tsft, detectors=None, time_offset=0
+        self, timestamps, Tsft, detectors=None, time_offset=None
     ):
         """
         Parameters
@@ -290,13 +291,15 @@ class DetectorStates:
             Conflicts with dictionary of `time_stamps`, required otherwise.
         time_offset: float
             Timestamp offset to retrieve detector states.
-
+            Defaults to LALSuite's default of using the central time of an STF (SFT's timestamp + Tsft/2).
 
         Returns
         -------
         multi_detector_states: lalpulsar.MultiDetectorStateSeries
             Resulting multi-detector states produced by XLALGetMultiDetectorStates
         """
+        if time_offset is None:
+            time_offset = 0.5 * Tsft
 
         self._parse_timestamps_and_detectors(timestamps, Tsft, detectors)
         return lalpulsar.GetMultiDetectorStates(
@@ -310,7 +313,7 @@ class DetectorStates:
         self,
         sftfilepath,
         central_frequency,
-        time_offset=0,
+        time_offset=None,
         frequency_wing_bins=1,
         sft_constraint=None,
         return_sfts=False,
@@ -326,6 +329,7 @@ class DetectorStates:
             retrieved from the SFTs (i.e. `return_sfts=True`).
         time_offset: float
             Timestamp offset to retrieve detector states.
+            Defaults to LALSuite's default of using the central time of an STF (SFT's timestamp + Tsft/2).
         frequency_wing_bins: int
             Frequency bins around the central frequency to retrieve from
             SFT data. Bin size is determined using the SFT baseline time
@@ -356,6 +360,10 @@ class DetectorStates:
             fMin=central_frequency - wing_Hz,
             fMax=central_frequency + wing_Hz,
         )
+
+        if time_offset is None:
+            time_offset = 0.5 / df
+
         multi_detector_states = lalpulsar.GetMultiDetectorStatesFromMultiSFTs(
             multiSFTs=multi_sfts, edat=self.ephems, tOffset=time_offset
         )
