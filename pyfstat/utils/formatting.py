@@ -1,3 +1,4 @@
+import lalpulsar
 import numpy as np
 
 
@@ -59,10 +60,10 @@ def texify_float(x, d=2):
         return r"${}{{\times}}10^{{{}}}$".format(stem, power)
 
 
-def get_doppler_params_output_format(keys):
+def get_doppler_params_output_format(keys, fmt_str="%.16g"):
     """Set a canonical output precision for frequency evolution parameters.
 
-    This uses the same format (`%.16g`) as
+    The default format (`%.16g`) is the same as
     the `write_FstatCandidate_to_fp()` function of
     the `ComputeFstatistic_v2` executable.
 
@@ -74,18 +75,17 @@ def get_doppler_params_output_format(keys):
     -------
     keys: dict
         The parameter keys for which to select formats.
+    fmt_str: str
+        fprintf-style format specifier for a single value.
 
     Returns
     -------
-    fmt: dict
+    fmt_dict: dict
         A dictionary assigning the default format to each parameter key
         from the hardcoded list of standard 'Doppler' parameters.
     """
-    CFSv2_fmt = "%.16g"
-    doppler_keys = [
-        "F0",
-        "F1",
-        "F2",
+    doppler_keys = [f"F{k}" for k in range(lalpulsar.PULSAR_MAX_SPINS)]
+    doppler_keys += [
         "Alpha",
         "Delta",
         "asini",
@@ -94,5 +94,5 @@ def get_doppler_params_output_format(keys):
         "tp",
         "argp",
     ]
-    fmt = {k: CFSv2_fmt for k in keys if k in doppler_keys}
-    return fmt
+    fmt_dict = {k: fmt_str for k in keys if k in doppler_keys}
+    return fmt_dict

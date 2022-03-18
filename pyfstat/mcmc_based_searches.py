@@ -1846,7 +1846,9 @@ class MCMCSearch(BaseSearchClass):
             return False
 
     def _get_savetxt_fmt_dict(self):
-        fmt_dict = utils.get_doppler_params_output_format(self.theta_keys)
+        fmt_dict = utils.get_doppler_params_output_format(
+            self.theta_keys, self.fmt_doppler
+        )
         fmt_dict["twoF"] = self.fmt_detstat
         if self.BSGL:
             fmt_dict["log10BSGL"] = self.fmt_detstat
@@ -2710,7 +2712,9 @@ class MCMCGlitchSearch(MCMCSearch):
         return ax
 
     def _get_savetxt_fmt_dict(self):
-        fmt_dict = utils.get_doppler_params_output_format(self.theta_keys)
+        fmt_dict = utils.get_doppler_params_output_format(
+            self.theta_keys, self.fmt_doppler
+        )
         if "tglitch" in self.theta_keys:
             fmt_dict["tglitch"] = "%d"
         if "delta_F0" in self.theta_keys:
@@ -3509,7 +3513,9 @@ class MCMCTransientSearch(MCMCSearch):
             self.output_keys.append("log10BSGL")
 
     def _get_savetxt_fmt_dict(self):
-        fmt_dict = utils.get_doppler_params_output_format(self.theta_keys)
+        fmt_dict = utils.get_doppler_params_output_format(
+            self.theta_keys, self.fmt_doppler
+        )
         if "transient_tstart" in self.theta_keys:
             fmt_dict["transient_tstart"] = "%d"
         if "transient_duration" in self.theta_keys:
