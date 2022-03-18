@@ -10,24 +10,25 @@ from pyfstat.helper_functions import get_ephemeris_files
 
 @define(kw_only=True, slots=False)
 class SignalToNoiseRatio:
-    """
-    Compute the optimal signal-to-noise ratio (and derived quantities, such as the F-statistic)
-    of a CW signal on Gaussian noise or an arbitrary dataset of SFTs.
+    r"""Compute the optimal SNR of a CW signal as expected in Gaussian noise.
 
     The definition of SNR (shortcut for "optimal signal-to-noise ratio")
     is taken from Eq. (76) of https://dcc.ligo.org/T0900149-v6/public and is
-    such that `<2F> = 4 + SNR^2`, where `<2F>` represents the expected
-    value over noise realizations of twice the F-statistic of a perfectly
-    matched template to an existing signal in the data.
+    such that :math:`\langle 2\mathcal{F}\rangle = 4 + \textrm{SNR}^2`,
+    where  :math:`\langle 2\mathcal{F}\rangle` represents the expected
+    value over noise realizations of twice the F-statistic of a template
+    perfectly matched to an existing signal in the data.
 
-    Computing SNR^2 requires two quantities:
-        - The antenna pattern matrix `M`, which depends on the sky position and polarization angle
-        and encodes the effect of the detector's antenna pattern over the course
-        of the observing run.
-        - The JKS amplitude parameters `{A^0, A^1, A^2, A^3}`
-        [Jaranowski, Krolak, Schutz Phys. Rev. D 58 063001,(1998)], which are functions
-        of the CW's amplitude parameters `(h0, cosi, psi, phi0)` or, alternatively,
-        `(aPlus, aCross, psi, phi0)`.
+    Computing :math:`\textrm{SNR}^2` requires two quantities:
+
+    * | The antenna pattern matrix :math:`\mathcal{M}`, which depends on the sky position :math:`\vec{n}`
+      | and polarization angle :math:`\psi` and encodes the effect of the detector's antenna pattern response
+      | over the course of the observing run.
+    * | The JKS amplitude parameters :math:`(\mathcal{A}^0, \mathcal{A}^1, \mathcal{A}^2, \mathcal{A}^3)`
+      | [JKS1998]_ which are functions of the CW's amplitude parameters :math:`(h_0,\cos\iota, \psi, \phi_0)` or,
+      | alternatively, :math:`(A_{+}, A_{\times}, \psi, \phi_0)`.
+
+    .. [JKS1998] `Jaranowski, Krolak, Schuz Phys. Rev. D58 063001, 1998 <https://arxiv.org/abs/gr-qc/9804014>`_
 
     Parameters
     ----------
@@ -41,11 +42,11 @@ class SignalToNoiseRatio:
         floors in different detectors.
     assumeSqrtSX: float
         Optional, incompatible with `noise_weights`.
-        *Single-sided* *amplitude* spectral density (ASD) of the detector noise.
+        Single-sided amplitude spectral density (ASD) of the detector noise.
         This value is used for all detectors, meaning it's not currently possible to manually
         specify different noise floors without creating SFT files.
         (To be improved in the future; developer note:
-         will require SWIG constructor for MultiNoiseWeights.)
+        will require SWIG constructor for MultiNoiseWeights.)
     """
 
     detector_states: lalpulsar.MultiDetectorStateSeries = field()
@@ -80,7 +81,8 @@ class SignalToNoiseRatio:
     ):
         """
         Alternative constructor to retrieve detector states and noise weights from SFT files.
-        This method is based on `DetectorStates.multi_detector_states_from_sfts`.
+        This method is based on
+        :py:meth:`DetectorStates.multi_detector_states_from_sfts`.
         This is currently the other way in which varying / different noise floors can be used
         when computing SNRs.
 
@@ -125,17 +127,15 @@ class SignalToNoiseRatio:
     def compute_snr2(
         self, Alpha, Delta, psi, phi0, h0=None, cosi=None, aPlus=None, aCross=None
     ):
-        """
-        Compute the SNR^2 of a CW signal using XLALComputeOptimalSNR2FromMmunu.
+        r"""
+        Compute the :math:`\textrm{SNR}^2` of a CW signal using XLALComputeOptimalSNR2FromMmunu.
         Parameters correspond to the standard ones used to describe a CW
         (see e.g. Eqs. (16), (26), (30) of https://dcc.ligo.org/T0900149-v6/public ).
 
         Mind that this function returns *squared* SNR
         (Eq. (76) of https://dcc.ligo.org/T0900149-v6/public ),
         which can be directly related to the expected F-statistic as
-        ```
-        <2F> = 4 + SNR^2.
-        ```
+        :math:`\langle 2\mathcal{F}\rangle = 4 + \textrm{SNR}^2`.
 
         Parameters
         ----------
@@ -181,13 +181,11 @@ class SignalToNoiseRatio:
         return lalpulsar.ComputeOptimalSNR2FromMmunu(Aphys, M)
 
     def compute_twoF(self, *args, **kwargs):
-        """
-        Compute the expected 2F value of a CW signal from the result of `compute_snr2`.
+        r"""
+        Compute the expected :math:`2\mathcal{F}` value of a CW signal from the result of `compute_snr2`.
 
-        ```
-        expected_2F = 4 + SNR^2.
-        stdev_2F = sqrt(8 + 4 * SNR^2)
-        ```
+        .. math:: \langle 2\mathcal{F}\rangle = 4 + \textrm{SNR}^2
+        .. math:: \sigma_{\2\mathcal{F}} =  \sqrt{8 + 4 \textrm{SNR}^2}
 
         Input parameters are passed untouched to `self.compute_snr2`.
         See corresponding docstring for a list of valid parameters.
