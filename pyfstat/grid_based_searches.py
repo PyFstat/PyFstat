@@ -322,6 +322,52 @@ class GridSearch(BaseSearchClass):
             return False
         return False
 
+    def _get_single_cand_results(self, data, n, vals):
+        """Obtain the results at each grid iteration step.
+
+        Re-formats the input params into the format required by self.search.get_det_stat()
+        and gets additional detection statistic by-products as needed,
+        then stores them all into the right columns of the data array.
+        Can be overridden e.g. for legacy get_det_stat() variants.
+
+        Parameters
+        ----------
+        data: np.ndarray
+            The inputs+outputs data set to be updated.
+        n: int
+            Row index of the data array to update.
+        vals: tuple
+            Iteration of our iterable.
+
+        Returns
+        -------
+        data: np.ndarray
+            The updated inputs+outputs data set.
+        """
+        thisCand = {key: val for key, val in zip(self.search_keys, vals)}
+        detstat = self.search.get_det_stat(params=thisCand)
+        thisCand["twoF"] = self.search.twoF
+        if self.search.singleFstats:
+            thisCand["twoFX"] = list(self.search.twoFX[: self.search.numDetectors])
+        if self.detstat != "twoF":
+            thisCand[self.detstat] = detstat
+        for key in self.output_keys:
+            if key in thisCand.keys():
+                data[key][n] = thisCand[key]
+            elif key.startswith("twoF"):
+                try:
+                    X = self.search.detector_names.index(key.lstrip("twoF"))
+                    data[key][n] = thisCand["twoFX"][X]
+                except (KeyError, IndexError):
+                    raise RuntimeError(
+                        f"Could not get value for key {key} from candidate dict {thisCand}."
+                    )
+            else:
+                raise RuntimeError(
+                    f"Could not get value for key {key} from candidate dict {thisCand}."
+                )
+        return data
+
     def run(self, return_data=False):
         """Execute the actual search over the full grid.
 
@@ -368,15 +414,7 @@ class GridSearch(BaseSearchClass):
         for n, vals in enumerate(
             tqdm(iterable, total=getattr(self, "total_iterations", None))
         ):
-            thisCand = list(vals)
-            detstat = self.search.get_det_stat(*vals)
-            thisCand.append(self.search.twoF)
-            if self.search.singleFstats:
-                thisCand += list(self.search.twoFX[: self.search.numDetectors])
-            if self.detstat != "twoF":
-                thisCand.append(detstat)
-            for k, key in enumerate(self.output_keys):
-                data[key][n] = thisCand[k]
+            data = self._get_single_cand_results(data, n, vals)
 
         if return_data:
             return data
@@ -386,7 +424,9 @@ class GridSearch(BaseSearchClass):
 
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
-        fmt_dict = utils.get_doppler_params_output_format(self.output_keys)
+        fmt_dict = utils.get_doppler_params_output_format(
+            self.output_keys, self.fmt_doppler
+        )
         fmt_dict["twoF"] = self.fmt_detstat
         if self.search.singleFstats:
             for IFO in self.search.detector_names:
@@ -1118,6 +1158,8 @@ class TransientGridSearch(GridSearch):
     def get_transient_fstat_map_filename(self, param_point):
         """Filename convention for given grid point: freq_alpha_delta_f1dot_f2dot
 
+        FIXME: This does not yet deal properly with spindown terms higher than F2!
+
         Parameters
         ----------
         param_point: tuple, dict, list, np.void or np.ndarray
@@ -1145,7 +1187,9 @@ class TransientGridSearch(GridSearch):
 
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
-        fmt_dict = utils.get_doppler_params_output_format(self.output_keys)
+        fmt_dict = utils.get_doppler_params_output_format(
+            self.output_keys, self.fmt_doppler
+        )
         fmt_dict["twoF"] = self.fmt_detstat
         if self.search.singleFstats:
             for IFO in self.search.detector_names:
@@ -1262,12 +1306,47 @@ class GridGlitchSearch(GridSearch):
 
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
-        fmt_dict = utils.get_doppler_params_output_format(self.output_keys)
+        fmt_dict = utils.get_doppler_params_output_format(
+            self.output_keys, self.fmt_doppler
+        )
         fmt_dict["delta_F0"] = self.fmt_doppler
         fmt_dict["delta_F1"] = self.fmt_doppler
         fmt_dict["tglitch"] = "%d"
         fmt_dict[self.detstat] = self.fmt_detstat
         return fmt_dict
+
+    def _get_single_cand_results(self, data, n, vals):
+        """Obtain the results at each grid iteration step.
+
+        FIXME: currently we need to override the default method here
+        because the SemiCoherentGlitchSearch.get_semicoherent_nglitch_twoF()
+        is not yet ported to the new parameter dictionary style
+        of other detection statistics methods.
+
+        Parameters
+        ----------
+        data: np.ndarray
+            The inputs+outputs data set to be updated.
+        n: int
+            Row index of the data array to update.
+        vals: tuple
+            Iteration of our iterable.
+
+        Returns
+        -------
+        data: np.ndarray
+            The updated inputs+outputs data set.
+        """
+        thisCand = list(vals)
+        detstat = self.search.get_det_stat(*vals)
+        thisCand.append(self.search.twoF)
+        if self.search.singleFstats:
+            thisCand += list(self.search.twoFX[: self.search.numDetectors])
+        if self.detstat != "twoF":
+            thisCand.append(detstat)
+        for k, key in enumerate(self.output_keys):
+            data[key][n] = thisCand[k]
+        return data
 
 
 class SlidingWindow(DefunctClass):
