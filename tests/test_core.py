@@ -9,6 +9,7 @@ import pytest
 from commons_for_tests import (
     BaseForTestsWithData,
     BaseForTestsWithOutdir,
+    default_binary_params,
     default_signal_params,
     default_Writer_params,
 )
@@ -156,6 +157,7 @@ class TestComputeFstat(BaseForTestsWithData):
             minCoverFreq=self.F0 - 0.1,
             maxCoverFreq=self.F0 + 0.1,
         )
+        # FIXME: This way is deprecated, remove test in future versions
         FS = search.get_fullycoherent_twoF(
             F0=self.F0,
             F1=self.F1,
@@ -163,6 +165,66 @@ class TestComputeFstat(BaseForTestsWithData):
             Alpha=self.Alpha,
             Delta=self.Delta,
         )
+        self.assertTrue(FS > 0.0)
+        # now with new input params option
+        FS_new = search.get_fullycoherent_twoF(
+            params={
+                "F0": self.F0,
+                "F1": self.F1,
+                "F2": self.F2,
+                "Alpha": self.Alpha,
+                "Delta": self.Delta,
+            }
+        )
+        np.isclose(FS_new, FS, rtol=1e-6, atol=0)
+        # now with higher spindowns
+        FS_sd = search.get_fullycoherent_twoF(
+            params={
+                "F0": self.F0,
+                "F1": self.F1,
+                "F2": self.F2,
+                # deliberately skipping F3 to test non-contiguous lists
+                # (omtited terms should be assumed as 0)
+                "F4": 1e-20,
+                "Alpha": self.Alpha,
+                "Delta": self.Delta,
+            }
+        )
+        np.isclose(FS_sd, FS, rtol=1e-6, atol=0)
+        # FIXME: extend test to properly test Fkdot matches
+
+    def test_run_computefstatistic_single_point_injectSqrtSX_binary(self):
+        # not using any SFTs
+        search = pyfstat.ComputeFstat(
+            tref=self.tref,
+            minStartTime=self.tstart,
+            maxStartTime=self.tstart + self.duration,
+            detectors=self.detectors,
+            injectSqrtSX=self.sqrtSX,
+            minCoverFreq=self.F0 - 0.1,
+            maxCoverFreq=self.F0 + 0.1,
+            binary=True,
+        )
+        # FIXME: This way is deprecated, remove test in future versions
+        FS = search.get_fullycoherent_twoF(
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+            **default_binary_params,
+        )
+        self.assertTrue(FS > 0.0)
+        # now with new input params option
+        params = {
+            "F0": self.F0,
+            "F1": self.F1,
+            "F2": self.F2,
+            "Alpha": self.Alpha,
+            "Delta": self.Delta,
+        }
+        params.update(default_binary_params)
+        FS = search.get_fullycoherent_twoF(params=params)
         self.assertTrue(FS > 0.0)
 
     def test_run_computefstatistic_single_point_with_SFTs(self):
