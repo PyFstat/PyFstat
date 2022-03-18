@@ -966,7 +966,7 @@ def multi_detector_states():
     ts = np.arange(tstart, tstart + default_Writer_params["duration"], Tsft)
     detectors = default_Writer_params["detectors"]
 
-    return ds.multi_detector_states(
+    return ds.get_multi_detector_states(
         timestamps=ts, detectors=detectors, Tsft=Tsft, time_offset=Tsft / 2
     )
 

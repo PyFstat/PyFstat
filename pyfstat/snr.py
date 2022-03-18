@@ -24,7 +24,7 @@ class SignalToNoiseRatio:
         - The antenna pattern matrix `M`, which depends on the sky position and polarization angle
         and encodes the effect of the detector's antenna pattern over the course
         of the observing run.
-        - The JKS amplitude parameters `{A^0, A^1, A^2, A^3}` 
+        - The JKS amplitude parameters `{A^0, A^1, A^2, A^3}`
         [Jaranowski, Krolak, Schutz Phys. Rev. D 58 063001,(1998)], which are functions
         of the CW's amplitude parameters `(h0, cosi, psi, phi0)` or, alternatively,
         `(aPlus, aCross, psi, phi0)`.
@@ -100,7 +100,10 @@ class SignalToNoiseRatio:
             Optional argument to specify further constraints in XLALSFTdataFind.
         """
 
-        detector_states, multi_sfts = DetectorStates().multi_detector_states_from_sfts(
+        (
+            detector_states,
+            multi_sfts,
+        ) = DetectorStates().get_multi_detector_states_from_sfts(
             sftfilepath=sftfilepath,
             central_frequency=F0,
             frequency_wing_bins=running_median_window // 2
@@ -266,7 +269,9 @@ class DetectorStates:
     def __init__(self):
         self.ephems = lalpulsar.InitBarycenter(*get_ephemeris_files())
 
-    def multi_detector_states(self, timestamps, Tsft, detectors=None, time_offset=0):
+    def get_multi_detector_states(
+        self, timestamps, Tsft, detectors=None, time_offset=0
+    ):
         """
         Parameters
         ----------
@@ -301,7 +306,7 @@ class DetectorStates:
             time_offset,
         )
 
-    def multi_detector_states_from_sfts(
+    def get_multi_detector_states_from_sfts(
         self,
         sftfilepath,
         central_frequency,
