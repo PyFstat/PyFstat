@@ -79,38 +79,6 @@ class MCMCSearch(BaseSearchClass):
     corresponding to an isolated/binary-modulated CW signal.
     """
 
-    symbol_dictionary = dict(
-        F0=r"$f$",
-        F1=r"$\dot{f}$",
-        F2=r"$\ddot{f}$",
-        Alpha=r"$\alpha$",
-        Delta=r"$\delta$",
-        asini=r"asini",
-        period=r"P",
-        ecc=r"ecc",
-        tp=r"tp",
-        argp=r"argp",
-    )
-    """
-        Key, val pairs of the parameters (`F0`, `F1`, ...), to LaTeX math
-        symbols for plots
-    """
-    unit_dictionary = dict(
-        F0=r"Hz",
-        F1=r"Hz/s",
-        F2=r"Hz/s$^2$",
-        Alpha=r"rad",
-        Delta=r"rad",
-        asini="",
-        period=r"s",
-        ecc="",
-        tp=r"s",
-        argp="",
-    )
-    """
-        Key, val pairs of the parameters (i.e. `F0`, `F1`), and the
-        units (i.e. `Hz`)
-    """
     transform_dictionary = {}
     """
         Key, val pairs of the parameters (i.e. `F0`, `F1`), where the key is
@@ -399,7 +367,7 @@ class MCMCSearch(BaseSearchClass):
         return detstat * self.likelihooddetstatmultiplier + self.likelihoodcoef
 
     def _unpack_input_theta(self):
-        self.full_theta_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
+        self.full_theta_keys = self.default_search_keys.copy()
         if self.binary:
             self.full_theta_keys += self.binary_keys
         full_theta_keys_copy = copy.copy(self.full_theta_keys)
@@ -420,14 +388,14 @@ class MCMCSearch(BaseSearchClass):
 
         if len(full_theta_keys_copy) > 0:
             raise ValueError(
-                ("Input dictionary `theta` is missing the" "following keys: {}").format(
+                ("Input dictionary `theta` is missing the following keys: {}").format(
                     full_theta_keys_copy
                 )
             )
 
         self.fixed_theta = [fixed_theta_dict[key] for key in self.full_theta_keys]
         self.theta_idxs = [self.full_theta_keys.index(k) for k in self.theta_keys]
-        self.theta_symbols = [self.symbol_dictionary[k] for k in self.theta_keys]
+        self.theta_symbols = [self.tex_labels[k] for k in self.theta_keys]
 
         idxs = np.argsort(self.theta_idxs)
         self.theta_idxs = [self.theta_idxs[i] for i in idxs]
@@ -921,9 +889,7 @@ class MCMCSearch(BaseSearchClass):
             ]
 
             if label is None:
-                s = s or self.symbol_dictionary[key].replace(
-                    "_{glitch}", r"_\mathrm{glitch}"
-                )
+                s = s or self.tex_labels[key]
                 u = u or self.unit_dictionary[key]
                 label = (
                     f"{s}"
@@ -1881,9 +1847,9 @@ class MCMCSearch(BaseSearchClass):
 
     def _get_savetxt_fmt_dict(self):
         fmt_dict = utils.get_doppler_params_output_format(self.theta_keys)
-        fmt_dict["twoF"] = "%.9g"
+        fmt_dict["twoF"] = self.fmt_detstat
         if self.BSGL:
-            fmt_dict["log10BSGL"] = "%.9g"
+            fmt_dict["log10BSGL"] = self.fmt_detstat
         return fmt_dict
 
     def _get_savetxt_gmt_list(self):
@@ -2191,7 +2157,7 @@ class MCMCSearch(BaseSearchClass):
                         line = r"{} & $|\mathcal{{N}}$({}, {})| & {}\\"
 
                     u = self.unit_dictionary[key]
-                    s = self.symbol_dictionary[key]
+                    s = self.tex_labels[key]
                     f.write("\n")
                     a = utils.texify_float(a)
                     b = utils.texify_float(b)
@@ -2418,41 +2384,6 @@ class MCMCGlitchSearch(MCMCSearch):
     only the additional init parameters of this class.
     """
 
-    symbol_dictionary = dict(
-        F0=r"$f$",
-        F1=r"$\dot{f}$",
-        F2=r"$\ddot{f}$",
-        Alpha=r"$\alpha$",
-        Delta=r"$\delta$",
-    )
-    """
-        Key, val pairs of the parameters (`F0`, `F1`, ...), to LaTeX math
-        symbols for plots
-    """
-    glitch_symbol_dictionary = dict(
-        delta_F0=r"$\delta f$",
-        delta_F1=r"$\delta \dot{f}$",
-        tglitch=r"$t_\mathrm{glitch}$",
-    )
-    """
-        Key, val pairs of glitch parameters (`dF0`, `dF1`, `tglitch`), to LaTeX math
-        symbols for plots. This dictionary included within `self.symbol_dictionary`.
-    """
-    symbol_dictionary.update(glitch_symbol_dictionary)
-    unit_dictionary = dict(
-        F0=r"Hz",
-        F1=r"Hz/s",
-        F2=r"Hz/s$^2$",
-        Alpha=r"rad",
-        Delta=r"rad",
-        delta_F0=r"Hz",
-        delta_F1=r"Hz/s",
-        tglitch=r"s",
-    )
-    """
-        Key, val pairs of the parameters (`F0`, `F1`, ..., including glitch parameters),
-        and the units (`Hz`, `Hz/s`, ...).
-    """
     transform_dictionary = dict(
         tglitch={
             "multiplier": 1 / 86400.0,
@@ -2605,7 +2536,6 @@ class MCMCGlitchSearch(MCMCSearch):
         return twoF * self.likelihooddetstatmultiplier + self.likelihoodcoef
 
     def _unpack_input_theta(self):
-        base_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         glitch_keys = ["delta_F0", "delta_F1", "tglitch"]
         full_glitch_keys = list(
             np.array([[gk] * self.nglitch for gk in glitch_keys]).flatten()
@@ -2621,17 +2551,9 @@ class MCMCGlitchSearch(MCMCSearch):
             full_glitch_keys[-4 * self.nglitch : -2 * self.nglitch] = [
                 "delta_F0_{}".format(i) for i in range(self.nglitch)
             ]
-        full_theta_keys = base_keys + full_glitch_keys
+        full_theta_keys = self.default_search_keys + full_glitch_keys
         full_theta_keys_copy = copy.copy(full_theta_keys)
-
-        full_glitch_symbols = list(
-            np.array(
-                [[gs] * self.nglitch for gs in self.glitch_symbol_dictionary]
-            ).flatten()
-        )
-        full_theta_symbols = [
-            self.symbol_dictionary[key] for key in base_keys
-        ] + full_glitch_symbols
+        full_theta_symbols = [self.tex_labels[key] for key in full_theta_keys]
         self.theta_keys = []
         fixed_theta_dict = {}
         for key, val in self.theta_prior.items():
@@ -2656,7 +2578,7 @@ class MCMCGlitchSearch(MCMCSearch):
 
         if len(full_theta_keys_copy) > 0:
             raise ValueError(
-                ("Input dictionary `theta` is missing the" "following keys: {}").format(
+                ("Input dictionary `theta` is missing the following keys: {}").format(
                     full_theta_keys_copy
                 )
             )
@@ -2782,12 +2704,12 @@ class MCMCGlitchSearch(MCMCSearch):
         if "tglitch" in self.theta_keys:
             fmt_dict["tglitch"] = "%d"
         if "delta_F0" in self.theta_keys:
-            fmt_dict["delta_F0"] = "%.16g"
+            fmt_dict["delta_F0"] = self.fmt_doppler
         if "delta_F1" in self.theta_keys:
-            fmt_dict["delta_F1"] = "%.16g"
-        fmt_dict["twoF"] = "%.9g"
+            fmt_dict["delta_F1"] = self.fmt_doppler
+        fmt_dict["twoF"] = self.fmt_detstat
         if self.BSGL:
-            fmt_dict["log10BSGL"] = "%.9g"
+            fmt_dict["log10BSGL"] = self.fmt_detstat
         return fmt_dict
 
 
@@ -3440,32 +3362,6 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
 class MCMCTransientSearch(MCMCSearch):
     """MCMC search for a transient signal using ComputeFstat"""
 
-    symbol_dictionary = dict(
-        F0=r"$f$",
-        F1=r"$\dot{f}$",
-        F2=r"$\ddot{f}$",
-        Alpha=r"$\alpha$",
-        Delta=r"$\delta$",
-        transient_tstart=r"$t_\mathrm{start}$",
-        transient_duration=r"$\Delta T$",
-    )
-    """
-        Key, val pairs of the parameters (`F0`, `F1`, ...), to LaTeX math
-        symbols for plots
-    """
-    unit_dictionary = dict(
-        F0=r"Hz",
-        F1=r"Hz/s",
-        F2=r"Hz/s$^2$",
-        Alpha=r"rad",
-        Delta=r"rad",
-        transient_tstart=r"s",
-        transient_duration=r"s",
-    )
-    """
-        Key, val pairs of the parameters (`F0`, `F1`, ..., including glitch parameters),
-        and the units (`Hz`, `Hz/s`, ...).
-    """
     transform_dictionary = dict(
         transient_duration={
             "multiplier": 1 / 86400.0,
@@ -3561,7 +3457,7 @@ class MCMCTransientSearch(MCMCSearch):
         return detstat * self.likelihooddetstatmultiplier + self.likelihoodcoef
 
     def _unpack_input_theta(self):
-        self.full_theta_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
+        self.full_theta_keys = self.default_search_keys.copy()
         if self.binary:
             self.full_theta_keys += self.binary_keys
         self.full_theta_keys += ["transient_tstart", "transient_duration"]
@@ -3583,14 +3479,14 @@ class MCMCTransientSearch(MCMCSearch):
 
         if len(full_theta_keys_copy) > 0:
             raise ValueError(
-                ("Input dictionary `theta` is missing the" "following keys: {}").format(
+                ("Input dictionary `theta` is missing the following keys: {}").format(
                     full_theta_keys_copy
                 )
             )
 
         self.fixed_theta = [fixed_theta_dict[key] for key in self.full_theta_keys]
         self.theta_idxs = [self.full_theta_keys.index(k) for k in self.theta_keys]
-        self.theta_symbols = [self.symbol_dictionary[k] for k in self.theta_keys]
+        self.theta_symbols = [self.tex_labels[k] for k in self.theta_keys]
 
         idxs = np.argsort(self.theta_idxs)
         self.theta_idxs = [self.theta_idxs[i] for i in idxs]
@@ -3608,7 +3504,7 @@ class MCMCTransientSearch(MCMCSearch):
             fmt_dict["transient_tstart"] = "%d"
         if "transient_duration" in self.theta_keys:
             fmt_dict["transient_duration"] = "%d"
-        fmt_dict["twoF"] = "%.9g"
+        fmt_dict["twoF"] = self.fmt_detstat
         if self.BSGL:
-            fmt_dict["log10BSGL"] = "%.9g"
+            fmt_dict["log10BSGL"] = self.fmt_detstat
         return fmt_dict

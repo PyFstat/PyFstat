@@ -37,6 +37,80 @@ class BaseSearchClass:
     """
 
     binary_keys = ["asini", "period", "ecc", "tp", "argp"]
+    """List of extra parameters for sources in binaries."""
+
+    default_search_keys = [
+        "F0",
+        "F1",
+        "F2",
+        "Alpha",
+        "Delta",
+    ]
+    """Default order of the traditionally supported search parameter names.
+
+    FIXME: these are only used as fallbacks for the deprecated style
+    of passing keys one by one;
+    not needed when using the new parameters dictionary.
+    """
+
+    tex_labels = {
+        # standard Doppler parameters
+        "F0": r"$f$",
+        "F1": r"$\dot{f}$",
+        "F2": r"$\ddot{f}$",
+        "F3": r"$\dddot{f}$",
+        "Alpha": r"$\alpha$",
+        "Delta": r"$\delta$",
+        # binary parameters
+        "asini": r"$\mathrm{asin}\,i$",
+        "period": r"$P$",
+        "ecc": r"$\mathrm{ecc}$",
+        "tp": r"$t_p$",
+        "argp": r"$\mathrm{argp}$",
+        # transient parameters
+        "transient_tstart": r"$t_\mathrm{start}$",
+        "transient_duration": r"$\Delta T$",
+        # glitch parameters
+        "delta_F0": r"$\delta f$",
+        "delta_F1": r"$\delta \dot{f}$",
+        "tglitch": r"$t_\mathrm{glitch}$",
+        # detection statistics
+        "twoF": r"$\widetilde{2\mathcal{F}}$",
+        "maxTwoF": r"$\max\widetilde{2\mathcal{F}}$",
+        "log10BSGL": r"$\log_{10}\mathcal{B}_{\mathrm{SGL}}$",
+        "lnBtSG": r"$\ln\mathcal{B}_{\mathrm{tS/G}}$",
+    }
+    """Formatted labels used for plot annotations."""
+
+    unit_dictionary = dict(
+        # standard Doppler parameters
+        F0=r"Hz",
+        F1=r"Hz/s",
+        F2=r"Hz/s$^2$",
+        F3=r"Hz/s$^3$",
+        Alpha=r"rad",
+        Delta=r"rad",
+        # binary parameters
+        asini="",
+        period=r"s",
+        ecc="",
+        tp=r"s",
+        argp="",
+        # transient parameters
+        transient_tstart=r"s",
+        transient_duration=r"s",
+        # glitch parameters
+        delta_F0=r"Hz",
+        delta_F1=r"Hz/s",
+        tglitch=r"s",
+    )
+    """Units for standard parameters."""
+
+    fmt_detstat = "%.9g"
+    """Standard output precision for detection statistics."""
+
+    fmt_doppler = "%.16g"
+    """Standard output precision for Doppler (frequency evolution) parameters."""
 
     def __new__(cls, *args, **kwargs):
         logger.info(f"Creating {cls.__name__} object...")
@@ -52,6 +126,11 @@ class BaseSearchClass:
             return matches
         else:
             raise IOError("No sfts found matching {}".format(self.sftfilepattern))
+
+    def tex_label0(self, key):
+        """Formatted labels used for annotating central values in plots."""
+        label = self.tex_labels[key].strip("$")
+        return f"${label} - {label}_0$"
 
     def set_ephemeris_files(self, earth_ephem=None, sun_ephem=None):
         """Set the ephemeris files to use for the Earth and Sun.
