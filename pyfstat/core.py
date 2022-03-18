@@ -278,20 +278,23 @@ class BaseSearchClass:
             Copy of "dictionary" with new keys according to lalpulsar convention.
         """
 
-        translation = {
-            "F0": "Freq",
-            "F1": "f1dot",
-            "F2": "f2dot",
-            "phi": "phi0",
-            "tref": "refTime",
-            "asini": "orbitasini",
-            "period": "orbitPeriod",
-            "tp": "orbitTp",
-            "argp": "orbitArgp",
-            "ecc": "orbitEcc",
-            "transient_tstart": "transient-t0Epoch",
-            "transient_duration": "transient-tau",
-        }
+        translation = {"F0": "Freq"}
+        translation.update(
+            {f"F{k+1}": f"f{k+1}dot" for k in range(lalpulsar.PULSAR_MAX_SPINS - 1)}
+        )
+        translation.update(
+            {
+                "phi": "phi0",
+                "tref": "refTime",
+                "asini": "orbitasini",
+                "period": "orbitPeriod",
+                "tp": "orbitTp",
+                "argp": "orbitArgp",
+                "ecc": "orbitEcc",
+                "transient_tstart": "transient-t0Epoch",
+                "transient_duration": "transient-tau",
+            }
+        )
 
         keys_to_translate = [key for key in dictionary.keys() if key in translation]
 
@@ -601,6 +604,32 @@ class ComputeFstat(BaseSearchClass):
             )
         )
 
+    def _parse_Fk_key(self, key):
+        if len(key) != 2:
+            # this should be a sufficient check as long as lalpulsar.PULSAR_MAX_SPINS <= 10
+            raise ValueError(
+                f"Cannot parse parameter {key}, expected a Fk spindown term but has {len(key)} instead of 2 chars."
+            )
+        try:
+            k = int(key[1])
+        except ValueError:
+            raise ValueError(
+                f"Cannot parse parameter {key}, expected a Fk spindown term but cannot convert 2nd char to integer."
+            )
+        if k >= lalpulsar.PULSAR_MAX_SPINS:
+            raise ValueError(
+                f"Input parameter {key} exceeds lalpulsar.PULSAR_MAX_SPINS={lalpulsar.PULSAR_MAX_SPINS}."
+            )
+        return k
+
+    def _set_fkdot_from_params_dict(self, params_dict):
+        fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
+        for key in params_dict:
+            if key.startswith("F"):
+                k = self._parse_Fk_key(key)
+                fkdot[k] = params_dict[key]
+        return fkdot
+
     def init_computefstatistic(self):
         """Initialization step for the F-stastic computation internals.
 
@@ -672,9 +701,7 @@ class ComputeFstat(BaseSearchClass):
             if "fkdot" in self.injectSources:
                 PP.Doppler.fkdot = np.array(self.injectSources["fkdot"])
             else:
-                PP.Doppler.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
-                for i, key in enumerate(["F0", "F1", "F2"]):
-                    PP.Doppler.fkdot[i] = self.injectSources[key]
+                PP.Doppler.fkdot = self._set_fkdot_from_params_dict(self.injectSources)
             PP.Doppler.refTime = self.tref
             if "t0" not in self.injectSources:
                 PP.Transient.type = lalpulsar.TRANSIENT_NONE
@@ -976,8 +1003,8 @@ class ComputeFstat(BaseSearchClass):
         # frequency and spindowns
         searchRegion.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
         searchRegion.fkdotBand = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
-        for k in range(3):
-            Fk = "F{:d}".format(k)
+        for k in range(lalpulsar.PULSAR_MAX_SPINS):
+            Fk = f"F{k}"
             if Fk in range_keys:
                 searchRegion.fkdot[k] = self.search_ranges[Fk][0]
                 searchRegion.fkdotBand[k] = (
@@ -1001,9 +1028,9 @@ class ComputeFstat(BaseSearchClass):
             else 0.001  # fallback, irrelevant for band estimate but must be > 0
         )
         scanInit.stepSizes.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
-        for k in range(3):
+        for k in range(lalpulsar.PULSAR_MAX_SPINS):
+            Fk = f"F{k}"
             if Fk in range_keys:
-                Fk = "F{:d}".format(k)
                 scanInit.stepSizes.fkdot[k] = (
                     self.search_ranges[Fk][-1]
                     if len(self.search_ranges[Fk]) == 3
@@ -1040,12 +1067,8 @@ class ComputeFstat(BaseSearchClass):
             tref=self.tref,
             tstart=self.minStartTime,
             tend=self.maxStartTime,
-            F0=spinRangeRef.fkdot[0],
-            F1=spinRangeRef.fkdot[1],
-            F2=spinRangeRef.fkdot[2],
-            F0band=spinRangeRef.fkdotBand[0],
-            F1band=spinRangeRef.fkdotBand[1],
-            F2band=spinRangeRef.fkdotBand[2],
+            fkdot=spinRangeRef.fkdot,
+            fkdotBand=spinRangeRef.fkdotBand,
             maxOrbitAsini=maxOrbitAsini,
             minOrbitPeriod=minOrbitPeriod,
             maxOrbitEcc=maxOrbitEcc,
@@ -1204,24 +1227,7 @@ class ComputeFstat(BaseSearchClass):
                 f" or a full set of {list(base_params_oldstyle.keys())} (DEPRECATED)."
             )
 
-        self.PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
-        for key in [key for key in parkeys if key.startswith("F")]:
-            if len(key) > 2:
-                # this should be a sufficient check as long as lalpulsar.PULSAR_MAX_SPINS <= 10
-                raise ValueError(
-                    f"Unknown parameter {key} in input dictionary, looks like a Fk spindown term but is too long."
-                )
-            try:
-                k = int(key[1])
-            except ValueError:
-                raise ValueError(
-                    f"Unknown parameter {key} in input dictionary, looks like a Fk spindown term but cannot convert 2nd char to integer."
-                )
-            if k >= lalpulsar.PULSAR_MAX_SPINS:
-                raise ValueError(
-                    f"Input parameter {key} exceeds lalpulsar.PULSAR_MAX_SPINS={lalpulsar.PULSAR_MAX_SPINS}."
-                )
-            self.PulsarDopplerParams.fkdot[k] = params[key]
+        self.PulsarDopplerParams.fkdot = self._set_fkdot_from_params_dict(params)
         self.PulsarDopplerParams.Alpha = float(params["Alpha"])
         self.PulsarDopplerParams.Delta = float(params["Delta"])
         for key in np.intersect1d(self.binary_keys, parkeys, assume_unique=True):
@@ -1363,10 +1369,6 @@ class ComputeFstat(BaseSearchClass):
 
         Parameters
         ----------
-        F0, F1, F2, Alpha, Delta: float
-            Parameters at which to compute the statistic.
-        asini, period, ecc, tp, argp: float, optional
-            Optional: Binary parameters at which to compute the statistic.
         tstart, tend: int or None
             GPS times to restrict the range of data used.
             If None: falls back to self.minStartTime and self.maxStartTime.
@@ -2382,6 +2384,9 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
 
     def get_semicoherent_nglitch_twoF(self, F0, F1, F2, Alpha, Delta, *args):
         """Returns the semi-coherent glitch summed twoF.
+
+        FIXME: not yet ported to the new parameter dictionary style
+        of other detection statistics methods.
 
         Parameters
         ----------

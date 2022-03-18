@@ -533,16 +533,15 @@ class Writer(BaseSearchClass):
                 " of signal to inject plus {:d} extra bins either side"
                 " (corresponding to default F-statistic settings).".format(extraBins)
             )
+            fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
+            for k in range(3):
+                fkdot[k] = getattr(self, f"F{k}")
             minCoverFreq, maxCoverFreq = helper_functions.get_covering_band(
                 tref=self.tref,
                 tstart=self.tstart,
                 tend=self.tend,
-                F0=self.F0,
-                F1=self.F1,
-                F2=self.F2,
-                F0band=0.0,
-                F1band=0.0,
-                F2band=0.0,
+                fkdot=fkdot,
+                fkdotBand=np.zeros(lalpulsar.PULSAR_MAX_SPINS),
                 maxOrbitAsini=getattr(self, "asini", 0.0),
                 minOrbitPeriod=getattr(self, "period", 0.0),
                 maxOrbitEcc=getattr(self, "ecc", 0.0),

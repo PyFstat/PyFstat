@@ -549,12 +549,8 @@ def get_covering_band(
     tref,
     tstart,
     tend,
-    F0,
-    F1,
-    F2,
-    F0band=0.0,
-    F1band=0.0,
-    F2band=0.0,
+    fkdot,
+    fkdotBand=0.0,
     maxOrbitAsini=0.0,
     minOrbitPeriod=0.0,
     maxOrbitEcc=0.0,
@@ -576,10 +572,10 @@ def get_covering_band(
         Start time (in GPS seconds) for the signal evolution to consider.
     tend: int
         End time (in GPS seconds) for the signal evolution to consider.
-    F0, F1, F1: float
-        Minimum frequency and spin-down of signals to be covered.
-    F0band, F1band, F1band: float
-        Ranges of frequency and spin-down of signals to be covered.
+    fkdot: list
+        Minimum frequency and spin-downs of signals to be covered.
+    fktotBand: list
+        Ranges of frequency and spin-downs of signals to be covered.
     maxOrbitAsini: float
         Largest orbital projected semi-major axis to be covered.
     minOrbitPeriod: float
@@ -597,12 +593,8 @@ def get_covering_band(
     tstart = lal.LIGOTimeGPS(tstart)
     tend = lal.LIGOTimeGPS(tend)
     psr = lalpulsar.PulsarSpinRange()
-    psr.fkdot[0] = F0
-    psr.fkdot[1] = F1
-    psr.fkdot[2] = F2
-    psr.fkdotBand[0] = F0band
-    psr.fkdotBand[1] = F1band
-    psr.fkdotBand[2] = F2band
+    psr.fkdot = fkdot
+    psr.fkdotBand = fkdotBand
     psr.refTime = tref
     minCoverFreq, maxCoverFreq = lalpulsar.CWSignalCoveringBand(
         tstart, tend, psr, maxOrbitAsini, minOrbitPeriod, maxOrbitEcc
@@ -660,10 +652,10 @@ def get_version_string():
     return get_versions()["version"]
 
 
-def get_doppler_params_output_format(keys):
+def get_doppler_params_output_format(keys, fmt_str="%.16g"):
     """Set a canonical output precision for frequency evolution parameters.
 
-    This uses the same format (`%.16g`) as
+    The default format (`%.16g`) is the same as
     the `write_FstatCandidate_to_fp()` function of
     `lalapps_ComputeFstatistic_v2`.
 
@@ -675,18 +667,17 @@ def get_doppler_params_output_format(keys):
     -------
     keys: dict
         The parameter keys for which to select formats.
+    fmt_str: str
+        fprintf-style format specifier for a single value.
 
     Returns
     -------
-    fmt: dict
+    fmt_dict: dict
         A dictionary assigning the default format to each parameter key
         from the hardcoded list of standard 'Doppler' parameters.
     """
-    CFSv2_fmt = "%.16g"
-    doppler_keys = [
-        "F0",
-        "F1",
-        "F2",
+    doppler_keys = [f"F{k}" for k in range(lalpulsar.PULSAR_MAX_SPINS)]
+    doppler_keys += [
         "Alpha",
         "Delta",
         "asini",
@@ -695,8 +686,8 @@ def get_doppler_params_output_format(keys):
         "tp",
         "argp",
     ]
-    fmt = {k: CFSv2_fmt for k in keys if k in doppler_keys}
-    return fmt
+    fmt_dict = {k: fmt_str for k in keys if k in doppler_keys}
+    return fmt_dict
 
 
 def read_txt_file_with_header(f, names=True, comments="#"):
