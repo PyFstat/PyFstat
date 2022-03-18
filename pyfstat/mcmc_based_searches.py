@@ -401,7 +401,7 @@ class MCMCSearch(BaseSearchClass):
     def _unpack_input_theta(self):
         self.full_theta_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         if self.binary:
-            self.full_theta_keys += ["asini", "period", "ecc", "tp", "argp"]
+            self.full_theta_keys += self.binary_keys
         full_theta_keys_copy = copy.copy(self.full_theta_keys)
 
         self.theta_keys = []
@@ -3563,7 +3563,7 @@ class MCMCTransientSearch(MCMCSearch):
     def _unpack_input_theta(self):
         self.full_theta_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         if self.binary:
-            self.full_theta_keys += ["asini", "period", "ecc", "tp", "argp"]
+            self.full_theta_keys += self.binary_keys
         self.full_theta_keys += ["transient_tstart", "transient_duration"]
         full_theta_keys_copy = copy.copy(self.full_theta_keys)
 
