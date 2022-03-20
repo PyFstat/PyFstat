@@ -45,6 +45,21 @@ default_Writer_params = {
     "Band": None,
 }
 
+
+@pytest.fixture
+def writer_using_fixtures():
+    kwargs = default_Writer_params.copy()
+    kwargs["F0"] = 10.0
+    kwargs["Band"] = 0.1
+    kwargs["sqrtSX"] = 1e-23
+    kwargs["outdir"] = "TestData/"
+
+    this_writer = pyfstat.Writer(**kwargs)
+    yield this_writer
+    if os.path.isdir(this_writer.outdir):
+        shutil.rmtree(this_writer.outdir)
+
+
 default_signal_params_no_sky = {
     "F0": 30.0,
     "F1": -1e-10,
@@ -940,6 +955,83 @@ class TestPredictFstat(BaseForTestsWithOutdir):
             f" E[2F]={twoF_expected_transient}+-{twoF_sigma_transient}"
         )
         self.assertTrue(twoF_expected_transient < twoF_expected)
+
+
+@pytest.fixture
+def multi_detector_states():
+    ds = pyfstat.snr.DetectorStates()
+
+    Tsft = default_Writer_params["Tsft"]
+    tstart = default_Writer_params["tstart"]
+    ts = np.arange(tstart, tstart + default_Writer_params["duration"], Tsft)
+    detectors = default_Writer_params["detectors"]
+
+    return ds.get_multi_detector_states(
+        timestamps=ts, detectors=detectors, Tsft=Tsft, time_offset=Tsft / 2
+    )
+
+
+@pytest.fixture
+def snr_object(multi_detector_states):
+    return pyfstat.SignalToNoiseRatio(
+        detector_states=multi_detector_states,
+        assumeSqrtSX=default_Writer_params["sqrtSX"],
+    )
+
+
+def test_SignalToNoiseRatio(writer_using_fixtures, multi_detector_states):
+
+    params = {
+        "h0": 1e-23,
+        "cosi": 0,
+        "psi": 0,
+        "phi0": 0,
+        "Alpha": 0,
+        "Delta": 0,
+    }
+
+    # Test compute SNR using assumeSqrtSX
+    snr = pyfstat.SignalToNoiseRatio(
+        detector_states=multi_detector_states,
+        assumeSqrtSX=writer_using_fixtures.sqrtSX,
+    )
+    twoF_from_snr2, twoF_stdev_from_snr2 = snr.compute_twoF(**params)
+
+    predicted_twoF, predicted_stdev_twoF = pyfstat.helper_functions.predict_fstat(
+        **{key: val for key, val in params.items() if key != "phi0"},
+        minStartTime=writer_using_fixtures.tstart,
+        duration=writer_using_fixtures.duration,
+        IFOs=writer_using_fixtures.detectors,
+        assumeSqrtSX=snr.assumeSqrtSX,
+    )
+    np.testing.assert_allclose(twoF_from_snr2, predicted_twoF, rtol=1e-3)
+    np.testing.assert_allclose(twoF_stdev_from_snr2, predicted_stdev_twoF, rtol=1e-3)
+
+    # Test compute SNR using noise SFTs
+    writer_using_fixtures.make_data()
+    params = {
+        "F0": writer_using_fixtures.F0,
+        "h0": 1e-23,
+        "cosi": 0,
+        "psi": 0,
+        "phi0": 0,
+        "Alpha": 0,
+        "Delta": 0,
+    }
+    snr = pyfstat.SignalToNoiseRatio.from_sfts(
+        F0=params["F0"],
+        sftfilepath=writer_using_fixtures.sftfilepath,
+        time_offset=writer_using_fixtures.Tsft / 2,
+    )
+    twoF_from_snr2, twoF_stdev_from_snr2 = snr.compute_twoF(
+        **{key: val for key, val in params.items() if key != "F0"},
+    )
+    predicted_twoF, predicted_stdev_twoF = pyfstat.helper_functions.predict_fstat(
+        **{key: val for key, val in params.items() if key != "phi0"},
+        sftfilepattern=writer_using_fixtures.sftfilepath,
+    )
+    np.testing.assert_allclose(twoF_from_snr2, predicted_twoF, rtol=1e-3)
+    np.testing.assert_allclose(twoF_stdev_from_snr2, predicted_stdev_twoF, rtol=1e-3)
 
 
 class TestBaseSearchClass(unittest.TestCase):

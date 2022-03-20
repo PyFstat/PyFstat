@@ -41,6 +41,14 @@ pyfstat.helper\_functions module
    :undoc-members:
    :show-inheritance:
 
+pyfstat.injection\_parameters module
+------------------------------------
+
+.. automodule:: pyfstat.injection_parameters
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pyfstat.make\_sfts module
 -------------------------
 
@@ -61,6 +69,14 @@ pyfstat.optimal\_setup\_functions module
 ----------------------------------------
 
 .. automodule:: pyfstat.optimal_setup_functions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pyfstat.snr module
+------------------
+
+.. automodule:: pyfstat.snr
    :members:
    :undoc-members:
    :show-inheritance:
