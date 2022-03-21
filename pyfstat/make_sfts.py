@@ -373,10 +373,12 @@ class Writer(BaseSearchClass):
             # Each key should correspond to `detectors` if given;
             # otherwise, construct detectors from the given keys.
             if self.detectors is not None:
-                if not all(ifo in self.timestamps for ifo in self.detectors):
+                ifos_in_ts = list(self.timetamps.keys())
+                ifos_in_detectors = self.detectors.split(",")
+                if np.setdiff1d(ifos_in_ts, ifos_in_detectors).size:
                     raise ValueError(
-                        f"Detector names in timestamps dictionary ({list(self.timestamps.keys())}) "
-                        "are inconsistent with detector names given via keyword ({self.detectors.split(',')})."
+                        f"Detector names in timestamps dictionary ({ifos_in_ts}) "
+                        "are inconsistent with detector names given via keyword ({ifos_in_detectors})."
                     )
             else:
                 ifos = list(self.timestamps.keys())
