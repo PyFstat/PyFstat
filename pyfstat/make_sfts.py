@@ -382,7 +382,7 @@ class Writer(BaseSearchClass):
                 input_timestamps = self.timestamps.values()
                 self.detectors = ",".join(ifos)
         else:
-            # Otherwise, assume it's a list and convert into a 1D numpy arra
+            # Otherwise, assume it's a list and convert into a 1D numpy array
             if self.detectors is None:
                 raise ValueError(
                     "Detector names must be given either as a key in `timestamps` or explicitly via `detectors`."
@@ -778,7 +778,7 @@ class Writer(BaseSearchClass):
         if self.SFTWindowType is not None:
             cl_mfd.append('--SFTWindowType="{}"'.format(self.SFTWindowType))
             cl_mfd.append("--SFTWindowBeta={}".format(self.SFTWindowBeta))
-        if getattr(self, "timestampsFiles", None) is not None:
+        if getattr(self, "timestamps", None) is not None:
             cl_mfd.append("--timestampsFiles={}".format(self.timestamps))
         else:
             cl_mfd.append("--startTime={}".format(self.tstart))
