@@ -34,7 +34,7 @@ jobs:
         black --check --diff .
     - name: Run test suite with pytest
       run: |
-        (cd .. && pytest --durations=0 $GITHUB_WORKSPACE/tests.py --log-file=$GITHUB_WORKSPACE/tests.log)
+        (cd .. && pytest --durations=0 $GITHUB_WORKSPACE/tests/ --log-file=$GITHUB_WORKSPACE/tests.log)
     - name: Build package
       run: |
         python setup.py sdist bdist_wheel

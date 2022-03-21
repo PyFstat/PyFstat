@@ -30,4 +30,4 @@ jobs:
         black --check --diff .
     - name: Test with pytest
       run: |
-        (cd .. && pytest --durations=0 $GITHUB_WORKSPACE/tests.py --log-file=$GITHUB_WORKSPACE/tests.log)
+        (cd .. && pytest --durations=0 $GITHUB_WORKSPACE/tests/ --log-file=$GITHUB_WORKSPACE/tests.log)
