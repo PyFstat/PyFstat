@@ -423,7 +423,10 @@ class Writer(BaseSearchClass):
         no_noiseSFTs_options = ["tstart", "duration", "Tsft", "detectors"]
 
         # FIXME: Remove after deprecating timestampsFiles
-        if self.timestampsFiles is not None and self.timestamps is None:
+        if (
+            getattr(self, "timestampsFiles", None) is not None
+            and self.timestamps is None
+        ):
             self.timestamps = self.timestampsFiles
 
         if getattr(self, "timestamps", None) is not None:
