@@ -183,14 +183,15 @@ class Writer(BaseSearchClass):
             Optionally fix the random seed of Gaussian noise generation
             for reproducibility.
         timestamps: str or dict
-            Dictionary of timestamps or
-            Comma-separated list of per-detector timestamps files
+            Dictionary of timestamps (each key must refer to a detector),
+            list of timestamps (`detectors` should be set),
+            or comma-separated list of per-detector timestamps files
             (simple text files, lines with <seconds> <nanoseconds>,
             comments should use `%`, each time stamp gives the
             start time of one SFT).
+            WARNING: In that last case, order must match that of `detectors`!
             NOTE: mutually exclusive with [`tstart`,`duration`]
             and with `noiseSFTs`.
-            WARNING: order must match that of `detectors`!
         timestampsFiles:
             Deprecated. Currently an alias to `timestamps`.
             Comma-separated list of per-detector timestamps files
