@@ -331,6 +331,7 @@ class Writer(BaseSearchClass):
         """
         self._parse_timestamps()
         IFOs = self.detectors.split(",")
+        # at this point, it's definitely a comma-separated string
         tsfiles = self.timestamps.split(",")
         if len(IFOs) != len(tsfiles):
             raise ValueError(
