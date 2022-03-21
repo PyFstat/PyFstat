@@ -429,7 +429,7 @@ class Writer(BaseSearchClass):
         # FIXME: Remove after deprecating timestampsFiles
         if (
             getattr(self, "timestampsFiles", None) is not None
-            and self.timestamps is None
+            and getattr(self, "timestamps", None) is None
         ):
             self.timestamps = self.timestampsFiles
 
