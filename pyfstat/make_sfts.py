@@ -111,6 +111,7 @@ class Writer(BaseSearchClass):
         transientStartTime=None,
         transientTau=None,
         randSeed=None,
+        timestamps=None,
         timestampsFiles=None,
     ):
         """
@@ -120,10 +121,10 @@ class Writer(BaseSearchClass):
             A human-readable label to be used in naming the output files.
         tstart: int
             Starting GPS epoch of the data set.
-            NOTE: mutually exclusive with `timestampsFiles`.
+            NOTE: mutually exclusive with `timestamps`.
         duration: int
             Duration (in GPS seconds) of the total data set.
-            NOTE: mutually exclusive with `timestampsFiles`.
+            NOTE: mutually exclusive with `timestamps`.
         tref: float or None
             Reference time for simulated signals.
             Default is `None`, which sets the reference time to `tstart`.
@@ -152,7 +153,7 @@ class Writer(BaseSearchClass):
             Existing SFT files on top of which signals will be injected.
             If not `None`, additional constraints can be applied
             using the arguments `tstart` and `duration`.
-            NOTE: mutually exclusive with `timestampsFiles`.
+            NOTE: mutually exclusive with `timestamps`.
         SFTWindowType: str or None
             LAL name of the windowing function to apply to the data.
         SFTWindowBeta: float
@@ -181,7 +182,18 @@ class Writer(BaseSearchClass):
         randSeed: int or None
             Optionally fix the random seed of Gaussian noise generation
             for reproducibility.
-        timestampsFiles: str or None
+        timestamps: str or dict
+            Dictionary of timestamps (each key must refer to a detector),
+            list of timestamps (`detectors` should be set),
+            or comma-separated list of per-detector timestamps files
+            (simple text files, lines with <seconds> <nanoseconds>,
+            comments should use `%`, each time stamp gives the
+            start time of one SFT).
+            WARNING: In that last case, order must match that of `detectors`!
+            NOTE: mutually exclusive with [`tstart`,`duration`]
+            and with `noiseSFTs`.
+        timestampsFiles:
+            Deprecated. Currently an alias to `timestamps`.
             Comma-separated list of per-detector timestamps files
             (simple text files, lines with <seconds> <nanoseconds>,
             comments should use `%`, each time stamp gives the
@@ -312,17 +324,19 @@ class Writer(BaseSearchClass):
         self.duration = max(tend) - self.tstart
         self.detectors = ",".join(IFOs)
 
-    def _get_setup_from_timestampsFiles(self):
+    def _get_setup_from_timestamps(self):
         """
-        If timestampsFiles are given, use them to obtain relevant data parameters
+        If timestamps are given, use them to obtain relevant data parameters
         (tstart, duration; but not detectors and Tsft as in the noiseSFTs case).
         """
+        self._parse_timestamps()
         IFOs = self.detectors.split(",")
-        tsfiles = self.timestampsFiles.split(",")
+        # at this point, it's definitely a comma-separated string
+        tsfiles = self.timestamps.split(",")
         if len(IFOs) != len(tsfiles):
             raise ValueError(
                 f"Length of detectors=='{self.detectors}'"
-                f" does not match that of timestampsFiles=='{self.timestampsFiles}'"
+                f" does not match that of timestamps=='{self.timestamps}'"
                 f" ({len(IFOs)}!={len(tsfiles)})"
             )
         tstart = []
@@ -348,6 +362,50 @@ class Writer(BaseSearchClass):
         self.tstart = min(tstart)
         self.duration = max(tend) - self.tstart
 
+    def _parse_timestamps(self):
+        """
+        Timestamps can be given either as a timestamp file or as an actual list
+        of timestamps. The former case ignores this function, whereas the second
+        one requires us to actually construct the timestamps file.
+        """
+        if isinstance(self.timestamps, str):
+            return
+        elif isinstance(self.timestamps, dict):
+            # Each key should correspond to `detectors` if given;
+            # otherwise, construct detectors from the given keys.
+            if self.detectors is not None:
+                ifos_in_ts = list(self.timetamps.keys())
+                ifos_in_detectors = self.detectors.split(",")
+                if np.setdiff1d(ifos_in_ts, ifos_in_detectors).size:
+                    raise ValueError(
+                        f"Detector names in timestamps dictionary ({ifos_in_ts}) "
+                        "are inconsistent with detector names given via keyword ({ifos_in_detectors})."
+                    )
+            else:
+                ifos = list(self.timestamps.keys())
+                input_timestamps = self.timestamps.values()
+                self.detectors = ",".join(ifos)
+        else:
+            # Otherwise, assume it's a list and convert into a 1D numpy array
+            if self.detectors is None:
+                raise ValueError(
+                    "Detector names must be given either as a key in `timestamps` or explicitly via `detectors`."
+                )
+            ifos = self.detectors.split(",")
+            input_timestamps = (self.timestamps for i in ifos)
+
+        # If this point was reached, it means we should create timestamps files.
+        timestamp_files = []
+        for ind, ts in enumerate(input_timestamps):
+            output_file = os.path.join(
+                self.outdir, f"{self.label}_timestamps_{ifos[ind]}.csv"
+            )
+            left_column = np.floor(ts).reshape(-1, 1)
+            right_column = np.floor(1e9 * (np.reshape(ts, (-1, 1)) - left_column))
+            np.savetxt(output_file, np.hstack((left_column, right_column)), fmt="%d")
+            timestamp_files.append(output_file)
+        self.timestamps = ",".join(timestamp_files)
+
     def _basic_setup(self):
         """Basic parameters handling, path setup etc."""
 
@@ -365,22 +423,30 @@ class Writer(BaseSearchClass):
             )
 
         incompatible_with_TS = ["tstart", "duration", "noiseSFTs"]
-        TS_required_options = ["Tsft", "detectors"]
+        TS_required_options = ["Tsft"]
         no_noiseSFTs_options = ["tstart", "duration", "Tsft", "detectors"]
-        if getattr(self, "timestampsFiles", None) is not None:
+
+        # FIXME: Remove after deprecating timestampsFiles
+        if (
+            getattr(self, "timestampsFiles", None) is not None
+            and getattr(self, "timestamps", None) is None
+        ):
+            self.timestamps = self.timestampsFiles
+
+        if getattr(self, "timestamps", None) is not None:
             if np.any(
                 [getattr(self, k, None) is not None for k in incompatible_with_TS]
             ):
                 raise ValueError(
-                    "timestampsFiles option is incompatible with"
+                    "timestamps option is incompatible with"
                     f" ({','.join(incompatible_with_TS)})."
                 )
             if np.any([getattr(self, k, None) is None for k in TS_required_options]):
                 raise ValueError(
-                    "With timestampsFiles option, need also all of"
+                    "With timestamps option, need also all of"
                     f" ({','.join(TS_required_options)})."
                 )
-            self._get_setup_from_timestampsFiles()
+            self._get_setup_from_timestamps()
         elif self.noiseSFTs is not None:
             logging.warning(
                 "noiseSFTs is not None: Inferring tstart, duration, Tsft. "
@@ -391,7 +457,7 @@ class Writer(BaseSearchClass):
             self._get_setup_from_noiseSFTs()
         elif np.any([getattr(self, k, None) is None for k in no_noiseSFTs_options]):
             raise ValueError(
-                "Need either noiseSFTs, timestampsFiles or all of ({:s}).".format(
+                "Need either noiseSFTs, timestamps or all of ({:s}).".format(
                     ",".join(no_noiseSFTs_options)
                 )
             )
@@ -719,8 +785,8 @@ class Writer(BaseSearchClass):
         if self.SFTWindowType is not None:
             cl_mfd.append('--SFTWindowType="{}"'.format(self.SFTWindowType))
             cl_mfd.append("--SFTWindowBeta={}".format(self.SFTWindowBeta))
-        if getattr(self, "timestampsFiles", None) is not None:
-            cl_mfd.append("--timestampsFiles={}".format(self.timestampsFiles))
+        if getattr(self, "timestamps", None) is not None:
+            cl_mfd.append("--timestampsFiles={}".format(self.timestamps))
         else:
             cl_mfd.append("--startTime={}".format(self.tstart))
             cl_mfd.append("--duration={}".format(self.duration))
@@ -818,6 +884,7 @@ class BinaryModulatedWriter(Writer):
         transientStartTime=None,
         transientTau=None,
         randSeed=None,
+        timestamps=None,
         timestampsFiles=None,
     ):
         """
@@ -1054,6 +1121,7 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
         sun_ephem=None,
         transientWindowType="rect",
         randSeed=None,
+        timestamps=None,
         timestampsFiles=None,
     ):
         """
