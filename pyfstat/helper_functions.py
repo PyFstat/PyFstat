@@ -1204,7 +1204,7 @@ def generate_loudest_file(
     loudest_file: str
         The filename of the CFSv2 output file.
     """
-    logging.info("Running CFSv2 to get .loudest file")
+    logging.info(f"Running CFSv2 to get .loudest file with max_params={max_params} ...")
     if np.any([key in max_params for key in ["delta_F0", "delta_F1", "tglitch"]]):
         raise RuntimeError("CFSv2 --outputLoudest cannot deal with glitch parameters.")
     if transientWindowType:
