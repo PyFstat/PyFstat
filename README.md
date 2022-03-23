@@ -182,8 +182,8 @@ plotting methods and some of the [example scripts](./examples).
 * `style`: Includes the `flake8` linter ([flake8.pycqa](https://flake8.pycqa.org/en/latest))
   and `black` style checker ([black.readthedocs](https://black.readthedocs.io)). These checks are required to pass
   by the online integration pipeline.
-* `test`: For running the test suite locally using [pytest](https://docs.pytest.org) 
-  (`python -m pytest tests.py`).
+* `test`: For running the test suite locally using [pytest](https://docs.pytest.org) and some of its addons
+  (`python -m pytest tests/`).
 * `wheel`: Includes `wheel` and `check-wheel-contents`.
 * `dev`: Collects `style`, `test` and `wheel`.
 * `docs`: Required dependencies to build the documentation.

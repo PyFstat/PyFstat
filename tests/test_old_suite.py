@@ -10,6 +10,16 @@ import time
 from scipy.stats import chi2
 
 
+# custom class to allow flaky filtering only on specific excepted exceptions
+class FlakyError(Exception):
+    pass
+
+
+# flaky filter function
+def is_flaky(err, *args):
+    return issubclass(err[0], FlakyError)
+
+
 class BaseForTestsWithOutdir(unittest.TestCase):
     outdir = "TestData"
 
@@ -1753,6 +1763,7 @@ class TestSemiCoherentGlitchSearch(BaseForTestsWithData):
         self._run_test(delta_F0=0.1)
 
 
+@pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=is_flaky)
 class BaseForMCMCSearchTests(BaseForTestsWithData):
     # this class is only used for common utilities for MCMCSearch-based classes
     # and doesn't run any tests itself
@@ -1804,7 +1815,11 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
                 )
             )
             if assertTrue:
-                self.assertTrue(within)
+                try:
+                    self.assertTrue(within)
+                except AssertionError:
+                    print("FAIL: Not within tolerances!")
+                    raise FlakyError
             within = (inj[k] >= summary_stats[k]["lower" + conf]) and (
                 inj[k] <= summary_stats[k]["upper" + conf]
             )
@@ -1819,7 +1834,11 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
                 )
             )
             if assertTrue:
-                self.assertTrue(within)
+                try:
+                    self.assertTrue(within)
+                except AssertionError:
+                    print("FAIL: Not within tolerances!")
+                    raise FlakyError
 
     def _test_plots(self):
         self.search.plot_corner(add_prior=True)

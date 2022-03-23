@@ -41,7 +41,7 @@ extras_require = {
         "flake8-docstrings",
         "flake8-executable",
     ],
-    "test": ["pytest", "pytest-cov"],
+    "test": ["pytest", "pytest-cov", "flaky"],
     "wheel": ["wheel", "check-wheel-contents"],
 }
 for key in ["style", "test", "wheel"]:
