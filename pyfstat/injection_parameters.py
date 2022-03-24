@@ -1,9 +1,10 @@
 """Generate injection parameters drawn from different prior populations"""
-from attrs import define, Factory, field
-import logging
-import numpy as np
 import functools
+import logging
 from typing import Union
+
+import numpy as np
+from attrs import Factory, define, field
 
 isotropic_amplitude_priors = {
     "cosi": {"uniform": {"low": -1.0, "high": 1.0}},

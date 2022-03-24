@@ -7,9 +7,10 @@ Compute the cumulative coherent F-statistic of a signal candidate.
 
 
 import os
-import numpy as np
-import pyfstat
 
+import numpy as np
+
+import pyfstat
 from pyfstat.helper_functions import get_predict_fstat_parameters_from_dict
 
 label = "PyFstat_example_twoF_cumulative"

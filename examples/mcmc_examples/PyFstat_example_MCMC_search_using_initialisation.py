@@ -6,9 +6,11 @@ Directed MCMC search for an isolated CW signal using the
 fully-coherent F-statistic. Prior to the burn-in stage, walkers
 are initialized with a certain scattering factor.
 """
-import pyfstat
-import numpy as np
 import os
+
+import numpy as np
+
+import pyfstat
 
 label = "PyFstat_example_MCMC_search_using_initialisation"
 outdir = os.path.join("PyFstat_example_data", label)

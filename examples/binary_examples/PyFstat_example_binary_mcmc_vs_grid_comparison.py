@@ -7,10 +7,12 @@ to a simple grid search accross the parameter space corresponding
 to a CW source in a binary system.
 """
 
-import pyfstat
 import os
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
+
+import pyfstat
 
 # Set to false to include eccentricity
 circular_orbit = False

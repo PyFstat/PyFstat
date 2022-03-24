@@ -1,18 +1,20 @@
 import os
-import pytest
 import unittest
+
 import lalpulsar
 import numpy as np
-from scipy.stats import chi2
-import pyfstat
+import pytest
 
 # FIXME this should be made cleaner with fixtures
 from commons_for_tests import (
     BaseForTestsWithData,
     BaseForTestsWithOutdir,
-    default_Writer_params,
     default_signal_params,
+    default_Writer_params,
 )
+from scipy.stats import chi2
+
+import pyfstat
 
 
 class TestReadParFile(BaseForTestsWithOutdir):

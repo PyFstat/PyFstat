@@ -1,20 +1,20 @@
 """ The core tools used in pyfstat """
 
 
-import os
-import logging
-from pprint import pformat
-
-import glob
-import numpy as np
-import scipy.special
-import scipy.optimize
-from datetime import datetime
 import getpass
+import glob
+import logging
+import os
 import socket
+from datetime import datetime
+from pprint import pformat
 
 import lal
 import lalpulsar
+import numpy as np
+import scipy.optimize
+import scipy.special
+
 import pyfstat.helper_functions as helper_functions
 import pyfstat.tcw_fstat_map_funcs as tcw
 

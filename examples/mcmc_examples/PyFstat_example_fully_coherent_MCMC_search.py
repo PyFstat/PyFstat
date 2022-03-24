@@ -6,9 +6,11 @@ Directed MCMC search for an isolated CW signal using the
 fully coherent F-statistic.
 """
 
-import pyfstat
-import numpy as np
 import os
+
+import numpy as np
+
+import pyfstat
 from pyfstat.helper_functions import get_predict_fstat_parameters_from_dict
 
 label = "PyFstat_example_fully_coherent_MCMC_search"

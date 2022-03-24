@@ -1,23 +1,18 @@
 """PyFstat tools to generate and manipulate data in the form of SFTs."""
 
 
-import numpy as np
+import glob
 import logging
 import os
-import glob
 import pkgutil
 
 import lal
 import lalpulsar
+import numpy as np
 
-from pyfstat.core import (
-    BaseSearchClass,
-    SearchForSignalWithJumps,
-    tqdm,
-    args,
-)
 import pyfstat.helper_functions as helper_functions
 from pyfstat import injection_parameters
+from pyfstat.core import BaseSearchClass, SearchForSignalWithJumps, args, tqdm
 
 
 class Writer(BaseSearchClass):

@@ -5,10 +5,12 @@ Follow up example
 Multi-stage MCMC follow up of a CW signal produced by an isolated
 source using a ladder of coherent times.
 """
-import pyfstat
-import numpy as np
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+import pyfstat
 
 label = "PyFstat_example_semi_coherent_directed_follow_up"
 outdir = os.path.join("PyFstat_example_data", label)

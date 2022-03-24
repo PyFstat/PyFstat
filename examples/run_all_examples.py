@@ -1,6 +1,7 @@
 import os
 import shutil
 from glob import glob
+
 from pyfstat.helper_functions import run_commandline
 
 exit_on_first_failure = False

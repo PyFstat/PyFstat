@@ -1,14 +1,15 @@
-import pytest
 import numpy as np
-import pyfstat
+import pytest
 
 # FIXME this should be made cleaner with fixtures
 from commons_for_tests import (
     BaseForTestsWithData,
-    default_signal_params,
     FlakyError,
+    default_signal_params,
     is_flaky,
 )
+
+import pyfstat
 
 
 @pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=is_flaky)

@@ -5,10 +5,12 @@ Directed grid search: Monochromatic source
 Search for a monochromatic (no spindown) signal using
 a parameter space grid (i.e. no MCMC).
 """
-import pyfstat
-import numpy as np
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+import pyfstat
 
 label = "PyFstat_example_grid_search_F0"
 outdir = os.path.join("PyFstat_example_data", label)

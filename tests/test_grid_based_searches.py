@@ -1,9 +1,11 @@
 import os
+
 import numpy as np
-import pyfstat
 
 # FIXME this should be made cleaner with fixtures
 from commons_for_tests import BaseForTestsWithData
+
+import pyfstat
 
 
 class TestGridSearch(BaseForTestsWithData):

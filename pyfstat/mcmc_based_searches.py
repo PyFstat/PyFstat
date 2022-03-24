@@ -43,24 +43,24 @@ and ``scale`` shape parameters). Further priors can be added by modifying ``pyfs
 
 """
 
-import sys
-import os
 import copy
 import logging
+import os
+import sys
 from collections import OrderedDict
 
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-from ptemcee import Sampler as PTSampler
 import corner
 import dill as pickle
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+from ptemcee import Sampler as PTSampler
 from scipy.stats import lognorm
 
 import pyfstat.core as core
-from pyfstat.core import BaseSearchClass, tqdm, args
-import pyfstat.optimal_setup_functions as optimal_setup_functions
 import pyfstat.helper_functions as helper_functions
+import pyfstat.optimal_setup_functions as optimal_setup_functions
+from pyfstat.core import BaseSearchClass, args, tqdm
 
 
 class MCMCSearch(BaseSearchClass):

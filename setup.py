@@ -1,6 +1,8 @@
-from setuptools import setup, find_packages
-from os import path
 import sys
+from os import path
+
+from setuptools import find_packages, setup
+
 import versioneer
 
 # check python version
@@ -40,6 +42,8 @@ extras_require = {
         "flake8",
         "flake8-docstrings",
         "flake8-executable",
+        "flake8-isort",
+        "isort",
     ],
     "test": ["pytest", "pytest-cov", "flaky"],
     "wheel": ["wheel", "check-wheel-contents"],

@@ -1,9 +1,10 @@
-from attrs import define, field
+import logging
+from typing import Union
+
 import lal
 import lalpulsar
-import logging
 import numpy as np
-from typing import Union
+from attrs import define, field
 
 from pyfstat.helper_functions import get_ephemeris_files
 

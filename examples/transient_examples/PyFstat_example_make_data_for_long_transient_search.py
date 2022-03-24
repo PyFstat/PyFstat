@@ -9,8 +9,9 @@ or it is also being imported from
 PyFstat_example_long_transient_MCMC_search.py
 """
 
-import pyfstat
 import os
+
+import pyfstat
 
 outdir = os.path.join("PyFstat_example_data", "PyFstat_example_long_transient_search")
 
