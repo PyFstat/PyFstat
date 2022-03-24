@@ -1,3 +1,19 @@
+## 1.14.0 [??/??/2022]
+
+ - new dependencies: `attr` (core), `flaky` (for tests only)
+ - added `SignalToNoiseRatio` class (equivalent to `lalapps_PredictFstat`)
+   and `DetectorStates` helper class in new `snr` module
+ - ` InjectionParametersGenerator` and its children moved
+   to separate module `injection_parameters`
+ - `Writer` (and its children) now accepts `timestamps`
+   as a list, dict over detectors,
+   or comma-separated string of files per detector
+   (`timestampsFiles` input is now deprecated)
+ - some simplifications to `Writer` internal methods
+ - started splitting up test suite by module,
+   full suite can now be run with `pytest tests/`
+ - flaky MCMC tests will be rerun 3 times if needed
+
 ## 1.13.1 [15/02/2022]
 
  - add new helper function `get_sft_as_arrays()`
