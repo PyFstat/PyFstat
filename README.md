@@ -179,9 +179,10 @@ plotting methods and some of the [example scripts](./examples).
 * `pycuda` ([PyPI](https://pypi.org/project/pycuda/)): Required for the `tCWFstatMapVersion=pycuda`
   option of the `TransientGridSearch` class. (Note: Installing `pycuda` requires a working 
   `nvcc` compiler in your path.)
-* `style`: Includes the `flake8` linter ([flake8.pycqa](https://flake8.pycqa.org/en/latest))
-  and `black` style checker ([black.readthedocs](https://black.readthedocs.io)). These checks are required to pass
-  by the online integration pipeline.
+* `style`: Includes the `flake8` linter ([flake8.pycqa](https://flake8.pycqa.org/en/latest)),
+  `black` style checker ([black.readthedocs](https://black.readthedocs.io)),
+  and `isort` for import ordering ([pycqa.github.io](https://pycqa.github.io/isort/)).
+  These checks are required to pass by the online integration pipeline.
 * `test`: For running the test suite locally using [pytest](https://docs.pytest.org) and some of its addons
   (`python -m pytest tests/`).
 * `wheel`: Includes `wheel` and `check-wheel-contents`.
@@ -249,17 +250,19 @@ Here's what you need to know:
 * The github automated tests currently run on `python` [3.7,3.8,3.9,3.10]
   and new PRs need to pass all these.
 * The automated test also runs
-  the [black](https://black.readthedocs.io) style checker
-  and the [flake8](https://flake8.pycqa.org/en/latest/) linter.
-  If at all possible, please run these two tools locally before pushing changes / submitting PRs:
+  the [black](https://black.readthedocs.io) style checker,
+  the [flake8](https://flake8.pycqa.org/en/latest/) linter,
+  and the [isort](https://pycqa.github.io/isort/) import ordering helper.
+  If at all possible, please run these tools locally before pushing changes / submitting PRs:
+  `isort .` to sort package imports,
   `flake8 --count --statistics .` to find common coding errors and then fix them manually,
-  and then
   `black --check --diff .` to show the required style changes, or `black .` to automatically apply them.
 * `bin/setup-dev-tools.sh` gets your virtual environment ready for you. After making sure you are 
 using a virtual environment (venv or conda),
 it installs `black`, `flake8`, `pre-commit`, `pytest`, `wheel` via `pip` and uses `pre-commit` to run
-the `black` and `flake8` using a pre-commit hook. In this way, you will be prompted a warning whenever you
-forget to run `black` or `flake8` before doing your commit :wink:.
+`isort`, `black`, `flake8` and other pre-commit hooks
+to automatically reformat your code to match our style
+and/or get warnings for things to fix that would fail on the github integration tests.
 
 ## Contributors
 
