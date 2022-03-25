@@ -1,5 +1,5 @@
 include versioneer.py
 include pyfstat/_version.py
 include CHANGELOG.md
-include tests.py
+include tests/*.py
 recursive-include examples/ *.py

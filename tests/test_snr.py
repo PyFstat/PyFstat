@@ -1,8 +1,8 @@
-import numpy as np
 import os
-import shutil
-import pyfstat
 import pytest
+import shutil
+import numpy as np
+import pyfstat
 
 
 @pytest.fixture
