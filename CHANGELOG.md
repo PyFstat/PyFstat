@@ -10,9 +10,12 @@
    or comma-separated string of files per detector
    (`timestampsFiles` input is now deprecated)
  - some simplifications to `Writer` internal methods
- - started splitting up test suite by module,
-   full suite can now be run with `pytest tests/`
- - flaky MCMC tests will be rerun 3 times if needed
+ - for developers:
+   - test suite now split up by module,
+     full suite can now be run with `pytest tests/`
+   - flaky MCMC tests will be rerun 3 times if needed
+   - now enforcing isort import ordering style
+     and some other simple pre-commit-hook rules
 
 ## 1.13.1 [15/02/2022]
 
