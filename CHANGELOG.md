@@ -1,6 +1,7 @@
 ## 1.14.0 [??/??/2022]
 
  - new dependencies: `attr` (core), `flaky` (for tests only)
+ - removed deprecated option to use `$LALPULSAR_DATADIR` for ephemerides
  - added `SignalToNoiseRatio` class (equivalent to `lalapps_PredictFstat`)
    and `DetectorStates` helper class in new `snr` module
  - ` InjectionParametersGenerator` and its children moved
@@ -14,7 +15,7 @@
    - test suite now split up by module,
      full suite can now be run with `pytest tests/`
    - flaky MCMC tests will be rerun 3 times if needed
-   - now enforcing isort import ordering style
+   - now enforcing `isort` import ordering style
      and some other simple pre-commit-hook rules
 
 ## 1.13.1 [15/02/2022]
