@@ -80,7 +80,7 @@ class BaseSearchClass:
 
         NOTE: If not given explicit arguments,
         default values from helper_functions.get_ephemeris_files()
-        are used (looking in ~/.pyfstat or $LALPULSAR_DATADIR)
+        are used.
 
         Parameters
         ----------

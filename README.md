@@ -234,10 +234,10 @@ Paths set in this way will take precedence over lal's default resolution logic.
 You can also manually specify ephemerides files when initialising
 each PyFstat class with the `earth_ephem` and `sun_ephem` arguments.
 
-The alternative of relying on environment variables
+NOTE: The alternative of relying on environment variables
 (as previously recommended by PyFstat's documentation)
 is considered deprecated by LALSuite maintainers
-and will no longer be supported by PyFstat in future versions.
+and is no longer supported by current PyFstat versions.
 
 ## Contributing to PyFstat
 

@@ -142,18 +142,15 @@ def get_ephemeris_files():
     ```
 
     If such a file is not found or does not conform to that format,
-    then the `$LALPULSAR_DATADIR` environment variable is checked
-    for the default `[earth/sun]00-40-DE405` ephemerides.
-    NOTE that this solution is deprecated
-    and will no longer be supported in future versions!
-
-    If that also fails,
-    a warning is emitted.
-    However, the user can still continue,
-    by either relying on lal's recently improved ability to find proper
+    then we rely on lal's recently improved ability to find proper
     default fallback paths for the `[earth/sun]00-40-DE405` ephemerides
     with both pip- and conda-installed packages,
-    or by setting the ephemeris options manually on each class instantiation.
+
+    Alternatively, ephemeris options can be set manually
+    on each class instantiation.
+
+    NOTE that the `$LALPULSAR_DATADIR` environment variable
+    is no longer supported!
 
     Returns
     ----------
@@ -161,7 +158,6 @@ def get_ephemeris_files():
         Paths of the two files containing positions of Earth and Sun.
     """
     config_file = os.path.join(os.path.expanduser("~"), ".pyfstat.conf")
-    env_var = "LALPULSAR_DATADIR"
     ephem_version = "DE405"
     earth_ephem = f"earth00-40-{ephem_version}.dat.gz"
     sun_ephem = f"sun00-40-{ephem_version}.dat.gz"
@@ -182,27 +178,8 @@ def get_ephemeris_files():
             sun_ephem = d["sun_ephem"]
         except KeyError:
             logging.warning(f"No [earth/sun]_ephem found in {config_file}. {please}")
-    elif env_var in list(os.environ.keys()):
-        earth_ephem = os.path.join(os.environ[env_var], earth_ephem)
-        sun_ephem = os.path.join(os.environ[env_var], sun_ephem)
-        if os.path.isfile(earth_ephem) and os.path.isfile(sun_ephem):
-            logging.warning(
-                f"Relying on ${env_var} for ephemerides is deprecated"
-                " and will no longer be supported in future versions!"
-                " You can instead rely on lal's automatic path resolution,"
-                " use a '.pyfstat.conf' file,"
-                " or provide 'earth_ephem' and 'sun_ephem' class options."
-            )
-        else:
-            logging.warning(
-                f"Default ephemerides [{earth_ephem},{sun_ephem}]"
-                f" not found in the {os.environ[env_var]} directory. {please}"
-            )
     else:
-        logging.warning(
-            f"No {config_file} file or ${env_var} environment"
-            f" variable found. {please}"
-        )
+        logging.info(f"No {config_file} file found. {please}")
     return earth_ephem, sun_ephem
 
 
