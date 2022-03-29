@@ -5,9 +5,11 @@ Directed grid search: Quadratic spindown
 Search for CW signal including two spindown parameters
 using a parameter space grid (i.e. no MCMC).
 """
-import pyfstat
-import numpy as np
 import os
+
+import numpy as np
+
+import pyfstat
 
 label = "PyFstat_example_grid_search_F0F1F2"
 outdir = os.path.join("PyFstat_example_data", label)

@@ -7,20 +7,22 @@ presenting a glitch. This is intended to show the impact of
 glitches on vanilla CW searches.
 """
 
+import os
+
 import numpy as np
-import pyfstat
 from PyFstat_example_make_data_for_search_on_1_glitch import (
-    tstart,
-    duration,
-    tref,
     F0,
     F1,
     F2,
     Alpha,
     Delta,
+    duration,
     outdir,
+    tref,
+    tstart,
 )
-import os
+
+import pyfstat
 
 label = "PyFstat_example_standard_directed_MCMC_search_on_1_glitch"
 

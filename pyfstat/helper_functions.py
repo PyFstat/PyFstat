@@ -6,18 +6,20 @@ and are of interest mostly only for developers,
 but others can also be helpful for end users.
 """
 
-import os
-import sys
-import subprocess
 import argparse
-import logging
 import inspect
-import peakutils
+import logging
+import os
 import shutil
+import subprocess
+import sys
 from functools import wraps
-import numpy as np
+
 import lal
 import lalpulsar
+import numpy as np
+import peakutils
+
 from ._version import get_versions
 
 # workaround for matplotlib on X-less remote logins

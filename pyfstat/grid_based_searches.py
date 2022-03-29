@@ -1,25 +1,25 @@
 """PyFstat search classes using grid-based methods."""
 
 
-import os
-import logging
 import itertools
+import logging
+import os
+import re
 from collections import OrderedDict
 
-import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-import re
+import numpy as np
 
 import pyfstat.helper_functions as helper_functions
 from pyfstat.core import (
     BaseSearchClass,
     ComputeFstat,
+    DefunctClass,
     SemiCoherentGlitchSearch,
     SemiCoherentSearch,
-    tqdm,
     args,
-    DefunctClass,
+    tqdm,
 )
 
 

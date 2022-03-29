@@ -5,10 +5,12 @@ Short transient grid search
 An example grid-based search for a short transient signal.
 """
 
-import pyfstat
 import os
+
 import numpy as np
 import PyFstat_example_make_data_for_short_transient_search as data
+
+import pyfstat
 
 if __name__ == "__main__":
 

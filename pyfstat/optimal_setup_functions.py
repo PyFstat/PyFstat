@@ -6,10 +6,12 @@ Provides functions to aid in calculating the optimal setup for zoom follow up
 
 
 import logging
-import numpy as np
-import scipy.optimize
+
 import lal
 import lalpulsar
+import numpy as np
+import scipy.optimize
+
 import pyfstat.helper_functions as helper_functions
 
 

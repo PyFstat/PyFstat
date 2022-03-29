@@ -5,9 +5,11 @@ Glitch examples: Make data
 Generate the data to run examples on glitch-robust searches.
 """
 
-from pyfstat import Writer, GlitchWriter
-import numpy as np
 import os
+
+import numpy as np
+
+from pyfstat import GlitchWriter, Writer
 
 outdir = os.path.join("PyFstat_example_data", "PyFstat_example_glitch_robust_search")
 

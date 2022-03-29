@@ -1,7 +1,9 @@
 import os
-import pytest
 import shutil
+
 import numpy as np
+import pytest
+
 import pyfstat
 
 

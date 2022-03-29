@@ -10,7 +10,9 @@ but the same procedure can be applied to any other set of SFTs
 """
 
 import os
+
 import numpy as np
+
 import pyfstat
 
 label = "PyFstat_example_injection_into_noise_sfts"

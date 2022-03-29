@@ -1,20 +1,22 @@
 import os
-import pytest
 import time
-import numpy as np
+
 import lalpulsar
-import pyfstat
+import numpy as np
+import pytest
 
 # FIXME this should be made cleaner with fixtures
 from commons_for_tests import (
     BaseForTestsWithData,
     BaseForTestsWithOutdir,
-    default_Writer_params,
-    default_signal_params_no_sky,
-    default_signal_params,
     default_binary_params,
+    default_signal_params,
+    default_signal_params_no_sky,
     default_transient_params,
+    default_Writer_params,
 )
+
+import pyfstat
 
 
 class TestWriter(BaseForTestsWithData):

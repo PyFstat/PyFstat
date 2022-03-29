@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 import unittest
+
 import pyfstat
 
 

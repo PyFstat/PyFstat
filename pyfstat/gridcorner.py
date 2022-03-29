@@ -40,8 +40,8 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.ticker import MaxNLocator
 
 try:

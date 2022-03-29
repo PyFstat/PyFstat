@@ -7,13 +7,11 @@ be present in the data. The setup corresponds to a targeted search,
 and the simulated signal contains a single glitch.
 """
 
-import numpy as np
-import pyfstat
+import os
 import time
+
+import numpy as np
 from PyFstat_example_make_data_for_search_on_1_glitch import (
-    tstart,
-    duration,
-    tref,
     F0,
     F1,
     F2,
@@ -21,9 +19,13 @@ from PyFstat_example_make_data_for_search_on_1_glitch import (
     Delta,
     delta_F0,
     dtglitch,
+    duration,
     outdir,
+    tref,
+    tstart,
 )
-import os
+
+import pyfstat
 
 label = "PyFstat_example_glitch_robust_directed_MCMC_search_on_1_glitch"
 

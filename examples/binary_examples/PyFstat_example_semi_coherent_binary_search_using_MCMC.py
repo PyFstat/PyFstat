@@ -6,9 +6,11 @@ MCMC search of a CW signal produced by a source in a binary
 system using the semicoherent F-statistic.
 """
 
-import pyfstat
-import numpy as np
 import os
+
+import numpy as np
+
+import pyfstat
 
 # If False, sky priors are used
 directed_search = True

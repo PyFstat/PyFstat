@@ -4,10 +4,12 @@ Long transient MCMC search
 
 MCMC search for a long transient CW signal.
 """
-import pyfstat
 import os
+
 import numpy as np
 import PyFstat_example_make_data_for_long_transient_search as data
+
+import pyfstat
 from pyfstat.helper_functions import get_predict_fstat_parameters_from_dict
 
 if not os.path.isdir(data.outdir) or not np.any(

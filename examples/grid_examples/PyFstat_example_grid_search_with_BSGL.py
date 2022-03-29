@@ -8,9 +8,11 @@ and the line-robust BSGL statistic
 to distinguish an astrophysical signal from an artifact in a single detector.
 """
 
-import pyfstat
-import numpy as np
 import os
+
+import numpy as np
+
+import pyfstat
 
 label = "PyFstat_example_grid_search_BSGL"
 outdir = os.path.join("PyFstat_example_data", label)

@@ -7,6 +7,7 @@ visualizations of the Doppler modulation of a CW signal.
 """
 
 import os
+
 import matplotlib.pyplot as plt
 
 import pyfstat

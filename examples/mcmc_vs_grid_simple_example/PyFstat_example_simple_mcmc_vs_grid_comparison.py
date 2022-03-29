@@ -5,10 +5,12 @@ MCMC search v.s. grid search
 An example to compare MCMCSearch and GridSearch on the same data.
 """
 
-import pyfstat
 import os
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
+
+import pyfstat
 
 # flip this switch for a more expensive 4D (F0,F1,Alpha,Delta) run
 # instead of just (F0,F1)

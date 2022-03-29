@@ -1,45 +1,41 @@
+from ._version import get_versions
 from .core import (
     BaseSearchClass,
     ComputeFstat,
     SearchForSignalWithJumps,
-    SemiCoherentSearch,
     SemiCoherentGlitchSearch,
-)
-
-from .injection_parameters import (
-    InjectionParametersGenerator,
-    AllSkyInjectionParametersGenerator,
-)
-
-from .make_sfts import (
-    Writer,
-    BinaryModulatedWriter,
-    GlitchWriter,
-    FrequencyModulatedArtifactWriter,
-    FrequencyAmplitudeModulatedArtifactWriter,
-    LineWriter,
-)
-from .mcmc_based_searches import (
-    MCMCSearch,
-    MCMCGlitchSearch,
-    MCMCSemiCoherentSearch,
-    MCMCFollowUpSearch,
-    MCMCTransientSearch,
+    SemiCoherentSearch,
 )
 from .grid_based_searches import (
+    DMoff_NO_SPIN,
+    FrequencySlidingWindow,
+    GridGlitchSearch,
     GridSearch,
     GridUniformPriorSearch,
-    GridGlitchSearch,
-    FrequencySlidingWindow,
-    DMoff_NO_SPIN,
     SliceGridSearch,
     TransientGridSearch,
 )
 from .gridcorner import gridcorner
-
+from .injection_parameters import (
+    AllSkyInjectionParametersGenerator,
+    InjectionParametersGenerator,
+)
+from .make_sfts import (
+    BinaryModulatedWriter,
+    FrequencyAmplitudeModulatedArtifactWriter,
+    FrequencyModulatedArtifactWriter,
+    GlitchWriter,
+    LineWriter,
+    Writer,
+)
+from .mcmc_based_searches import (
+    MCMCFollowUpSearch,
+    MCMCGlitchSearch,
+    MCMCSearch,
+    MCMCSemiCoherentSearch,
+    MCMCTransientSearch,
+)
 from .snr import DetectorStates, SignalToNoiseRatio
-
-from ._version import get_versions
 
 __version__ = get_versions()["version"]
 del get_versions

@@ -8,13 +8,13 @@ https://arxiv.org/abs/1805.05652
 for a detailed discussion of the GPU implementation.
 """
 
-import numpy as np
-import os
-import logging
-from time import time
-
 # optional imports
 import importlib as imp
+import logging
+import os
+from time import time
+
+import numpy as np
 
 
 def _optional_import(modulename, shorthand=None):
