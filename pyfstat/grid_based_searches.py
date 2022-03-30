@@ -4,7 +4,6 @@ import itertools
 import logging
 import os
 import re
-from collections import OrderedDict
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -774,7 +773,7 @@ class GridSearch(BaseSearchClass):
             Dictionary containing parameters and detection statistic at the maximum.
         """
         idx = np.argmax(self.data[self.detstat])
-        d = OrderedDict([(key, self.data[key][idx]) for key in self.output_keys])
+        d = {key: self.data[key][idx] for key in self.output_keys}
         return d
 
     def get_max_twoF(self):
@@ -788,7 +787,7 @@ class GridSearch(BaseSearchClass):
             Dictionary containing parameters and twoF value at the maximum.
         """
         idx = np.argmax(self.data["twoF"])
-        d = OrderedDict([(key, self.data[key][idx]) for key in self.output_keys])
+        d = {key: self.data[key][idx] for key in self.output_keys}
         return d
 
     def print_max_twoF(self):
@@ -805,7 +804,11 @@ class GridSearch(BaseSearchClass):
     def generate_loudest(self):
         """Use ComputeFstatistic_v2 executable to produce a .loudest file"""
         max_params = self.get_max_twoF()
-        max_params.pop("twoF")
+        if "twoF" in max_params.keys():
+            max_params.pop("twoF")
+        for key in [self.detstat, "t0", "tau"]:
+            if key in max_params.keys():
+                max_params.pop(key)
         max_params = self.translate_keys_to_lal(max_params)
         self.loudest_file = utils.generate_loudest_file(
             max_params=max_params,
