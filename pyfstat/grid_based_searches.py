@@ -1024,10 +1024,10 @@ class TransientGridSearch(GridSearch):
             self.output_keys += [
                 f"twoF{IFO}atMaxTwoF" for IFO in self.search.detector_names
             ]
-        if self.detstat != "maxTwoF":
+        if self.detstat not in ["twoF", "maxTwoF"]:
             self.output_keys.append(self.detstat)
         if self.transientWindowType:
-            # for consistency below, t0/tau must come after detstat
+            # for consistency, t0/tau must come after detstat
             # they are not included in self.search_keys because the main Fstat
             # code does not loop over them
             self.output_keys += ["t0", "tau"]
@@ -1066,6 +1066,59 @@ class TransientGridSearch(GridSearch):
         # passed None and they were read from SFTs
         self.minStartTime = self.search.minStartTime
         self.maxStartTime = self.search.maxStartTime
+
+    def _get_single_cand_results(self, data, n, vals):
+        """Obtain the results at each grid iteration step.
+
+        Re-formats the input params into the format required by self.search.get_det_stat()
+        and gets additional detection statistic by-products as needed,
+        then stores them all into the right columns of the data array.
+
+        We override the default method here to get the extra transient output values.
+
+        Parameters
+        ----------
+        data: np.ndarray
+            The inputs+outputs data set to be updated.
+        n: int
+            Row index of the data array to update.
+        vals: tuple
+            Iteration of our iterable.
+
+        Returns
+        -------
+        data: np.ndarray
+            The updated inputs+outputs data set.
+        """
+        thisCand = {key: val for key, val in zip(self.search_keys, vals)}
+        detstat = self.search.get_det_stat(params=thisCand)
+        windowRange = getattr(self.search, "windowRange", None)
+        self.timingFstatMap += getattr(self.search, "timingFstatMap", 0.0)
+        thisCand["twoF"] = self.search.twoF
+        if self.search.singleFstats:
+            thisCand += list(self.search.twoFX[: self.search.numDetectors])
+        if windowRange is not None:
+            thisCand["maxTwoF"] = self.search.maxTwoF
+            if hasattr(self.search, "twoFXatMaxTwoF"):
+                thisCand += list(self.search.twoFXatMaxTwoF[: self.search.numDetectors])
+        if self.detstat not in ["twoF", "maxTwoF"]:
+            thisCand[self.detstat] = detstat
+        if getattr(self, "transientWindowType", None):
+            if not hasattr(self.search, "FstatMap"):
+                raise RuntimeError(
+                    "Since transientWindowType!=None, we expected to have a FstatMap."
+                )
+            if self.outputTransientFstatMap:
+                tCWfile = self.get_transient_fstat_map_filename(thisCand)
+                self.search.FstatMap.write_F_mn_to_file(
+                    tCWfile, windowRange, self.output_file_header
+                )
+            maxidx = self.search.FstatMap.get_maxF_idx()
+            thisCand["t0"] = windowRange.t0 + maxidx[0] * windowRange.dt0
+            thisCand["tau"] = windowRange.tau + maxidx[1] * windowRange.dtau
+        for key in self.output_keys:
+            data[key][n] = thisCand[key]
+        return data
 
     def run(self, return_data=False):
         """Execute the actual search over the full grid.
@@ -1110,36 +1163,7 @@ class TransientGridSearch(GridSearch):
             )
         )
         for n, vals in enumerate(tqdm(self.input_data)):
-            thisCand = list(vals)
-            detstat = self.search.get_det_stat(*vals)
-            windowRange = getattr(self.search, "windowRange", None)
-            self.timingFstatMap += getattr(self.search, "timingFstatMap", 0.0)
-            thisCand.append(self.search.twoF)
-            if self.search.singleFstats:
-                thisCand += list(self.search.twoFX[: self.search.numDetectors])
-            if hasattr(self.search, "maxTwoF"):
-                thisCand.append(self.search.maxTwoF)
-            if hasattr(self.search, "twoFXatMaxTwoF"):
-                thisCand += list(self.search.twoFXatMaxTwoF[: self.search.numDetectors])
-            if self.detstat != "maxTwoF":
-                thisCand.append(detstat)
-            if getattr(self, "transientWindowType", None):
-                if not hasattr(self.search, "FstatMap"):
-                    raise RuntimeError(
-                        "Since transientWindowType!=None, we expected to have a FstatMap."
-                    )
-                if self.outputTransientFstatMap:
-                    tCWfile = self.get_transient_fstat_map_filename(thisCand)
-                    self.search.FstatMap.write_F_mn_to_file(
-                        tCWfile, windowRange, self.output_file_header
-                    )
-                maxidx = self.search.FstatMap.get_maxF_idx()
-                thisCand += [
-                    windowRange.t0 + maxidx[0] * windowRange.dt0,
-                    windowRange.tau + maxidx[1] * windowRange.dtau,
-                ]
-            for k, key in enumerate(self.output_keys):
-                data[key][n] = thisCand[k]
+            data = self._get_single_cand_results(data, n, vals)
             if self.outputAtoms:
                 self.search.write_atoms_to_file(os.path.splitext(self.out_file)[0])
 
