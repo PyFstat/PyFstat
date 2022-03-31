@@ -7,7 +7,6 @@ import os
 import pkgutil
 from typing import Union
 
-from attrs import define, field
 import lal
 import lalpulsar
 import numpy as np
@@ -129,7 +128,7 @@ class MakeFakeData:
         pass
 
     def simulate_data(self, **params):
-        lalpulsar.CWMakeFakeMultiData(
+        return lalpulsar.CWMakeFakeMultiData(
             0,
             None,
             self.parse_signal_parameters(**params),

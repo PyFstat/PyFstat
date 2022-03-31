@@ -1,6 +1,7 @@
 import numpy as np
-import pyfstat
 import pytest
+
+import pyfstat
 
 
 @pytest.fixture
@@ -32,4 +33,5 @@ def signal_parameters(mfd_parameters):
 
 def test_MakeFakeData(mfd_parameters, signal_parameters):
     mfd = pyfstat.make_sfts.MakeFakeData(**mfd_parameters)
-    mfd.simulate_data(**signal_parameters)
+    data = mfd.simulate_data(**signal_parameters)
+    print(data)
