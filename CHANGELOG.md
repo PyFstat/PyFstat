@@ -1,4 +1,4 @@
-## 1.14.0 [??/??/2022]
+## 1.14.0 [31/03/2022]
 
  - new dependencies: `attr` (core), `flaky` (for tests only)
  - removed deprecated option to use `$LALPULSAR_DATADIR` for ephemerides
