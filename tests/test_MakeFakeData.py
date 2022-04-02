@@ -33,5 +33,4 @@ def signal_parameters(mfd_parameters):
 
 def test_MakeFakeData(mfd_parameters, signal_parameters):
     mfd = pyfstat.make_sfts.MakeFakeData(**mfd_parameters)
-    data = mfd.simulate_data(**signal_parameters)
-    print(data)
+    mfd.simulate_data(**signal_parameters)

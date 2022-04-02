@@ -127,14 +127,18 @@ class MakeFakeData:
     def from_noiseSFTs(cls, sftpattern, window_type, window_beta):
         pass
 
-    def simulate_data(self, **params):
+    def simulate_data_SFT(self, **params):
         return lalpulsar.CWMakeFakeMultiData(
             0,
             None,
             self.parse_signal_parameters(**params),
             self.data_parameters,
             self.ephemeris,
-        )
+        )[0]
+
+    def simulate_data(self, **params):
+        sfts = self.simulate_data_SFT(**params)
+        return helper_functions.unpack_multi_sft_into_dicts(sfts)
 
 
 class Writer(BaseSearchClass):
