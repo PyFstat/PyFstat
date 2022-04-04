@@ -126,7 +126,7 @@ class SignalToNoiseRatio:
         return cls(detector_states=detector_states, noise_weights=noise_weights)
 
     def compute_snr2(
-        self, Alpha, Delta, psi, phi0, h0=None, cosi=None, aPlus=None, aCross=None
+        self, Alpha, Delta, psi, phi, h0=None, cosi=None, aPlus=None, aCross=None
     ):
         r"""
         Compute the :math:`\textrm{SNR}^2` of a CW signal using XLALComputeOptimalSNR2FromMmunu.
@@ -173,7 +173,7 @@ class SignalToNoiseRatio:
 
         Aphys = lalpulsar.PulsarAmplitudeParams()
         Aphys.psi = psi
-        Aphys.phi0 = phi0
+        Aphys.phi0 = phi
         Aphys.aPlus = aPlus
         Aphys.aCross = aCross
 
