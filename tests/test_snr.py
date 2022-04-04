@@ -63,10 +63,12 @@ def test_SignalToNoiseRatio(writer, multi_detector_states):
         "h0": 1e-23,
         "cosi": 0,
         "psi": 0,
-        "phi0": 0,
+        "phi": 0,
         "Alpha": 0,
         "Delta": 0,
     }
+    params_pfs = params.copy()
+    params_pfs.pop("phi")
 
     # Test compute SNR using assumeSqrtSX
     snr = pyfstat.SignalToNoiseRatio(
@@ -76,7 +78,7 @@ def test_SignalToNoiseRatio(writer, multi_detector_states):
     twoF_from_snr2, twoF_stdev_from_snr2 = snr.compute_twoF(**params)
 
     predicted_twoF, predicted_stdev_twoF = pyfstat.helper_functions.predict_fstat(
-        **{key: val for key, val in params.items() if key != "phi0"},
+        **params_pfs,
         minStartTime=writer.tstart,
         duration=writer.duration,
         IFOs=writer.detectors,
@@ -87,25 +89,15 @@ def test_SignalToNoiseRatio(writer, multi_detector_states):
 
     # Test compute SNR using noise SFTs
     writer.make_data()
-    params = {
-        "F0": writer.F0,
-        "h0": 1e-23,
-        "cosi": 0,
-        "psi": 0,
-        "phi0": 0,
-        "Alpha": 0,
-        "Delta": 0,
-    }
     snr = pyfstat.SignalToNoiseRatio.from_sfts(
-        F0=params["F0"],
+        F0=writer.F0,
         sftfilepath=writer.sftfilepath,
         time_offset=writer.Tsft / 2,
     )
-    twoF_from_snr2, twoF_stdev_from_snr2 = snr.compute_twoF(
-        **{key: val for key, val in params.items() if key != "F0"},
-    )
+    twoF_from_snr2, twoF_stdev_from_snr2 = snr.compute_twoF(**params)
     predicted_twoF, predicted_stdev_twoF = pyfstat.helper_functions.predict_fstat(
-        **{key: val for key, val in params.items() if key != "phi0"},
+        **params_pfs,
+        F0=writer.F0,
         sftfilepattern=writer.sftfilepath,
     )
     np.testing.assert_allclose(twoF_from_snr2, predicted_twoF, rtol=1e-3)
