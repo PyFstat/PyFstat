@@ -1,3 +1,6 @@
+import os
+import shutil
+
 import numpy as np
 import pytest
 
@@ -32,10 +35,8 @@ def signal_parameters(mfd_parameters):
     }
 
 
-def test_MakeFakeData(mfd_parameters, signal_parameters):
-    mfd = pyfstat.make_sfts.MakeFakeData(**mfd_parameters)
-    mfd_freq, mfd_timestamps, mfd_amplitudes = mfd.simulate_data(**signal_parameters)
-
+@pytest.fixture
+def consistent_writer(mfd_parameters, signal_parameters):
     w_parameters = {**mfd_parameters, **signal_parameters}
 
     for remove in ["fMin"]:
@@ -44,10 +45,19 @@ def test_MakeFakeData(mfd_parameters, signal_parameters):
         w_parameters[new] = w_parameters.pop(old)
     w_parameters["detectors"] = ",".join(w_parameters.pop("detectors"))
 
-    writer = pyfstat.Writer(**w_parameters)
-    writer.make_data()
+    this_writer = pyfstat.Writer(**w_parameters, outdir="MakeFakeDataTest")
+    yield this_writer
+    if os.path.isdir(this_writer.outdir):
+        shutil.rmtree(this_writer.outdir)
+
+
+def test_MakeFakeData(consistent_writer, mfd_parameters, signal_parameters):
+    mfd = pyfstat.make_sfts.MakeFakeData(**mfd_parameters)
+    mfd_freq, mfd_timestamps, mfd_amplitudes = mfd.simulate_data(**signal_parameters)
+
+    consistent_writer.make_data()
     w_freq, w_timestamps, w_amplitudes = pyfstat.helper_functions.get_sft_as_arrays(
-        writer.sftfilepath
+        consistent_writer.sftfilepath
     )
 
     np.testing.assert_allclose(mfd_freq, w_freq)
