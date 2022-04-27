@@ -369,7 +369,7 @@ class Writer(BaseSearchClass):
             # Each key should correspond to `detectors` if given;
             # otherwise, construct detectors from the given keys.
             if self.detectors is not None:
-                ifos_in_ts = list(self.timetamps.keys())
+                ifos_in_ts = list(self.timestamps.keys())
                 ifos_in_detectors = self.detectors.split(",")
                 if np.setdiff1d(ifos_in_ts, ifos_in_detectors).size:
                     raise ValueError(
