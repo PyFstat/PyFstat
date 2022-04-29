@@ -368,17 +368,17 @@ class Writer(BaseSearchClass):
         elif isinstance(self.timestamps, dict):
             # Each key should correspond to `detectors` if given;
             # otherwise, construct detectors from the given keys.
+            ifos = list(self.timestamps.keys())
+            input_timestamps = self.timestamps.values()
+
             if self.detectors is not None:
-                ifos_in_ts = list(self.timestamps.keys())
                 ifos_in_detectors = self.detectors.split(",")
-                if np.setdiff1d(ifos_in_ts, ifos_in_detectors).size:
+                if np.setdiff1d(ifos, ifos_in_detectors).size:
                     raise ValueError(
-                        f"Detector names in timestamps dictionary ({ifos_in_ts}) "
+                        f"Detector names in timestamps dictionary ({ifos}) "
                         "are inconsistent with detector names given via keyword ({ifos_in_detectors})."
                     )
             else:
-                ifos = list(self.timestamps.keys())
-                input_timestamps = self.timestamps.values()
                 self.detectors = ",".join(ifos)
         else:
             # Otherwise, assume it's a list and convert into a 1D numpy array
@@ -387,7 +387,7 @@ class Writer(BaseSearchClass):
                     "Detector names must be given either as a key in `timestamps` or explicitly via `detectors`."
                 )
             ifos = self.detectors.split(",")
-            input_timestamps = (self.timestamps for i in ifos)
+            input_timestamps = [self.timestamps for i in ifos]
 
         # If this point was reached, it means we should create timestamps files.
         timestamp_files = []
