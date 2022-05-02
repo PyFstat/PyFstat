@@ -376,7 +376,7 @@ class Writer(BaseSearchClass):
                 if np.setdiff1d(ifos, ifos_in_detectors).size:
                     raise ValueError(
                         f"Detector names in timestamps dictionary ({ifos}) "
-                        "are inconsistent with detector names given via keyword ({ifos_in_detectors})."
+                        f"are inconsistent with detector names given via keyword ({ifos_in_detectors})."
                     )
             else:
                 self.detectors = ",".join(ifos)
