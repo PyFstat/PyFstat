@@ -421,9 +421,41 @@ class TestWriter(BaseForTestsWithData):
             ts = ts[:, 0] + 1e-9 * ts[:, 1]
             np.testing.assert_almost_equal(ts, timestamps[ifo])
 
+        # Test dictionary with input detector
+        timestamps = {"H1": np.arange(self.tref, self.tref + 4 * self.Tsft, self.Tsft)}
+        if "v4" not in self.writer_class_to_test.mfd:
+            timestamps["L1"] = np.arange(
+                self.tref, self.tref + 8 * self.Tsft, self.Tsft
+            )
+        detectors = ",".join(list(timestamps.keys()))
+
+        tsWriter = self.writer_class_to_test(
+            label="ts_using_dict",
+            tref=self.tref,
+            Tsft=self.Tsft,
+            outdir=self.outdir,
+            sqrtSX=self.sqrtSX,
+            Band=self.Band,
+            detectors=detectors,
+            SFTWindowType=self.SFTWindowType,
+            SFTWindowBeta=self.SFTWindowBeta,
+            randSeed=self.randSeed,
+            timestamps=timestamps,
+            **self.signal_parameters,
+        )
+
+        for ifo in timestamps:
+            timestamps_file = os.path.join(
+                tsWriter.outdir, f"{tsWriter.label}_timestamps_{ifo}.csv"
+            )
+            self.assertTrue(os.path.isfile(timestamps_file))
+            ts = np.genfromtxt(timestamps_file)
+            ts = ts[:, 0] + 1e-9 * ts[:, 1]
+            np.testing.assert_almost_equal(ts, timestamps[ifo])
+
         # Test single list
-        timestamps = np.arange(self.tref, self.tref + 4 * self.Tsft, self.Tsft)
         detectors = "H1"
+        timestamps = np.arange(self.tref, self.tref + 4 * self.Tsft, self.Tsft)
         if "v4" not in self.writer_class_to_test.mfd:
             detectors += ",L1"
 
