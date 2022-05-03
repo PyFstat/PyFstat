@@ -1,3 +1,9 @@
+"""
+Utils
+=====
+
+Utility functions to simplify practical notebooks.
+"""
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colors
