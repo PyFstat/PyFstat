@@ -1,4 +1,7 @@
+*egg*
+*ipynb_checkpoints*
 *pyc
+*Pyfstat_example*
 *swp
 docs/build/
 docs/source/*_example*/
