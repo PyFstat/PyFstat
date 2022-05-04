@@ -2,7 +2,7 @@
 Utils
 =====
 
-Utility functions to simplify practical notebooks.
+Utility functions to simplify tutorials.
 """
 import matplotlib.pyplot as plt
 import numpy as np
