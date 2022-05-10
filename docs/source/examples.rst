@@ -31,6 +31,10 @@ the interactive notebook experience,
 meaning for example that you'll need to use the jupyter file browser to find
 the plots which are saved to files instead of being directly displayed.
 
+See also the in-progress new set of bottom-up
+`tutorials <https://github.com/PyFstat/PyFstat/blob/master/examples/tutorials/>`_
+.
+
 .. toctree::
     grid_examples/index
     mcmc_examples/index
@@ -40,4 +44,3 @@ the plots which are saved to files instead of being directly displayed.
     glitch_examples/index
     transient_examples/index
     other_examples/index
-    tutorials/index
