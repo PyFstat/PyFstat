@@ -35,3 +35,4 @@ repos:
     rev: 0.5.0
     hooks:
       - id: nbstripout
+        args: ["--extra-keys", '"metadata.language_info.pygments_lexer metadata.language_info.version"']
