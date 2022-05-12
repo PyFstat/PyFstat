@@ -82,7 +82,7 @@ _, example_names, _ = next(os.walk(examples_basedir))
 sphinx_gallery_conf = {
     "examples_dirs": [os.path.join(examples_basedir, case) for case in example_names],
     "gallery_dirs": example_names,
-    "filename_pattern": "/PyFstat_example_",
+    "ignore_pattern": "/utils",
     "plot_gallery": "False",  # our examples are slow, so we can't generate plots every time the docs are built
     "line_numbers": True,
 }

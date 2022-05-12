@@ -15,7 +15,7 @@ and downloading the example itself from these pages
 (or from `github <https://github.com/PyFstat/PyFstat/tree/master/examples>`_).
 
 The complete set of examples can be accessed by cloning or downloading the PyFstat repository
-from `github`_ or `Zenodo <https://doi.org/10.5281/zenodo.4542822>`_ 
+from `github`_ or `Zenodo <https://doi.org/10.5281/zenodo.4542822>`_
 (make sure to target the proper PyFstat version).
 After that, `run_all_examples.py <https://github.com/PyFstat/PyFstat/blob/master/examples/run_all_examples.py>`_,
 included in the package, can be executed to run all examples one by one.
@@ -30,6 +30,10 @@ Note though that the examples have currently not yet been optimized
 the interactive notebook experience,
 meaning for example that you'll need to use the jupyter file browser to find
 the plots which are saved to files instead of being directly displayed.
+
+See also the in-progress new set of bottom-up
+`tutorials <https://github.com/PyFstat/PyFstat/blob/master/examples/tutorials/>`_
+.
 
 .. toctree::
     grid_examples/index
