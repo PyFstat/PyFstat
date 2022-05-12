@@ -7,11 +7,11 @@ built on top of the [LALSuite library](https://doi.org/10.7935/GT1W-FZ16).
 Getting started:
 * This README provides information on
 [installing](#installation),
-[contributing](#contributors) to 
+[contributing](#contributors) to
 and [citing](#citing-this-work) PyFstat.
 * PyFstat usage and its API are documented at [pyfstat.readthedocs.io](https://pyfstat.readthedocs.io/).
-* We also have a number of [examples](https://github.com/PyFstat/PyFstat/tree/master/examples),
-demonstrating different use cases.
+* We also have a number of [tutorials](https://github.com/PyFstat/PyFstat/tree/master/examples/tutorials) and
+[examples](https://github.com/PyFstat/PyFstat/tree/master/examples), demonstrating different use cases.
 You can run them locally, or online as jupyter notebooks with
 [binder](https://mybinder.org/v2/gh/PyFstat/PyFstat/master).
 * New contributors are encouraged to have a look into
@@ -65,7 +65,7 @@ for installing conda itself and for a minimal .yml recipe to set up a PyFstat-sp
 
 To install into an existing conda environment, all you need to do is
 ```
-conda install -c conda-forge pyfstat 
+conda install -c conda-forge pyfstat
 ```
 
 If getting PyFstat from conda-forge, it already includes the required ephemerides files.
@@ -174,10 +174,10 @@ PyFstat manages optional dependencies through setuptool's `extras_require`.
 
 Available sets of optional dependencies are:
 
-* `chainconsumer` ([Samreay/Chainconsumer](https://github.com/Samreay/ChainConsumer)): Required to run some optional 
+* `chainconsumer` ([Samreay/Chainconsumer](https://github.com/Samreay/ChainConsumer)): Required to run some optional
 plotting methods and some of the [example scripts](./examples).
 * `pycuda` ([PyPI](https://pypi.org/project/pycuda/)): Required for the `tCWFstatMapVersion=pycuda`
-  option of the `TransientGridSearch` class. (Note: Installing `pycuda` requires a working 
+  option of the `TransientGridSearch` class. (Note: Installing `pycuda` requires a working
   `nvcc` compiler in your path.)
 * `style`: Includes the `flake8` linter ([flake8.pycqa](https://flake8.pycqa.org/en/latest)),
   `black` style checker ([black.readthedocs](https://black.readthedocs.io)),
@@ -257,7 +257,7 @@ Here's what you need to know:
   `isort .` to sort package imports,
   `flake8 --count --statistics .` to find common coding errors and then fix them manually,
   `black --check --diff .` to show the required style changes, or `black .` to automatically apply them.
-* `bin/setup-dev-tools.sh` gets your virtual environment ready for you. After making sure you are 
+* `bin/setup-dev-tools.sh` gets your virtual environment ready for you. After making sure you are
 using a virtual environment (venv or conda),
 it installs `black`, `flake8`, `pre-commit`, `pytest`, `wheel` via `pip` and uses `pre-commit` to run
 `isort`, `black`, `flake8` and other pre-commit hooks
@@ -332,8 +332,8 @@ the DOIs for those versions can be found from the sidebar at
 and please amend the BibTeX entry accordingly.
 
 
-PyFstat uses the [`ptemcee` sampler](https://github.com/willvousden/ptemcee), which can be 
-cited as 
+PyFstat uses the [`ptemcee` sampler](https://github.com/willvousden/ptemcee), which can be
+cited as
 [Vousden, Far & Mandel 2015](https://doi.org/10.1093/mnras/stv2422)
 ([ADS:2016MNRAS.455.1919V](https://ui.adsabs.harvard.edu/abs/2016MNRAS.455.1919V/abstract))
 and [Foreman-Mackey, Hogg, Lang, and Goodman 2012](https://doi.org/10.1086/670067)
