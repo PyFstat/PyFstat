@@ -1,3 +1,13 @@
+## 1.14.1 [12/05/2022]
+
+ - fixed `phi0` argument name to `phi`
+   in `SignalToNoiseRatio.compute_snr2()` function
+   to match conventions elsewhere
+ - fixed syntax error in `Writer`
+   when both timestamps and detector names are given
+ - added new set of intro notebooks
+   in `examples/tutorials`
+
 ## 1.14.0 [31/03/2022]
 
  - new dependencies: `attr` (core), `flaky` (for tests only)
