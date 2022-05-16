@@ -15,6 +15,7 @@ pip install .
 TMP_DIR=/tmp/pyfstat
 mkdir -p ${TMP_DIR}
 cp -r examples/*/*.py .binder ${TMP_DIR}
+cp examples/tutorials/*.ipynb ${TMP_DIR}
 find . -delete
 
 # Generate notebooks from the python scripts
@@ -26,3 +27,4 @@ find ${NOTEBOOKS_SCRIPTS_DIR} -name '*.py' ! -name '*run_all*' ! -name '*utils*'
 # This symlink is required
 mkdir notebooks
 ln -s ../${NOTEBOOKS_SCRIPTS_DIR} notebooks/auto_examples
+
