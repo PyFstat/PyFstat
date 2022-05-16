@@ -21,7 +21,7 @@ find . -delete
 NOTEBOOKS_SCRIPTS_DIR=.generated-notebooks
 mkdir -p ${NOTEBOOKS_SCRIPTS_DIR}
 cp -r ${TMP_DIR}/* ${NOTEBOOKS_SCRIPTS_DIR}
-find ${NOTEBOOKS_SCRIPTS_DIR} -name '*.py' ! -name '*run_all*' -name '*utils*' -exec sphx_glr_python_to_jupyter.py '{}' +
+find ${NOTEBOOKS_SCRIPTS_DIR} -name '*.py' ! -name '*run_all*' ! -name '*utils*' -exec sphx_glr_python_to_jupyter.py '{}' +
 
 # This symlink is required
 mkdir notebooks
