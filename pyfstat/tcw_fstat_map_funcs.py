@@ -166,7 +166,7 @@ being available.
 """
 
 
-def init_transient_fstat_map_features(wantCuda=False, cudaDeviceName=None):
+def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
     """Initialization of available modules (or 'features') for computing transient F-stat maps.
 
     Currently, two implementations are supported and checked for
@@ -180,9 +180,8 @@ def init_transient_fstat_map_features(wantCuda=False, cudaDeviceName=None):
 
     Parameters
     ----------
-    wantCuda: bool
-        Only if this is True and it was possible to import pycuda,
-        a CUDA device context is created and returned.
+    feature: str
+        Set the transient F-stat map implementation.
     cudaDeviceName: str or None
         Request a CUDA device with this name.
         Partial matches are allowed.
@@ -220,7 +219,9 @@ def init_transient_fstat_map_features(wantCuda=False, cudaDeviceName=None):
     logging.debug("Got the following features for transient F-stat maps:")
     logging.debug(features)
 
-    if wantCuda and features["pycuda"]:
+    if feature == "pycuda":
+        if not features["pycuda"]:
+            raise RuntimeError("pycuda use was requested, but imports failed.")
         logging.debug("CUDA version: " + ".".join(map(str, drv.get_version())))
 
         drv.init()
@@ -308,8 +309,12 @@ def init_transient_fstat_map_features(wantCuda=False, cudaDeviceName=None):
             gpu_context.push()
 
         _print_GPU_memory_MB("Available")
-    else:
+    elif feature == "lal":
         gpu_context = None
+    else:
+        raise ValueError(
+            "Unknown transient F-stat map computation feature" f"'{feature}' requested."
+        )
 
     return features, gpu_context
 
