@@ -51,4 +51,5 @@ from .mcmc_based_searches import (
     MCMCTransientSearch,
 )
 from .snr import DetectorStates, SignalToNoiseRatio
+from .synth import Synthesizer
 from .tcw_fstat_map_funcs import pyTransientFstatMap
