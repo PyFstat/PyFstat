@@ -208,7 +208,7 @@ Following the instructions from their README,
 at the step where it tells you to run `./configure`,
 an example minimal line would be e.g.:
 ```
-./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpulsar --enable-lalapps --enable-swig
+./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpulsar --enable-lalapps --enable-swig --enable-swig-python --disable-swig-octave
 ```
 
 Then after the `make && make install` step,
