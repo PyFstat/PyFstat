@@ -218,6 +218,22 @@ You have to redo this in every new session,
 unless you tweak your venv / conda env activation script
 to do it automatically.
 
+Alternatively, Python's builtin site can be used to direct the Python interpreter
+to the right LALSuite installation using site-packages.
+To do so, add the following minimal script to one of the available site-packages paths
+(which can be retrieved using python -c 'import site; print( site.getsitepackages())'):
+
+```
+usercustomize.py
+----------------
+import sys
+
+custom_lalsuite = "${HOME}/lalsuite-install/lib/pythonX.Y/site-packages"
+sys.path.insert(0, custom_lalsuite)
+```
+
+where `pythonX.Y` is dependent upon the Python version with which LALSuite was installed.
+
 ## Contributing to PyFstat
 
 This project is open to development, please feel free to contact us
