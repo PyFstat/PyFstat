@@ -198,13 +198,28 @@ pip install pyfstat[chainconsumer,pycuda,style]
 ```
 This command accepts the "development mode" tag `-e`.
 
-* If you prefer to make your own LALSuite installation
+### Using LALSuite built from source
+
+If you prefer to make your own LALSuite installation
 [from source](https://git.ligo.org/lscsoft/lalsuite/),
 make sure it is **swig-enabled** and contains at least the `lalpulsar` and `lalapps` packages.
-A minimal configuration line to use would be e.g.:
+
+Following the instructions from their README,
+at the step where it tells you to run `./configure`,
+an example minimal line would be e.g.:
 ```
-./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpulsar --enable-lalapps --enable-swig
+./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpulsar --enable-lalapps --enable-swig-python
 ```
+
+Then after the `make && make install` step,
+you can point your environment to this installation by doing
+```
+source ${HOME}/lalsuite-install/etc/lalsuite-user-env.sh
+```
+
+You have to redo this in every new session,
+unless you tweak your venv / conda env activation script
+to do it automatically.
 
 ### Ephemerides installation
 
