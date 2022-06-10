@@ -218,10 +218,10 @@ You have to redo this in every new session,
 unless you tweak your venv / conda env activation script
 to do it automatically.
 
-Alternatively, Python's builtin site can be used to direct the Python interpreter
-to the right LALSuite installation using site-packages.
-To do so, add the following minimal script to one of the available site-packages paths
-(which can be retrieved using python -c 'import site; print( site.getsitepackages())'):
+Alternatively, Python's built-in `site` package can be used to direct the Python interpreter
+to the right LALSuite installation using `site-packages`.
+To do so, add the following minimal script to one of the available `site-packages` paths
+(which can be retrieved using `python -c 'import site; print( site.getsitepackages())'`):
 
 ```
 usercustomize.py
