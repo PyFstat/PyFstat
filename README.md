@@ -226,13 +226,18 @@ To do so, add the following minimal script to one of the available site-packages
 ```
 usercustomize.py
 ----------------
+import os
 import sys
 
-custom_lalsuite = "${HOME}/lalsuite-install/lib/pythonX.Y/site-packages"
-sys.path.insert(0, custom_lalsuite)
+custom_lalsuite_lib = "${HOME}/lalsuite-install/lib/pythonX.Y/site-packages"
+custom_lalsuite_bin = "${HOME}/lalsuite-install/lib/pythonX.Y/site-packages"
+
+sys.path.insert(0, custom_lalsuite_lib)
+os.environ["PATH"] = (custom_lalsuite_bin + os.pathsep) + os.environ["PATH"]
 ```
 
-where `pythonX.Y` is dependent upon the Python version with which LALSuite was installed.
+where `pythonX.Y` is dependent upon the Python version with which LALSuite was installed
+and `${HOME}` may be substituted by any path of your choice.
 
 ## Contributing to PyFstat
 
