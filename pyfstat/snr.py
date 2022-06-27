@@ -320,7 +320,7 @@ class DetectorStates:
         """
         Parameters
         ----------
-        time_stamps: array-like or dict
+        timestamps: array-like or dict
             GPS timestamps at which detector states will be retrieved.
             If array, use the same set of timestamps for all detectors,
             which must be explicitly given by the user via `detectors`.
@@ -332,7 +332,7 @@ class DetectorStates:
             separation between consecutive timestamps.
         detectors: list[str] or comma-separated string
             List of detectors to be parsed using XLALParseMultiLALDetector.
-            Conflicts with dictionary of `time_stamps`, required otherwise.
+            Conflicts with dictionary of `timestamps`, required otherwise.
         time_offset: float
             Timestamp offset to retrieve detector states.
             Defaults to LALSuite's default of using the central time of an STF (SFT's timestamp + Tsft/2).
