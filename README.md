@@ -35,9 +35,9 @@ is also available.
 ## Installation
 
 PyFstat releases can be installed in a variety of ways, including
+[`pip install` from PyPI](#pip-install-from-PyPi),
+[conda](#conda-installation),
 [Docker/Singularity images](#docker-container),
-[`pip install` from PyPi](#pip-install-from-PyPi),
-[conda](#conda-installation)
 and [from source releases on Zenodo](#install-pyfstat-from-source-zenodo-or-git-clone).
 Latest development versions can
 [also be installed with pip](#pip-install-from-github)
@@ -47,9 +47,42 @@ If you don't have a recent `python` installation (`3.7+`) on your system,
 then `Docker` or `conda` are the easiest paths.
 
 In either case, be sure to also check out the notes on
-[dependencies](#dependencies),
-[ephemerides files](#ephemerides-installation)
+[dependencies](#dependencies)
 and [citing this work](#citing-this-work).
+
+If you run into problems with ephemerides files, check the wiki page on
+[ephemerides installation](https://github.com/PyFstat/PyFstat/wiki/ephemerides-installation).
+
+### pip install from PyPI
+
+PyPI releases are available from https://pypi.org/project/PyFstat/.
+
+A simple
+```
+pip install pyfstat
+```
+should give you the latest release version with all dependencies;
+recent releases now also include a sufficient minimal set of ephemerides files.
+
+If you are not installing into a [venv](https://docs.python.org/3/library/venv.html)
+or [conda environment](#conda-installation),
+on many systems you may need to use the `--user` flag.
+
+Note that the PyFstat installation will fail at the
+LALSuite dependency stage
+if your `pip` is too old (e.g. 18.1); to fix this, do
+```
+pip install --upgrade pip setuptools
+```
+
+### conda installation
+
+See [this wiki page](https://github.com/PyFstat/PyFstat/wiki/conda-environments)
+for further instructions on installing conda itself,
+installing PyFstat into an existing environment,
+or for a minimal .yml recipe to set up a PyFstat-specific environment.
+
+If getting PyFstat from conda-forge, it already includes the required ephemerides files.
 
 ### Docker container
 
@@ -57,41 +90,6 @@ Ready-to-use PyFstat containers are available at the [Packages](https://github.c
 page. A GitHub account together with a personal access token is required.
 [Go to the wiki page](https://github.com/PyFstat/PyFstat/wiki/Containers)
 to learn how to pull them from the GitHub registry using `Docker` or `Singularity`.
-
-### conda installation
-
-See [this wiki page](https://github.com/PyFstat/PyFstat/wiki/conda-environments)
-for installing conda itself and for a minimal .yml recipe to set up a PyFstat-specific environment.
-
-To install into an existing conda environment, all you need to do is
-```
-conda install -c conda-forge pyfstat
-```
-
-If getting PyFstat from conda-forge, it already includes the required ephemerides files.
-
-### pip install from PyPI
-
-PyPI releases are available from https://pypi.org/project/PyFstat/.
-
-Note that the PyFstat installation will fail at the
-LALSuite dependency stage
-if your `pip` is too old (e.g. 18.1); to be on the safe side, before starting do
-```
-pip install --upgrade pip
-```
-
-Then, a simple
-```
-pip install pyfstat
-```
-should give you the latest release version with all dependencies.
-
-If you are not installing into a [venv](https://docs.python.org/3/library/venv.html)
-or [conda environment](#conda-installation),
-on many systems you may need to use the `--user` flag.
-
-Recent releases now also include a sufficient minimal set of ephemerides files.
 
 ### pip install from github
 
@@ -220,39 +218,6 @@ source ${HOME}/lalsuite-install/etc/lalsuite-user-env.sh
 You have to redo this in every new session,
 unless you tweak your venv / conda env activation script
 to do it automatically.
-
-### Ephemerides installation
-
-PyFstat requires paths to earth and sun ephemerides files
-in order to use the `lalpulsar.ComputeFstat` module and various `lalapps` tools.
-Recent releases of the `lal` and `lalpulsar` dependencies from `conda`
-or `lalsuite` from PyPI
-include a sufficient minimal set of such files
-(the `[earth/sun]00-40-DE405` default versions)
-and no further setup should be needed.
-The same should be true if you have built and installed LALSuite from source,
-and set your paths up properly through something like
-`source $MYLALPATH/etc/lalsuite-user-env.sh`.
-
-However, if you run into errors with these files not found,
-or want to use different versions,
-you can manually download files from
-[this directory](https://git.ligo.org/lscsoft/lalsuite/-/tree/master/lalpulsar/lib).
-You then need to tell PyFstat where to find these files,
-by creating a `~/.pyfstat.conf` file in your home directory which looks like
-```
-earth_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/earth00-19-DE405.dat.gz'
-sun_ephem = '/home/<USER>/lalsuite-install/share/lalpulsar/sun00-19-DE405.dat.gz'
-```
-Paths set in this way will take precedence over lal's default resolution logic.
-
-You can also manually specify ephemerides files when initialising
-each PyFstat class with the `earth_ephem` and `sun_ephem` arguments.
-
-NOTE: The alternative of relying on environment variables
-(as previously recommended by PyFstat's documentation)
-is considered deprecated by LALSuite maintainers
-and is no longer supported by current PyFstat versions.
 
 ## Contributing to PyFstat
 
