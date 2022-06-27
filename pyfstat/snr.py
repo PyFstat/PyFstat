@@ -198,7 +198,7 @@ class SignalToNoiseRatio:
 
         This function returns "inverts" Eq. (77) of
         https://dcc.ligo.org/T0900149-v6/public by computing the overall prefactor
-        on :math:`$h_0$` using `self.compute_snr2(h0=1, ...)`.
+        on :math:`h_0` using `self.compute_snr2(h0=1, ...)`.
 
         Parameters
         ----------
@@ -231,7 +231,7 @@ class SignalToNoiseRatio:
         Compute the expected :math:`2\mathcal{F}` value of a CW signal from the result of `compute_snr2`.
 
         .. math:: \langle 2\mathcal{F}\rangle = 4 + \textrm{SNR}^2
-        .. math:: \sigma_{\2\mathcal{F}} =  \sqrt{8 + 4 \textrm{SNR}^2}
+        .. math:: \sigma_{2\mathcal{F}} =  \sqrt{8 + 4 \textrm{SNR}^2}
 
         Input parameters are passed untouched to `self.compute_snr2`.
         See corresponding docstring for a list of valid parameters.
