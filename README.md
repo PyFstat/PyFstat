@@ -35,9 +35,9 @@ is also available.
 ## Installation
 
 PyFstat releases can be installed in a variety of ways, including
-[Docker/Singularity images](#docker-container),
-[`pip install` from PyPi](#pip-install-from-PyPi),
+[`pip install` from PyPI](#pip-install-from-PyPi),
 [conda](#conda-installation)
+[Docker/Singularity images](#docker-container),
 and [from source releases on Zenodo](#install-pyfstat-from-source-zenodo-or-git-clone).
 Latest development versions can
 [also be installed with pip](#pip-install-from-github)
@@ -51,47 +51,43 @@ In either case, be sure to also check out the notes on
 [ephemerides files](#ephemerides-installation)
 and [citing this work](#citing-this-work).
 
+### pip install from PyPI
+
+PyPI releases are available from https://pypi.org/project/PyFstat/.
+
+A simple
+```
+pip install pyfstat
+```
+should give you the latest release version with all dependencies;
+recent releases now also include a sufficient minimal set of ephemerides files.
+
+If you are not installing into a [venv](https://docs.python.org/3/library/venv.html)
+or [conda environment](#conda-installation),
+on many systems you may need to use the `--user` flag.
+
+Note that the PyFstat installation will fail at the
+LALSuite dependency stage
+if your `pip` is too old (e.g. 18.1); to fix this, do
+```
+pip install --upgrade pip setuptools
+```
+
+### conda installation
+
+See [this wiki page](https://github.com/PyFstat/PyFstat/wiki/conda-environments)
+for further instructions on installing conda itself,
+installing PyFstat into an existing environment,
+or for a minimal .yml recipe to set up a PyFstat-specific environment.
+
+If getting PyFstat from conda-forge, it already includes the required ephemerides files.
+
 ### Docker container
 
 Ready-to-use PyFstat containers are available at the [Packages](https://github.com/PyFstat/PyFstat/packages)
 page. A GitHub account together with a personal access token is required.
 [Go to the wiki page](https://github.com/PyFstat/PyFstat/wiki/Containers)
 to learn how to pull them from the GitHub registry using `Docker` or `Singularity`.
-
-### conda installation
-
-See [this wiki page](https://github.com/PyFstat/PyFstat/wiki/conda-environments)
-for installing conda itself and for a minimal .yml recipe to set up a PyFstat-specific environment.
-
-To install into an existing conda environment, all you need to do is
-```
-conda install -c conda-forge pyfstat
-```
-
-If getting PyFstat from conda-forge, it already includes the required ephemerides files.
-
-### pip install from PyPI
-
-PyPI releases are available from https://pypi.org/project/PyFstat/.
-
-Note that the PyFstat installation will fail at the
-LALSuite dependency stage
-if your `pip` is too old (e.g. 18.1); to be on the safe side, before starting do
-```
-pip install --upgrade pip
-```
-
-Then, a simple
-```
-pip install pyfstat
-```
-should give you the latest release version with all dependencies.
-
-If you are not installing into a [venv](https://docs.python.org/3/library/venv.html)
-or [conda environment](#conda-installation),
-on many systems you may need to use the `--user` flag.
-
-Recent releases now also include a sufficient minimal set of ephemerides files.
 
 ### pip install from github
 
