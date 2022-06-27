@@ -1,3 +1,13 @@
+## 1.15.0 [27/06/2022]
+
+ - pin `numpy<1.23.0` to work around `ptemcee` incompatibility
+ - `pyfstat.__version__` now reported with the leading `v` stripped out
+   (e.g. just `1.15.0`)
+ - added new method `compute_h0_from_snr2()` to `SignalToNoiseRatio` class
+ - `init_transient_fstat_map_features()` now is stricter about feature name strings
+ - added tutorial notebooks to binder
+ - improved installation instructions
+
 ## 1.14.1 [12/05/2022]
 
  - fixed `phi0` argument name to `phi`
