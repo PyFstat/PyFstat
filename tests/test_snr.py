@@ -102,3 +102,22 @@ def test_SignalToNoiseRatio(writer, multi_detector_states):
     )
     np.testing.assert_allclose(twoF_from_snr2, predicted_twoF, rtol=1e-3)
     np.testing.assert_allclose(twoF_stdev_from_snr2, predicted_stdev_twoF, rtol=1e-3)
+
+
+def test_compute_h0_from_snr2(snr_object):
+
+    params = {
+        "h0": 1e-23,
+        "cosi": 0,
+        "psi": 0,
+        "phi": 0,
+        "Alpha": 0,
+        "Delta": 0,
+    }
+
+    params_no_h0 = {key: value for key, value in params.items() if key != "h0"}
+
+    snr2 = snr_object.compute_snr2(**params)
+    h0 = snr_object.compute_h0_from_snr2(**params_no_h0, snr2=snr2)
+
+    np.testing.assert_allclose(params["h0"], h0)
