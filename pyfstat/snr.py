@@ -182,7 +182,13 @@ class SignalToNoiseRatio:
         return lalpulsar.ComputeOptimalSNR2FromMmunu(Aphys, M)
 
     def compute_h0_from_snr2(
-        self, Alpha, Delta, psi, phi, cosi, snr2,
+        self,
+        Alpha,
+        Delta,
+        psi,
+        phi,
+        cosi,
+        snr2,
     ):
         r"""
         Convert the :math:`\textrm{SNR}^2` of a CW signal to a corresponding amplitude
@@ -190,7 +196,7 @@ class SignalToNoiseRatio:
         Parameters correspond to the standard ones used to describe a CW
         (see e.g. Eqs. (16), (26), (30) of https://dcc.ligo.org/T0900149-v6/public ).
 
-        This function returns "inverts" Eq. (77) of 
+        This function returns "inverts" Eq. (77) of
         https://dcc.ligo.org/T0900149-v6/public by computing the overall prefactor
         on :math:`$h_0$` using `self.compute_snr2(h0=1, ...)`.
 
@@ -207,7 +213,7 @@ class SignalToNoiseRatio:
             Must be given together with `h0`
             and conflicts with `aPlus` and `aCross`.
         snr2: float
-            Squared signal-to-noise ratio of a CW signal 
+            Squared signal-to-noise ratio of a CW signal
             in the specified detector network.
 
         Returns
@@ -215,10 +221,10 @@ class SignalToNoiseRatio:
         h0: float
             Nominal GW amplitude.
         """
-        conversion_factor = self.compute_snr2(Alpha=Alpha, Delta=Delta,
-                psi=psi, phi=phi, cosi=cosi, h0=h0)
+        conversion_factor = self.compute_snr2(
+            Alpha=Alpha, Delta=Delta, psi=psi, phi=phi, cosi=cosi, h0=1.0
+        )
         return np.sqrt(snr2 / conversion_factor)
-
 
     def compute_twoF(self, *args, **kwargs):
         r"""
