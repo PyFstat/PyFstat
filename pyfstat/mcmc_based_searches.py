@@ -524,7 +524,7 @@ class MCMCSearch(BaseSearchClass):
 
         This is copied from sampler.py of ptemcee-1.0.0
         [(c) Daniel Foreman-Mackey & contributors],
-        and only modified to be a class method.
+        to allow us to call the locally fixed _autocorr_function().
 
         :param window: (optional)
             The size of the windowing function. This is equivalent to the
@@ -547,7 +547,7 @@ class MCMCSearch(BaseSearchClass):
 
         This version of this function is copied from util.py of ptemcee-1.0.0
         [(c) Daniel Foreman-Mackey & contributors],
-        and only modified to be a class method.
+        and fixed up to be compatible with numpy>=1.23.0.
 
         :param x:
             The time series. If multidimensional, set the time axis using the
@@ -577,7 +577,7 @@ class MCMCSearch(BaseSearchClass):
             slice(None),
         ] * len(f.shape)
         m[axis] = slice(1, window)
-        m[axis] = slice(1, window)
+        m = tuple(m)  # fix for numpy>=1.23.0
         tau = 1 + 2 * np.sum(f[m], axis=axis)
 
         return tau
@@ -588,7 +588,7 @@ class MCMCSearch(BaseSearchClass):
 
         This version of this function is copied from util.py of ptemcee-1.0.0
         [(c) Daniel Foreman-Mackey & contributors],
-        and only modified to be a class method.
+        and fixed up to be compatible with numpy>=1.23.0.
 
         :param x:
             The time series. If multidimensional, set the time axis using the
@@ -620,9 +620,11 @@ class MCMCSearch(BaseSearchClass):
         # Compute the FFT and then (from that) the auto-correlation function.
         f = np.fft.fft(x - np.mean(x, axis=axis), n=2 * n, axis=axis)
         m[axis] = slice(0, n)
-        acf = np.fft.ifft(f * np.conjugate(f), axis=axis)[m].real
+        m_tuple = tuple(m)  # fix for numpy>=1.23.0
+        acf = np.fft.ifft(f * np.conjugate(f), axis=axis)[m_tuple].real
         m[axis] = 0
-        return acf / acf[m]
+        m_tuple = tuple(m)  # fix for numpy>=1.23.0
+        return acf / acf[m_tuple]
 
     def _estimate_run_time(self):
         """Print the estimated run time
