@@ -512,8 +512,117 @@ class MCMCSearch(BaseSearchClass):
                     self.sampler.tswap_acceptance_fraction
                 )
             )
-        self.autocorr_time = self.sampler.get_autocorr_time(window=window)
+        self.autocorr_time = self._get_autocorr_time(
+            sampler=self.sampler, window=window
+        )
         logging.info("Autocorrelation length: {}".format(self.autocorr_time))
+
+    def _get_autocorr_time(self, sampler, window=50):
+        """
+        Returns a matrix of autocorrelation lengths for each
+        parameter in each temperature of shape ``(Ntemps, Ndim)``.
+
+        This is copied from sampler.py of ptemcee-1.0.0
+        [(c) Daniel Foreman-Mackey & contributors],
+        and only modified to be a class method.
+
+        :param window: (optional)
+            The size of the windowing function. This is equivalent to the
+            maximum number of lags to use. (default: 50)
+
+        """
+        acors = np.zeros((sampler.ntemps, sampler.dim))
+
+        for i in range(sampler.ntemps):
+            x = np.mean(sampler._chain[i, :, :, :], axis=0)
+            acors[i, :] = self._autocorr_integrated_time(x=x, window=window)
+        return acors
+
+    def _autocorr_integrated_time(self, x, axis=0, window=50, fast=False):
+        """
+        Estimate the integrated autocorrelation time of a time series.
+
+        See `Sokal's notes <http://www.stat.unc.edu/faculty/cji/Sokal.pdf>`_ on
+        MCMC and sample estimators for autocorrelation times.
+
+        This version of this function is copied from util.py of ptemcee-1.0.0
+        [(c) Daniel Foreman-Mackey & contributors],
+        and only modified to be a class method.
+
+        :param x:
+            The time series. If multidimensional, set the time axis using the
+            ``axis`` keyword argument and the function will be computed for every
+            other axis.
+
+        :param axis: (optional)
+            The time axis of ``x``. Assumed to be the first axis if not specified.
+
+        :param window: (optional)
+            The size of the window to use. (default: 50)
+
+        :param fast: (optional)
+            If ``True``, only use the largest ``2^n`` entries for efficiency.
+            (default: False)
+
+        """
+        # Compute the autocorrelation function.
+        f = self._autocorr_function(x, axis=axis, fast=fast)
+
+        # Special case 1D for simplicity.
+        if len(f.shape) == 1:
+            return 1 + 2 * np.sum(f[1:window])
+
+        # N-dimensional case.
+        m = [
+            slice(None),
+        ] * len(f.shape)
+        m[axis] = slice(1, window)
+        m[axis] = slice(1, window)
+        tau = 1 + 2 * np.sum(f[m], axis=axis)
+
+        return tau
+
+    def _autocorr_function(self, x, axis=0, fast=False):
+        """
+        Estimate the autocorrelation function of a time series using the FFT.
+
+        This version of this function is copied from util.py of ptemcee-1.0.0
+        [(c) Daniel Foreman-Mackey & contributors],
+        and only modified to be a class method.
+
+        :param x:
+            The time series. If multidimensional, set the time axis using the
+            ``axis`` keyword argument and the function will be computed for every
+            other axis.
+
+        :param axis: (optional)
+            The time axis of ``x``. Assumed to be the first axis if not specified.
+
+        :param fast: (optional)
+            If ``True``, only use the largest ``2^n`` entries for efficiency.
+            (default: False)
+
+        """
+        x = np.atleast_1d(x)
+        m = [
+            slice(None),
+        ] * len(x.shape)
+
+        # For computational efficiency, crop the chain to the largest power of
+        # two if requested.
+        if fast:
+            n = int(2 ** np.floor(np.log2(x.shape[axis])))
+            m[axis] = slice(0, n)
+            x = x
+        else:
+            n = x.shape[axis]
+
+        # Compute the FFT and then (from that) the auto-correlation function.
+        f = np.fft.fft(x - np.mean(x, axis=axis), n=2 * n, axis=axis)
+        m[axis] = slice(0, n)
+        acf = np.fft.ifft(f * np.conjugate(f), axis=axis)[m].real
+        m[axis] = 0
+        return acf / acf[m]
 
     def _estimate_run_time(self):
         """Print the estimated run time
