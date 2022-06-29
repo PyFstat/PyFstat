@@ -94,7 +94,7 @@ setup(
         "dill",
         "lalsuite>=7.2",
         "matplotlib>=2.1",
-        "numpy<1.23.0",
+        "numpy",
         "pathos",
         "peakutils",
         "ptemcee",
