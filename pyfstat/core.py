@@ -242,14 +242,14 @@ class ComputeFstat(BaseSearchClass):
     it can also generate simulated data (including noise and/or signals) on the fly.
 
     NOTE: when you want to use this with `tCWFstatMapVersion="pycuda"`,
-    please use context management to ensure proper cleanup of the cuda device context:
-    ```
-    with pyfstat.ComputeFstat(
-        [...],
-        tCWFstatMapVersion="pycuda",
-    ) as search:
-        search.get_fullycoherent_detstat([...])
-    ```
+    please use context management to ensure proper cleanup of the cuda device context,
+    for example::
+
+       with pyfstat.ComputeFstat(
+            [...],
+            tCWFstatMapVersion="pycuda",
+        ) as search:
+            search.get_fullycoherent_detstat([...])
     """
 
     @helper_functions.initializer

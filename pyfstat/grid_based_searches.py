@@ -861,14 +861,14 @@ class TransientGridSearch(GridSearch):
     only the additional ones are documented here.
 
     NOTE: when you want to use this with `tCWFstatMapVersion="pycuda"`,
-    please use context management to ensure proper cleanup of the cuda device context:
-    ```
-    with pyfstat.TransientGridSearch(
-        [...],
-        tCWFstatMapVersion="pycuda",
-    ) as search:
-        search.run()
-    ```
+    please use context management to ensure proper cleanup of the cuda device context,
+    for example::
+
+        with pyfstat.TransientGridSearch(
+            [...],
+            tCWFstatMapVersion="pycuda",
+        ) as search:
+            search.run()
     """
 
     @helper_functions.initializer
