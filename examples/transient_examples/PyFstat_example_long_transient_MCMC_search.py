@@ -3,6 +3,12 @@ Long transient MCMC search
 ==========================
 
 MCMC search for a long transient CW signal.
+
+By default, the standard persistent-CW 2F-statistic
+and the transient max2F statistic are compared.
+
+You can turn on either `BSGL = True` or `BtSG = True` (not both!)
+to test alternative statistics.
 """
 import os
 
@@ -66,9 +72,11 @@ nwalkers = 100
 nsteps = [100, 100]
 
 transientWindowType = "rect"
+BSGL = False
+BtSG = False
 
 mcmc = pyfstat.MCMCTransientSearch(
-    label="transient_search",
+    label="transient_search" + ("_BSGL" if BSGL else "") + ("_BtSG" if BtSG else ""),
     outdir=data.outdir,
     sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
     theta_prior=theta_prior,
@@ -78,6 +86,8 @@ mcmc = pyfstat.MCMCTransientSearch(
     ntemps=ntemps,
     log10beta_min=log10beta_min,
     transientWindowType=transientWindowType,
+    BSGL=BSGL,
+    BtSG=BtSG,
 )
 mcmc.run(walker_plot_args={"plot_det_stat": True, "injection_parameters": inj})
 mcmc.print_summary()

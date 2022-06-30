@@ -50,7 +50,9 @@ class GridSearch(BaseSearchClass):
         "Alpha": r"$\alpha$",
         "Delta": r"$\delta$",
         "twoF": r"$\widetilde{2\mathcal{F}}$",
-        "log10BSGL": r"$\log_{10}\mathcal{B}_{\mathrm{SGL}}$",
+        "maxTwoF": r"$\max\widetilde{2\mathcal{F}}$",
+        "log10BSGL": r"$\log_{10}\mathcal{B}_{\mathrm{S/GL}}$",
+        "lnBtSG": r"$\ln\mathcal{B}_{\mathrm{tS/G}}$",
     }
     """Formatted labels used for plot annotations."""
 
@@ -876,6 +878,7 @@ class TransientGridSearch(GridSearch):
         minStartTime=None,
         maxStartTime=None,
         BSGL=False,
+        BtSG=False,
         minCoverFreq=None,
         maxCoverFreq=None,
         detectors=None,
@@ -943,8 +946,12 @@ class TransientGridSearch(GridSearch):
         self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         for k in self.search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
-        if self.BSGL:
+        if self.BSGL and self.BtSG:  # pragma: no cover
+            raise ValueError("Please choose only one of [BSGL,BtSG].")
+        elif self.BSGL:
             self.detstat = "log10BSGL"
+        elif self.BtSG:
+            self.detstat = "lnBtSG"
         else:
             self.detstat = "maxTwoF"
         self._initiate_search_object()
@@ -993,6 +1000,7 @@ class TransientGridSearch(GridSearch):
             minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime,
             BSGL=self.BSGL,
+            BtSG=self.BtSG,
             SSBprec=self.SSBprec,
             RngMedWindow=self.RngMedWindow,
             injectSources=self.injectSources,

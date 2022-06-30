@@ -74,11 +74,24 @@ class pyTransientFstatMap:
         Maximum likelihood estimate of the transient start time `t0`.
     tau_ML: float
         Maximum likelihood estimate of the transient duration `tau`.
+    lnBtSG: float
+        Natural log of the marginalised transient Bayes factor.
+        NOTE: This is always initialised as `nan`,
+        and you have to call `get_lnBtSG()` to get its actual value.
     """
 
-    def __init__(self, N_t0Range=None, N_tauRange=None, transientFstatMap_t=None):
+    def __init__(
+        self,
+        N_t0Range=None,
+        N_tauRange=None,
+        transientFstatMap_t=None,
+        from_file=None,
+    ):
         """
-        The class can be initialized with the following:
+        The class can be initialized with either
+        a pair of (N_t0Range,N_tauRange),
+        from a lalpulsar object,
+        or reading from a file.
 
         Parameters
         ----------
@@ -87,10 +100,20 @@ class pyTransientFstatMap:
         N_tauRange: int
             Number of `tau` values covered.
         transientFstatMap_t: lalpulsar.transientFstatMap_t
-            pre-allocated matrix from lalpulsar.
+            pre-allocated matrix from lalpulsar to initialise from.
+        from_file: str or None
+            Text file,
+            compatible with `lalpulsar.write_transientFstatMap_to_fp()` format,
+            to load and initialise from.
         """
-        if transientFstatMap_t:
+        if transientFstatMap_t and from_file:  # pragma: no cover
+            raise ValueError(
+                "Please choose either a transientFstatMap_t or file to init from."
+            )
+        elif transientFstatMap_t:
             self._init_from_lalpulsar_type(transientFstatMap_t)
+        elif from_file:
+            self.read_from_file(from_file)
         else:
             if not N_t0Range or not N_tauRange:
                 raise ValueError(
@@ -104,13 +127,47 @@ class pyTransientFstatMap:
             self.maxF = float(-1.0)
             self.t0_ML = float(0.0)
             self.tau_ML = float(0.0)
+        self.lnBtSG = np.nan
 
     def _init_from_lalpulsar_type(self, transientFstatMap_t):
-        """This essentially just strips out a redundant member level from the lalpulsar structure."""
+        """This essentially just strips out a redundant member level from the lalpulsar structure.
+
+        Parameters
+        ----------
+        transientFstatMap_t: str
+            The lalpulsar structure to extract data from.
+        """
         self.F_mn = transientFstatMap_t.F_mn.data
         self.maxF = transientFstatMap_t.maxF
         self.t0_ML = transientFstatMap_t.t0_ML
         self.tau_ML = transientFstatMap_t.tau_ML
+
+    def read_from_file(self, file):
+        """Read F_mn map from a text file and set all other fields.
+
+        Apart from optional header lines (`#` comments),
+        the format has to be consistent with lalpulsar.write_transientFstatMap_to_fp()
+        and the `write_F_mn_to_file()` method of this class itself:
+        with the columns `[t0[s], tau[s], 2F]`.
+        NOTE that the file is expected to provide 2F,
+        so the values will be halved to obtain F for storage in this class.
+
+        Parameters
+        ----------
+        file: str
+            Name of the file to load from.
+        """
+        inarray = np.genfromtxt(
+            file,
+            comments="#",
+        )
+        t0s = np.unique(inarray[:, 0])
+        taus = np.unique(inarray[:, 1])
+        self.F_mn = (0.5 * inarray[:, 2]).reshape(len(t0s), len(taus))
+        maxidx = np.argmax(inarray[:, 2])
+        self.t0_ML = inarray[maxidx, 0]
+        self.tau_ML = inarray[maxidx, 1]
+        self.maxF = 0.5 * inarray[maxidx, 2]
 
     def get_maxF_idx(self):
         """Gets the 2D-unravelled index pair of the maximum of the F_mn map
@@ -122,11 +179,36 @@ class pyTransientFstatMap:
         """
         return np.unravel_index(np.argmax(self.F_mn), self.F_mn.shape)
 
+    def get_lnBtSG(self):
+        """Compute (natural log of the) transient-CW Bayes-factor B_tSG = P(x|HyptS)/P(x|HypG).
+
+        Here HypG = Gaussian noise hypothesis, HyptS = transient-CW signal hypothesis.
+
+        B_tSG is marginalized over start-time and timescale of transient CW signal,
+        using given type and parameters of transient window range.
+
+        This is a python port of the `lalpulsar.ComputeTransientBstat` implementation,
+        replacing `for` loops by numpy operations.
+        """
+        # The first 2 lines are equivalent to `logBhat = logsumexp(self.F_mn)`,
+        # but since we have `self.maxF` already precomputed,
+        # doing the manual version of the same stable summation trick is slightly faster.
+        sum_eB = np.sum(np.exp(-(self.maxF - self.F_mn)))
+        logBhat = self.maxF + np.log(sum_eB)  # unnormalized Bhat
+        normBh = 70.0 / np.prod(
+            self.F_mn.shape
+        )  # normalization factor assuming rhohMax=1
+        # NOTE: correct this for different rhohMax by adding "- 4 * log(rhohMax)" to lnBtSG
+        self.lnBtSG = np.log(normBh) + logBhat  # - 4.0 * log ( rhohMax )
+        return self.lnBtSG
+
     def write_F_mn_to_file(self, tCWfile, windowRange, header=[]):
         """Format a 2D transient-F-stat matrix over `(t0,tau)` and write as a text file.
 
         Apart from the optional extra header lines,
-        the format is consistent with lalpulsar.write_transientFstatMap_to_fp().
+        the format is consistent with lalpulsar.write_transientFstatMap_to_fp(),
+        with the columns `[t0[s], tau[s], 2F]`.
+        NOTE that the output is 2F, not F like stored in this class itself!
 
         Parameters
         ----------
@@ -152,11 +234,11 @@ class pyTransientFstatMap:
 
 
 fstatmap_versions = {
-    "lal": lambda multiFstatAtoms, windowRange: lalpulsar_compute_transient_fstat_map(
-        multiFstatAtoms, windowRange
+    "lal": lambda multiFstatAtoms, windowRange, BtSG: lalpulsar_compute_transient_fstat_map(
+        multiFstatAtoms, windowRange, BtSG
     ),
-    "pycuda": lambda multiFstatAtoms, windowRange: pycuda_compute_transient_fstat_map(
-        multiFstatAtoms, windowRange
+    "pycuda": lambda multiFstatAtoms, windowRange, BtSG: pycuda_compute_transient_fstat_map(
+        multiFstatAtoms, windowRange, BtSG
     ),
 }
 """Dictionary of the actual callable transient F-stat map functions this module supports.
@@ -320,7 +402,7 @@ def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
 
 
 def call_compute_transient_fstat_map(
-    version, features, multiFstatAtoms=None, windowRange=None
+    version, features, multiFstatAtoms=None, windowRange=None, BtSG=False
 ):
     """Call a version of the ComputeTransientFstatMap function.
 
@@ -340,6 +422,10 @@ def call_compute_transient_fstat_map(
         The time-dependent F-stat atoms previously computed by `ComputeFstat`.
     windowRange: lalpulsar.transientWindowRange_t or None
         The structure defining the transient parameters.
+    BtSG: boolean
+        If true, also compute the lnBtSG transient Bayes factor statistic,
+        using the appropriate implementation for each feature,
+        and store it in `FstatMap.lnBtSG`.
 
     Returns
     -------
@@ -353,7 +439,7 @@ def call_compute_transient_fstat_map(
     if version in fstatmap_versions:
         if features[version]:
             time0 = time()
-            FstatMap = fstatmap_versions[version](multiFstatAtoms, windowRange)
+            FstatMap = fstatmap_versions[version](multiFstatAtoms, windowRange, BtSG)
             timingFstatMap = time() - time0
         else:
             raise Exception(
@@ -367,7 +453,7 @@ def call_compute_transient_fstat_map(
     return FstatMap, timingFstatMap
 
 
-def lalpulsar_compute_transient_fstat_map(multiFstatAtoms, windowRange):
+def lalpulsar_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=False):
     """Wrapper for the standard lalpulsar function for computing a transient F-statistic map.
 
     See https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/_transient_c_w__utils_8h.html
@@ -379,6 +465,10 @@ def lalpulsar_compute_transient_fstat_map(multiFstatAtoms, windowRange):
         The time-dependent F-stat atoms previously computed by `ComputeFstat`.
     windowRange: lalpulsar.transientWindowRange_t
         The structure defining the transient parameters.
+    BtSG: boolean
+        If true, also compute the lnBtSG transient Bayes factor statistic,
+        using the corresponding lalpulsar function,
+        and store it in `FstatMap.lnBtSG`.
 
     Returns
     -------
@@ -390,7 +480,12 @@ def lalpulsar_compute_transient_fstat_map(multiFstatAtoms, windowRange):
         windowRange=windowRange,
         useFReg=False,
     )
-    return pyTransientFstatMap(transientFstatMap_t=FstatMap_lalpulsar)
+    FstatMap = pyTransientFstatMap(transientFstatMap_t=FstatMap_lalpulsar)
+    if BtSG:
+        FstatMap.lnBtSG = lalpulsar.ComputeTransientBstat(
+            windowRange, FstatMap_lalpulsar
+        )
+    return FstatMap
 
 
 def reshape_FstatAtomsVector(atomsVector):
@@ -450,7 +545,7 @@ def _print_GPU_memory_MB(key):
     )
 
 
-def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange):
+def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=False):
     """GPU version of computing a transient F-statistic map.
 
     This is based on XLALComputeTransientFstatMap from LALSuite,
@@ -472,6 +567,10 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange):
         The time-dependent F-stat atoms previously computed by `ComputeFstat`.
     windowRange: lalpulsar.transientWindowRange_t
         The structure defining the transient parameters.
+    BtSG: boolean
+        If true, also compute the lnBtSG transient Bayes factor statistic,
+        using a CPU python port of the corresponding lalpulsar function,
+        and store it in `FstatMap.lnBtSG`.
 
     Returns
     -------
@@ -611,6 +710,11 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange):
             FstatMap.maxF, FstatMap.t0_ML, FstatMap.tau_ML
         )
     )
+
+    if BtSG:
+        # so far seems there is no need to move this onto the GPU
+        FstatMap.lnBtSG = FstatMap.get_lnBtSG()
+        logging.debug(f"Also computed: lnBtSG={FstatMap.lnBtSG:.4f}")
 
     return FstatMap
 

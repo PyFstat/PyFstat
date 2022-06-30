@@ -407,6 +407,134 @@ class TestComputeFstat(BaseForTestsWithData):
             log10BSGL == lalpulsar.ComputeBSGL(twoF, twoFX, search_H1L1_BSGL.BSGLSetup)
         )
 
+    def test_transient_detstats(self):
+        # first get maxTwoF and lnBtSG (from lalpulsar.ComputeTransientBstat) stats
+        CFS_params = {
+            "tref": self.tref,
+            "minStartTime": self.tstart,
+            "maxStartTime": self.tstart + self.duration,
+            "detectors": "H1,L1",
+            "injectSqrtSX": np.repeat(self.sqrtSX, 2),
+            "randSeed": 42,
+            "minCoverFreq": self.F0 - 0.1,
+            "maxCoverFreq": self.F0 + 0.1,
+            "transientWindowType": "rect",
+            "t0Band": 2 * default_Writer_params["Tsft"],
+            "tauBand": 2 * default_Writer_params["Tsft"],
+            "tauMin": 2 * default_Writer_params["Tsft"],
+            "tCWFstatMapVersion": "lal",
+        }
+        lambda_params = {
+            "F0": self.F0,
+            "F1": self.F1,
+            "F2": self.F2,
+            "Alpha": self.Alpha,
+            "Delta": self.Delta,
+        }
+        search1 = pyfstat.ComputeFstat(
+            **CFS_params,
+            BtSG=True,
+        )
+        # standard way of getting the "main" detection statistic (as set by BtSG=True)
+        lnBtSG1a = search1.get_fullycoherent_detstat(**lambda_params)
+        # twoF1 = search1.twoF
+        # maxTwoF1 = search1.maxTwoF
+        print(f"twoF={search1.twoF}, maxTwoF={search1.maxTwoF}")
+        # self.assertTrue(search1.maxTwoF >= search1.twoF) # FIXME: not always exactly true, can we define a more robust check?
+        # recompute BtSG by calling one function level lower,
+        # this should still redo the F-stat map and use the lalpulsar implementation
+        lnBtSG1b = search1.get_transient_detstats()
+        self.assertAlmostEqual(
+            lnBtSG1a,
+            lnBtSG1b,
+            places=4,
+            msg=f"lnBtSG: from get_fullycoherent_detstat() -> {lnBtSG1a}, from get_transient_detstats() -> {lnBtSG1b}",
+        )
+        # recompute BtSG from the F-stat map using our own implementation
+        lnBtSG1c = search1.FstatMap.get_lnBtSG()
+        self.assertAlmostEqual(
+            lnBtSG1a,
+            lnBtSG1b,
+            places=4,
+            msg=f"lnBtSG: from get_fullycoherent_detstat() -> {lnBtSG1a}, from FstatMap.get_lnBtSG() -> {lnBtSG1c}",
+        )
+        # recompute BtSG and other stats from a map saved to disk, using our own implementation
+        tCWfile = os.path.join(self.outdir, "Fmn.txt")
+        search1.FstatMap.write_F_mn_to_file(
+            tCWfile, search1.windowRange, "testing a header"
+        )
+        Fmap_from_file = pyfstat.pyTransientFstatMap(from_file=tCWfile)
+        Fmap_from_file.lnBtSG = Fmap_from_file.get_lnBtSG()
+        maxidx = Fmap_from_file.get_maxF_idx()
+        t0_ML = search1.windowRange.t0 + maxidx[0] * search1.windowRange.dt0
+        tau_ML = search1.windowRange.tau + maxidx[1] * search1.windowRange.dtau
+        shape1 = np.shape(search1.FstatMap.F_mn)
+        shape2 = np.shape(Fmap_from_file.F_mn)
+        self.assertTrue(
+            shape1 == shape2,
+            msg=f"shape(search1.FstatMap.F_mn)={shape1}, shape(Fmap_from_file.F_mn)={shape2}",
+        )
+        self.assertAlmostEqual(
+            search1.FstatMap.maxF,
+            Fmap_from_file.maxF,
+            places=4,
+            msg=f"search1.FstatMap.maxF={search1.FstatMap.maxF}, Fmap_from_file.maxF={Fmap_from_file.maxF}",
+        )
+        self.assertAlmostEqual(
+            search1.FstatMap.maxF,
+            Fmap_from_file.maxF,
+            places=4,
+            msg=f"search1.FstatMap.maxF={search1.FstatMap.maxF}, Fmap_from_file.maxF={Fmap_from_file.maxF}",
+        )
+        self.assertAlmostEqual(
+            search1.FstatMap.t0_ML,
+            t0_ML,
+            places=4,
+            msg=f"search1.FstatMap.t0_ML={search1.FstatMap.t0_ML}, from file: t0_ML={t0_ML}",
+        )
+        self.assertAlmostEqual(
+            search1.FstatMap.tau_ML,
+            tau_ML,
+            places=4,
+            msg=f"search1.FstatMap.tau_ML={search1.FstatMap.tau_ML}, from file: tau_ML={tau_ML}",
+        )
+        self.assertAlmostEqual(
+            search1.FstatMap.lnBtSG,
+            Fmap_from_file.lnBtSG,
+            places=2,  # more tolerant than other checks due to implementation details
+            msg=f"search1.FstatMap.lnBtSG={search1.FstatMap.lnBtSG}, Fmap_from_file.lnBtSG={Fmap_from_file.lnBtSG}",
+        )
+
+        # now set up for transient BSGL as "main" detection statistic instead
+        search2 = pyfstat.ComputeFstat(
+            **CFS_params,
+            BSGL=True,
+        )
+        log10BSGL2a = search2.get_fullycoherent_detstat(**lambda_params)
+        self.assertAlmostEqual(
+            search1.twoF,
+            search2.twoF,
+            places=4,
+            msg=f"search1.twoF={search1.twoF}, search2.twoF={search2.twoF}",
+        )
+        self.assertAlmostEqual(
+            search1.maxTwoF,
+            search2.maxTwoF,
+            places=4,
+            msg=f"search1.maxTwoF={search1.maxTwoF}, search2.maxTwoF={search2.maxTwoF}",
+        )
+        print(f"twoFXatMaxTwoF={search2.twoFXatMaxTwoF}")
+        print(f"log10BSGL={search2.log10BSGL}")
+        # recompute log10BSGL by calling one function level lower
+        log10BSGL2b = search2.get_transient_detstats()
+        self.assertAlmostEqual(
+            log10BSGL2a,
+            log10BSGL2b,
+            places=4,
+            msg=f"log10BSGL: from get_fullycoherent_detstat() -> {log10BSGL2a}, from get_transient_detstats() -> {log10BSGL2b}",
+        )
+        # FIXME: add more quantitative tests of BSGL values
+
     def test_cumulative_twoF(self):
         Nsft = 100
         # not using any SFTs on disk

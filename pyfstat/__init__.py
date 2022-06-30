@@ -36,6 +36,7 @@ from .mcmc_based_searches import (
     MCMCTransientSearch,
 )
 from .snr import DetectorStates, SignalToNoiseRatio
+from .tcw_fstat_map_funcs import pyTransientFstatMap
 
 __version__ = get_versions()["version"]
 del get_versions

@@ -128,6 +128,7 @@ class MCMCSearch(BaseSearchClass):
         rhohatmax=1000,
         binary=False,
         BSGL=False,
+        BtSG=False,
         SSBprec=None,
         RngMedWindow=None,
         minCoverFreq=None,
@@ -183,6 +184,9 @@ class MCMCSearch(BaseSearchClass):
             If true, search over binary orbital parameters.
         BSGL: bool, optional
             If true, use the BSGL statistic.
+        BtSG: bool, optional
+            If true, use the transient lnBtSG statistic.
+            (Only for transient searches.)
         SSBPrec: int, optional
             SSBPrec (SSB precision) to use when calling ComputeFstat. See `core.ComputeFstat`.
         RngMedWindow: int, optional
@@ -226,6 +230,7 @@ class MCMCSearch(BaseSearchClass):
         self.rhohatmax = rhohatmax
         self.binary = binary
         self.BSGL = BSGL
+        self.BtSG = BtSG
         self.SSBprec = SSBprec
         self.RngMedWindow = RngMedWindow
         self.minCoverFreq = minCoverFreq
@@ -3480,6 +3485,7 @@ class MCMCTransientSearch(MCMCSearch):
             minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime,
             BSGL=self.BSGL,
+            BtSG=self.BtSG,
             binary=self.binary,
             injectSources=self.injectSources,
             tCWFstatMapVersion=self.tCWFstatMapVersion,
