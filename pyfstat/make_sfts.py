@@ -13,6 +13,7 @@ import numpy as np
 import pyfstat.helper_functions as helper_functions
 from pyfstat import injection_parameters
 from pyfstat.core import BaseSearchClass, SearchForSignalWithJumps, args, tqdm
+from pyfstat.snr import SignalToNoiseRatio
 
 
 class Writer(BaseSearchClass):
@@ -802,24 +803,20 @@ class Writer(BaseSearchClass):
             and the data in self.sftfilepath.
             Detectors will be paired to list elements following alphabetical order.
         """
-        twoF_expected, twoF_sigma = helper_functions.predict_fstat(
+        snr = SignalToNoiseRatio.from_sfts(
+            F0=self.F0,
+            sftfilepath=self.sftfilepath,
+        )
+        twoF_expected, twoF_sigma = snr.compute_twoF(
             h0=self.h0,
             cosi=self.cosi,
             psi=self.psi,
+            phi=self.phi,
             Alpha=self.Alpha,
             Delta=self.Delta,
-            F0=self.F0,
-            sftfilepattern=self.sftfilepath,
-            minStartTime=self.tstart,
-            duration=self.duration,
-            IFOs=self.detectors,
-            assumeSqrtSX=(assumeSqrtSX or self.sqrtSX),
-            tempory_filename=os.path.join(self.outdir, self.label + ".tmp"),
-            earth_ephem=self.earth_ephem,
-            sun_ephem=self.sun_ephem,
-            transientWindowType=self.transientWindowType,
-            transientStartTime=self.transientStartTime,
-            transientTau=self.transientTau,
+            # transientWindowType=self.transientWindowType,
+            # transientStartTime=self.transientStartTime,
+            # transientTau=self.transientTau,
         )
         return twoF_expected
 
