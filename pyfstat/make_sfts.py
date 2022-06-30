@@ -107,7 +107,6 @@ class Writer(BaseSearchClass):
         transientTau=None,
         randSeed=None,
         timestamps=None,
-        timestampsFiles=None,
     ):
         """
         Parameters
@@ -187,15 +186,6 @@ class Writer(BaseSearchClass):
             WARNING: In that last case, order must match that of `detectors`!
             NOTE: mutually exclusive with [`tstart`,`duration`]
             and with `noiseSFTs`.
-        timestampsFiles:
-            Deprecated. Currently an alias to `timestamps`.
-            Comma-separated list of per-detector timestamps files
-            (simple text files, lines with <seconds> <nanoseconds>,
-            comments should use `%`, each time stamp gives the
-            start time of one SFT).
-            NOTE: mutually exclusive with [`tstart`,`duration`]
-            and with `noiseSFTs`.
-            WARNING: order must match that of `detectors`!
         """
 
         self.set_ephemeris_files(earth_ephem, sun_ephem)
@@ -420,13 +410,6 @@ class Writer(BaseSearchClass):
         incompatible_with_TS = ["tstart", "duration", "noiseSFTs"]
         TS_required_options = ["Tsft"]
         no_noiseSFTs_options = ["tstart", "duration", "Tsft", "detectors"]
-
-        # FIXME: Remove after deprecating timestampsFiles
-        if (
-            getattr(self, "timestampsFiles", None) is not None
-            and getattr(self, "timestamps", None) is None
-        ):
-            self.timestamps = self.timestampsFiles
 
         if getattr(self, "timestamps", None) is not None:
             if np.any(
@@ -880,7 +863,6 @@ class BinaryModulatedWriter(Writer):
         transientTau=None,
         randSeed=None,
         timestamps=None,
-        timestampsFiles=None,
     ):
         """
         Most parameters are the same as for the basic `Writer` class,
@@ -1117,7 +1099,6 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
         transientWindowType="rect",
         randSeed=None,
         timestamps=None,
-        timestampsFiles=None,
     ):
         """
         Most parameters are the same as for the basic `Writer` class,
