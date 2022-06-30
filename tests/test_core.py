@@ -165,6 +165,27 @@ class TestComputeFstat(BaseForTestsWithData):
         )
         self.assertTrue(FS > 0.0)
 
+    def test_run_computefstatistic_single_point_context(self):
+        # not using any SFTs
+        # same as above but in "context manager" style
+        with pyfstat.ComputeFstat(
+            tref=self.tref,
+            minStartTime=self.tstart,
+            maxStartTime=self.tstart + self.duration,
+            detectors=self.detectors,
+            injectSqrtSX=self.sqrtSX,
+            minCoverFreq=self.F0 - 0.1,
+            maxCoverFreq=self.F0 + 0.1,
+        ) as search:
+            FS = search.get_fullycoherent_twoF(
+                F0=self.F0,
+                F1=self.F1,
+                F2=self.F2,
+                Alpha=self.Alpha,
+                Delta=self.Delta,
+            )
+        self.assertTrue(FS > 0.0)
+
     def test_run_computefstatistic_single_point_with_SFTs(self):
 
         twoF_predicted = self.Writer.predict_fstat()

@@ -316,3 +316,38 @@ class TestTransientGridSearch(BaseForTestsWithData):
 
     def test_transient_grid_search_BtSG(self):
         self.test_transient_grid_search(BtSG=True)
+
+    def test_transient_grid_search_context(self):
+        # same as above but in "context manager" style
+        with pyfstat.TransientGridSearch(
+            "grid_search",
+            self.outdir,
+            self.Writer.sftfilepath,
+            F0s=self.F0s,
+            F1s=[self.Writer.F1],
+            F2s=[self.Writer.F2],
+            Alphas=[self.Writer.Alpha],
+            Deltas=[self.Writer.Delta],
+            tref=self.tref,
+            minStartTime=self.Writer.tstart,
+            maxStartTime=self.Writer.tend,
+            transientWindowType="rect",
+            t0Band=self.Writer.duration - 2 * self.Writer.Tsft,
+            tauBand=self.Writer.duration,
+            outputTransientFstatMap=True,
+            tCWFstatMapVersion="lal",
+        ) as search:
+            search.run()
+            self.assertTrue(os.path.isfile(search.out_file))
+            max2F_point = search.get_max_twoF()
+            self.assertTrue(np.all(max2F_point["twoF"] >= search.data["twoF"]))
+            tCWfile = search.get_transient_fstat_map_filename(max2F_point)
+        tCW_out = pyfstat.helper_functions.read_txt_file_with_header(
+            tCWfile, comments="#"
+        )
+        max2Fidx = np.argmax(tCW_out["2F"])
+        self.assertTrue(
+            np.isclose(max2F_point["twoF"], tCW_out["2F"][max2Fidx], rtol=1e-6, atol=0)
+        )
+        self.assertTrue(max2F_point["t0"] == tCW_out["t0s"][max2Fidx])
+        self.assertTrue(max2F_point["tau"] == tCW_out["taus"][max2Fidx])

@@ -240,6 +240,16 @@ class ComputeFstat(BaseSearchClass):
     Normally this will read in existing data through the `sftfilepattern` argument,
     but if that option is `None` and the necessary alternative arguments are used,
     it can also generate simulated data (including noise and/or signals) on the fly.
+
+    NOTE: when you want to use this with `tCWFstatMapVersion="pycuda"`,
+    please use context management to ensure proper cleanup of the cuda device context:
+    ```
+    with pyfstat.ComputeFstat(
+        [...],
+        tCWFstatMapVersion="pycuda",
+    ) as search:
+        search.get_fullycoherent_detstat([...])
+    ```
     """
 
     @helper_functions.initializer
@@ -1657,9 +1667,17 @@ class ComputeFstat(BaseSearchClass):
                 "Cannot print atoms vector to file: no FstatResults.multiFatoms, or it is None!"
             )
 
-    def __del__(self):
-        """In pyCuda case without autoinit, make sure the context is removed at the end."""
+    def __enter__(self):
+        """Enables context manager style calling."""
+        logging.debug("Entering the ComputeFstat context...")
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        """Clean up at the end of context manager style usage."""
+        logging.debug("Leaving the ComputeFStat context...")
         if hasattr(self, "gpu_context") and self.gpu_context:
+            logging.debug("Detaching GPU context...")
+            # this is needed because we use pyCuda without autoinit
             self.gpu_context.detach()
 
 

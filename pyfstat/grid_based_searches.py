@@ -858,7 +858,17 @@ class TransientGridSearch(GridSearch):
 
     Most parameters are the same as for `GridSearch`
     and the `core.ComputeFstat` class,
-    only the additional ones are documented here:
+    only the additional ones are documented here.
+
+    NOTE: when you want to use this with `tCWFstatMapVersion="pycuda"`,
+    please use context management to ensure proper cleanup of the cuda device context:
+    ```
+    with pyfstat.TransientGridSearch(
+        [...],
+        tCWFstatMapVersion="pycuda",
+    ) as search:
+        search.run()
+    ```
     """
 
     @helper_functions.initializer
@@ -1146,9 +1156,14 @@ class TransientGridSearch(GridSearch):
         fmt_dict["tau"] = "%d"
         return fmt_dict
 
-    def __del__(self):
-        if hasattr(self, "search"):
-            self.search.__del__()
+    def __enter__(self):
+        logging.debug("Entering the TransientGridSearch context...")
+        self.search.__enter__()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        logging.debug("Leaving the TransientGridSearch context...")
+        self.search.__exit__(*args, **kwargs)
 
 
 class SliceGridSearch(DefunctClass):
@@ -1195,7 +1210,7 @@ class GridGlitchSearch(GridSearch):
     ):
         """
         Most parameters are the same as for `GridSearch`
-        and the `core.SemiCoherentGlitchSearch` class,
+        and the `core.SemiCoherentGlitchSearch` class;
         only the additional ones are documented here:
 
         Parameters

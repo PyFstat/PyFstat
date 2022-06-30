@@ -3,6 +3,10 @@ Short transient grid search
 ===========================
 
 An example grid-based search for a short transient signal.
+
+This is also ready to use on a GPU,
+if you have one available and `pycuda` installed.
+Just change to `tCWFstatMapVersion = "pycuda"`.
 """
 
 import os
@@ -11,6 +15,8 @@ import numpy as np
 import PyFstat_example_make_data_for_short_transient_search as data
 
 import pyfstat
+
+tCWFstatMapVersion = "lal"
 
 if __name__ == "__main__":
 
@@ -52,9 +58,14 @@ if __name__ == "__main__":
     search1.print_max_twoF()
     search1.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")
 
+    # Now we do the transient-enabled search.
+    # We write this in "context manager" style (with the "with" keyword)
+    # to be GPU-ready: if tCWFstatMapVersion=="pycuda",
+    # this style is necessary to ensure proper cleanup of the cuda device context.
     print("with t0,tau bands:")
-    search2 = pyfstat.TransientGridSearch(
-        label="tCW" + ("_BSGL" if BSGL else ""),
+    label = f"tCW{'_BSGL' if BSGL else ''}_FstatMap_{tCWFstatMapVersion}"
+    with pyfstat.TransientGridSearch(
+        label=label,
         outdir=data.outdir,
         sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
         F0s=F0s,
@@ -67,10 +78,10 @@ if __name__ == "__main__":
         t0Band=data.duration - 2 * data.Tsft,
         tauBand=data.duration,
         outputTransientFstatMap=True,
-        tCWFstatMapVersion="lal",
+        tCWFstatMapVersion=tCWFstatMapVersion,
         BSGL=BSGL,
         BtSG=BtSG,
-    )
-    search2.run()
-    search2.print_max_twoF()
-    search2.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")
+    ) as search2:
+        search2.run()
+        search2.print_max_twoF()
+        search2.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")
