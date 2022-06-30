@@ -277,7 +277,7 @@ class TestTransientGridSearch(BaseForTestsWithData):
     F0s = [29.95, 30.05, 0.01]
     Band = 0.2
 
-    def test_transient_grid_search(self):
+    def test_transient_grid_search(self, BtSG=False):
         search = pyfstat.TransientGridSearch(
             "grid_search",
             self.outdir,
@@ -295,6 +295,7 @@ class TestTransientGridSearch(BaseForTestsWithData):
             tauBand=self.Writer.duration,
             outputTransientFstatMap=True,
             tCWFstatMapVersion="lal",
+            BtSG=BtSG,
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
@@ -310,3 +311,8 @@ class TestTransientGridSearch(BaseForTestsWithData):
         )
         self.assertTrue(max2F_point["t0"] == tCW_out["t0s"][max2Fidx])
         self.assertTrue(max2F_point["tau"] == tCW_out["taus"][max2Fidx])
+        if BtSG:
+            self.assertTrue(hasattr(search.search, "logBtSG"))
+
+    def test_transient_grid_search_BtSG(self):
+        self.test_transient_grid_search(BtSG=True)

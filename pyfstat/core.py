@@ -253,6 +253,7 @@ class ComputeFstat(BaseSearchClass):
         binary=False,
         singleFstats=False,
         BSGL=False,
+        BtSG=False,
         transientWindowType=None,
         t0Band=None,
         tauBand=None,
@@ -309,6 +310,13 @@ class ComputeFstat(BaseSearchClass):
               for semicoherent searches.
 
             * Uniform per-detector prior line-vs-Gaussian odds.
+        BtSG: bool
+            If true and `transientWindowType` is not `None`,
+            compute the transient
+            :math:`\\mathcal{B}_{\\mathrm{tS}/\\mathrm{G}}`
+            statistic from Prix, Giampanis & Messenger (PRD 84, 023007, 2011)
+            (tCWFstatMap marginalised over uniform t0, tau priors).
+            rather than the maxTwoF value.
         transientWindowType: str
             If `rect` or `exp`,
             allow for the Fstat to be computed over a transient range.
@@ -671,6 +679,10 @@ class ComputeFstat(BaseSearchClass):
                 raise ValueError("Can't use BSGL with single detectors data")
             else:
                 logging.info("Initialising BSGL")
+            # do next check only conditionally because this init method is also inherited
+            # by SemiCoherentSearch and friends who don't have a concept of BtSG
+            if hasattr(self, "BtSG") and self.BtSG:
+                raise ValueError("Choose only one of [BSGL,BtSG].")
 
             # Tuning parameters - to be reviewed
             # We use a fixed Fstar0 for coherent searches,
@@ -993,10 +1005,18 @@ class ComputeFstat(BaseSearchClass):
         tstart=None,
         tend=None,
     ):
-        """Computes the detection statistic (twoF or log10BSGL) fully-coherently at a single point.
+        """Computes the detection statistic fully-coherently at a single point.
 
-        These are also stored to `self.twoF` and `self.log10BSGL` respectively.
-        As the basic statistic of this class, `self.twoF` is always computed.
+        Currently supported statistics:
+        * twoF (CW)
+        * log10BSGL (CW or transient)
+        * maxTwoF (transient)
+        * logBtSG (transient)
+
+        The main chosen statistic is also stored as an attribute of `self`.
+        As the basic statistic of this class, twoF is always computed
+        and stored as `self.twoF` as well.
+
         If `self.singleFstats`, additionally the single-detector
         2F-stat values are saved in `self.twoFX`.
 
@@ -1019,9 +1039,8 @@ class ComputeFstat(BaseSearchClass):
         Returns
         -------
         stat: float
-            A single value of the detection statistic (twoF or log10BSGL)
+            A single value of the main detection statistic
             at the input parameter values.
-            Also stored as `self.twoF` or `self.log10BSGL`.
         """
         self.get_fullycoherent_twoF(
             F0, F1, F2, Alpha, Delta, asini, period, ecc, tp, argp
@@ -1034,7 +1053,10 @@ class ComputeFstat(BaseSearchClass):
             self.get_fullycoherent_log10BSGL()
             return self.log10BSGL
         self.get_transient_maxTwoFstat(tstart, tend)
-        if self.BSGL is False:
+        if hasattr(self, "BtSG") and self.BtSG:
+            self.get_transient_logBtSG()
+            return self.logBtSG
+        elif self.BSGL is False:
             return self.maxTwoF
         else:
             return self.get_transient_log10BSGL()
@@ -1152,10 +1174,6 @@ class ComputeFstat(BaseSearchClass):
 
         Parameters
         ----------
-        F0, F1, F2, Alpha, Delta: float
-            Parameters at which to compute the statistic.
-        asini, period, ecc, tp, argp: float, optional
-            Optional: Binary parameters at which to compute the statistic.
         tstart, tend: int or None
             GPS times to restrict the range of data used.
             If None: falls back to self.minStartTime and self.maxStartTime.
@@ -1192,6 +1210,23 @@ class ComputeFstat(BaseSearchClass):
         if np.isnan(self.maxTwoF):
             self.maxTwoF = 0
         return self.maxTwoF
+
+    def get_transient_logBtSG(self):
+        """Compute the transient detection statistic logBtSG at a single point.
+
+        Following Prix, Giampanis & Messenger (PRD 84, 023007, 2011),
+        this is the (natural log of the) Bayes factor obtained by marginalising
+        the tCWFstatMap over uniform priors in t0 and tau.
+
+        Returns
+        -------
+        log10BSGL: float
+            A single value of the detection statistic logBtSG
+            at the input parameter values.
+            Also stored as `self.logBtSG`.
+        """
+        self.logBtSG = self.FstatMap.get_logBtSG(self.windowRange)
+        return self.logBtSG
 
     def get_transient_log10BSGL(self):
         """Computes a transient detection statistic log10BSGL at a single point.

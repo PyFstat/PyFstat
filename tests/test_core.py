@@ -407,6 +407,38 @@ class TestComputeFstat(BaseForTestsWithData):
             log10BSGL == lalpulsar.ComputeBSGL(twoF, twoFX, search_H1L1_BSGL.BSGLSetup)
         )
 
+    def test_transient_detstats(self):
+        search = pyfstat.ComputeFstat(
+            tref=self.tref,
+            minStartTime=self.tstart,
+            maxStartTime=self.tstart + self.duration,
+            detectors="H1,L1",
+            injectSqrtSX=np.repeat(self.sqrtSX, 2),
+            minCoverFreq=self.F0 - 0.1,
+            maxCoverFreq=self.F0 + 0.1,
+            transientWindowType="rect",
+            t0Band=2 * default_Writer_params["Tsft"],
+            tauBand=2 * default_Writer_params["Tsft"],
+            tauMin=2 * default_Writer_params["Tsft"],
+            BSGL=True,
+        )
+        twoF = search.get_fullycoherent_twoF(
+            F0=self.F0,
+            F1=self.F1,
+            F2=self.F2,
+            Alpha=self.Alpha,
+            Delta=self.Delta,
+        )
+        print(f"twoF={twoF}")
+        maxTwoF = search.get_transient_maxTwoFstat()
+        print(f"maxTwoF={maxTwoF}")
+        logBtSG = search.get_transient_logBtSG()
+        print(f"logBtSG={logBtSG}")
+        log10BSGL = search.get_transient_log10BSGL()
+        print(f"twoFXatMaxTwoF={search.twoFXatMaxTwoF}")
+        print(f"log10BSGL={log10BSGL}")
+        # FIXME: add quantitative tests
+
     def test_cumulative_twoF(self):
         Nsft = 100
         # not using any SFTs on disk

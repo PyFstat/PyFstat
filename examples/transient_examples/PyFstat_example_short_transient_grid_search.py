@@ -33,6 +33,7 @@ if __name__ == "__main__":
     Deltas = [data.Delta]
 
     BSGL = False
+    BtSG = False
 
     print("Standard CW search:")
     search1 = pyfstat.GridSearch(
@@ -68,6 +69,7 @@ if __name__ == "__main__":
         outputTransientFstatMap=True,
         tCWFstatMapVersion="lal",
         BSGL=BSGL,
+        BtSG=BtSG,
     )
     search2.run()
     search2.print_max_twoF()
