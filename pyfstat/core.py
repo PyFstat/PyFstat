@@ -8,6 +8,7 @@ import os
 import socket
 from datetime import datetime
 from pprint import pformat
+from weakref import finalize
 
 import lal
 import lalpulsar
@@ -416,12 +417,28 @@ class ComputeFstat(BaseSearchClass):
             [Default: what's hardcoded in XLALFstatMaximumSFTLength]
         """
 
+        self._setup_finalizer()
         self._set_init_params_dict(locals())
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.init_computefstatistic()
         self.output_file_header = self.get_output_file_header()
         self.get_det_stat = self.get_fullycoherent_detstat
         self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
+
+    def _setup_finalizer(self):
+        if "cuda" in self.tCWFstatMapVersion:
+            logging.debug(
+                f"Setting up GPU context finalizer for {self.tCWFstatMapVersion} transient maps."
+            )
+            finalize(self, self._finalize_gpu_context)
+
+    def _finalize_gpu_context(self):
+        """Clean up at the end of context manager style usage."""
+        logging.debug("Leaving the ComputeFStat context...")
+        if hasattr(self, "gpu_context") and self.gpu_context:
+            logging.debug("Detaching GPU context...")
+            # this is needed because we use pyCuda without autoinit
+            self.gpu_context.detach()
 
     def _get_SFTCatalog(self):
         """Load the SFTCatalog
@@ -1665,11 +1682,6 @@ class ComputeFstat(BaseSearchClass):
             raise RuntimeError(
                 "Cannot print atoms vector to file: no FstatResults.multiFatoms, or it is None!"
             )
-
-    def __del__(self):
-        """In pyCuda case without autoinit, make sure the context is removed at the end."""
-        if hasattr(self, "gpu_context") and self.gpu_context:
-            self.gpu_context.detach()
 
 
 class SemiCoherentSearch(ComputeFstat):

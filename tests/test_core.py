@@ -624,6 +624,39 @@ class TestComputeFstat(BaseForTestsWithData):
         self.assertTrue(reldiffmid < 0.25)
         self.assertTrue(reldiffend < 0.25)
 
+    def test_gpu_context_finalizer(self):
+        search_no_gpu = pyfstat.ComputeFstat(
+            tref=self.tref,
+            minStartTime=self.tstart,
+            maxStartTime=self.tstart + self.duration,
+            detectors=self.detectors,
+            injectSqrtSX=self.sqrtSX,
+            minCoverFreq=self.F0 - 0.1,
+            maxCoverFreq=self.F0 + 0.1,
+            tCWFstatMapVersion="lal",
+        )
+        # no GPU, finalizer should be None
+        self.assertTrue(search_no_gpu._finalizer is None)
+
+        search_gpu = pyfstat.ComputeFstat(
+            tref=self.tref,
+            minStartTime=self.tstart,
+            maxStartTime=self.tstart + self.duration,
+            detectors=self.detectors,
+            injectSqrtSX=self.sqrtSX,
+            minCoverFreq=self.F0 - 0.1,
+            maxCoverFreq=self.F0 + 0.1,
+            tCWFstatMapVersion="pycuda",
+        )
+        # GPU case, finalizer should be alive
+        self.assertTrue(search_gpu._finalizer is not None)
+        self.assertTrue(search_gpu._finalizer.alive)
+        # print(search_gpu.gpu_context)
+        # Calling finalizer should kill it
+        search_gpu._finalizer()
+        self.assertFalse(search_gpu._finalizer.alive)
+        # print(search_gpu.gpu_context)
+
 
 class TestComputeFstatNoNoise(BaseForTestsWithData):
     # FIXME: should be possible to merge into TestComputeFstat with smart

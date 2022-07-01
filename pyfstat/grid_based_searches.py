@@ -1148,10 +1148,6 @@ class TransientGridSearch(GridSearch):
         fmt_dict["tau"] = "%d"
         return fmt_dict
 
-    def __del__(self):
-        if hasattr(self, "search"):
-            self.search.__del__()
-
 
 class SliceGridSearch(DefunctClass):
     last_supported_version = "1.9.0"
