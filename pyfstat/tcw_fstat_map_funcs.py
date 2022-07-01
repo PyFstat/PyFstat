@@ -667,7 +667,7 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=False)
 
     if BtSG:
         # FIXME this should be moved into cuda kernel!
-        FstatMap.logBtSG = FstatMap.get_logBtSG()
+        FstatMap.logBtSG = FstatMap.get_logBtSG(windowRange)
         logging.debug(f"Also computed: logBtSG={FstatMap.logBtSG:.4f}")
 
     return FstatMap
