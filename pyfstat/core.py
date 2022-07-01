@@ -681,7 +681,7 @@ class ComputeFstat(BaseSearchClass):
                 logging.info("Initialising BSGL")
             # do next check only conditionally because this init method is also inherited
             # by SemiCoherentSearch and friends who don't have a concept of BtSG
-            if hasattr(self, "BtSG") and self.BtSG:
+            if getattr(self, "BtSG", False):
                 raise ValueError("Choose only one of [BSGL,BtSG].")
 
             # Tuning parameters - to be reviewed
@@ -1033,7 +1033,7 @@ class ComputeFstat(BaseSearchClass):
         tstart, tend: int or None
             GPS times to restrict the range of data used.
             If None: falls back to self.minStartTime and self.maxStartTime.
-            This is only passed on to `self.get_transient_detstat()`,
+            This is only passed on to `self.get_transient_detstats()`,
             i.e. only used if `self.transientWindowType` is set.
 
         Returns
@@ -1052,14 +1052,12 @@ class ComputeFstat(BaseSearchClass):
                 return self.twoF
             self.get_fullycoherent_log10BSGL()
             return self.log10BSGL
-        self.get_transient_maxTwoFstat(tstart, tend)
-        if hasattr(self, "BtSG") and self.BtSG:
-            self.get_transient_logBtSG()
-            return self.logBtSG
-        elif self.BSGL is False:
-            return self.maxTwoF
-        else:
-            return self.get_transient_log10BSGL()
+        return self.get_transient_detstats(
+            tstart=tstart,
+            tend=tend,
+            BSGL=getattr(self, "BSGL", False),
+            BtSG=getattr(self, "BtSG", False),
+        )
 
     def get_fullycoherent_twoF(
         self,
@@ -1160,14 +1158,19 @@ class ComputeFstat(BaseSearchClass):
         self.log10BSGL = lalpulsar.ComputeBSGL(self.twoF, self.twoFX, self.BSGLSetup)
         return self.log10BSGL
 
-    def get_transient_maxTwoFstat(
+    def get_transient_detstats(
         self,
         tstart=None,
         tend=None,
+        BSGL=False,
+        BtSG=False,
     ):
-        """Computes the transient maxTwoF statistic at a single point.
+        """Computes one or more transient detection statistics at a single point.
 
         This requires `self.get_fullycoherent_twoF()` to be run first.
+
+        All computed statistics will be stored as attributes of `self`,
+        but only one (twoF, log10BSGL or BtSG) will be the return value.
 
         The full transient-F-stat map will also be computed here,
         but stored in `self.FstatMap`, not returned.
@@ -1177,16 +1180,26 @@ class ComputeFstat(BaseSearchClass):
         tstart, tend: int or None
             GPS times to restrict the range of data used.
             If None: falls back to self.minStartTime and self.maxStartTime.
-            This is only passed on to `self.get_transient_detstat()`,
-            i.e. only used if `self.transientWindowType` is set.
+        BSGL : bool
+            If true, compute and return the `log10BSGL` statistic
+            from `maxTwoF` and `twoFXatMaxTwoF`.
+        BtSG: bool
+            If true,
+            compute and return the transient Bayes factor
+            :math:`\\mathcal{B}_{\\mathrm{tS}/\\mathrm{G}}`
+            statistic from Prix, Giampanis & Messenger (PRD 84, 023007, 2011)
+            (tCWFstatMap marginalised over uniform t0, tau priors).
 
         Returns
         -------
-        maxTwoF: float
-            A single value of the detection statistic (twoF or log10BSGL)
+        detstat: float
+            A single value of the main chosen detection statistic
+            (twoF, log10BSGL or BtSG)
             at the input parameter values.
-            Also stored as `self.maxTwoF`.
         """
+        if BtSG and BSGL:
+            raise ValueError("Choose only one of [BSGL,BtSG].")
+
         tstart = tstart or getattr(self, "minStartTime", None)
         tend = tend or getattr(self, "maxStartTime", None)
         if tstart is None or tend is None:
@@ -1198,40 +1211,65 @@ class ComputeFstat(BaseSearchClass):
             self.windowRange.tau = int(tend - tstart)  # TYPE UINT4
 
         self.FstatMap, self.timingFstatMap = tcw.call_compute_transient_fstat_map(
-            self.tCWFstatMapVersion,
-            self.tCWFstatMapFeatures,
-            self.FstatResults.multiFatoms[0],  # 0 index: single frequency bin
-            self.windowRange,
+            version=self.tCWFstatMapVersion,
+            features=self.tCWFstatMapFeatures,
+            multiFstatAtoms=self.FstatResults.multiFatoms[
+                0
+            ],  # 0 index: single frequency bin
+            windowRange=self.windowRange,
+            BtSG=BtSG,
         )
 
-        # Now instead of the overall twoF,
-        # we get the maximum twoF over the transient window range.
+        # get the maximum twoF over the transient window range
         self.maxTwoF = 2 * self.FstatMap.maxF
         if np.isnan(self.maxTwoF):
             self.maxTwoF = 0
-        return self.maxTwoF
 
-    def get_transient_logBtSG(self):
-        """Compute the transient detection statistic logBtSG at a single point.
+        if BtSG:
+            self.logBtSG = self.FstatMap.logBtSG
+            return self.logBtSG
+        elif not BSGL:
+            return self.maxTwoF
+        else:
+            self.get_transient_log10BSGL()
+            return self.log10BSGL
 
-        Following Prix, Giampanis & Messenger (PRD 84, 023007, 2011),
-        this is the (natural log of the) Bayes factor obtained by marginalising
-        the tCWFstatMap over uniform priors in t0 and tau.
+    def get_transient_maxTwoFstat(
+        self,
+        tstart=None,
+        tend=None,
+    ):
+        """Computes the transient maxTwoF statistic at a single point.
+
+        This requires `self.get_fullycoherent_twoF()` to be run first,
+        and is itself now only a backwards compatibility / convenience
+        wrapper around the more general `get_transient_detstats().`
+
+        The full transient-F-stat map will also be computed here,
+        but stored in `self.FstatMap`, not returned.
+
+        Parameters
+        ----------
+        tstart, tend: int or None
+            GPS times to restrict the range of data used.
+            If None: falls back to self.minStartTime and self.maxStartTime.
 
         Returns
         -------
-        log10BSGL: float
-            A single value of the detection statistic logBtSG
+        maxTwoF: float
+            A single value of the detection statistic
             at the input parameter values.
-            Also stored as `self.logBtSG`.
+            Also stored as `self.maxTwoF`.
         """
-        self.logBtSG = self.FstatMap.get_logBtSG(self.windowRange)
-        return self.logBtSG
+        self.get_transient_detstats(tstart=tstart, tend=tend, BSGL=False, BtSG=False)
+        return self.maxTwoF
 
     def get_transient_log10BSGL(self):
         """Computes a transient detection statistic log10BSGL at a single point.
 
-        This requires `self.get_transient_maxTwoFstat()` to be run first.
+        This should normally be called through `get_transient_detstats()`,
+        but if called stand-alone,
+        it requires `self.get_transient_maxTwoFstat()` to be run first.
 
         The single-detector 2F-stat values
         used for that computation (at the index of `maxTwoF`)
@@ -1271,6 +1309,7 @@ class ComputeFstat(BaseSearchClass):
                 self.tCWFstatMapFeatures,
                 singleIFOmultiFatoms,
                 self.windowRange,
+                BtSG=False,
             )
             self.twoFXatMaxTwoF[X] = 2 * FXstatMap.F_mn[idx_maxTwoF]
         self.log10BSGL = lalpulsar.ComputeBSGL(

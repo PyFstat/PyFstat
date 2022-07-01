@@ -104,6 +104,7 @@ class pyTransientFstatMap:
             self.maxF = float(-1.0)
             self.t0_ML = float(0.0)
             self.tau_ML = float(0.0)
+            self.logBtSG = np.nan
 
     def _init_from_lalpulsar_type(self, transientFstatMap_t):
         """This essentially just strips out a redundant member level from the lalpulsar structure."""
@@ -111,6 +112,7 @@ class pyTransientFstatMap:
         self.maxF = transientFstatMap_t.maxF
         self.t0_ML = transientFstatMap_t.t0_ML
         self.tau_ML = transientFstatMap_t.tau_ML
+        self.logBtSG = np.nan
 
     def get_maxF_idx(self):
         """Gets the 2D-unravelled index pair of the maximum of the F_mn map
@@ -186,11 +188,11 @@ class pyTransientFstatMap:
 
 
 fstatmap_versions = {
-    "lal": lambda multiFstatAtoms, windowRange: lalpulsar_compute_transient_fstat_map(
-        multiFstatAtoms, windowRange
+    "lal": lambda multiFstatAtoms, windowRange, BtSG: lalpulsar_compute_transient_fstat_map(
+        multiFstatAtoms, windowRange, BtSG
     ),
-    "pycuda": lambda multiFstatAtoms, windowRange: pycuda_compute_transient_fstat_map(
-        multiFstatAtoms, windowRange
+    "pycuda": lambda multiFstatAtoms, windowRange, BtSG: pycuda_compute_transient_fstat_map(
+        multiFstatAtoms, windowRange, BtSG
     ),
 }
 """Dictionary of the actual callable transient F-stat map functions this module supports.
@@ -354,7 +356,7 @@ def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
 
 
 def call_compute_transient_fstat_map(
-    version, features, multiFstatAtoms=None, windowRange=None
+    version, features, multiFstatAtoms=None, windowRange=None, BtSG=False
 ):
     """Call a version of the ComputeTransientFstatMap function.
 
@@ -374,6 +376,10 @@ def call_compute_transient_fstat_map(
         The time-dependent F-stat atoms previously computed by `ComputeFstat`.
     windowRange: lalpulsar.transientWindowRange_t or None
         The structure defining the transient parameters.
+    BtSG: boolean
+        If true, also compute the logBtSG transient Bayes factor statistic,
+        using the appropriate implementation for each feature,
+        and store it in `FstatMap.logBtSG`.
 
     Returns
     -------
@@ -387,7 +393,7 @@ def call_compute_transient_fstat_map(
     if version in fstatmap_versions:
         if features[version]:
             time0 = time()
-            FstatMap = fstatmap_versions[version](multiFstatAtoms, windowRange)
+            FstatMap = fstatmap_versions[version](multiFstatAtoms, windowRange, BtSG)
             timingFstatMap = time() - time0
         else:
             raise Exception(
@@ -401,7 +407,7 @@ def call_compute_transient_fstat_map(
     return FstatMap, timingFstatMap
 
 
-def lalpulsar_compute_transient_fstat_map(multiFstatAtoms, windowRange):
+def lalpulsar_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=False):
     """Wrapper for the standard lalpulsar function for computing a transient F-statistic map.
 
     See https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/_transient_c_w__utils_8h.html
@@ -413,6 +419,10 @@ def lalpulsar_compute_transient_fstat_map(multiFstatAtoms, windowRange):
         The time-dependent F-stat atoms previously computed by `ComputeFstat`.
     windowRange: lalpulsar.transientWindowRange_t
         The structure defining the transient parameters.
+    BtSG: boolean
+        If true, also compute the logBtSG transient Bayes factor statistic,
+        using the corresponding lalpulsar function,
+        and store it in `FstatMap.logBtSG`.
 
     Returns
     -------
@@ -424,7 +434,12 @@ def lalpulsar_compute_transient_fstat_map(multiFstatAtoms, windowRange):
         windowRange=windowRange,
         useFReg=False,
     )
-    return pyTransientFstatMap(transientFstatMap_t=FstatMap_lalpulsar)
+    FstatMap = pyTransientFstatMap(transientFstatMap_t=FstatMap_lalpulsar)
+    if BtSG:
+        FstatMap.logBtSG = lalpulsar.ComputeTransientBstat(
+            windowRange, FstatMap_lalpulsar
+        )
+    return FstatMap
 
 
 def reshape_FstatAtomsVector(atomsVector):
@@ -484,7 +499,7 @@ def _print_GPU_memory_MB(key):
     )
 
 
-def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange):
+def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=False):
     """GPU version of computing a transient F-statistic map.
 
     This is based on XLALComputeTransientFstatMap from LALSuite,
@@ -506,6 +521,10 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange):
         The time-dependent F-stat atoms previously computed by `ComputeFstat`.
     windowRange: lalpulsar.transientWindowRange_t
         The structure defining the transient parameters.
+    BtSG: boolean
+        If true, also compute the logBtSG transient Bayes factor statistic,
+        currently using a naive unoptimised port of the corresponding lalpulsar function,
+        and store it in `FstatMap.logBtSG`.
 
     Returns
     -------
@@ -645,6 +664,11 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange):
             FstatMap.maxF, FstatMap.t0_ML, FstatMap.tau_ML
         )
     )
+
+    if BtSG:
+        # FIXME this should be moved into cuda kernel!
+        FstatMap.logBtSG = FstatMap.get_logBtSG()
+        logging.debug(f"Also computed: logBtSG={FstatMap.logBtSG:.4f}")
 
     return FstatMap
 

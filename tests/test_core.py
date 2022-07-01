@@ -430,10 +430,9 @@ class TestComputeFstat(BaseForTestsWithData):
             Delta=self.Delta,
         )
         print(f"twoF={twoF}")
-        maxTwoF = search.get_transient_maxTwoFstat()
-        print(f"maxTwoF={maxTwoF}")
-        logBtSG = search.get_transient_logBtSG()
-        print(f"logBtSG={logBtSG}")
+        search.get_transient_detstats(BtSG=True)
+        print(f"maxTwoF={search.maxTwoF}")
+        print(f"logBtSG={search.logBtSG}")
         log10BSGL = search.get_transient_log10BSGL()
         print(f"twoFXatMaxTwoF={search.twoFXatMaxTwoF}")
         print(f"log10BSGL={log10BSGL}")
