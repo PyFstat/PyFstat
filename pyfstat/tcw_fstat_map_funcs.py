@@ -132,31 +132,24 @@ class pyTransientFstatMap:
         B_tSG is marginalized over start-time and timescale of transient CW signal,
         using given type and parameters of transient window range.
 
-        NOTE: naive python port of the `lalpulsar.ComputeTransientBstat` implementation.
-        Should be optimised by vectorizing the for loops!
+        This is a python port of the `lalpulsar.ComputeTransientBstat` implementation,
+        replacing for loops by numpy operations.
         """
         # step through F_mn array subtract maxF and sum e^{F_mn - maxF}
         # The maximum-likelihood Fmax is globally subtracted from F_mn, and stored separatedly in the struct, because in most
         # expressions it is numerically more robust to compute e^(F_mn - Fmax), which at worst can underflow, while
         # e^F_mn can overflow (for F>~700). The constant offset e^Fmax is irrelevant for posteriors (normalization constant), or
         # can be handled separately, eg by computing log(B) = Fmax + log(sum e^(Fmn-Fmax)) for the Bayes-factor.
-        N_t0Range = self.F_mn.shape[0]
-        N_tauRange = self.F_mn.shape[1]
-        sum_eB = 0
-        for m in range(N_t0Range):
-            for n in range(N_tauRange):
-                DeltaF = (
-                    self.maxF - self.F_mn[m, n]
-                )  # always >= 0, exactly ==0 at {m,n}_max
-                sum_eB += np.exp(-DeltaF)
+        sum_eB = np.sum(np.exp(-self.maxF - self.F_mn))
         # combine this to final log(Bstat) result with proper normalization (assuming rhohMax=1):
         logBhat = self.maxF + np.log(sum_eB)  # unnormalized Bhat
-        normBh = 70.0 / (
-            N_t0Range * N_tauRange
+        normBh = 70.0 / np.prod(
+            self.F_mn.shape
         )  # normalization factor assuming rhohMax=1
         # final normalized Bayes factor, assuming rhohMax=1 */
         # NOTE: correct this for different rhohMax by adding "- 4 * log(rhohMax)" to logBtSG
-        return np.log(normBh) + logBhat  # - 4.0 * log ( rhohMax )
+        self.logBtSG = np.log(normBh) + logBhat  # - 4.0 * log ( rhohMax )
+        return self.logBtSG
 
     def write_F_mn_to_file(self, tCWfile, windowRange, header=[]):
         """Format a 2D transient-F-stat matrix over `(t0,tau)` and write as a text file.
