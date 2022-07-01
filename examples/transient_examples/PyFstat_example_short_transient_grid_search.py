@@ -3,12 +3,15 @@ Short transient grid search
 ===========================
 
 An example grid-based search for a short transient signal.
-
 By default, the standard persistent-CW 2F-statistic
 and the transient max2F statistic are compared.
 
 You can turn on either `BSGL = True` or `BtSG = True` (not both!)
 to test alternative statistics.
+
+This is also ready to use on a GPU,
+if you have one available and `pycuda` installed.
+Just change to `tCWFstatMapVersion = "pycuda"`.
 """
 
 import os
@@ -17,6 +20,8 @@ import numpy as np
 import PyFstat_example_make_data_for_short_transient_search as data
 
 import pyfstat
+
+tCWFstatMapVersion = "lal"
 
 if __name__ == "__main__":
 
@@ -43,7 +48,7 @@ if __name__ == "__main__":
 
     print("Standard CW search:")
     search1 = pyfstat.GridSearch(
-        label="CW" + ("_BSGL" if BSGL else "") + ("_BtSG" if BtSG else ""),
+        label=f"CW{'_BSGL' if BSGL else ''}",
         outdir=data.outdir,
         sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
         F0s=F0s,
@@ -61,8 +66,9 @@ if __name__ == "__main__":
     )
 
     print("with t0,tau bands:")
+    label = f"tCW{'_BSGL' if BSGL else ''}{'_BtSG' if BtSG else ''}_FstatMap_{tCWFstatMapVersion}"
     search2 = pyfstat.TransientGridSearch(
-        label="tCW" + ("_BSGL" if BSGL else ""),
+        label=label,
         outdir=data.outdir,
         sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
         F0s=F0s,
@@ -75,7 +81,7 @@ if __name__ == "__main__":
         t0Band=data.duration - 2 * data.Tsft,
         tauBand=data.duration,
         outputTransientFstatMap=True,
-        tCWFstatMapVersion="lal",
+        tCWFstatMapVersion=tCWFstatMapVersion,
         BSGL=BSGL,
         BtSG=BtSG,
     )
