@@ -13,6 +13,7 @@ import os
 import shutil
 import subprocess
 import sys
+from datetime import datetime, timezone
 from functools import wraps
 
 import lal
@@ -1242,3 +1243,37 @@ def generate_loudest_file(
 
     run_commandline(cmd, return_output=False)
     return loudest_file
+
+
+def gps_to_datestr_utc(gps):
+    """Convert an integer count of GPS seconds to a UTC date-time string.
+
+    This uses the locale's default string formatting as per `datetime.strftime()`.
+    It is intended just for informing the user and may not be as reliable
+    in all situations as `lal[apps]_tconvert`.
+    If you want to do any postprocessing of the date-time string,
+    for safety you should probably call that commandline tool.
+
+    Parameters
+    -------
+    gps: int
+        Integer seconds since GPS seconds.
+
+    Returns
+    -------
+    dtstr: str
+        A string representation of date-time in UTC and locale format.
+
+    """
+    utc = lal.GPSToUTC(gps)
+    dt = datetime(
+        year=utc[0],
+        month=utc[1],
+        day=utc[2],
+        hour=utc[3],
+        minute=utc[4],
+        second=utc[5],
+        microsecond=0,
+        tzinfo=timezone.utc,
+    )
+    return dt.strftime("%c %Z")
