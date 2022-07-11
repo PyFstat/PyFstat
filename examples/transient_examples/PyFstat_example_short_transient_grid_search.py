@@ -3,6 +3,12 @@ Short transient grid search
 ===========================
 
 An example grid-based search for a short transient signal.
+
+By default, the standard persistent-CW 2F-statistic
+and the transient max2F statistic are compared.
+
+You can turn on either `BSGL = True` or `BtSG = True` (not both!)
+to test alternative statistics.
 """
 
 import os
@@ -33,10 +39,11 @@ if __name__ == "__main__":
     Deltas = [data.Delta]
 
     BSGL = False
+    BtSG = False
 
     print("Standard CW search:")
     search1 = pyfstat.GridSearch(
-        label="CW" + ("_BSGL" if BSGL else ""),
+        label="CW" + ("_BSGL" if BSGL else "") + ("_BtSG" if BtSG else ""),
         outdir=data.outdir,
         sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
         F0s=F0s,
@@ -49,7 +56,9 @@ if __name__ == "__main__":
     )
     search1.run()
     search1.print_max_twoF()
-    search1.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")
+    search1.plot_1D(
+        xkey="F0", xlabel="freq [Hz]", ylabel=search1.tex_labels[search1.detstat]
+    )
 
     print("with t0,tau bands:")
     search2 = pyfstat.TransientGridSearch(
@@ -68,7 +77,10 @@ if __name__ == "__main__":
         outputTransientFstatMap=True,
         tCWFstatMapVersion="lal",
         BSGL=BSGL,
+        BtSG=BtSG,
     )
     search2.run()
     search2.print_max_twoF()
-    search2.plot_1D(xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$")
+    search2.plot_1D(
+        xkey="F0", xlabel="freq [Hz]", ylabel=search2.tex_labels[search2.detstat]
+    )

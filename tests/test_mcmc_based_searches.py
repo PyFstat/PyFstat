@@ -494,7 +494,7 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
         self._check_mcmc_quantiles(transient=True)
         self._test_plots()
 
-    def test_transient_MCMC_t0_tau(self):
+    def test_transient_MCMC_t0_tau(self, BtSG=False):
 
         theta = {
             **self.basic_theta,
@@ -517,9 +517,13 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
             sftfilepattern=self.Writer.sftfilepath,
             **self.MCMC_params,
             transientWindowType=self.transientWindowType,
+            BtSG=BtSG,
         )
         self.search.run(plot_walkers=False)
         self.search.print_summary()
         self._check_twoF_predicted()
         self._check_mcmc_quantiles(transient=True)
         self._test_plots()
+
+    def test_transient_MCMC_t0_tau_BtSG(self, BtSG=False):
+        self.test_transient_MCMC_t0_tau(BtSG=True)
