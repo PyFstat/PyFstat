@@ -15,7 +15,6 @@ import os
 from time import time
 
 import numpy as np
-from scipy.special import logsumexp
 
 
 def _optional_import(modulename, shorthand=None):
@@ -196,26 +195,6 @@ class pyTransientFstatMap:
         # doing the manual version of the same stable summation trick is slightly faster.
         sum_eB = np.sum(np.exp(-(self.maxF - self.F_mn)))
         logBhat = self.maxF + np.log(sum_eB)  # unnormalized Bhat
-        normBh = 70.0 / np.prod(
-            self.F_mn.shape
-        )  # normalization factor assuming rhohMax=1
-        # NOTE: correct this for different rhohMax by adding "- 4 * log(rhohMax)" to lnBtSG
-        self.lnBtSG = np.log(normBh) + logBhat  # - 4.0 * log ( rhohMax )
-        return self.lnBtSG
-
-    def get_lnBtSG_logsumexp(self):
-        """Compute (natural log of the) transient-CW Bayes-factor B_tSG = P(x|HyptS)/P(x|HypG).
-
-        Here HypG = Gaussian noise hypothesis, HyptS = transient-CW signal hypothesis.
-
-        B_tSG is marginalized over start-time and timescale of transient CW signal,
-        using given type and parameters of transient window range.
-
-        This is a python port of the `lalpulsar.ComputeTransientBstat` implementation,
-        replacing for loops by numpy operations.
-        """
-        # step through F_mn array and sum e^{-maxF} via stable "logsumexp" summation
-        logBhat = logsumexp(self.F_mn)
         normBh = 70.0 / np.prod(
             self.F_mn.shape
         )  # normalization factor assuming rhohMax=1
