@@ -426,11 +426,20 @@ class ComputeFstat(BaseSearchClass):
         self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
 
     def _setup_finalizer(self):
+        """
+        Setup for proper cleanup at end of context in pycuda case.
+
+        Users should normally *not* have to call self._finalizer() manually:
+        the `finalize` call is enough to set up python garbage collection,
+        and we only store it as an attribute for debugging/testing purposes.
+        """
         if "cuda" in self.tCWFstatMapVersion:
             logging.debug(
                 f"Setting up GPU context finalizer for {self.tCWFstatMapVersion} transient maps."
             )
-            finalize(self, self._finalize_gpu_context)
+            self._finalizer = finalize(self, self._finalize_gpu_context)
+        else:
+            self._finalizer = None
 
     def _finalize_gpu_context(self):
         """Clean up at the end of context manager style usage."""

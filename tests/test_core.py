@@ -624,38 +624,88 @@ class TestComputeFstat(BaseForTestsWithData):
         self.assertTrue(reldiffmid < 0.25)
         self.assertTrue(reldiffend < 0.25)
 
-    def test_gpu_context_finalizer(self):
-        search_no_gpu = pyfstat.ComputeFstat(
-            tref=self.tref,
-            minStartTime=self.tstart,
-            maxStartTime=self.tstart + self.duration,
-            detectors=self.detectors,
-            injectSqrtSX=self.sqrtSX,
-            minCoverFreq=self.F0 - 0.1,
-            maxCoverFreq=self.F0 + 0.1,
-            tCWFstatMapVersion="lal",
-        )
-        # no GPU, finalizer should be None
-        self.assertTrue(search_no_gpu._finalizer is None)
+    def _test_context_finalizer(
+        self, tCWFstatMapVersion="lal", transientWindowType=None
+    ):
+        CFS_params = {
+            "tref": self.tref,
+            "minStartTime": self.tstart,
+            "maxStartTime": self.tstart + self.duration,
+            "detectors": self.detectors,
+            "injectSqrtSX": self.sqrtSX,
+            "minCoverFreq": self.F0 - 0.1,
+            "maxCoverFreq": self.F0 + 0.1,
+        }
+        lambda_params = {
+            "F0": self.F0,
+            "F1": self.F1,
+            "F2": self.F2,
+            "Alpha": self.Alpha,
+            "Delta": self.Delta,
+        }
 
-        search_gpu = pyfstat.ComputeFstat(
-            tref=self.tref,
-            minStartTime=self.tstart,
-            maxStartTime=self.tstart + self.duration,
-            detectors=self.detectors,
-            injectSqrtSX=self.sqrtSX,
-            minCoverFreq=self.F0 - 0.1,
-            maxCoverFreq=self.F0 + 0.1,
-            tCWFstatMapVersion="pycuda",
+        if "cuda" not in tCWFstatMapVersion:
+            search = pyfstat.ComputeFstat(
+                **CFS_params,
+                tCWFstatMapVersion="lal",
+            )
+            self.assertTrue(search._finalizer is None)
+            return search
+
+        # if GPU available, try the real thing;
+        # else this should still set up the finalizer
+        # but without actually trying to run on GPU
+        try:
+            search = pyfstat.ComputeFstat(
+                **CFS_params,
+                tCWFstatMapVersion=tCWFstatMapVersion,
+                transientWindowType=transientWindowType,
+            )
+        except RuntimeError as e:
+            if "imports failed" in str(e):
+                pytest.skip("Optional imports failed, skipping actual pycuda test.")
+            else:
+                raise
+        print(search)
+        # finalizer should be alive
+        self.assertTrue(search._finalizer is not None)
+        self.assertTrue(search._finalizer.alive)
+        # try to actually do something
+        detstat = search.get_fullycoherent_detstat(**lambda_params)
+        self.assertTrue(detstat > 0)
+        return search
+
+    def test_context_finalizer_lal(self):
+        self._test_context_finalizer(tCWFstatMapVersion="lal", transientWindowType=None)
+
+    def test_context_finalizer_pycuda_but_not_really_manualkill(self):
+        search = self._test_context_finalizer(
+            tCWFstatMapVersion="pycuda", transientWindowType=None
         )
-        # GPU case, finalizer should be alive
-        self.assertTrue(search_gpu._finalizer is not None)
-        self.assertTrue(search_gpu._finalizer.alive)
-        # print(search_gpu.gpu_context)
-        # Calling finalizer should kill it
-        search_gpu._finalizer()
-        self.assertFalse(search_gpu._finalizer.alive)
-        # print(search_gpu.gpu_context)
+        # calling finalizer manually should kill it
+        search._finalizer()
+        self.assertFalse(search._finalizer.alive)
+
+    def test_context_finalizer_pycuda_but_not_really_garbagecollect(self):
+        self._test_context_finalizer(
+            tCWFstatMapVersion="pycuda", transientWindowType=None
+        )
+        # done, let garbage collection do the finalizing
+
+    def test_context_finalizer_pycuda_for_real_manualkill(self):
+        search = self._test_context_finalizer(
+            tCWFstatMapVersion="pycuda", transientWindowType="rect"
+        )
+        # calling finalizer manually should kill it
+        search._finalizer()
+        self.assertFalse(search._finalizer.alive)
+
+    # @pytest.mark.skip
+    def test_context_finalizer_pycuda_for_real_garbagecollect(self):
+        self._test_context_finalizer(
+            tCWFstatMapVersion="pycuda", transientWindowType="rect"
+        )
+        # done, let garbage collection do the finalizing
 
 
 class TestComputeFstatNoNoise(BaseForTestsWithData):
