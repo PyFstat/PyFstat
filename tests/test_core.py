@@ -625,6 +625,70 @@ class TestComputeFstat(BaseForTestsWithData):
         self.assertTrue(reldiffend < 0.25)
 
 
+@pytest.mark.parametrize("tCWFstatMapVersion", ["lal", "pycuda"])
+@pytest.mark.parametrize("transientWindowType", [None, "rect"])
+@pytest.mark.parametrize("cleanup", ["no", "manual", "contextmanager"])
+def test_context_finalizer(tCWFstatMapVersion, transientWindowType, cleanup):
+    CFS_params = {
+        "tref": default_Writer_params["tstart"],
+        "minStartTime": default_Writer_params["tstart"],
+        "maxStartTime": default_Writer_params["tstart"]
+        + default_Writer_params["duration"],
+        "detectors": default_Writer_params["detectors"],
+        "injectSqrtSX": default_Writer_params["sqrtSX"],
+        "minCoverFreq": default_signal_params["F0"] - 0.1,
+        "maxCoverFreq": default_signal_params["F0"] + 0.1,
+    }
+    lambda_params = {
+        "F0": default_signal_params["F0"],
+        "F1": default_signal_params["F1"],
+        "F2": default_signal_params["F2"],
+        "Alpha": default_signal_params["Alpha"],
+        "Delta": default_signal_params["Delta"],
+    }
+
+    if "cuda" not in tCWFstatMapVersion:
+        search = pyfstat.ComputeFstat(
+            **CFS_params,
+            tCWFstatMapVersion="lal",
+        )
+        assert search._finalizer is None
+        return
+
+    # if GPU available, try the real thing;
+    # else this should still set up the finalizer
+    # but without actually trying to run on GPU
+    have_pycuda = pyfstat.tcw_fstat_map_funcs._optional_imports_pycuda()
+    if have_pycuda:
+        if cleanup == "no":
+            pytest.skip("This case might work but will sabotage others.")
+    else:
+        pytest.skip("Optional imports failed, skipping actual pycuda test.")
+    if cleanup == "contextmanager":
+        with pyfstat.ComputeFstat(
+            **CFS_params,
+            tCWFstatMapVersion=tCWFstatMapVersion,
+            transientWindowType=transientWindowType,
+        ) as search:
+            assert search._finalizer is not None
+            assert search._finalizer.alive
+            detstat = search.get_fullycoherent_detstat(**lambda_params)
+    else:
+        search = pyfstat.ComputeFstat(
+            **CFS_params,
+            tCWFstatMapVersion=tCWFstatMapVersion,
+            transientWindowType=transientWindowType,
+        )
+        assert search._finalizer is not None
+        assert search._finalizer.alive
+        detstat = search.get_fullycoherent_detstat(**lambda_params)
+        if cleanup == "manual":
+            # calling finalizer manually should kill it
+            search._finalizer()
+            assert not search._finalizer.alive
+    assert detstat > 0
+
+
 class TestComputeFstatNoNoise(BaseForTestsWithData):
     # FIXME: should be possible to merge into TestComputeFstat with smart
     # defaults handlingf

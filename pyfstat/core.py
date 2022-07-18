@@ -8,6 +8,7 @@ import os
 import socket
 from datetime import datetime
 from pprint import pformat
+from weakref import finalize
 
 import lal
 import lalpulsar
@@ -246,6 +247,24 @@ class ComputeFstat(BaseSearchClass):
     See `get_fullycoherent_detstat()` and `get_transient_detstats()` for details.
     To change what you want to compute,
     you may need to initialise a new instance with different options.
+
+    NOTE for GPU users (`tCWFstatMapVersion="pycuda"`):
+    This class tries to conveniently deal with GPU context management behind the scenes.
+    A known problematic case is if you try to instantiate it twice from the same
+    session/script. If you then get some messages like
+    `RuntimeError: make_default_context()`
+    and `invalid device context`,
+    that is because the GPU is still blocked from the first instance when
+    you try to initiate the second.
+    To avoid this problem, use context management::
+
+        with pyfstat.ComputeFstat(
+            [...],
+            tCWFstatMapVersion="pycuda",
+        ) as search:
+            search.get_fullycoherent_detstat([...])
+
+    or manually call the `search.finalizer_()` method where needed.
     """
 
     @helper_functions.initializer
@@ -416,12 +435,51 @@ class ComputeFstat(BaseSearchClass):
             [Default: what's hardcoded in XLALFstatMaximumSFTLength]
         """
 
+        self._setup_finalizer()
         self._set_init_params_dict(locals())
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.init_computefstatistic()
         self.output_file_header = self.get_output_file_header()
         self.get_det_stat = self.get_fullycoherent_detstat
         self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
+
+    def _setup_finalizer(self):
+        """
+        Setup for proper cleanup at end of context in pycuda case.
+
+        Users should normally *not* have to call self._finalizer() manually:
+        the `finalize` call is enough to set up python garbage collection,
+        and we only store it as an attribute for debugging/testing purposes.
+
+        However, if one wants to initialise two or more of these objects from
+        a single script, one has to manually clean up after each one by either
+        using context management or calling the `.finalizer_()` method.
+        """
+        if "cuda" in self.tCWFstatMapVersion:
+            logging.debug(
+                f"Setting up GPU context finalizer for {self.tCWFstatMapVersion} transient maps."
+            )
+            self._finalizer = finalize(self, self._finalize_gpu_context)
+        else:
+            self._finalizer = None
+
+    def _finalize_gpu_context(self):
+        """Clean up at the end of context manager style usage."""
+        logging.debug("Leaving the ComputeFStat context...")
+        if hasattr(self, "gpu_context") and self.gpu_context:
+            logging.debug("Detaching GPU context...")
+            # this is needed because we use pyCuda without autoinit
+            self.gpu_context.detach()
+
+    def __enter__(self):
+        """Enables context manager style calling."""
+        logging.debug("Entering the ComputeFstat context...")
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        """Clean up at the end of context manager style usage."""
+        logging.debug("Leaving the ComputeFStat context...")
+        self._finalizer()
 
     def _get_SFTCatalog(self):
         """Load the SFTCatalog
@@ -1660,11 +1718,6 @@ class ComputeFstat(BaseSearchClass):
             raise RuntimeError(
                 "Cannot print atoms vector to file: no FstatResults.multiFatoms, or it is None!"
             )
-
-    def __del__(self):
-        """In pyCuda case without autoinit, make sure the context is removed at the end."""
-        if hasattr(self, "gpu_context") and self.gpu_context:
-            self.gpu_context.detach()
 
 
 class SemiCoherentSearch(ComputeFstat):
