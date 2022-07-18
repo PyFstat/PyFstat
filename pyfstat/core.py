@@ -511,16 +511,11 @@ class ComputeFstat(BaseSearchClass):
             except ImportError:
                 pass
 
-        cl_tconv1 = "lalapps_tconvert {}".format(int(SFT_timestamps[0]))
-        output = helper_functions.run_commandline(cl_tconv1, log_level=logging.DEBUG)
-        tconvert1 = output.rstrip("\n")
-        cl_tconv2 = "lalapps_tconvert {}".format(int(SFT_timestamps[-1]))
-        output = helper_functions.run_commandline(cl_tconv2, log_level=logging.DEBUG)
-        tconvert2 = output.rstrip("\n")
+        dtstr1 = helper_functions.gps_to_datestr_utc(int(SFT_timestamps[0]))
+        dtstr2 = helper_functions.gps_to_datestr_utc(int(SFT_timestamps[-1]))
         logging.info(
-            "Data contains SFT timestamps from {} ({}) to (including) {} ({})".format(
-                int(SFT_timestamps[0]), tconvert1, int(SFT_timestamps[-1]), tconvert2
-            )
+            f"Data contains SFT timestamps from {SFT_timestamps[0]} ({dtstr1})"
+            f" to (including) {SFT_timestamps[-1]} ({dtstr2})."
         )
 
         if self.minStartTime is None:
