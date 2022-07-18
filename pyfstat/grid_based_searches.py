@@ -858,6 +858,25 @@ class TransientGridSearch(GridSearch):
     https://arxiv.org/abs/1805.05652
     for a detailed discussion of the GPU implementation.
 
+    NOTE for GPU users (`tCWFstatMapVersion="pycuda"`):
+    The underlying `ComputeFstat` class tries to
+    conveniently deal with GPU context management behind the scenes.
+    A known problematic case is if you try to instantiate it twice from the same
+    session/script. If you then get some messages like
+    `RuntimeError: make_default_context()`
+    and `invalid device context`,
+    that is because the GPU is still blocked from the first instance when
+    you try to initiate the second.
+    To avoid this problem, use context management::
+
+        with pyfstat.TransientGridSearch(
+            [...],
+            tCWFstatMapVersion="pycuda",
+        ) as search:
+            search.search.run()
+
+    or manually call the `search.search.finalizer_()` method where needed.
+
     Most parameters are the same as for `GridSearch`
     and the `core.ComputeFstat` class,
     only the additional ones are documented here:
@@ -963,6 +982,15 @@ class TransientGridSearch(GridSearch):
                 "Will save per-Doppler Fstatmap"
                 " results to {}*.dat".format(self.tCWfilebase)
             )
+
+    def __enter__(self):
+        logging.debug("Entering the TransientGridSearch context...")
+        self.search.__enter__()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        logging.debug("Leaving the TransientGridSearch context...")
+        self.search.__exit__(*args, **kwargs)
 
     def _set_output_keys(self):
         self.output_keys = self.search_keys.copy()

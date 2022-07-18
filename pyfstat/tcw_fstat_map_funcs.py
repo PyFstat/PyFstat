@@ -248,6 +248,22 @@ being available.
 """
 
 
+def _optional_imports_pycuda():
+    """Helper function to check for all all modules we need."""
+    have_pycuda = _optional_import("pycuda")
+    have_pycuda_drv = _optional_import("pycuda.driver", "drv")
+    have_pycuda_gpuarray = _optional_import("pycuda.gpuarray", "gpuarray")
+    have_pycuda_tools = _optional_import("pycuda.tools", "cudatools")
+    have_pycuda_compiler = _optional_import("pycuda.compiler", "cudacomp")
+    return (
+        have_pycuda
+        and have_pycuda_drv
+        and have_pycuda_gpuarray
+        and have_pycuda_tools
+        and have_pycuda_compiler
+    )
+
+
 def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
     """Initialization of available modules (or 'features') for computing transient F-stat maps.
 
@@ -279,25 +295,10 @@ def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
     """
 
     features = {}
-
     have_lal = _optional_import("lal")
     have_lalpulsar = _optional_import("lalpulsar")
     features["lal"] = have_lal and have_lalpulsar
-
-    # import GPU features
-    have_pycuda = _optional_import("pycuda")
-    have_pycuda_drv = _optional_import("pycuda.driver", "drv")
-    have_pycuda_gpuarray = _optional_import("pycuda.gpuarray", "gpuarray")
-    have_pycuda_tools = _optional_import("pycuda.tools", "cudatools")
-    have_pycuda_compiler = _optional_import("pycuda.compiler", "cudacomp")
-    features["pycuda"] = (
-        have_pycuda
-        and have_pycuda_drv
-        and have_pycuda_gpuarray
-        and have_pycuda_tools
-        and have_pycuda_compiler
-    )
-
+    features["pycuda"] = _optional_imports_pycuda()
     logging.debug("Got the following features for transient F-stat maps:")
     logging.debug(features)
 

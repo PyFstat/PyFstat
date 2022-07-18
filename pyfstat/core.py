@@ -247,6 +247,24 @@ class ComputeFstat(BaseSearchClass):
     See `get_fullycoherent_detstat()` and `get_transient_detstats()` for details.
     To change what you want to compute,
     you may need to initialise a new instance with different options.
+
+    NOTE for GPU users (`tCWFstatMapVersion="pycuda"`):
+    This class tries to conveniently deal with GPU context management behind the scenes.
+    A known problematic case is if you try to instantiate it twice from the same
+    session/script. If you then get some messages like
+    `RuntimeError: make_default_context()`
+    and `invalid device context`,
+    that is because the GPU is still blocked from the first instance when
+    you try to initiate the second.
+    To avoid this problem, use context management::
+
+        with pyfstat.ComputeFstat(
+            [...],
+            tCWFstatMapVersion="pycuda",
+        ) as search:
+            search.get_fullycoherent_detstat([...])
+
+    or manually call the `search.finalizer_()` method where needed.
     """
 
     @helper_functions.initializer
@@ -432,6 +450,10 @@ class ComputeFstat(BaseSearchClass):
         Users should normally *not* have to call self._finalizer() manually:
         the `finalize` call is enough to set up python garbage collection,
         and we only store it as an attribute for debugging/testing purposes.
+
+        However, if one wants to initialise two or more of these objects from
+        a single script, one has to manually clean up after each one by either
+        using context management or calling the `.finalizer_()` method.
         """
         if "cuda" in self.tCWFstatMapVersion:
             logging.debug(
@@ -448,6 +470,16 @@ class ComputeFstat(BaseSearchClass):
             logging.debug("Detaching GPU context...")
             # this is needed because we use pyCuda without autoinit
             self.gpu_context.detach()
+
+    def __enter__(self):
+        """Enables context manager style calling."""
+        logging.debug("Entering the ComputeFstat context...")
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        """Clean up at the end of context manager style usage."""
+        logging.debug("Leaving the ComputeFStat context...")
+        self._finalizer()
 
     def _get_SFTCatalog(self):
         """Load the SFTCatalog
