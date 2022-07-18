@@ -1,3 +1,22 @@
+## 1.16.0 [??/??/2022]
+
+ - include local versions of autocorr functions from `ptemcee`
+   to restore compatibility with `numpy>=1.23.0`
+ - `Writer`: remove deprecated `timestampsFiles` option,
+   please use the more general `timestamps` instead
+ - added `BtSG` option to transient searches
+   (transient Bayes factor from PGM2011)
+ - `pyTransientFstatMap` is now available via `import pyfstat`
+ - some refactoring of internal detection statistics functions
+ - use of `lalapps_tconvert` replaced by new `gps_to_datestr_utc()` helper function
+   (which uses `XLALGPSToUTC` and `datetime`)
+ - fix CUDA context detaching at garbage collection time for
+   `ComputeFstat` and `TransientGridSearch` classes
+   - using `weakref`
+   - should not require any caller code changes in standard use cases
+   - but if user wants to initiate more than one such object from one session/script,
+     these should be used in context manager style (`with ComputeFstat as` etc)
+
 ## 1.15.0 [27/06/2022]
 
  - pin `numpy<1.23.0` to work around `ptemcee` incompatibility
