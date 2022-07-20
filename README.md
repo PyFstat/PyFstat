@@ -14,8 +14,6 @@ and [citing](#citing-this-work) PyFstat.
 [examples](https://github.com/PyFstat/PyFstat/tree/master/examples), demonstrating different use cases.
 You can run them locally, or online as jupyter notebooks with
 [binder](https://mybinder.org/v2/gh/PyFstat/PyFstat/master).
-* New contributors are encouraged to have a look into
-[how to set up a development environment](#contributing-to-pyfstat)
 * The [project wiki](https://github.com/PyFstat/PyFstat/wiki) is mainly used for developer information.
 * A [changelog](https://github.com/PyFstat/PyFstat/blob/master/CHANGELOG.md)
 is also available.
@@ -65,7 +63,8 @@ should give you the latest release version with all dependencies;
 recent releases now also include a sufficient minimal set of ephemerides files.
 
 If you are not installing into a [venv](https://docs.python.org/3/library/venv.html)
-or [conda environment](#conda-installation),
+or [conda environment](#conda-installation)
+(you really should!),
 on many systems you may need to use the `--user` flag.
 
 Note that the PyFstat installation will fail at the
@@ -227,22 +226,39 @@ for advice or just jump in and submit an
 [pull request](https://github.com/PyFstat/PyFstat/compare).
 
 Here's what you need to know:
+* As a developer, you should ideally install directly from a git clone,
+  with either `pip install -e .[dev]` into a venv
+  or creating a conda environment from the
+  [pyfstat-dev.yml file](https://github.com/PyFstat/PyFstat/blob/dev-cleanup/etc/pyfstat-dev.yml)
+  as explained on [this wiki page](https://github.com/PyFstat/PyFstat/wiki/conda-environments).
 * The github automated tests currently run on `python` [3.7,3.8,3.9,3.10]
   and new PRs need to pass all these.
-* The automated test also runs
+* You can also run the full test suite locally via `pytest tests/`,
+  or run individual tests as explained
+  [on this page](https://docs.pytest.org/en/6.2.x/usage.html#specifying-tests-selecting-tests).
+* The automated test on github also runs
   the [black](https://black.readthedocs.io) style checker,
   the [flake8](https://flake8.pycqa.org/en/latest/) linter,
   and the [isort](https://pycqa.github.io/isort/) import ordering helper.
-  If at all possible, please run these tools locally before pushing changes / submitting PRs:
+* If you have installed the dev dependencies correctly via pip or conda,
+  then you're ready to let the `pre-commit` tool do all of this automatically for you.
+  Just run once after installing:
+  ```
+  pre-commit install
+  ```
+
+  and then these checks will be automatically executed,
+  every time you do `git commit`.
+  For anything that would fail on the github integration tests,
+  it will then either automatically reformat your code to match our style
+  or print warnings for things to fix.
+  The first time it will take a while for setup,
+  later it should be faster.
+* If for some reason you can't use `pre-commit`,
+  you can still manually run these tools before pushing changes / submitting PRs:
   `isort .` to sort package imports,
   `flake8 --count --statistics .` to find common coding errors and then fix them manually,
   `black --check --diff .` to show the required style changes, or `black .` to automatically apply them.
-* `bin/setup-dev-tools.sh` gets your virtual environment ready for you. After making sure you are
-using a virtual environment (venv or conda),
-it installs `black`, `flake8`, `pre-commit`, `pytest`, `wheel` via `pip` and uses `pre-commit` to run
-`isort`, `black`, `flake8` and other pre-commit hooks
-to automatically reformat your code to match our style
-and/or get warnings for things to fix that would fail on the github integration tests.
 
 ## Contributors
 
