@@ -508,27 +508,36 @@ def reshape_FstatAtomsVector(atomsVector):
 
     numAtoms = atomsVector.length
     atomsDict = {}
-    atom_fieldnames = [
-        "timestamp",
-        "Fa_alpha",
-        "Fb_alpha",
-        "a2_alpha",
-        "ab_alpha",
-        "b2_alpha",
+    tempDict = {}
+    atom_fields = [
+        ("timestamp", np.uint32),
+        ("a2_alpha", np.float32),
+        ("b2_alpha", np.float32),
+        ("ab_alpha", np.float32),
+        ("Fa_alpha", complex),
+        ("Fb_alpha", complex),
     ]
-    atom_dtypes = [np.uint32, complex, complex, np.float32, np.float32, np.float32]
-    for f, field in enumerate(atom_fieldnames):
-        atomsDict[field] = np.ndarray(numAtoms, dtype=atom_dtypes[f])
-
+    for dtype in atom_fields:
+        if dtype[1] == complex:
+            for part in "re", "im":
+                atomsDict[dtype[0] + "_" + part] = np.ndarray(
+                    numAtoms, dtype=np.float32
+                )
+            tempDict[dtype[0]] = np.ndarray(numAtoms, dtype=complex)
+        else:
+            atomsDict[dtype[0]] = np.ndarray(numAtoms, dtype=dtype[1])
     for n, atom in enumerate(atomsVector.data):
-        for field in atom_fieldnames:
-            atomsDict[field][n] = atom.__getattribute__(field)
-
-    atomsDict["Fa_alpha_re"] = np.float32(atomsDict["Fa_alpha"].real)
-    atomsDict["Fa_alpha_im"] = np.float32(atomsDict["Fa_alpha"].imag)
-    atomsDict["Fb_alpha_re"] = np.float32(atomsDict["Fb_alpha"].real)
-    atomsDict["Fb_alpha_im"] = np.float32(atomsDict["Fb_alpha"].imag)
-
+        for dtype in atom_fields:
+            if dtype[1] == complex:
+                tempDict[dtype[0]][n] = atom.__getattribute__(dtype[0])
+            else:
+                atomsDict[dtype[0]][n] = atom.__getattribute__(dtype[0])
+    for dtype in atom_fields:
+        if dtype[1] == complex:
+            for part in "real", "imag":
+                atomsDict[dtype[0] + "_" + part[:2]] = np.float32(
+                    getattr(tempDict[dtype[0]], part)
+                )
     return atomsDict
 
 
