@@ -1,7 +1,5 @@
 name: pyfstat
 channels:
     - conda-forge
-    - defaults
 dependencies:
     - pyfstat
-    - pip
