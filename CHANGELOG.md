@@ -1,4 +1,4 @@
-## 1.16.0 [??/??/2022]
+## 1.16.0 [25/07/2022]
 
  - include local versions of autocorr functions from `ptemcee`
    to restore compatibility with `numpy>=1.23.0`
@@ -16,6 +16,9 @@
    - should not require any caller code changes in standard use cases
    - but if user wants to initiate more than one such object from one session/script,
      these should be used in context manager style (`with ComputeFstat as` etc)
+ - remove redundant complex entries from output of `tcw_fstat_map_funcs.reshape_FstatAtomsVector()`
+ - streamline installation instructions for developers
+   and remove single-use helper bash scripts
 
 ## 1.15.0 [27/06/2022]
 
