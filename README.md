@@ -226,11 +226,18 @@ for advice or just jump in and submit an
 [pull request](https://github.com/PyFstat/PyFstat/compare).
 
 Here's what you need to know:
-* As a developer, you should ideally install directly from a git clone,
-  with either `pip install -e .[dev]` into a venv
-  or creating a conda environment from the
-  [pyfstat-dev.yml file](https://github.com/PyFstat/PyFstat/blob/dev-cleanup/etc/pyfstat-dev.yml)
+* As a developer, you should install directly from a git clone,
+  with either `pip install -e .[dev]` into some environment
+  or creating a development-enabled conda environment directly from the
+  `pyfstat-dev.yml` file
   as explained on [this wiki page](https://github.com/PyFstat/PyFstat/wiki/conda-environments).
+  Please also run, just once after installing:
+  ```
+  pre-commit install
+  ```
+
+  This sets up everything for automated code quality tests (see below)
+  to be checked for you at every commit.
 * The github automated tests currently run on `python` [3.7,3.8,3.9,3.10]
   and new PRs need to pass all these.
 * You can also run the full test suite locally via `pytest tests/`,
@@ -241,13 +248,8 @@ Here's what you need to know:
   the [flake8](https://flake8.pycqa.org/en/latest/) linter,
   and the [isort](https://pycqa.github.io/isort/) import ordering helper.
 * If you have installed the dev dependencies correctly via pip or conda,
-  then you're ready to let the `pre-commit` tool do all of this automatically for you.
-  Just run once after installing:
-  ```
-  pre-commit install
-  ```
-
-  and then these checks will be automatically executed,
+  and ran `pre-commit install` once,
+  then you're ready to let the `pre-commit` tool do all of this automatically for you
   every time you do `git commit`.
   For anything that would fail on the github integration tests,
   it will then either automatically reformat your code to match our style
