@@ -4,7 +4,7 @@ channels:
   - conda-forge
 
 dependencies:
-  - pip
+  - python >=3.7
   - numpy
   - matplotlib-base >=2.1
   - scipy
@@ -18,5 +18,6 @@ dependencies:
   - python-lal >=7.1.5
   - python-lalpulsar >=3.1.1
   - lalapps >=7.4.0
-  - pytest
-  - flaky
+  - pip
+  - pip:
+    - -e ../[dev]
