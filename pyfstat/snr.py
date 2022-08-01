@@ -99,7 +99,7 @@ class SignalToNoiseRatio:
             Defaults to LALSuite's default of using the central time of an STF (SFT's timestamp + Tsft/2).
         running_median_window: int
             Window used to compute the running-median noise floor estimation.
-            Default value is consistent with that used in lalapps_PredictFstat.
+            Default value is consistent with that used in PredictFstat executable.
         sft_constraint: lalpulsar.SFTConstraint
             Optional argument to specify further constraints in XLALSFTdataFind.
         """

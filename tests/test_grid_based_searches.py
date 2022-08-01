@@ -102,7 +102,7 @@ class TestGridSearch(BaseForTestsWithData):
         CFSv2_out_file = os.path.join(self.outdir, "CFSv2_Fstat_out.txt")
         CFSv2_loudest_file = os.path.join(self.outdir, "CFSv2_Fstat_loudest.txt")
         cl_CFSv2 = []
-        cl_CFSv2.append("lalapps_ComputeFstatistic_v2")
+        cl_CFSv2.append(pyfstat.helper_functions.get_lal_exec("ComputeFstatistic_v2"))
         cl_CFSv2.append("--Alpha {} --AlphaBand 0".format(self.Alpha))
         cl_CFSv2.append("--Delta {} --DeltaBand 0".format(self.Delta))
         cl_CFSv2.append("--Freq {}".format(self.F0s[0]))
@@ -114,7 +114,7 @@ class TestGridSearch(BaseForTestsWithData):
         cl_CFSv2.append("--outputFstat " + CFSv2_out_file)
         cl_CFSv2.append("--outputLoudest " + CFSv2_loudest_file)
         # to match ComputeFstat default (and hence PyFstat) defaults on older
-        # lalapps_CFSv2 versions, set the RngMedWindow manually:
+        # CFSv2 versions, set the RngMedWindow manually:
         cl_CFSv2.append("--RngMedWindow=101")
         cl_CFSv2 = " ".join(cl_CFSv2)
         pyfstat.helper_functions.run_commandline(cl_CFSv2)

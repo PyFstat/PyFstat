@@ -2111,7 +2111,7 @@ class MCMCSearch(BaseSearchClass):
                     f.write("{} = {:1.16e}\n".format(key, val))
 
     def generate_loudest(self):
-        """Use lalapps_ComputeFstatistic_v2 to produce a .loudest file"""
+        """Use ComputeFstatistic_v2 executable to produce a .loudest file"""
         max_params, max_twoF = self.get_max_twoF()
         for key in self.theta_prior:
             if key not in max_params:

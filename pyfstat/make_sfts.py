@@ -26,13 +26,13 @@ class Writer(BaseSearchClass):
     Existing SFTs (real data or previously simulated) can also be reused through
     the `noiseSFTs` option, allowing to 'inject' additional signals into them.
 
-    This class currently relies on the `lalapps_Makefakedata_v5` executable
+    This class currently relies on the `Makefakedata_v5` executable
     which will be run in a subprocess.
     See `lalapps_Makefakedata_v5 --help`
     for more detailed help with some of the parameters.
     """
 
-    mfd = "lalapps_Makefakedata_v5"
+    mfd = helper_functions.get_lal_exec("Makefakedata_v5")
     """The executable; can be overridden by child classes."""
 
     signal_parameter_labels = [
@@ -640,7 +640,7 @@ class Writer(BaseSearchClass):
         # matching CLs
         for sftfile in self.sftfilenames:
             catalog = lalpulsar.SFTdataFind(sftfile, None)
-            cl_old = helper_functions.get_lalapps_commandline_from_SFTDescriptor(
+            cl_old = helper_functions.get_commandline_from_SFTDescriptor(
                 catalog.data[0]
             )
             if len(cl_old) == 0:
@@ -706,7 +706,7 @@ class Writer(BaseSearchClass):
         self.run_makefakedata()
 
     def run_makefakedata(self):
-        """Generate the SFT data calling lalapps_Makefakedata_v5.
+        """Generate the SFT data calling Makefakedata_v5 executable.
 
         This first builds the full commandline,
         then calls `check_cached_data_okay_to_use()`
@@ -793,7 +793,7 @@ class Writer(BaseSearchClass):
         """Predict the expected F-statistic value for the injection parameters.
 
         Through helper_functions.predict_fstat(), this wraps
-        the lalapps_PredictFstat executable.
+        the PredictFstat executable.
 
         Parameters
         ----------
@@ -922,13 +922,13 @@ class LineWriter(Writer):
 
     In practice, it corresponds to a CW without Doppler or antenna-patern-induced amplitude modulation.
 
-    NOTE: This functionality is implemented via `lalapps_MakeFakeData_v4`'s `lineFeature` option.
+    NOTE: This functionality is implemented via `Makefakedata_v4`'s `lineFeature` option.
     This version of MFD only supports one interferometer at a time.
 
     NOTE: All signal parameters except for `h0`, `Freq`, `phi0` and transient parameters will be ignored.
     """
 
-    mfd = "lalapps_Makefakedata_v4"
+    mfd = helper_functions.get_lal_exec("Makefakedata_v4")
     """The executable (older version that supports the `--lineFeature` option)."""
 
     required_signal_parameters = [
@@ -951,10 +951,10 @@ class LineWriter(Writer):
         super().__init__(*args, **kwargs)
 
         if self.detectors is None:
-            raise ValueError("MakeFakeData_v4 requires detector name to be given")
+            raise ValueError("Makefakedata_v4 requires detector name to be given")
         elif len(self.detectors.split(",")) > 1:
             raise NotImplementedError(
-                "MakeFakeData_v4 does not support more than one detector at a time. "
+                "Makefakedata_v4 does not support more than one detector at a time. "
                 "Multi-detector behaviour can be reproduced by calling the procedure "
                 "on single-detector SFT sets once at a time."
             )
@@ -1004,7 +1004,7 @@ class LineWriter(Writer):
             )
 
     def _build_MFD_command_line(self):
-        """Generate the SFT data calling lalapps_Makefakedata_v4."""
+        """Generate the SFT data calling Makefakedata_v4."""
 
         cl_mfd = [self.mfd]
 
@@ -1306,7 +1306,7 @@ class FrequencyModulatedArtifactWriter(Writer):
     """Specialized Writer variant to generate SFTs containing simulated instrumental artifacts.
 
     Contrary to the main `Writer` class, this calls the older
-    `lalapps_Makefakedata_v4` executable which supports the special `--lineFeature` option.
+    `Makefakedata_v4` executable which supports the special `--lineFeature` option.
     See `lalapps_Makefakedata_v4 --help`
     for more detailed help with some of the parameters.
     """
@@ -1507,7 +1507,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         return self.h0
 
     def concatenate_sft_files(self):
-        """Merges the individual SFT files via lalapps_splitSFTs executable."""
+        """Merges the individual SFT files via splitSFTs executable."""
 
         SFTFilename = (
             f"{self.detectors[0]}-{self.nsfts}_{self.detectors}_{self.Tsft}SFT"
@@ -1533,7 +1533,8 @@ class FrequencyModulatedArtifactWriter(Writer):
                 helper_functions.run_commandline(f"rm {f}")
 
         inpattern = os.path.join(self.tmp_outdir, "*sft")
-        cl_splitSFTS = "lalapps_splitSFTs -fs {} -fb {} -fe {} -n {} -- {}".format(
+        cl_splitSFTS = helper_functions.get_lal_exec("splitSFTs")
+        cl_splitSFTS += " -fs {} -fb {} -fe {} -n {} -- {}".format(
             self.fmin, self.Band, self.fmin + self.Band, self.outdir, inpattern
         )
         helper_functions.run_commandline(cl_splitSFTS)
@@ -1637,7 +1638,7 @@ class FrequencyModulatedArtifactWriter(Writer):
     def run_makefakedata_v4(self, mid_time, lineFreq, linePhi, h0, tmp_outdir):
         """Generate SFT data using the MFDv4 code with the --lineFeature option."""
         cl_mfd = []
-        cl_mfd.append("lalapps_Makefakedata_v4")
+        cl_mfd.append(helper_functions.get_lal_exec("Makefakedata_v4"))
         cl_mfd.append("--outSingleSFT=FALSE")
         cl_mfd.append('--outSFTbname="{}"'.format(tmp_outdir))
         cl_mfd.append("--IFO={}".format(self.detectors))
