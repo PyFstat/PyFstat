@@ -652,8 +652,11 @@ class Writer(BaseSearchClass):
             if not helper_functions.match_commandlines(cl_old, cl_mfd):
                 logging.info(
                     "......commandlines unmatched for first SFT in old"
-                    " file '{}'. {}".format(sftfile, need_new)
+                    " file '{}':".format(sftfile)
                 )
+                logging.info(cl_old)
+                logging.info(cl_mfd)
+                logging.info(need_new)
                 return False
         logging.info("......OK: Commandline matched with old SFT header(s).")
         logging.info(
