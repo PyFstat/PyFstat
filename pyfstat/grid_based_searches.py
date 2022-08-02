@@ -783,7 +783,7 @@ class GridSearch(BaseSearchClass):
             print("  {}={}".format(k, v))
 
     def generate_loudest(self):
-        """Use lalapps_ComputeFstatistic_v2 to produce a .loudest file"""
+        """Use ComputeFstatistic_v2 executable to produce a .loudest file"""
         max_params = self.get_max_twoF()
         max_params.pop("twoF")
         max_params = self.translate_keys_to_lal(max_params)

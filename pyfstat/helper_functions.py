@@ -666,7 +666,7 @@ def get_doppler_params_output_format(keys):
 
     This uses the same format (`%.16g`) as
     the `write_FstatCandidate_to_fp()` function of
-    `lalapps_ComputeFstatistic_v2`.
+    the `ComputeFstatistic_v2` executable.
 
     This assigns that format to each parameter name in `keys`
     which matches a hardcoded list of known standard 'Doppler' parameters,
@@ -740,10 +740,10 @@ def read_txt_file_with_header(f, names=True, comments="#"):
     return data
 
 
-def get_lalapps_commandline_from_SFTDescriptor(descriptor):
-    """Extract a lalapps commandline from the 'comment' entry of a SFT descriptor.
+def get_commandline_from_SFTDescriptor(descriptor):
+    """Extract a commandline from the 'comment' entry of a SFT descriptor.
 
-    Most SFT creation tools save their commandline into that entry,
+    Most LALSuite SFT creation tools save their commandline into that entry,
     so we can extract it and reuse it to reproduce that data.
 
     Parameters
@@ -754,8 +754,8 @@ def get_lalapps_commandline_from_SFTDescriptor(descriptor):
     Returns
     -------
     cmd: str
-        A lalapps commandline string,
-        or an empty string if 'lalapps' not found in comment.
+        A lalapps/lalpulsar commandline string,
+        or an empty string if no match in comment.
     """
     comment = getattr(descriptor, "comment", None)
     if comment is None:
@@ -763,7 +763,9 @@ def get_lalapps_commandline_from_SFTDescriptor(descriptor):
     comment_lines = comment.split("\n")
     # get the first line with the right substring
     # (iterate until it's found)
-    return next((line for line in comment_lines if "lalapps" in line), "")
+    return next(
+        (line for line in comment_lines if "lalpulsar" in line or "lalapps" in line), ""
+    )
 
 
 def read_parameters_dict_lines_from_file_header(
@@ -890,7 +892,7 @@ def read_par(
     Notes
     -----
     This can also be used to read in `.loudest` files
-    produced by `lalapps_ComputeFstatistic_v2`,
+    produced by the `ComputeFstatistic_v2` executable,
     or any file which has rows of `key=val` data
     (in which the val can be understood using `eval(val)`).
 
@@ -1027,7 +1029,7 @@ def predict_fstat(
     transientStartTime=None,
     transientTau=None,
 ):
-    """Wrapper to lalapps_PredictFstat for predicting expected F-stat values.
+    """Wrapper to PredictFstat executable for predicting expected F-stat values.
 
     Parameters
     ----------
@@ -1061,7 +1063,7 @@ def predict_fstat(
         Required if `sftfilepattern=None`,
         optional otherwise..
     tempory_filename : str
-        Temporary file used for `lalapps_PredictFstat` output,
+        Temporary file used for `PredictFstat` output,
         will be deleted at the end.
     earth_ephem, sun_ephem : str or None
         Ephemerides files, defaults will be used if `None`.
@@ -1080,7 +1082,7 @@ def predict_fstat(
     """
 
     cl_pfs = []
-    cl_pfs.append("lalapps_PredictFstat")
+    cl_pfs.append(get_lal_exec("PredictFstat"))
 
     pars = {"h0": h0, "cosi": cosi, "psi": psi, "Alpha": Alpha, "Delta": Delta}
     cl_pfs.extend([f"--{key}={val}" for key, val in pars.items() if val is not None])
@@ -1181,7 +1183,7 @@ def generate_loudest_file(
     earth_ephem=None,
     sun_ephem=None,
 ):
-    """Use lalapps_ComputeFstatistic_v2 to produce a .loudest file.
+    """Use ComputeFstatistic_v2 executable to produce a .loudest file.
 
     Parameters
     -------
@@ -1224,7 +1226,7 @@ def generate_loudest_file(
         )
 
     loudest_file = os.path.join(outdir, label + ".loudest")
-    cmd = "lalapps_ComputeFstatistic_v2 "
+    cmd = get_lal_exec("ComputeFstatistic_v2")
     CFSv2_params = {
         "DataFiles": f'"{sftfilepattern}"',
         "outputLoudest": loudest_file,
@@ -1239,7 +1241,7 @@ def generate_loudest_file(
         "ephemSun": sun_ephem,
     }
     CFSv2_params.update({key: val for key, val in opt_params.items() if val})
-    cmd += " ".join([f"--{key}={val}" for key, val in CFSv2_params.items()])
+    cmd += " " + " ".join([f"--{key}={val}" for key, val in CFSv2_params.items()])
 
     run_commandline(cmd, return_output=False)
     return loudest_file
@@ -1277,3 +1279,28 @@ def gps_to_datestr_utc(gps):
         tzinfo=timezone.utc,
     )
     return dt.strftime("%c %Z")
+
+
+def get_lal_exec(cmd):
+    """Get a lalpulsar/lalapps executable name with the right prefix.
+
+    This is purely to allow for backwards compatibility while
+    https://git.ligo.org/lscsoft/lalsuite/-/merge_requests/1904/
+    has been merged to LALSuite master but not yet released.
+
+    Parameters
+    -------
+    cmd: str
+        Base executable name without lalapps/lalpulsar prefix.
+
+    Returns
+    -------
+    full_cmd: str
+        Full executable name with the right prefix.
+    """
+    full_cmd = shutil.which("lalpulsar_" + cmd) or shutil.which("lalapps_" + cmd)
+    if full_cmd is None:
+        raise RuntimeError(
+            f"Could not find either lalpulsar or lalapps version of command {cmd}."
+        )
+    return os.path.basename(full_cmd)
