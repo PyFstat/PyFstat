@@ -429,10 +429,19 @@ class DetectorStates:
         if isinstance(timestamps, dict):
 
             if detectors is not None:
-                raise ValueError("`timestamps`' keys are redundant with `detectors`. ")
+                raise ValueError("`timestamps`' keys are redundant with `detectors`.")
+            for ifo in timestamps:
+                try:
+                    lalpulsar.FindCWDetector(name=ifo, exactMatch=True)
+                except Exception:
+                    raise ValueError(
+                        "Invalid detector name in timestamps. "
+                        "Each key should contain a single detector, "
+                        "no comma-separated strings allowed."
+                    )
 
             logging.debug("Retrieving detectors from timestamps dictionary.")
-            detectors = list(timestamps.key())
+            detectors = list(timestamps.keys())
             timestamps = timestamps.values()
 
         elif detectors is not None:
