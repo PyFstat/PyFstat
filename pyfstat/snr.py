@@ -65,7 +65,7 @@ class SignalToNoiseRatio:
             )
 
         self.Tsft = self.detector_states.data[0].deltaT
-        if not have_noise_weights:
+        if have_sqrtSX:
             self.Sinv_Tsft = self.Tsft / self.assumeSqrtSX**2
         else:
             self.Sinv_Tsft = None
