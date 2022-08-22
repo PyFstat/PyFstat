@@ -435,7 +435,7 @@ class DetectorStates:
                     lalpulsar.FindCWDetector(name=ifo, exactMatch=True)
                 except Exception:
                     raise ValueError(
-                        "Invalid detector name in timestamps. "
+                        f"Invalid detector name {ifo} in timestamps. "
                         "Each key should contain a single detector, "
                         "no comma-separated strings allowed."
                     )
