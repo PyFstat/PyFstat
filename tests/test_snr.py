@@ -14,7 +14,7 @@ def data_parameters():
         "Tsft": 1800,
         "tstart": 700000000,
         "duration": 4 * 1800,
-        "detectors": "H1",
+        "detectors": "H1,L1",
         "SFTWindowType": "tukey",
         "SFTWindowBeta": 0.001,
         "randSeed": 42,
@@ -23,13 +23,14 @@ def data_parameters():
 
 @pytest.fixture
 def writer(data_parameters):
-    data_parameters["label"] = "Test"
-    data_parameters["outdir"] = "TestData/"
-    data_parameters["F0"] = 10.0
-    data_parameters["Band"] = 0.1
-    data_parameters["sqrtSX"] = 1e-23
+    extra_parameters = {}
+    extra_parameters["label"] = "Test"
+    extra_parameters["outdir"] = "TestData/"
+    extra_parameters["F0"] = 10.0
+    extra_parameters["Band"] = 0.1
+    extra_parameters["sqrtSX"] = 1e-23
 
-    this_writer = pyfstat.Writer(**data_parameters)
+    this_writer = pyfstat.Writer(**{**data_parameters, **extra_parameters})
     yield this_writer
     if os.path.isdir(this_writer.outdir):
         shutil.rmtree(this_writer.outdir)
@@ -55,6 +56,78 @@ def snr_object(data_parameters, multi_detector_states):
         detector_states=multi_detector_states,
         assumeSqrtSX=data_parameters["sqrtSX"],
     )
+
+
+def compare_detector_states_series(dss_0, dss_1):
+    """
+    Check timestamps, Tsft, detector name and time off-set
+    """
+    if dss_0.length != dss_1.length:
+        raise ValueError(
+            f"Detector states series' length don't match: {dss_0.length} vs. {dss_1.length}"
+        )
+    for attribute in ["length", "system", "deltaT"]:
+        attr_0 = getattr(dss_0, attribute)
+        attr_1 = getattr(dss_1, attribute)
+        if attr_0 != attr_1:
+            raise ValueError(
+                f"Attribute {attribute} doesn't match: {attr_0} vs. {attr_1}"
+            )
+
+    name_0 = dss_0.detector.frDetector.name
+    name_1 = dss_1.detector.frDetector.name
+    if name_0 != name_1:
+        raise ValueError(f"Detector names don't match: {name_0} vs. {name_1}")
+
+    for ind in range(dss_0.length):
+        ts_0 = dss_0.data[ind].tGPS
+        ts_1 = dss_1.data[ind].tGPS
+        if ts_0 != ts_1:
+            raise ValueError(f"Timetamps are not consistent: {ts_0} vs. {ts_1}")
+
+    return True
+
+
+def compare_multi_detector_states_series(mdss_0, mdss_1):
+    """
+    Loop over individual detector states series
+    """
+    if mdss_0.length != mdss_1.length:
+        raise ValueError(
+            f"Multi-detector states series' length don't match: {mdss_0.length} vs. {mdss_1.length}"
+        )
+    return all(
+        compare_detector_states_series(mdss_0.data[ifo], mdss_1.data[ifo])
+        for ifo in range(mdss_0.length)
+    )
+
+
+def test_DetectorStates(data_parameters, writer):
+
+    # Test that both input formats of timestamps work consistently
+    common_ts = writer.tstart + writer.Tsft * np.arange(writer.duration / writer.Tsft)
+    timestamp_options = [
+        {"detectors": "H1,L1", "timestamps": common_ts},
+        {"timestamps": {key: common_ts for key in ("H1", "L1")}},
+    ]
+
+    mds = [
+        pyfstat.DetectorStates().get_multi_detector_states(Tsft=writer.Tsft, **ts)
+        for ts in timestamp_options
+    ]
+    assert compare_multi_detector_states_series(*mds)
+
+    with pytest.raises(Exception):
+        pyfstat.DetectorStates().get_multi_detector_states(
+            Tsft=writer.Tsft, timestamps={"H1,L1": [0]}
+        )
+
+    # Test that SFT parsing also works consistently
+    writer.make_data()
+    from_sfts = pyfstat.DetectorStates().get_multi_detector_states_from_sfts(
+        writer.sftfilepath, central_frequency=writer.F0
+    )
+    assert compare_multi_detector_states_series(from_sfts, mds[0])
 
 
 def test_SignalToNoiseRatio(writer, multi_detector_states):

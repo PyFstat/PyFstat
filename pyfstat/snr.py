@@ -56,20 +56,19 @@ class SignalToNoiseRatio:
 
     def __attrs_post_init__(self):
 
-        self.Tsft = self.detector_states.data[0].deltaT
+        have_noise_weights = self.noise_weights is not None
+        have_sqrtSX = self.assumeSqrtSX is not None
 
-        # FIXME: There has to be a simpler logic for this
-        if self.noise_weights is None:
-            if self.assumeSqrtSX is not None:
-                self.Sinv_Tsft = self.Tsft / self.assumeSqrtSX**2
-            else:
-                raise ValueError(
-                    "Need either `assumeSqrtSX` or `noise_weights` to account for background noise"
-                )
-        elif self.assumeSqrtSX is not None:
+        if have_noise_weights == have_sqrtSX:
             raise ValueError(
-                "Need either `assumeSqrtSX` or `noise_weights` to account for background noise"
+                "Need either `assumeSqrtSX` or `noise_weights` to account for background noise."
             )
+
+        self.Tsft = self.detector_states.data[0].deltaT
+        if have_sqrtSX:
+            self.Sinv_Tsft = self.Tsft / self.assumeSqrtSX**2
+        else:
+            self.Sinv_Tsft = None
 
     @classmethod
     def from_sfts(
@@ -430,10 +429,19 @@ class DetectorStates:
         if isinstance(timestamps, dict):
 
             if detectors is not None:
-                raise ValueError("`timestamps`' keys are redundant with `detectors`. ")
+                raise ValueError("`timestamps`' keys are redundant with `detectors`.")
+            for ifo in timestamps:
+                try:
+                    lalpulsar.FindCWDetector(name=ifo, exactMatch=True)
+                except Exception:
+                    raise ValueError(
+                        f"Invalid detector name {ifo} in timestamps. "
+                        "Each key should contain a single detector, "
+                        "no comma-separated strings allowed."
+                    )
 
             logging.debug("Retrieving detectors from timestamps dictionary.")
-            detectors = list(timestamps.key())
+            detectors = list(timestamps.keys())
             timestamps = timestamps.values()
 
         elif detectors is not None:
