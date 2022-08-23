@@ -13,6 +13,7 @@ import pyfstat
 
 label = "PyFstat_example_semi_coherent_MCMC_search"
 outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 # Properties of the GW data
 data_parameters = {

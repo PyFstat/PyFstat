@@ -20,6 +20,7 @@ sky = False
 outdir = os.path.join(
     "PyFstat_example_data", "PyFstat_example_simple_mcmc_vs_grid_comparison"
 )
+logger = pyfstat.set_up_logger(label="mcmc_vs_grid", outdir=outdir)
 if sky:
     outdir += "AlphaDelta"
 

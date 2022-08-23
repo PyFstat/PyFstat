@@ -25,6 +25,9 @@ tCWFstatMapVersion = "lal"
 
 if __name__ == "__main__":
 
+    logger = pyfstat.set_up_logger(
+        label="short_transient_grid_search", outdir=data.outdir
+    )
     if not os.path.isdir(data.outdir) or not np.any(
         [f.endswith(".sft") for f in os.listdir(data.outdir)]
     ):

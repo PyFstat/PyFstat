@@ -16,6 +16,7 @@ import pyfstat
 
 label = "PyFstat_example_grid_search_BSGL"
 outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 F0 = 30.0
 F1 = 0

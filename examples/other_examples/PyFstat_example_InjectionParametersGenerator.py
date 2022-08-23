@@ -14,10 +14,12 @@ from pyfstat import (
     AllSkyInjectionParametersGenerator,
     InjectionParametersGenerator,
     Writer,
+    set_up_logger,
 )
 
 label = "PyFstat_example_InjectionParametersGenerator"
 outdir = os.path.join("PyFstat_example_data", label)
+logger = set_up_logger(label=label, outdir=outdir)
 
 # Properties of the GW data
 gw_data = {
