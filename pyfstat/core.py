@@ -19,11 +19,13 @@ import scipy.special
 import pyfstat.helper_functions as helper_functions
 import pyfstat.tcw_fstat_map_funcs as tcw
 
+logger = logging.getLogger(__name__)
+
 # workaround for matplotlib on X-less remote logins
 if "DISPLAY" in os.environ:
     import matplotlib.pyplot as plt
 else:
-    logging.info(
+    logger.info(
         'No $DISPLAY environment variable found, so importing \
                   matplotlib.pyplot with non-interactive "Agg" backend.'
     )
@@ -33,7 +35,6 @@ else:
     import matplotlib.pyplot as plt
 
 helper_functions.set_up_matplotlib_defaults()
-args = helper_functions.set_up_command_line_arguments()
 detector_colors = {"h1": "C0", "l1": "C1"}
 
 
@@ -46,25 +47,9 @@ class BaseSearchClass:
     """
 
     def __new__(cls, *args, **kwargs):
-        logging.info(f"Creating {cls.__name__} object...")
+        logger.info(f"Creating {cls.__name__} object...")
         instance = super().__new__(cls)
         return instance
-
-    def _add_log_file(self, header=None):
-        """Log output to a file, requires class to have outdir and label"""
-        header = [] if header is None else header
-        logfilename = os.path.join(self.outdir, self.label + ".log")
-        with open(logfilename, "w") as fp:
-            for hline in header:
-                fp.write("# {:s}\n".format(hline))
-        fh = logging.FileHandler(logfilename)
-        fh.setLevel(logging.INFO)
-        fh.setFormatter(
-            logging.Formatter(
-                "%(asctime)s %(levelname)-8s: %(message)s", datefmt="%y-%m-%d %H:%M"
-            )
-        )
-        logging.getLogger().addHandler(fh)
 
     def _get_list_of_matching_sfts(self):
         """Returns a list of sfts matching the attribute sftfilepattern"""
@@ -456,7 +441,7 @@ class ComputeFstat(BaseSearchClass):
         using context management or calling the `.finalizer_()` method.
         """
         if "cuda" in self.tCWFstatMapVersion:
-            logging.debug(
+            logger.debug(
                 f"Setting up GPU context finalizer for {self.tCWFstatMapVersion} transient maps."
             )
             self._finalizer = finalize(self, self._finalize_gpu_context)
@@ -465,20 +450,20 @@ class ComputeFstat(BaseSearchClass):
 
     def _finalize_gpu_context(self):
         """Clean up at the end of context manager style usage."""
-        logging.debug("Leaving the ComputeFStat context...")
+        logger.debug("Leaving the ComputeFStat context...")
         if hasattr(self, "gpu_context") and self.gpu_context:
-            logging.debug("Detaching GPU context...")
+            logger.debug("Detaching GPU context...")
             # this is needed because we use pyCuda without autoinit
             self.gpu_context.detach()
 
     def __enter__(self):
         """Enables context manager style calling."""
-        logging.debug("Entering the ComputeFstat context...")
+        logger.debug("Entering the ComputeFstat context...")
         return self
 
     def __exit__(self, *args, **kwargs):
         """Clean up at the end of context manager style usage."""
-        logging.debug("Leaving the ComputeFStat context...")
+        logger.debug("Leaving the ComputeFStat context...")
         self._finalizer()
 
     def _get_SFTCatalog(self):
@@ -488,10 +473,10 @@ class ComputeFstat(BaseSearchClass):
         create data on the fly.
         """
         if hasattr(self, "SFTCatalog"):
-            logging.info("Already have SFTCatalog.")
+            logger.info("Already have SFTCatalog.")
             return
         if self.sftfilepattern is None:
-            logging.info("No sftfilepattern given, making fake SFTCatalog.")
+            logger.info("No sftfilepattern given, making fake SFTCatalog.")
             for k in ["minStartTime", "maxStartTime", "detectors"]:
                 if getattr(self, k) is None:
                     raise ValueError(
@@ -522,12 +507,12 @@ class ComputeFstat(BaseSearchClass):
             self.SFTCatalog = SFTCatalog
             return
 
-        logging.info("Initialising SFTCatalog from sftfilepattern.")
+        logger.info("Initialising SFTCatalog from sftfilepattern.")
         constraints = lalpulsar.SFTConstraints()
         constr_str = []
         if self.detectors:
             if "," in self.detectors:
-                logging.warning(
+                logger.warning(
                     "Multiple-detector constraints not available,"
                     " using all available data."
                 )
@@ -540,14 +525,14 @@ class ComputeFstat(BaseSearchClass):
         if self.maxStartTime:
             constraints.maxStartTime = lal.LIGOTimeGPS(self.maxStartTime)
             constr_str.append("maxStartTime={}".format(self.maxStartTime))
-        logging.info(
+        logger.info(
             "Loading data matching SFT file name pattern '{}'"
             " with constraints {}.".format(self.sftfilepattern, ", ".join(constr_str))
         )
         self.SFTCatalog = lalpulsar.SFTdataFind(self.sftfilepattern, constraints)
         Tsft_from_catalog = int(1.0 / self.SFTCatalog.data[0].header.deltaF)
         if Tsft_from_catalog != self.Tsft:
-            logging.info(
+            logger.info(
                 "Overwriting pre-set Tsft={:d} with {:d} obtained from SFTs.".format(
                     self.Tsft, Tsft_from_catalog
                 )
@@ -563,7 +548,7 @@ class ComputeFstat(BaseSearchClass):
 
         dtstr1 = helper_functions.gps_to_datestr_utc(int(SFT_timestamps[0]))
         dtstr2 = helper_functions.gps_to_datestr_utc(int(SFT_timestamps[-1]))
-        logging.info(
+        logger.info(
             f"Data contains SFT timestamps from {SFT_timestamps[0]} ({dtstr1})"
             f" to (including) {SFT_timestamps[-1]} ({dtstr2})."
         )
@@ -579,7 +564,7 @@ class ComputeFstat(BaseSearchClass):
         self.numDetectors = len(self.detector_names)
         if self.numDetectors == 0:
             raise ValueError("No data loaded.")
-        logging.info(
+        logger.info(
             "Loaded {} SFTs from {} detectors: {}".format(
                 len(SFT_timestamps), self.numDetectors, self.detector_names
             )
@@ -606,10 +591,10 @@ class ComputeFstat(BaseSearchClass):
             if getattr(self, "BtSG", False):
                 raise ValueError("Please choose only one of [BSGL,BtSG].")
 
-        logging.info("Initialising ephems")
+        logger.info("Initialising ephems")
         ephems = lalpulsar.InitBarycenter(self.earth_ephem, self.sun_ephem)
 
-        logging.info("Initialising Fstat arguments")
+        logger.info("Initialising Fstat arguments")
         dFreq = 0
         self.whatToCompute = lalpulsar.FSTATQ_2F
         if self.transientWindowType or self.computeAtoms:
@@ -617,7 +602,7 @@ class ComputeFstat(BaseSearchClass):
 
         FstatOAs = lalpulsar.FstatOptionalArgs()
         if self.SSBprec:
-            logging.info("Using SSBprec={}".format(self.SSBprec))
+            logger.info("Using SSBprec={}".format(self.SSBprec))
             FstatOAs.SSBprec = self.SSBprec
         else:
             FstatOAs.SSBprec = lalpulsar.FstatOptionalArgsDefaults.SSBprec
@@ -643,7 +628,7 @@ class ComputeFstat(BaseSearchClass):
             FstatOAs.allowedMismatchFromSFTLength = self.allowedMismatchFromSFTLength
 
         if hasattr(self, "injectSources") and type(self.injectSources) == dict:
-            logging.info("Injecting source with params: {}".format(self.injectSources))
+            logger.info("Injecting source with params: {}".format(self.injectSources))
             PPV = lalpulsar.CreatePulsarParamsVector(1)
             PP = PPV.data[0]
             h0 = self.injectSources["h0"]
@@ -671,7 +656,7 @@ class ComputeFstat(BaseSearchClass):
                 PP.Transient.type = lalpulsar.TRANSIENT_NONE
             FstatOAs.injectSources = PPV
         elif hasattr(self, "injectSources") and type(self.injectSources) == str:
-            logging.info(
+            logger.info(
                 "Injecting source from param file: {}".format(self.injectSources)
             )
             PPV = lalpulsar.PulsarParamsFromFile(self.injectSources, self.tref)
@@ -704,7 +689,7 @@ class ComputeFstat(BaseSearchClass):
         )
         self._set_min_max_cover_freqs()
 
-        logging.info("Initialising FstatInput")
+        logger.info("Initialising FstatInput")
         self.FstatInput = lalpulsar.CreateFstatInput(
             self.SFTCatalog,
             self.minCoverFreq,
@@ -714,7 +699,7 @@ class ComputeFstat(BaseSearchClass):
             FstatOAs,
         )
 
-        logging.info("Initialising PulsarDoplerParams")
+        logger.info("Initialising PulsarDoplerParams")
         PulsarDopplerParams = lalpulsar.PulsarDopplerParams()
         PulsarDopplerParams.refTime = self.tref
         PulsarDopplerParams.Alpha = 1
@@ -722,7 +707,7 @@ class ComputeFstat(BaseSearchClass):
         PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
         self.PulsarDopplerParams = PulsarDopplerParams
 
-        logging.info("Initialising FstatResults")
+        logger.info("Initialising FstatResults")
         self.FstatResults = lalpulsar.FstatResults()
 
         # always initialise the twoFX array,
@@ -734,7 +719,7 @@ class ComputeFstat(BaseSearchClass):
             self.whatToCompute += lalpulsar.FSTATQ_2F_PER_DET
 
         if self.BSGL:
-            logging.info("Initialising BSGL")
+            logger.info("Initialising BSGL")
             self.log10BSGL = np.nan
             # Tuning parameters - to be reviewed
             # We use a fixed Fstar0 for coherent searches,
@@ -749,7 +734,7 @@ class ComputeFstat(BaseSearchClass):
                     raise ValueError("Max Fstar0 exceeded")
             else:
                 self.Fstar0 = 15.0
-            logging.info("Using Fstar0 of {:1.2f}".format(self.Fstar0))
+            logger.info("Using Fstar0 of {:1.2f}".format(self.Fstar0))
             # assume uniform per-detector prior line-vs-Gaussian odds
             self.oLGX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
             self.oLGX[: self.numDetectors] = 1.0 / self.numDetectors
@@ -762,7 +747,7 @@ class ComputeFstat(BaseSearchClass):
             )
 
         if self.transientWindowType:
-            logging.info("Initialising transient parameters")
+            logger.info("Initialising transient parameters")
             self.maxTwoF = 0
             if getattr(self, "BtSG", False):
                 self.lnBtSG = np.nan
@@ -797,7 +782,7 @@ class ComputeFstat(BaseSearchClass):
                     self.windowRange.t0Band = 0
                 else:
                     if not isinstance(self.t0Band, int):
-                        logging.warn(
+                        logger.warning(
                             "Casting non-integer t0Band={} to int...".format(
                                 self.t0Band
                             )
@@ -810,7 +795,7 @@ class ComputeFstat(BaseSearchClass):
                     self.windowRange.tauBand = 0
                 else:
                     if not isinstance(self.tauBand, int):
-                        logging.warn(
+                        logger.warning(
                             "Casting non-integer tauBand={} to int...".format(
                                 self.tauBand
                             )
@@ -823,7 +808,7 @@ class ComputeFstat(BaseSearchClass):
                         self.windowRange.tau = int(2 * self.Tsft)
                     else:
                         if not isinstance(self.tauMin, int):
-                            logging.warn(
+                            logger.warning(
                                 "Casting non-integer tauMin={} to int...".format(
                                     self.tauMin
                                 )
@@ -831,7 +816,7 @@ class ComputeFstat(BaseSearchClass):
                             self.tauMin = int(self.tauMin)
                         self.windowRange.tau = self.tauMin
 
-            logging.info("Initialising transient FstatMap features...")
+            logger.info("Initialising transient FstatMap features...")
             (
                 self.tCWFstatMapFeatures,
                 self.gpu_context,
@@ -860,7 +845,7 @@ class ComputeFstat(BaseSearchClass):
                 "Please use either search_ranges or both of [minCoverFreq,maxCoverFreq]."
             )
         elif self.minCoverFreq is None or self.maxCoverFreq is None:
-            logging.info(
+            logger.info(
                 "[minCoverFreq,maxCoverFreq] not provided, trying to estimate"
                 " from search ranges."
             )
@@ -875,7 +860,7 @@ class ComputeFstat(BaseSearchClass):
                     " or set both to None (automated estimation)."
                 )
             if self.minCoverFreq < 0.0:
-                logging.info(
+                logger.info(
                     "minCoverFreq={:f} provided, using as offset from min(SFTs).".format(
                         self.minCoverFreq
                     )
@@ -883,7 +868,7 @@ class ComputeFstat(BaseSearchClass):
                 # to set *above* min, since minCoverFreq is negative: subtract it
                 self.minCoverFreq = minFreq_SFTs - self.minCoverFreq
             if self.maxCoverFreq < 0.0:
-                logging.info(
+                logger.info(
                     "maxCoverFreq={:f} provided, using as offset from max(SFTs).".format(
                         self.maxCoverFreq
                     )
@@ -899,7 +884,7 @@ class ComputeFstat(BaseSearchClass):
                     self.minCoverFreq, self.maxCoverFreq, minFreq_SFTs, maxFreq_SFTs
                 )
             )
-        logging.info(
+        logger.info(
             "Using minCoverFreq={} and maxCoverFreq={}.".format(
                 self.minCoverFreq, self.maxCoverFreq
             )
@@ -1624,7 +1609,7 @@ class ComputeFstat(BaseSearchClass):
         if custom_ax_kwargs is not None:
             for kwarg in "xlabel", "ylabel":
                 if kwarg in custom_ax_kwargs:
-                    logging.warning(
+                    logger.warning(
                         f"Be careful, overwriting {kwarg} {axis_kwargs[kwarg]}"
                         " with {custom_ax_kwargs[kwarg]}: Check out the units!"
                     )
@@ -1830,7 +1815,7 @@ class SemiCoherentSearch(ComputeFstat):
 
         Each segment is required to be at least two SFTs long.f
         """
-        logging.info(
+        logger.info(
             (
                 "Initialising semicoherent parameters from"
                 " minStartTime={:d} to maxStartTime={:d} in {:d} segments..."
@@ -1840,12 +1825,12 @@ class SemiCoherentSearch(ComputeFstat):
             self.minStartTime, self.maxStartTime, self.nsegs + 1
         )
         self.Tcoh = self.tboundaries[1] - self.tboundaries[0]
-        logging.info(
+        logger.info(
             ("Obtained {:d} segments of length Tcoh={:f}s (={:f}d).").format(
                 self.nsegs, self.Tcoh, self.Tcoh / 86400.0
             )
         )
-        logging.debug("Segment boundaries: {}".format(self.tboundaries))
+        logger.debug("Segment boundaries: {}".format(self.tboundaries))
         if self.Tcoh < 2 * self.Tsft:
             raise RuntimeError(
                 "Per-segment coherent time {} may not be < Tsft={}"
@@ -1979,7 +1964,7 @@ class SemiCoherentSearch(ComputeFstat):
         self.twoF = twoF_per_segment.sum()
 
         if np.isnan(self.twoF):
-            logging.debug(
+            logger.debug(
                 "NaNs in per-segment 2F treated as zero"
                 " and semi-coherent 2F re-computed."
             )
@@ -2036,7 +2021,7 @@ class SemiCoherentSearch(ComputeFstat):
             twoFX_per_segment = 2 * FXstatMap.F_mn.data[:, 0]
             self.twoFX[X] = twoFX_per_segment.sum()
             if np.isnan(self.twoFX[X]):
-                logging.debug(
+                logger.debug(
                     "NaNs in per-segment per-detector 2F treated as zero"
                     " and sum re-computed."
                 )
@@ -2064,7 +2049,7 @@ class SemiCoherentSearch(ComputeFstat):
         """
         self.log10BSGL = lalpulsar.ComputeBSGL(self.twoF, self.twoFX, self.BSGLSetup)
         if np.isnan(self.log10BSGL):
-            logging.debug("NaNs in semi-coherent log10BSGL treated as zero")
+            logger.debug("NaNs in semi-coherent log10BSGL treated as zero")
             self.log10BSGL = 0.0
         return self.log10BSGL
 
@@ -2366,7 +2351,7 @@ class DeprecatedClass:
     """Outdated classes are marked for future removal by inheriting from this."""
 
     def __new__(cls, *args, **kwargs):
-        logging.warning(
+        logger.warning(
             f"The {cls.__name__} class is no longer maintained"
             " and will be removed in an upcoming release of PyFstat!"
             " If you rely on this class and/or are interested in taking over"
