@@ -6,7 +6,6 @@ and are of interest mostly only for developers,
 but others can also be helpful for end users.
 """
 
-import argparse
 import inspect
 import logging
 import os
@@ -41,41 +40,73 @@ def set_up_matplotlib_defaults():
     plt.rcParams["axes.formatter.useoffset"] = False
 
 
-def set_up_command_line_arguments():
-    """Parse global commandline arguments."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Increase output verbosity [logging.DEBUG]",
-    )
-    parser.add_argument(
-        "-q",
-        "--quite",
-        action="store_true",
-        help="Decrease output verbosity [logging.WARNING]",
-    )
-    args, unknown = parser.parse_known_args()
+def set_up_logger(outdir=None, label="pyfstat", log_level="INFO"):
+    """
+    Setup the logger.
+    Based on the implementation in Nessai:
+    https://github.com/mj-will/nessai/blob/main/nessai/utils/logging.py
+    Parameters
+    ----------
+    outdir : str, optional
+        Path of to outdir directory.
+    label : str, optional
+        Label for this instance of the logger.
+        Defaults to `pyfstat`, which is the "root" logger of this package.
+    log_level : {'ERROR', 'WARNING', 'INFO', 'DEBUG'}, optional
+        Level of logging passed to logger.
+    Returns
+    -------
+    :obj:`logging.Logger`
+        Instance of the Logger class.
+    """
+    from . import __version__ as version
 
-    logger = logging.getLogger()
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(
-        logging.Formatter("%(asctime)s %(levelname)-8s: %(message)s", datefmt="%H:%M")
-    )
-
-    if args.quite:
-        logger.setLevel(logging.WARNING)
-        stream_handler.setLevel(logging.WARNING)
-    elif args.verbose:
-        logger.setLevel(logging.DEBUG)
-        stream_handler.setLevel(logging.DEBUG)
+    if type(log_level) is str:
+        try:
+            level = getattr(logging, log_level.upper())
+        except AttributeError:
+            raise ValueError("log_level {} not understood".format(log_level))
     else:
-        logger.setLevel(logging.INFO)
-        stream_handler.setLevel(logging.INFO)
+        level = int(log_level)
 
-    logger.addHandler(stream_handler)
-    return args
+    logger = logging.getLogger("pyfstat")
+    logger.setLevel(level)
+
+    if any([type(h) == logging.StreamHandler for h in logger.handlers]) is False:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s %(name)s %(levelname)-8s: %(message)s",
+                datefmt="%m-%d %H:%M",
+            )
+        )
+        stream_handler.setLevel(level)
+        logger.addHandler(stream_handler)
+
+    if any([type(h) == logging.FileHandler for h in logger.handlers]) is False:
+        if label:
+            if outdir:
+                if not os.path.exists(outdir):
+                    os.makedirs(outdir, exist_ok=True)
+            else:
+                outdir = "."
+            log_file = os.path.join(outdir, f"{label}.log")
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s %(levelname)-8s: %(message)s", datefmt="%H:%M"
+                )
+            )
+
+            file_handler.setLevel(level)
+            logger.addHandler(file_handler)
+
+    for handler in logger.handlers:
+        handler.setLevel(level)
+
+    logger.info(f"Running PyFstat version {version}")
+
+    return logger
 
 
 def get_ephemeris_files():
@@ -83,6 +114,7 @@ def get_ephemeris_files():
 
     This looks first for a configuration file `~/.pyfstat.conf`
     giving individual earth/sun file paths like this:
+
     ```
     earth_ephem = '/my/path/earth00-40-DE405.dat.gz'
     sun_ephem = '/my/path/sun00-40-DE405.dat.gz'
