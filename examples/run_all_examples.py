@@ -49,7 +49,7 @@ for case in os.listdir(basedir):
         print(f"Executing {len(scripts)} script(s) in example directory {exdir}...")
         for script in scripts:
             Nscripts += 1
-            cl = "python " + script
+            cl = "python " + script + " --clean"
             print(f"Running: {script}")
             try:
                 run_commandline(cl, return_output=False)
