@@ -56,12 +56,6 @@ def set_up_command_line_arguments():
         action="store_true",
         help="Decrease output verbosity [logging.WARNING]",
     )
-    parser.add_argument(
-        "-c",
-        "--clean",
-        action="store_true",
-        help="Force clean data, never use cached data",
-    )
     args, unknown = parser.parse_known_args()
 
     logger = logging.getLogger()
