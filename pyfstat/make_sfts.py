@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 import pyfstat.helper_functions as helper_functions
 from pyfstat import injection_parameters
-from pyfstat.core import BaseSearchClass, SearchForSignalWithJumps, args
+from pyfstat.core import BaseSearchClass, SearchForSignalWithJumps
 
 
 class Writer(BaseSearchClass):
@@ -1582,11 +1582,17 @@ class FrequencyModulatedArtifactWriter(Writer):
             self.tmp_outdir,
         )
 
-    def make_data(self):
+    def make_data(self, num_threads=1):
         """Create a full multi-SFT data set.
 
         This loops over SFTs and generate them serially or in parallel,
         then contatenates the results together at the end.
+
+        Parameters
+        ----------
+        num_processes: int
+            Number threads to use when running in parallel.
+            Verbatim implementation of the former `args.N`.
         """
 
         self.tmp_outdir = os.path.join(self.outdir, self.label + "_tmp")
@@ -1603,12 +1609,12 @@ class FrequencyModulatedArtifactWriter(Writer):
 
         logging.info("Generating SFTs")
 
-        if args.N > 1 and pkgutil.find_loader("pathos") is not None:
+        if num_threads > 1 and pkgutil.find_loader("pathos") is not None:
             import pathos.pools
 
-            logging.info("Using {} threads".format(args.N))
+            logging.info("Using {} threads".format(num_threads))
             try:
-                with pathos.pools.ProcessPool(args.N) as p:
+                with pathos.pools.ProcessPool(num_threads) as p:
                     list(
                         tqdm(
                             p.imap(self.make_ith_sft, list(range(self.nsfts))),
