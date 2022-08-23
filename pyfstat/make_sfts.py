@@ -9,10 +9,11 @@ import pkgutil
 import lal
 import lalpulsar
 import numpy as np
+from tqdm import tqdm
 
 import pyfstat.helper_functions as helper_functions
 from pyfstat import injection_parameters
-from pyfstat.core import BaseSearchClass, SearchForSignalWithJumps, args, tqdm
+from pyfstat.core import BaseSearchClass, SearchForSignalWithJumps, args
 
 
 class Writer(BaseSearchClass):

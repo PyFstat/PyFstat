@@ -33,7 +33,7 @@ else:
     import matplotlib.pyplot as plt
 
 helper_functions.set_up_matplotlib_defaults()
-args, tqdm = helper_functions.set_up_command_line_arguments()
+args = helper_functions.set_up_command_line_arguments()
 detector_colors = {"h1": "C0", "l1": "C1"}
 
 

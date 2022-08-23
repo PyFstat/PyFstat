@@ -10,6 +10,7 @@ from collections import OrderedDict
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
 
 import pyfstat.helper_functions as helper_functions
 from pyfstat.core import (
@@ -19,7 +20,6 @@ from pyfstat.core import (
     SemiCoherentGlitchSearch,
     SemiCoherentSearch,
     args,
-    tqdm,
 )
 
 

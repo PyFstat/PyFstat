@@ -37,18 +37,6 @@ else:
     import matplotlib.pyplot as plt
 
 
-def set_up_optional_tqdm():
-    """Provides local replacement for tqdm if it cannot be imported."""
-    try:
-        from tqdm import tqdm
-    except ImportError:
-
-        def tqdm(x, *args, **kwargs):
-            return x
-
-    return tqdm
-
-
 def set_up_matplotlib_defaults():
     """Sets some defaults for matplotlib plotting."""
     plt.rcParams["axes.formatter.useoffset"] = False
@@ -103,14 +91,6 @@ def set_up_command_line_arguments():
     args, unknown = parser.parse_known_args()
     sys.argv[1:] = args.unittest_args
 
-    if args.quite or args.no_interactive:
-
-        def tqdm(x, *args, **kwargs):
-            return x
-
-    else:
-        tqdm = set_up_optional_tqdm()
-
     logger = logging.getLogger()
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(
@@ -128,7 +108,7 @@ def set_up_command_line_arguments():
         stream_handler.setLevel(logging.INFO)
 
     logger.addHandler(stream_handler)
-    return args, tqdm
+    return args
 
 
 def get_ephemeris_files():
