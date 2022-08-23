@@ -311,7 +311,7 @@ def get_comb_values(F0, frequencies, twoF, period, N=4):
     return comb_frequencies, twoF[comb_idxs], freq_err * np.ones(len(comb_idxs))
 
 
-def run_commandline(cl, log_level=20, raise_error=True, return_output=True):
+def run_commandline(cl, raise_error=True, return_output=True):
     """Run a string cmd as a subprocess, check for errors and return output.
 
     Parameters
@@ -338,7 +338,7 @@ def run_commandline(cl, log_level=20, raise_error=True, return_output=True):
         0 on failed execution if `raise_error=False`.
     """
 
-    logging.log(log_level, "Now executing: " + cl)
+    logger.info("Now executing: " + cl)
     if "|" in cl:
         logger.warning(
             "Pipe ('|') found in commandline, errors may not be" " properly caught!"
@@ -354,9 +354,9 @@ def run_commandline(cl, log_level=20, raise_error=True, return_output=True):
         else:
             subprocess.check_call(cl, shell=True)
     except subprocess.CalledProcessError as e:
-        logging.log(40, "Execution failed: {}".format(e))
+        logger.error("Execution failed: {}".format(e))
         if e.output:
-            logging.log(40, e.output)
+            logger.error(e.output)
         if raise_error:
             raise
         elif return_output:
