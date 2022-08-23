@@ -156,7 +156,6 @@ which should all be pulled in automatically if you use `pip`:
 * [corner](https://pypi.python.org/pypi/corner/)
 * [dill](https://pypi.python.org/pypi/dill)
 * [tqdm](https://pypi.python.org/pypi/tqdm)
-* [bashplotlib](https://github.com/glamp/bashplotlib)
 * [peakutils](https://pypi.python.org/pypi/PeakUtils)
 * [pathos](https://pypi.python.org/pypi/pathos)
 * [lalsuite](https://pypi.org/project/lalsuite/)

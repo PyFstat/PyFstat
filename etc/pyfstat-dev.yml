@@ -12,7 +12,6 @@ dependencies:
   - corner
   - dill
   - tqdm
-  - bashplotlib
   - peakutils
   - pathos
   - python-lal >=7.1.5
