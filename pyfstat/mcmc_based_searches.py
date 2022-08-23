@@ -246,6 +246,7 @@ class MCMCSearch(BaseSearchClass):
         self.tCWFstatMapVersion = tCWFstatMapVersion
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
+        self.clean = clean
 
         os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
@@ -2857,6 +2858,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         self.nsegs = nsegs
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
+        self.clean = clean
 
         os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
@@ -3012,6 +3014,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         self.nsegs = None
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
+        self.clean = clean
 
         os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()

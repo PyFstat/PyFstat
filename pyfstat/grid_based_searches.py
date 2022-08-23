@@ -921,6 +921,7 @@ class TransientGridSearch(GridSearch):
         cudaDeviceName=None,
         earth_ephem=None,
         sun_ephem=None,
+        clean=False,
     ):
         """
         Parameters
@@ -1221,6 +1222,7 @@ class GridGlitchSearch(GridSearch):
         detectors=None,
         earth_ephem=None,
         sun_ephem=None,
+        clean=False,
     ):
         """
         Most parameters are the same as for `GridSearch`
