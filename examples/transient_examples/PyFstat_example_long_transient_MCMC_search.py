@@ -25,6 +25,8 @@ if not os.path.isdir(data.outdir) or not np.any(
         "Please first run PyFstat_example_make_data_for_long_transient_search.py !"
     )
 
+logger = pyfstat.set_up_logger(label="long_transient_mcmc_search", outdir=data.outdir)
+
 tstart = data.tstart
 duration = data.duration
 

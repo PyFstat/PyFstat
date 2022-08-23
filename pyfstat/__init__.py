@@ -16,6 +16,7 @@ from .grid_based_searches import (
     TransientGridSearch,
 )
 from .gridcorner import gridcorner
+from .helper_functions import set_up_logger
 from .injection_parameters import (
     AllSkyInjectionParametersGenerator,
     InjectionParametersGenerator,

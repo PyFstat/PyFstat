@@ -21,6 +21,7 @@ label = "PyFstat_example_binary_mcmc_vs_grid_comparison" + (
     "_circular_orbit" if circular_orbit else ""
 )
 outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 # Parameters to generate a data set
 data_parameters = {

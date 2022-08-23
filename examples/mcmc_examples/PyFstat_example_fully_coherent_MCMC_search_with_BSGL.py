@@ -14,6 +14,7 @@ import pyfstat
 
 label = os.path.splitext(os.path.basename(__file__))[0]
 outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 # Properties of the GW data - first we make data for two detectors,
 # both including Gaussian noise and a coherent 'astrophysical' signal.

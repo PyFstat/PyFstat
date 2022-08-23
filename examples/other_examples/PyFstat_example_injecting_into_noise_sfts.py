@@ -17,6 +17,7 @@ import pyfstat
 
 label = "PyFstat_example_injection_into_noise_sfts"
 outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 tstart = 1269734418
 duration_Tsft = 100

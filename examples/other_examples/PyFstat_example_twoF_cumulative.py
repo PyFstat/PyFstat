@@ -15,6 +15,7 @@ from pyfstat.helper_functions import get_predict_fstat_parameters_from_dict
 
 label = "PyFstat_example_twoF_cumulative"
 outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 # Properties of the GW data
 gw_data = {
