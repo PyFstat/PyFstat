@@ -19,7 +19,6 @@ from pyfstat.core import (
     DefunctClass,
     SemiCoherentGlitchSearch,
     SemiCoherentSearch,
-    args,
 )
 
 
@@ -94,6 +93,7 @@ class GridSearch(BaseSearchClass):
         assumeSqrtSX=None,
         earth_ephem=None,
         sun_ephem=None,
+        clean=False,
     ):
         """
         Parameters
@@ -114,6 +114,9 @@ class GridSearch(BaseSearchClass):
         input_arrays: bool
             If true, use the F0s, F1s, etc as arrays just as they are given
             (do not interpret as 3-tuples of [min,max,step]).
+        clean: bool
+            If true, ignore existing data and overwrite.
+            Otherwise, re-use existing data if no inconsistencies are found.
         """
 
         self._set_init_params_dict(locals())
@@ -220,7 +223,7 @@ class GridSearch(BaseSearchClass):
         self.coord_arrays = coord_arrays
         self.total_iterations = np.prod([len(ca) for ca in coord_arrays])
 
-        if args.clean is False:
+        if not self.clean:
             input_data = []
             for vals in itertools.product(*coord_arrays):
                 input_data.append(vals)
@@ -252,7 +255,7 @@ class GridSearch(BaseSearchClass):
         Through `helper_functions.read_txt_file_with_header()`,
         the existing file is read in with `np.genfromtxt()`.
         """
-        if args.clean:
+        if self.clean:
             return False
         if os.path.isfile(self.out_file) is False:
             logging.info(
@@ -363,7 +366,7 @@ class GridSearch(BaseSearchClass):
         """
         self._get_input_data_array()
 
-        if args.clean:
+        if self.clean:
             iterable = itertools.product(*self.coord_arrays)
         else:
             old_data = self.check_old_data_is_okay_to_use()
@@ -918,6 +921,7 @@ class TransientGridSearch(GridSearch):
         cudaDeviceName=None,
         earth_ephem=None,
         sun_ephem=None,
+        clean=False,
     ):
         """
         Parameters
@@ -1218,6 +1222,7 @@ class GridGlitchSearch(GridSearch):
         detectors=None,
         earth_ephem=None,
         sun_ephem=None,
+        clean=False,
     ):
         """
         Most parameters are the same as for `GridSearch`

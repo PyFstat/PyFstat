@@ -61,7 +61,7 @@ from tqdm import tqdm
 import pyfstat.core as core
 import pyfstat.helper_functions as helper_functions
 import pyfstat.optimal_setup_functions as optimal_setup_functions
-from pyfstat.core import BaseSearchClass, args
+from pyfstat.core import BaseSearchClass
 
 
 class MCMCSearch(BaseSearchClass):
@@ -141,6 +141,7 @@ class MCMCSearch(BaseSearchClass):
         earth_ephem=None,
         sun_ephem=None,
         allowedMismatchFromSFTLength=None,
+        clean=False,
     ):
         """
         Parameters
@@ -213,6 +214,9 @@ class MCMCSearch(BaseSearchClass):
         allowedMismatchFromSFTLength: float
             Maximum allowed mismatch from SFTs being too long
             [Default: what's hardcoded in XLALFstatMaximumSFTLength].
+        clean: bool
+            If true, ignore existing data and overwrite.
+            Otherwise, re-use existing data if no inconsistencies are found.
         """
         self._set_init_params_dict(locals())
         self.theta_prior = theta_prior
@@ -242,6 +246,7 @@ class MCMCSearch(BaseSearchClass):
         self.tCWFstatMapVersion = tCWFstatMapVersion
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
+        self.clean = clean
 
         os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
@@ -261,7 +266,7 @@ class MCMCSearch(BaseSearchClass):
         else:
             self.betas = None
 
-        if args.clean and os.path.isfile(self.pickle_path):
+        if self.clean and os.path.isfile(self.pickle_path):
             os.rename(self.pickle_path, self.pickle_path + ".old")
 
         self._set_likelihoodcoef()
@@ -2486,6 +2491,7 @@ class MCMCGlitchSearch(MCMCSearch):
         earth_ephem=None,
         sun_ephem=None,
         allowedMismatchFromSFTLength=None,
+        clean=False,
     ):
         """
         Parameters
@@ -2516,7 +2522,7 @@ class MCMCGlitchSearch(MCMCSearch):
             self.betas = np.logspace(0, self.log10beta_min, self.ntemps)
         else:
             self.betas = None
-        if args.clean and os.path.isfile(self.pickle_path):
+        if self.clean and os.path.isfile(self.pickle_path):
             os.rename(self.pickle_path, self.pickle_path + ".old")
 
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
@@ -2817,6 +2823,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         earth_ephem=None,
         sun_ephem=None,
         allowedMismatchFromSFTLength=None,
+        clean=False,
     ):
         """
         Parameters
@@ -2851,6 +2858,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         self.nsegs = nsegs
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
+        self.clean = clean
 
         os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
@@ -2867,7 +2875,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             self.betas = np.logspace(0, self.log10beta_min, self.ntemps)
         else:
             self.betas = None
-        if args.clean and os.path.isfile(self.pickle_path):
+        if self.clean and os.path.isfile(self.pickle_path):
             os.rename(self.pickle_path, self.pickle_path + ".old")
 
         self._log_input()
@@ -2977,6 +2985,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         earth_ephem=None,
         sun_ephem=None,
         allowedMismatchFromSFTLength=None,
+        clean=False,
     ):
 
         self._set_init_params_dict(locals())
@@ -3005,6 +3014,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         self.nsegs = None
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self.allowedMismatchFromSFTLength = allowedMismatchFromSFTLength
+        self.clean = clean
 
         os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
@@ -3021,7 +3031,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
             self.betas = np.logspace(0, self.log10beta_min, self.ntemps)
         else:
             self.betas = None
-        if args.clean and os.path.isfile(self.pickle_path):
+        if self.clean and os.path.isfile(self.pickle_path):
             os.rename(self.pickle_path, self.pickle_path + ".old")
 
         self._log_input()
@@ -3211,6 +3221,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         Nsegs0=None,
         log_table=True,
         gen_tex_table=True,
+        setup_only=False,
+        no_template_counting=True,
     ):
         """
         Initialize the setup of the follow-up run computing the required quantities fro, NstarMax
@@ -3307,7 +3319,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                     rs[0] = (rs[0], 0)
                 run_setup[i] = rs
 
-                if args.no_template_counting:
+                if no_template_counting:
                     Nstar_vals.append([1, 1, 1])
                 else:
                     Nstar = optimal_setup_functions.get_Nstar_estimate(
@@ -3367,7 +3379,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                     f.write(line)
                 f.write(r"\end{tabular}" + "\n")
 
-        if args.setup_only:
+        if setup_only:
             logging.info("Exit as requested by setup_only flag")
             sys.exit()
         else:

@@ -12,7 +12,6 @@ import logging
 import os
 import shutil
 import subprocess
-import sys
 from datetime import datetime, timezone
 from functools import wraps
 
@@ -57,39 +56,7 @@ def set_up_command_line_arguments():
         action="store_true",
         help="Decrease output verbosity [logging.WARNING]",
     )
-    parser.add_argument(
-        "--no-interactive", help="Don't use interactive", action="store_true"
-    )
-    parser.add_argument(
-        "-c",
-        "--clean",
-        action="store_true",
-        help="Force clean data, never use cached data",
-    )
-    fu_parser = parser.add_argument_group(
-        "follow-up options", "Options related to MCMCFollowUpSearch"
-    )
-    fu_parser.add_argument(
-        "-s",
-        "--setup-only",
-        action="store_true",
-        help="Only generate the setup file, don't run",
-    )
-    fu_parser.add_argument(
-        "--no-template-counting",
-        action="store_true",
-        help="No counting of templates, useful if the setup is predefined",
-    )
-    parser.add_argument(
-        "-N",
-        type=int,
-        default=3,
-        metavar="N",
-        help="Number of threads to use when running in parallel",
-    )
-    parser.add_argument("unittest_args", nargs="*")
     args, unknown = parser.parse_known_args()
-    sys.argv[1:] = args.unittest_args
 
     logger = logging.getLogger()
     stream_handler = logging.StreamHandler()
