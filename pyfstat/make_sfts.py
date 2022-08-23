@@ -1663,7 +1663,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         if self.randSeed:
             cl_mfd.append("--randSeed={}".format(self.randSeed))
         cl_mfd = " ".join(cl_mfd)
-        helper_functions.run_commandline(cl_mfd, log_level=10)
+        helper_functions.run_commandline(cl_mfd)
 
 
 class FrequencyAmplitudeModulatedArtifactWriter(FrequencyModulatedArtifactWriter):
