@@ -33,7 +33,7 @@ else:
     import matplotlib.pyplot as plt
 
 helper_functions.set_up_matplotlib_defaults()
-args, tqdm = helper_functions.set_up_command_line_arguments()
+args = helper_functions.set_up_command_line_arguments()
 detector_colors = {"h1": "C0", "l1": "C1"}
 
 
@@ -560,14 +560,6 @@ class ComputeFstat(BaseSearchClass):
         self.SFT_timestamps = [float(s) for s in SFT_timestamps]
         if len(SFT_timestamps) == 0:
             raise ValueError("Failed to load any data")
-        if args.quite is False and args.no_interactive is False:
-            try:
-                from bashplotlib.histogram import plot_hist
-
-                print("Data timestamps histogram:")
-                plot_hist(SFT_timestamps, height=5, bincount=50)
-            except ImportError:
-                pass
 
         dtstr1 = helper_functions.gps_to_datestr_utc(int(SFT_timestamps[0]))
         dtstr2 = helper_functions.gps_to_datestr_utc(int(SFT_timestamps[-1]))

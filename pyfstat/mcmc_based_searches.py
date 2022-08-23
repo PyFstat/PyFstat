@@ -56,11 +56,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ptemcee import Sampler as PTSampler
 from scipy.stats import lognorm
+from tqdm import tqdm
 
 import pyfstat.core as core
 import pyfstat.helper_functions as helper_functions
 import pyfstat.optimal_setup_functions as optimal_setup_functions
-from pyfstat.core import BaseSearchClass, args, tqdm
+from pyfstat.core import BaseSearchClass, args
 
 
 class MCMCSearch(BaseSearchClass):
