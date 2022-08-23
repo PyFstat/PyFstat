@@ -58,9 +58,6 @@ def set_up_command_line_arguments():
         help="Decrease output verbosity [logging.WARNING]",
     )
     parser.add_argument(
-        "--no-interactive", help="Don't use interactive", action="store_true"
-    )
-    parser.add_argument(
         "-c",
         "--clean",
         action="store_true",
