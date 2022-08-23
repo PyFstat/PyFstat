@@ -3211,6 +3211,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         Nsegs0=None,
         log_table=True,
         gen_tex_table=True,
+        setup_only=False,
     ):
         """
         Initialize the setup of the follow-up run computing the required quantities fro, NstarMax
@@ -3367,7 +3368,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                     f.write(line)
                 f.write(r"\end{tabular}" + "\n")
 
-        if args.setup_only:
+        if setup_only:
             logging.info("Exit as requested by setup_only flag")
             sys.exit()
         else:

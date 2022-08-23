@@ -67,12 +67,6 @@ def set_up_command_line_arguments():
         "follow-up options", "Options related to MCMCFollowUpSearch"
     )
     fu_parser.add_argument(
-        "-s",
-        "--setup-only",
-        action="store_true",
-        help="Only generate the setup file, don't run",
-    )
-    fu_parser.add_argument(
         "--no-template-counting",
         action="store_true",
         help="No counting of templates, useful if the setup is predefined",
