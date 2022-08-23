@@ -15,6 +15,8 @@ import pyfstat.helper_functions as helper_functions
 from pyfstat import injection_parameters
 from pyfstat.core import BaseSearchClass, SearchForSignalWithJumps
 
+logger = logging.getLogger(__name__)
+
 
 class Writer(BaseSearchClass):
     """The main class for generating data in the form of SFTs.
@@ -212,7 +214,7 @@ class Writer(BaseSearchClass):
 
         SFTConstraint.timestamps = None  # FIXME: not currently supported
 
-        logging.info(
+        logger.info(
             "SFT Constraints: [minStartTime:{}, maxStartTime:{}]".format(
                 SFTConstraint.minStartTime,
                 SFTConstraint.maxStartTime,
@@ -301,7 +303,7 @@ class Writer(BaseSearchClass):
         if len(Tsft) != 1:
             raise ValueError(f"SFTs contain different basetimes: {Tsft}")
         if Tsft[0] != self.Tsft:
-            logging.warning(
+            logger.warning(
                 f"Overwriting self.Tsft={self.Tsft}"
                 f" with value {Tsft[0]} read from noiseSFTs."
             )
@@ -427,7 +429,7 @@ class Writer(BaseSearchClass):
                 )
             self._get_setup_from_timestamps()
         elif self.noiseSFTs is not None:
-            logging.warning(
+            logger.warning(
                 "noiseSFTs is not None: Inferring tstart, duration, Tsft. "
                 "Input tstart and duration will be treated as SFT constraints "
                 "using lalpulsar.SFTConstraints; Tsft will be checked for "
@@ -493,7 +495,7 @@ class Writer(BaseSearchClass):
         elif self.F0 is not None and self.Band is not None:
             self.fmin = self.F0 - 0.5 * self.Band
         elif self.noiseSFTs and not self.mfd.endswith("v4"):
-            logging.info("Generating SFTs with full bandwidth from noiseSFTs.")
+            logger.info("Generating SFTs with full bandwidth from noiseSFTs.")
         elif self.F0 is None:
             err_msg = "Need F0 and Band,"
             if not self.mfd.endswith("v4"):
@@ -512,7 +514,7 @@ class Writer(BaseSearchClass):
                 + int(lalpulsar.FstatOptionalArgsDefaults.runningMedianWindow / 2)
                 + 1
             )
-            logging.info(
+            logger.info(
                 "Estimating required SFT frequency range from properties"
                 " of signal to inject plus {:d} extra bins either side"
                 " (corresponding to default F-statistic settings).".format(extraBins)
@@ -534,7 +536,7 @@ class Writer(BaseSearchClass):
             self.fmin = minCoverFreq - extraBins / self.Tsft
             self.Band = maxCoverFreq - minCoverFreq + 2 * extraBins / self.Tsft
         if hasattr(self, "fmin"):
-            logging.info(
+            logger.info(
                 "Generating SFTs with fmin={}, Band={}".format(self.fmin, self.Band)
             )
 
@@ -567,11 +569,11 @@ class Writer(BaseSearchClass):
         content = self._get_single_config_line(0)
 
         if verbose:
-            logging.info("Injection parameters:")
-            logging.info(content.rstrip("\n"))
+            logger.info("Injection parameters:")
+            logger.info(content.rstrip("\n"))
 
         if self._check_if_cff_file_needs_rewriting(content):
-            logging.info("Writing config file: {:s}".format(self.config_file_name))
+            logger.info("Writing config file: {:s}".format(self.config_file_name))
             config_file = open(self.config_file_name, "w+")
             config_file.write(content)
             config_file.close()
@@ -597,14 +599,14 @@ class Writer(BaseSearchClass):
 
         need_new = "Will create new SFT file(s)."
 
-        logging.info("Checking if we can re-use existing SFT data file(s)...")
+        logger.info("Checking if we can re-use existing SFT data file(s)...")
         for sftfile in self.sftfilenames:
             if os.path.isfile(sftfile) is False:
-                logging.info(
+                logger.info(
                     "...no SFT file matching '{}' found. {}".format(sftfile, need_new)
                 )
                 return False
-        logging.info("...OK: file(s) found matching '{}'.".format(sftfile))
+        logger.info("...OK: file(s) found matching '{}'.".format(sftfile))
 
         if os.path.isfile(self.config_file_name):
             if np.any(
@@ -613,7 +615,7 @@ class Writer(BaseSearchClass):
                     for sftfile in self.sftfilenames
                 ]
             ):
-                logging.info(
+                logger.info(
                     (
                         "...the config file '{}' has been modified since"
                         " creation of the SFT file(s) '{}'. {}"
@@ -621,7 +623,7 @@ class Writer(BaseSearchClass):
                 )
                 return False
             else:
-                logging.info(
+                logger.info(
                     "...OK: The config file '{}' is older than the SFT file(s)"
                     " '{}'.".format(self.config_file_name, self.sftfilepath)
                 )
@@ -635,7 +637,7 @@ class Writer(BaseSearchClass):
                 )
             )
 
-        logging.info("...checking new commandline against existing SFT header(s)...")
+        logger.info("...checking new commandline against existing SFT header(s)...")
         # here we check one SFT header from each SFT file,
         # assuming that any concatenated file has been sanely constructed with
         # matching CLs
@@ -645,22 +647,22 @@ class Writer(BaseSearchClass):
                 catalog.data[0]
             )
             if len(cl_old) == 0:
-                logging.info(
+                logger.info(
                     "......could not obtain comparison commandline from first SFT"
                     " header in old file '{}'. {}".format(sftfile, need_new)
                 )
                 return False
             if not helper_functions.match_commandlines(cl_old, cl_mfd):
-                logging.info(
+                logger.info(
                     "......commandlines unmatched for first SFT in old"
                     " file '{}':".format(sftfile)
                 )
-                logging.info(cl_old)
-                logging.info(cl_mfd)
-                logging.info(need_new)
+                logger.info(cl_old)
+                logger.info(cl_mfd)
+                logger.info(need_new)
                 return False
-        logging.info("......OK: Commandline matched with old SFT header(s).")
-        logging.info(
+        logger.info("......OK: Commandline matched with old SFT header(s).")
+        logger.info(
             "...all data consistency checks passed: Looks like existing"
             " SFT data matches current options, will re-use it!"
         )
@@ -672,26 +674,26 @@ class Writer(BaseSearchClass):
         Returns True if the file should be overwritten - where possible avoid
         overwriting to allow cached data to be used
         """
-        logging.info("Checking if we can re-use injection config file...")
+        logger.info("Checking if we can re-use injection config file...")
         if os.path.isfile(self.config_file_name) is False:
-            logging.info("...no config file {} found.".format(self.config_file_name))
+            logger.info("...no config file {} found.".format(self.config_file_name))
             return True
         else:
-            logging.info(
+            logger.info(
                 "...OK: config file {} already exists.".format(self.config_file_name)
             )
 
         with open(self.config_file_name, "r") as f:
             file_content = f.read()
             if file_content == content:
-                logging.info(
+                logger.info(
                     "...OK: file contents match, no update of {} required.".format(
                         self.config_file_name
                     )
                 )
                 return False
             else:
-                logging.info(
+                logger.info(
                     "...file contents unmatched, updating {}.".format(
                         self.config_file_name
                     )
@@ -703,7 +705,7 @@ class Writer(BaseSearchClass):
         if self.h0:
             self.make_cff(verbose)
         else:
-            logging.info("Got h0=0, not writing an injection .cff file.")
+            logger.info("Got h0=0, not writing an injection .cff file.")
         self.run_makefakedata()
 
     def run_makefakedata(self):
@@ -726,8 +728,8 @@ class Writer(BaseSearchClass):
                     f" What we have in the output directory '{self.outdir}' is:"
                     f" {os.listdir(self.outdir)}"
                 )
-            logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
-            logging.info("Now validating each SFT file...")
+            logger.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
+            logger.info("Now validating each SFT file...")
             for sft in self.sftfilenames:
                 lalpulsar.ValidateSFTFile(sft)
 
@@ -747,7 +749,7 @@ class Writer(BaseSearchClass):
             if self.sqrtSX and np.any(
                 [s > 0 for s in helper_functions.parse_list_of_numbers(self.sqrtSX)]
             ):
-                logging.warning(
+                logger.warning(
                     "In addition to using noiseSFTs, you are adding "
                     "Gaussian noise with sqrtSX={} "
                     "Please, make sure this is what you intend to do.".format(
@@ -980,7 +982,7 @@ class LineWriter(Writer):
         if any(
             key not in lal_required_signal_parameters for key in self.signal_parameters
         ):
-            logging.warning(
+            logger.warning(
                 "Injection of line artifacts only uses the following parameters:\n"
                 f"{self.required_signal_parameters}.\n"
                 "Any other parameter will be purged from this class now"
@@ -988,7 +990,7 @@ class LineWriter(Writer):
             params_to_purge = list(
                 set(self.signal_parameters) - set(lal_required_signal_parameters)
             )
-            logging.info(
+            logger.info(
                 "Purging input parameters that are not meaningful for LineWriter: {}".format(
                     params_to_purge
                 )
@@ -1024,7 +1026,7 @@ class LineWriter(Writer):
             if self.sqrtSX and np.any(
                 [s > 0 for s in helper_functions.parse_list_of_numbers(self.sqrtSX)]
             ):
-                logging.warning(
+                logger.warning(
                     "In addition to using noiseSFTs, you are adding "
                     "Gaussian noise with sqrtSX={} "
                     "Please, make sure this is what you intend to do.".format(
@@ -1140,7 +1142,7 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
             self.dtglitch = np.atleast_1d(self.dtglitch)
             self.tglitch = self.tstart + self.dtglitch
             self.tbounds = np.concatenate(([self.tstart], self.tglitch, [self.tend]))
-        logging.info("Using segment boundaries {}".format(self.tbounds))
+        logger.info("Using segment boundaries {}".format(self.tbounds))
 
         tbs = np.array(self.tbounds)
         self.durations = tbs[1:] - tbs[:-1]
@@ -1293,11 +1295,11 @@ transientTau = {:10.0f}\n"""
             content += line
 
         if verbose:
-            logging.info("Injection parameters:")
-            logging.info(content.rstrip("\n"))
+            logger.info("Injection parameters:")
+            logger.info(content.rstrip("\n"))
 
         if self._check_if_cff_file_needs_rewriting(content):
-            logging.info("Writing config file: {:s}".format(self.config_file_name))
+            logger.info("Writing config file: {:s}".format(self.config_file_name))
             config_file = open(self.config_file_name, "w+")
             config_file.write(content)
             config_file.close()
@@ -1522,7 +1524,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         SFTFilename += f"-{self.tstart}-{self.duration}.sft"
         SFTFile_fullpath = os.path.join(self.outdir, SFTFilename)
         if os.path.isfile(SFTFile_fullpath):
-            logging.info(
+            logger.info(
                 f"Removing previous file(s) {SFTFile_fullpath} (no caching implemented)."
             )
             os.remove(SFTFile_fullpath)
@@ -1543,7 +1545,7 @@ class FrequencyModulatedArtifactWriter(Writer):
                 " Something went wrong!"
             )
         self.sftfilepath = outglob[0]
-        logging.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
+        logger.info(f"Successfully wrote SFTs to: {self.sftfilepath}")
 
     def pre_compute_evolution(self):
         """Precomputes evolution parameters for the artifact.
@@ -1551,7 +1553,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         This computes midtimes, frequencies, phases and amplitudes
         over the list of SFT timestamps.
         """
-        logging.info("Precomputing evolution parameters")
+        logger.info("Precomputing evolution parameters")
         self.lineFreqs = []
         self.linePhis = []
         self.lineh0s = []
@@ -1607,12 +1609,12 @@ class FrequencyModulatedArtifactWriter(Writer):
 
         self.pre_compute_evolution()
 
-        logging.info("Generating SFTs")
+        logger.info("Generating SFTs")
 
         if num_threads > 1 and pkgutil.find_loader("pathos") is not None:
             import pathos.pools
 
-            logging.info("Using {} threads".format(num_threads))
+            logger.info("Using {} threads".format(num_threads))
             try:
                 with pathos.pools.ProcessPool(num_threads) as p:
                     list(
@@ -1624,7 +1626,7 @@ class FrequencyModulatedArtifactWriter(Writer):
             except KeyboardInterrupt:
                 p.terminate()
         else:
-            logging.info(
+            logger.info(
                 "No multiprocessing requested or `pathos` not install, cont."
                 " without multiprocessing"
             )
@@ -1687,7 +1689,7 @@ class FrequencyAmplitudeModulatedArtifactWriter(FrequencyModulatedArtifactWriter
 
 class InjectionParametersGenerator(injection_parameters.InjectionParametersGenerator):
     def __new__(cls, *args, **kwargs):
-        logging.warning(
+        logger.warning(
             "This class was moved to a different module within this same package (`injection_parameters`) "
             "and will be removed from this module (`make_sfts`) in a future release. "
         )
@@ -1698,7 +1700,7 @@ class AllSkyInjectionParametersGenerator(
     injection_parameters.AllSkyInjectionParametersGenerator
 ):
     def __new__(cls, *args, **kwargs):
-        logging.warning(
+        logger.warning(
             "This class was moved to a different module within this same package (`injection_parameters`) "
             "and will be removed from this module (`make_sfts`) in a future release. "
         )

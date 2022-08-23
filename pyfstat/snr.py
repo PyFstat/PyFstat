@@ -8,6 +8,8 @@ from attrs import define, field
 
 from pyfstat.helper_functions import get_ephemeris_files
 
+logger = logging.getLogger(__name__)
+
 
 @define(kw_only=True, slots=False)
 class SignalToNoiseRatio:
@@ -440,16 +442,16 @@ class DetectorStates:
                         "no comma-separated strings allowed."
                     )
 
-            logging.debug("Retrieving detectors from timestamps dictionary.")
+            logger.debug("Retrieving detectors from timestamps dictionary.")
             detectors = list(timestamps.keys())
             timestamps = timestamps.values()
 
         elif detectors is not None:
             if isinstance(detectors, str):
-                logging.debug("Converting `detectors` string to list")
+                logger.debug("Converting `detectors` string to list")
                 detectors = detectors.replace(" ", "").split(",")
 
-            logging.debug("Checking integrity of `timestamps`")
+            logger.debug("Checking integrity of `timestamps`")
             ts = np.array(timestamps)
             if ts.dtype == np.dtype("O") or ts.ndim > 1:
                 raise ValueError("`timestamps` is not a 1D list of numerical values")

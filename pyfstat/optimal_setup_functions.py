@@ -14,6 +14,8 @@ import scipy.optimize
 
 import pyfstat.helper_functions as helper_functions
 
+logger = logging.getLogger(__name__)
+
 
 def get_optimal_setup(
     NstarMax, Nsegs0, tref, minStartTime, maxStartTime, prior, detector_names
@@ -50,14 +52,14 @@ def get_optimal_setup(
 
     """
 
-    logging.info(
+    logger.info(
         "Calculating optimal setup for NstarMax={}, Nsegs0={}".format(NstarMax, Nsegs0)
     )
 
     Nstar_0 = get_Nstar_estimate(
         Nsegs0, tref, minStartTime, maxStartTime, prior, detector_names
     )
-    logging.info("Stage {}, nsegs={}, Nstar={}".format(0, Nsegs0, int(Nstar_0)))
+    logger.info("Stage {}, nsegs={}, Nstar={}".format(0, Nsegs0, int(Nstar_0)))
 
     nsegs_vals = [Nsegs0]
     Nstar_vals = [Nstar_0]
@@ -71,7 +73,7 @@ def get_optimal_setup(
         nsegs_vals.append(nsegs_i)
         Nstar_vals.append(Nstar_i)
         i += 1
-        logging.info("Stage {}, nsegs={}, Nstar={}".format(i, nsegs_i, int(Nstar_i)))
+        logger.info("Stage {}, nsegs={}, Nstar={}".format(i, nsegs_i, int(Nstar_i)))
 
     return nsegs_vals, Nstar_vals
 
@@ -130,7 +132,7 @@ def _get_nsegs_ip1(
     res = scipy.optimize.minimize(
         f, 0.4 * nsegs_i, method="Powell", tol=1, options={"maxiter": 10}
     )
-    logging.info("{} with {} evaluations".format(res["message"], res["nfev"]))
+    logger.info("{} with {} evaluations".format(res["message"], res["nfev"]))
     nsegs_ip1 = int(res.x)
     if nsegs_ip1 == 0:
         nsegs_ip1 = 1
@@ -259,7 +261,7 @@ def get_Nstar_estimate(nsegs, tref, minStartTime, maxStartTime, prior, detector_
             ephemeris,
         )
     except RuntimeError as e:
-        logging.warning("Encountered run-time error {}".format(e))
+        logger.warning("Encountered run-time error {}".format(e))
         raise RuntimeError("Calculation of the SSkyMetric failed")
 
     if sky:
@@ -283,7 +285,7 @@ def get_Nstar_estimate(nsegs, tref, minStartTime, maxStartTime, prior, detector_
         dV = np.abs(np.linalg.det(parallelepiped[:j, :j]))
         sqrtdetG = np.sqrt(np.abs(np.linalg.det(g[:j, :j])))
         Nstars.append(sqrtdetG * dV)
-    logging.debug(
+    logger.debug(
         "Nstar for each dimension = {}".format(
             ", ".join(["{:1.1e}".format(n) for n in Nstars])
         )
