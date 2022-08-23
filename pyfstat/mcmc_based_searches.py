@@ -3212,6 +3212,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
         log_table=True,
         gen_tex_table=True,
         setup_only=False,
+        no_template_counting=True,
     ):
         """
         Initialize the setup of the follow-up run computing the required quantities fro, NstarMax
@@ -3308,7 +3309,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
                     rs[0] = (rs[0], 0)
                 run_setup[i] = rs
 
-                if args.no_template_counting:
+                if no_template_counting:
                     Nstar_vals.append([1, 1, 1])
                 else:
                     Nstar = optimal_setup_functions.get_Nstar_estimate(
