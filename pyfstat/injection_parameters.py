@@ -6,6 +6,8 @@ from typing import Union
 import numpy as np
 from attrs import Factory, define, field
 
+logger = logging.getLogger(__name__)
+
 isotropic_amplitude_priors = {
     "cosi": {"uniform": {"low": -1.0, "high": 1.0}},
     "psi": {"uniform": {"low": -0.25 * np.pi, "high": 0.25 * np.pi}},
@@ -110,7 +112,7 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
 
         for key in sky_priors:
             if key in priors_input_format:
-                logging.warning(
+                logger.warning(
                     f"Found {key} key in input priors with value {priors_input_format[key]}.\n"
                     "Overwritting to produce uniform samples across the sky."
                 )

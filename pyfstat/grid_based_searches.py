@@ -21,6 +21,8 @@ from pyfstat.core import (
     SemiCoherentSearch,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class GridSearch(BaseSearchClass):
     """A search evaluating the F-statistic over a regular grid in parameter space.
@@ -148,7 +150,7 @@ class GridSearch(BaseSearchClass):
             return None
 
     def _initiate_search_object(self):
-        logging.info("Setting up search object")
+        logger.info("Setting up search object")
         search_ranges = self._get_search_ranges()
         if self.nsegs == 1:
             self.search = ComputeFstat(
@@ -204,7 +206,7 @@ class GridSearch(BaseSearchClass):
                 x[0], x[1], num=int((x[1] - x[0]) / x[2]) + 1, endpoint=True
             )
         else:
-            logging.info("Using tuple of length {:d} as is.".format(len(x)))
+            logger.info("Using tuple of length {:d} as is.".format(len(x)))
             return np.array(x)
 
     def _get_input_data_array(self):
@@ -214,7 +216,7 @@ class GridSearch(BaseSearchClass):
         and explicit dtype (cannot have named columns without that).
         (Will also ensure safety when reading/saving data from/to .txt files.)
         """
-        logging.info("Generating input data array")
+        logger.info("Generating input data array")
         coord_arrays = []
         for sl in self.search_keys:
             coord_arrays.append(
@@ -258,7 +260,7 @@ class GridSearch(BaseSearchClass):
         if self.clean:
             return False
         if os.path.isfile(self.out_file) is False:
-            logging.info(
+            logger.info(
                 "No old output file '{:s}' found, continuing with grid search.".format(
                     self.out_file
                 )
@@ -269,13 +271,13 @@ class GridSearch(BaseSearchClass):
                 [os.path.getmtime(f) for f in self._get_list_of_matching_sfts()]
             )
             if os.path.getmtime(self.out_file) < oldest_sft:
-                logging.info(
+                logger.info(
                     "Search output data outdates sft files,"
                     + " continuing with grid search."
                 )
                 return False
 
-        logging.info("Checking header of '{:s}'".format(self.out_file))
+        logger.info("Checking header of '{:s}'".format(self.out_file))
         old_params_dict_str_list = (
             helper_functions.read_parameters_dict_lines_from_file_header(self.out_file)
         )
@@ -284,20 +286,20 @@ class GridSearch(BaseSearchClass):
         ]
         unmatched = np.setxor1d(old_params_dict_str_list, new_params_dict_str_list)
         if len(unmatched) > 0:
-            logging.info(
+            logger.info(
                 "Parameters string in file header does not match"
                 + " current search setup, continuing with grid search."
             )
             return False
         else:
-            logging.info(
+            logger.info(
                 "Parameters string in file header matches current search setup."
             )
 
-        logging.info("Loading old data from '{:s}'.".format(self.out_file))
+        logger.info("Loading old data from '{:s}'.".format(self.out_file))
         old_data = helper_functions.read_txt_file_with_header(self.out_file, names=True)
         if len(old_data) != len(self.input_data):
-            logging.info(
+            logger.info(
                 "Old data found in '{:s}', but differs"
                 " in length ({:d} points in file, {:d} points requested);"
                 " continuing with grid search.".format(
@@ -306,7 +308,7 @@ class GridSearch(BaseSearchClass):
             )
             return False
         if len(old_data.dtype) < len(self.input_data.dtype):
-            logging.info(
+            logger.info(
                 "Old data found in '{:s}', but has less columns ({:d})"
                 " than new input parameters grid ({:d});"
                 " continuing with grid search.".format(
@@ -331,7 +333,7 @@ class GridSearch(BaseSearchClass):
             for key in self.search_keys
         ]
         if np.all(column_matches):
-            logging.info(
+            logger.info(
                 "Old data found in '{:s}' with matching input parameters grid,"
                 " no search performed. Data grid size: {:d}x{:d}".format(
                     self.out_file, len(old_data), len(old_data.dtype)
@@ -339,7 +341,7 @@ class GridSearch(BaseSearchClass):
             )
             return old_data
         else:
-            logging.info(
+            logger.info(
                 "Old data found in '{:s}', input parameters grid differs,"
                 "  continuing with grid search.".format(self.out_file)
             )
@@ -376,7 +378,7 @@ class GridSearch(BaseSearchClass):
                 self.data = old_data
                 return
 
-        logging.info(
+        logger.info(
             "Running search over a total of {:d} grid points...".format(
                 np.shape(iterable)[0]
             )
@@ -462,7 +464,7 @@ class GridSearch(BaseSearchClass):
         as long as the `_get_savetxt_fmt_dict() method` is suitably overridden
         to account for any additional parameters.
         """
-        logging.info("Saving data to {}".format(self.out_file))
+        logger.info("Saving data to {}".format(self.out_file))
         header = "\n".join(self.output_file_header)
         header += "\n" + " ".join(self.output_keys)
         outfmt = self._get_savetxt_fmt_list()
@@ -982,18 +984,18 @@ class TransientGridSearch(GridSearch):
         self.output_file_header = self.get_output_file_header()
         if self.outputTransientFstatMap:
             self.tCWfilebase = os.path.splitext(self.out_file)[0] + "_tCW_"
-            logging.info(
+            logger.info(
                 "Will save per-Doppler Fstatmap"
                 " results to {}*.dat".format(self.tCWfilebase)
             )
 
     def __enter__(self):
-        logging.debug("Entering the TransientGridSearch context...")
+        logger.debug("Entering the TransientGridSearch context...")
         self.search.__enter__()
         return self
 
     def __exit__(self, *args, **kwargs):
-        logging.debug("Leaving the TransientGridSearch context...")
+        logger.debug("Leaving the TransientGridSearch context...")
         self.search.__exit__(*args, **kwargs)
 
     def _set_output_keys(self):
@@ -1014,7 +1016,7 @@ class TransientGridSearch(GridSearch):
         self.output_keys += ["t0", "tau"]
 
     def _initiate_search_object(self):
-        logging.info("Setting up search object")
+        logger.info("Setting up search object")
         search_ranges = self._get_search_ranges()
         self.search = ComputeFstat(
             tref=self.tref,
@@ -1085,7 +1087,7 @@ class TransientGridSearch(GridSearch):
         )
         data = np.zeros(len(self.input_data), dtype=output_dtype)
         self.timingFstatMap = 0.0
-        logging.info(
+        logger.info(
             "Running search over a total of {:d} grid points...".format(
                 np.shape(self.input_data)[0]
             )
@@ -1123,7 +1125,7 @@ class TransientGridSearch(GridSearch):
             if self.outputAtoms:
                 self.search.write_atoms_to_file(os.path.splitext(self.out_file)[0])
 
-        logging.info(
+        logger.info(
             "Total time spent computing transient F-stat maps: {:.2f}s".format(
                 self.timingFstatMap
             )
@@ -1268,7 +1270,7 @@ class GridGlitchSearch(GridSearch):
         self.output_file_header = self.get_output_file_header()
 
     def _initiate_search_object(self):
-        logging.info("Setting up search object")
+        logger.info("Setting up search object")
         search_ranges = self._get_search_ranges()
         self.search = SemiCoherentGlitchSearch(
             label=self.label,

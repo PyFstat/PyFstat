@@ -16,6 +16,8 @@ from time import time
 
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
 
 def _optional_import(modulename, shorthand=None):
     """
@@ -36,10 +38,10 @@ def _optional_import(modulename, shorthand=None):
 
     try:
         globals()[shorthand] = imp.import_module(modulename)
-        logging.debug("Successfully imported module %s%s." % (modulename, shorthandbit))
+        logger.debug("Successfully imported module %s%s." % (modulename, shorthandbit))
         success = True
     except ImportError:
-        logging.debug("Failed to import module {:s}.".format(modulename))
+        logger.debug("Failed to import module {:s}.".format(modulename))
         success = False
 
     return success
@@ -299,16 +301,16 @@ def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
     have_lalpulsar = _optional_import("lalpulsar")
     features["lal"] = have_lal and have_lalpulsar
     features["pycuda"] = _optional_imports_pycuda()
-    logging.debug("Got the following features for transient F-stat maps:")
-    logging.debug(features)
+    logger.debug("Got the following features for transient F-stat maps:")
+    logger.debug(features)
 
     if feature == "pycuda":
         if not features["pycuda"]:
             raise RuntimeError("pycuda use was requested, but imports failed.")
-        logging.debug("CUDA version: " + ".".join(map(str, drv.get_version())))
+        logger.debug("CUDA version: " + ".".join(map(str, drv.get_version())))
 
         drv.init()
-        logging.debug(
+        logger.debug(
             "Starting with default pyCUDA context,"
             " then checking all available devices..."
         )
@@ -327,7 +329,7 @@ def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
                 raise pycuda._driver.LogicError(e.message)
 
         num_gpus = drv.Device.count()
-        logging.debug("Found {} CUDA device(s).".format(num_gpus))
+        logger.debug("Found {} CUDA device(s).".format(num_gpus))
 
         devices = []
         devnames = np.empty(num_gpus, dtype="S32")
@@ -335,7 +337,7 @@ def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
             devn = drv.Device(n)
             devices.append(devn)
             devnames[n] = devn.name().replace(" ", "-").replace("_", "-")
-            logging.debug(
+            logger.debug(
                 "device {}: model: {}, RAM: {}MB".format(
                     n, devnames[n], devn.total_memory() / (2.0**20)
                 )
@@ -365,7 +367,7 @@ def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
             else:
                 devnum = devmatches[0]
                 if len(devmatches) > 1:
-                    logging.warning(
+                    logger.warning(
                         'Found {} CUDA devices matching name "{}".'
                         " Choosing first one with index {}.".format(
                             len(devmatches), cudaDeviceName, devnum
@@ -378,7 +380,7 @@ def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
         else:
             devnum = 0
         devn = devices[devnum]
-        logging.info(
+        logger.info(
             "Choosing CUDA device {},"
             " of {} devices present: {}{}...".format(
                 devnum, num_gpus, devn.name(), matchbit
@@ -550,7 +552,7 @@ def _get_absolute_kernel_path(kernel):
 def _print_GPU_memory_MB(key):
     mem_used_MB = drv.mem_get_info()[0] / (2.0**20)
     mem_total_MB = drv.mem_get_info()[1] / (2.0**20)
-    logging.debug(
+    logger.debug(
         "{} GPU memory: {:.4f} / {:.4f} MB free".format(key, mem_used_MB, mem_total_MB)
     )
 
@@ -627,11 +629,11 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=False)
         atoms.data[tCWparams["numAtoms"] - 1].timestamp + tCWparams["TAtom"]
     )
 
-    logging.debug(
+    logger.debug(
         "Transient F-stat map:"
         " t0_data={:d}, t1_data={:d}".format(tCWparams["t0_data"], tCWparams["t1_data"])
     )
-    logging.debug(
+    logger.debug(
         "Transient F-stat map:"
         " numAtoms={:d}, TAtom={:d},"
         " TAtomHalf={:d}".format(tCWparams["numAtoms"], tCWparams["TAtom"], TAtomHalf)
@@ -680,7 +682,7 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=False)
     )
     FstatMap = pyTransientFstatMap(tCWparams["N_t0Range"], tCWparams["N_tauRange"])
 
-    logging.debug(
+    logger.debug(
         "Transient F-stat map:"
         " N_t0Range={:d}, N_tauRange={:d},"
         " total grid points: {:d}".format(
@@ -714,7 +716,7 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=False)
     FstatMap.t0_ML = windowRange.t0 + maxidx[0] * windowRange.dt0
     FstatMap.tau_ML = windowRange.tau + maxidx[1] * windowRange.dtau
 
-    logging.debug(
+    logger.debug(
         "Done computing transient F-stat map."
         " maxF={:.4f}, t0_ML={}, tau_ML={}".format(
             FstatMap.maxF, FstatMap.t0_ML, FstatMap.tau_ML
@@ -724,7 +726,7 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=False)
     if BtSG:
         # so far seems there is no need to move this onto the GPU
         FstatMap.lnBtSG = FstatMap.get_lnBtSG()
-        logging.debug(f"Also computed: lnBtSG={FstatMap.lnBtSG:.4f}")
+        logger.debug(f"Also computed: lnBtSG={FstatMap.lnBtSG:.4f}")
 
     return FstatMap
 
@@ -776,7 +778,7 @@ def pycuda_compute_transient_fstat_map_rect(atomsInputMatrix, windowRange, tCWpa
     gridCols = 1
 
     # running the kernel
-    logging.debug(
+    logger.debug(
         "Calling pyCUDA kernel with a grid of {}*{}={} blocks"
         " of {}*{}={} threads each: {} total threads...".format(
             gridRows,
@@ -857,7 +859,7 @@ def pycuda_compute_transient_fstat_map_exp(atomsInputMatrix, windowRange, tCWpar
     gridCols = int(np.ceil(1.0 * tCWparams["N_tauRange"] / blockCols))
 
     # running the kernel
-    logging.debug(
+    logger.debug(
         "Calling kernel with a grid of {}*{}={} blocks"
         " of {}*{}={} threads each: {} total threads...".format(
             gridRows,

@@ -21,11 +21,13 @@ import peakutils
 
 from ._version import get_versions
 
+logger = logging.getLogger(__name__)
+
 # workaround for matplotlib on X-less remote logins
 if "DISPLAY" in os.environ:
     import matplotlib.pyplot as plt
 else:
-    logging.info(
+    logger.info(
         'No $DISPLAY environment variable found, so importing \
                   matplotlib.pyplot with non-interactive "Agg" backend.'
     )
@@ -152,9 +154,9 @@ def get_ephemeris_files():
             earth_ephem = d["earth_ephem"]
             sun_ephem = d["sun_ephem"]
         except KeyError:
-            logging.warning(f"No [earth/sun]_ephem found in {config_file}. {please}")
+            logger.warning(f"No [earth/sun]_ephem found in {config_file}. {please}")
     else:
-        logging.info(f"No {config_file} file found. {please}")
+        logger.info(f"No {config_file} file found. {please}")
     return earth_ephem, sun_ephem
 
 
@@ -338,7 +340,7 @@ def run_commandline(cl, log_level=20, raise_error=True, return_output=True):
 
     logging.log(log_level, "Now executing: " + cl)
     if "|" in cl:
-        logging.warning(
+        logger.warning(
             "Pipe ('|') found in commandline, errors may not be" " properly caught!"
         )
     try:
@@ -422,11 +424,11 @@ def get_sft_as_arrays(sftfilepattern, fMin=None, fMax=None, constraints=None):
     sft_catalog = lalpulsar.SFTdataFind(sftfilepattern, constraints)
     ifo_labels = lalpulsar.ListIFOsInCatalog(sft_catalog)
 
-    logging.info(
+    logger.info(
         f"Loading {sft_catalog.length} SFTs from {', '.join(ifo_labels.data)}..."
     )
     multi_sfts = lalpulsar.LoadMultiSFTs(sft_catalog, fMin, fMax)
-    logging.info("done!")
+    logger.info("done!")
 
     times = {}
     amplitudes = {}
@@ -441,7 +443,7 @@ def get_sft_as_arrays(sftfilepattern, fMin=None, fMax=None, constraints=None):
 
         nbins, nsfts = amplitudes[ifo].shape
 
-        logging.info(f"{nsfts} retrieved from {ifo}.")
+        logger.info(f"{nsfts} retrieved from {ifo}.")
 
         f0 = sfts.data[0].f0
         df = sfts.data[0].deltaF
@@ -504,7 +506,7 @@ def get_sft_array(sftfilepattern, F0=None, dF0=None):
     MultiSFTs = lalpulsar.LoadMultiSFTs(SFTCatalog, fMin, fMax)
     ndet = MultiSFTs.length
     if ndet > 1:
-        logging.warning(
+        logger.warning(
             "Loaded SFTs from {:d} detectors, only using the first.".format(ndet)
         )
 
@@ -822,7 +824,7 @@ def get_parameters_dict_from_file_header(outfile, comments="#", eval_values=Fals
         (with values either as unparsed strings, or evaluated).
     """
     if eval_values:
-        logging.warning(
+        logger.warning(
             "Will evaluate dictionary values read from file '{:s}'.".format(outfile)
         )
     params_dict = {}
@@ -1190,11 +1192,11 @@ def generate_loudest_file(
     loudest_file: str
         The filename of the CFSv2 output file.
     """
-    logging.info("Running CFSv2 to get .loudest file")
+    logger.info("Running CFSv2 to get .loudest file")
     if np.any([key in max_params for key in ["delta_F0", "delta_F1", "tglitch"]]):
         raise RuntimeError("CFSv2 --outputLoudest cannot deal with glitch parameters.")
     if transientWindowType:
-        logging.warning(
+        logger.warning(
             "CFSv2 --outputLoudest always reports the maximum of the"
             " standard CW 2F-statistic, not the transient max2F."
         )
