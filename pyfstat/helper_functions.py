@@ -43,23 +43,26 @@ def set_up_matplotlib_defaults():
 
 
 def set_up_logger(outdir=None, label="pyfstat", log_level="INFO"):
-    """
-     Setup the logger.
-     Based on the implementation in Nessai:
-     https://github.com/mj-will/nessai/blob/main/nessai/utils/logging.py
-     Parameters
-     ----------
-     outdir : str, optional
-         Path of to outdir directory.
-     label : str, optional
-         Label for this instance of the logger.
-         Defaults to `pyfstat`, which is the "root" logger of this package.
-     log_level : {'ERROR', 'WARNING', 'INFO', 'DEBUG'}, optional
-         Level of logging passed to logger.
-     Returns
-     -------
-    :obj:`logging.Logger`
-         Instance of the Logger class.
+    """Setup the logger.
+
+    Based on the implementation in Nessai:
+    https://github.com/mj-will/nessai/blob/main/nessai/utils/logging.py
+
+    Parameters
+    ----------
+    outdir : str, optional
+        Path of to outdir directory.
+    label : str, optional
+        Label for this instance of the logger.
+        Defaults to `pyfstat`, which is the "root" logger of this package.
+    log_level : {'ERROR', 'WARNING', 'INFO', 'DEBUG'}, optional
+        Level of logging passed to logger.
+
+    Returns
+    -------
+    obj:`logging.Logger`
+        Instance of the Logger class.
+
     """
     from . import __version__ as version
 
