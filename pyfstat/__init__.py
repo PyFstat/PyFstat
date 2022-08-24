@@ -40,7 +40,6 @@ from .make_sfts import (
     FrequencyModulatedArtifactWriter,
     GlitchWriter,
     LineWriter,
-    MakeFakeData,
     Writer,
 )
 from .mcmc_based_searches import (
@@ -50,5 +49,6 @@ from .mcmc_based_searches import (
     MCMCSemiCoherentSearch,
     MCMCTransientSearch,
 )
+from .simulate import MakeFakeData
 from .snr import DetectorStates, SignalToNoiseRatio
 from .tcw_fstat_map_funcs import pyTransientFstatMap
