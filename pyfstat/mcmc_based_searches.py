@@ -57,6 +57,7 @@ import numpy as np
 from ptemcee import Sampler as PTSampler
 from scipy.stats import lognorm
 from tqdm import tqdm
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 import pyfstat.core as core
 import pyfstat.helper_functions as helper_functions
@@ -506,10 +507,11 @@ class MCMCSearch(BaseSearchClass):
         self.scatter_val = scatter_val
 
     def _run_sampler(self, p0, nprod=0, nburn=0, window=50):
-        for result in tqdm(
-            self.sampler.sample(p0, iterations=nburn + nprod), total=nburn + nprod
-        ):
-            pass
+        with logging_redirect_tqdm():
+            for result in tqdm(
+                self.sampler.sample(p0, iterations=nburn + nprod), total=nburn + nprod
+            ):
+                pass
 
         self.mean_acceptance_fraction = np.mean(
             self.sampler.acceptance_fraction, axis=1
