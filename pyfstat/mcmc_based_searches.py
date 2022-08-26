@@ -2946,7 +2946,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         return np.sum(H)
 
 
-class MCMCFollowUpSearch(MCMCSemiCoherentSearch):
+class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
     """Hierarchical follow-up procedure
 
     Executes MCMC runs with increasing coherence times in order to follow up a parameter space
