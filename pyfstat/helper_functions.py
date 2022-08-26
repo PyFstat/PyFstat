@@ -11,6 +11,7 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 from datetime import datetime, timezone
 from functools import wraps
 
@@ -83,7 +84,7 @@ def set_up_logger(outdir=None, label="pyfstat", log_level="INFO"):
     )
 
     if any([type(h) == logging.StreamHandler for h in logger.handlers]) is False:
-        stream_handler = logging.StreamHandler()
+        stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(common_formatter)
         stream_handler.setLevel(level)
         logger.addHandler(stream_handler)
