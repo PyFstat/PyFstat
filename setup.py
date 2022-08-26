@@ -91,7 +91,7 @@ setup(
         "attrs",
         "corner",
         "dill",
-        "lalsuite>=7.2",
+        "lalsuite>=7.7",
         "matplotlib>=2.1",
         "numpy",
         "pathos",
