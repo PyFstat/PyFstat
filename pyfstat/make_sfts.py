@@ -10,7 +10,7 @@ import lal
 import lalpulsar
 import numpy as np
 from tqdm import tqdm, trange
-from tqdm.contribu.logging import logging_redirect_tqdm
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 import pyfstat.helper_functions as helper_functions
 from pyfstat import injection_parameters
