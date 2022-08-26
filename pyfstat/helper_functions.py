@@ -65,7 +65,6 @@ def set_up_logger(outdir=None, label="pyfstat", log_level="INFO"):
         Instance of the Logger class.
 
     """
-    from . import __version__ as version
 
     if type(log_level) is str:
         try:
@@ -90,23 +89,22 @@ def set_up_logger(outdir=None, label="pyfstat", log_level="INFO"):
         logger.addHandler(stream_handler)
 
     if any([type(h) == logging.FileHandler for h in logger.handlers]) is False:
-        if label:
-            if outdir:
-                if not os.path.exists(outdir):
-                    os.makedirs(outdir, exist_ok=True)
-            else:
-                outdir = "."
+        if label and outdir:
+            if not os.path.exists(outdir):
+                os.makedirs(outdir, exist_ok=True)
             log_file = os.path.join(outdir, f"{label}.log")
+            logger.info(f"Additionally logging to file: {log_file}")
             file_handler = logging.FileHandler(log_file)
             file_handler.setFormatter(common_formatter)
-
             file_handler.setLevel(level)
             logger.addHandler(file_handler)
+            # need the following because the file didn't catch any previous version logs yet
+            logger_file_only = logging.Logger("pyfstat")
+            logger_file_only.addHandler(file_handler)
+            logger_file_only.info(f"Running PyFstat version {get_version_string()}")
 
     for handler in logger.handlers:
         handler.setLevel(level)
-
-    logger.info(f"Running PyFstat version {version}")
 
     return logger
 

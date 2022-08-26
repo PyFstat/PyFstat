@@ -5,6 +5,7 @@ Directed grid search: Monochromatic source
 Search for a monochromatic (no spindown) signal using
 a parameter space grid (i.e. no MCMC).
 """
+import logging
 import os
 
 import matplotlib.pyplot as plt
@@ -12,9 +13,13 @@ import numpy as np
 
 import pyfstat
 
+# custom logging config needs to come before import
+# logging.basicConfig(level=logging.INFO, filename="log.log")
+
+
 label = "PyFstat_example_grid_search_F0"
 outdir = os.path.join("PyFstat_example_data", label)
-logger = pyfstat.set_up_logger(label=label, outdir=outdir)
+# logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 # Properties of the GW data
 sqrtS = "1e-23"
@@ -75,7 +80,7 @@ search.run()
 
 # report details of the maximum point
 max_dict = search.get_max_twoF()
-logger.info(
+logging.info(
     "max2F={:.4f} from GridSearch, offsets from injection: {:s}.".format(
         max_dict["twoF"],
         ", ".join(
@@ -89,7 +94,7 @@ logger.info(
 )
 search.generate_loudest()
 
-logger.info("Plotting 2F(F0)...")
+logging.info("Plotting 2F(F0)...")
 fig, ax = plt.subplots()
 frequencies = search.data["F0"]
 twoF = search.data["twoF"]

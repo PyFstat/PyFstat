@@ -20,6 +20,8 @@ import pyfstat.helper_functions as helper_functions
 import pyfstat.tcw_fstat_map_funcs as tcw
 
 logger = logging.getLogger(__name__)
+# the following only gets logged if caller pre-configured a logger
+logger.info(f"Running PyFstat version {helper_functions.get_version_string()}")
 
 # workaround for matplotlib on X-less remote logins
 if "DISPLAY" in os.environ:
