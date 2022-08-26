@@ -1,3 +1,25 @@
+## 1.17.0 [26/08/2022]
+
+ - dropped dependency on `lalapps` and now requiring `lalpulsar>=5.0.0` instead,
+   where LALSuite executables now live
+   - there is a `get_lal_exec()` helper function to still allow running
+     on old installations where the executables live in `lalapps`
+ - removed most of the old package-level hardcoded `argparse` options,
+   this should reduce conflicts when users import it in their own caller scripts:
+   - `--clean` to be given as an argument to supporting classes
+   - `-N` to be given as class argument `num_threads`
+     to the one class `FrequencyModulatedArtifactWriter` that supported it
+   - `--setup-only` and `--no-template-counting` to be given as class arguments
+     to the (now deprecated) `MCMCFollowUpSearch`
+   - `--no-interactive` was not supported anywhere
+ - LaTeX no longer enabled for plotting by default
+ - removed `bashplotlib` dependency and SFT timestamps ASCII art
+ - removed fallbacks in case `tqdm` is not available,
+   which is a dependency anyway
+ - `snr` class: fixed behaviour when instantiating with a dictionary of timestamps
+ - removed old backwards compatibility code from `FrequencyModulatedArtifactWriter`
+ - developers: updated pre-commit hooks
+
 ## 1.16.0 [25/07/2022]
 
  - include local versions of autocorr functions from `ptemcee`
