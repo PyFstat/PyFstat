@@ -2,6 +2,7 @@
 
  - dropped dependency on `lalapps` and now requiring `lalpulsar>=5.0.0` instead,
    where LALSuite executables now live
+   (corresponding to `lalsuite>=7.7`)
    - there is a `get_lal_exec()` helper function to still allow running
      on old installations where the executables live in `lalapps`
  - removed most of the old package-level hardcoded `argparse` options,
