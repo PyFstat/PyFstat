@@ -41,7 +41,7 @@ Latest development versions can
 [also be installed with pip](#pip-install-from-github)
 or [from a local git clone](#install-pyfstat-from-source-zenodo-or-git-clone).
 
-If you don't have a recent `python` installation (`3.7+`) on your system,
+If you don't have a recent `python` installation (`3.8+`) on your system,
 then `Docker` or `conda` are the easiest paths.
 
 In either case, be sure to also check out the notes on
@@ -258,7 +258,7 @@ Here's what you need to know:
 
   This sets up everything for automated code quality tests (see below)
   to be checked for you at every commit.
-* The github automated tests currently run on `python` [3.7,3.8,3.9,3.10]
+* The github automated tests currently run on `python` [3.8,3.9,3.10]
   and new PRs need to pass all these.
 * You can also run the full test suite locally via `pytest tests/`,
   or run individual tests as explained

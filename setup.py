@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 import versioneer
 
 # check python version
-min_python_version = (3, 7, 0)  # (major,minor,micro)
+min_python_version = (3, 8, 0)  # (major,minor,micro)
 python_version = sys.version_info
 print("Running Python version %s.%s.%s" % python_version[:3])
 if python_version < min_python_version:
