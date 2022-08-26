@@ -29,7 +29,7 @@ class Writer(BaseSearchClass):
 
     This class currently relies on the `Makefakedata_v5` executable
     which will be run in a subprocess.
-    See `lalapps_Makefakedata_v5 --help`
+    See `lalpulsar_Makefakedata_v5 --help`
     for more detailed help with some of the parameters.
     """
 
@@ -1308,7 +1308,7 @@ class FrequencyModulatedArtifactWriter(Writer):
 
     Contrary to the main `Writer` class, this calls the older
     `Makefakedata_v4` executable which supports the special `--lineFeature` option.
-    See `lalapps_Makefakedata_v4 --help`
+    See `lalpulsar_Makefakedata_v4 --help`
     for more detailed help with some of the parameters.
     """
 

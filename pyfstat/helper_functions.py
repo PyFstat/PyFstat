@@ -980,7 +980,7 @@ def predict_fstat(
     Parameters
     ----------
     h0, cosi, psi, Alpha, Delta : float
-        Signal parameters, see `lalapps_PredictFstat --help` for more info.
+        Signal parameters, see `lalpulsar_PredictFstat --help` for more info.
     F0: float or None
         Signal frequency.
         Only needed for noise floor estimation when given `sftfilepattern`
@@ -1015,11 +1015,11 @@ def predict_fstat(
         Ephemerides files, defaults will be used if `None`.
     transientWindowType: str
         Optional parameter for transient signals,
-        see `lalapps_PredictFstat --help`.
+        see `lalpulsar_PredictFstat --help`.
         Default of `none` means a classical Continuous Wave signal.
     transientStartTime, transientTau: int or None
         Optional parameters for transient signals,
-        see `lalapps_PredictFstat --help`.
+        see `lalpulsar_PredictFstat --help`.
 
     Returns
     -------
