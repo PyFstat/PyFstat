@@ -51,7 +51,7 @@ def set_up_logger(outdir=None, label="pyfstat", log_level="INFO"):
     Parameters
     ----------
     outdir : str, optional
-        Path of to outdir directory.
+        Path to outdir directory.
     label : str, optional
         Label for this instance of the logger.
         Defaults to `pyfstat`, which is the "root" logger of this package.
@@ -78,8 +78,8 @@ def set_up_logger(outdir=None, label="pyfstat", log_level="INFO"):
     logger.setLevel(level)
 
     common_formatter = logging.Formatter(
-        "%(asctime)s %(name)s %(levelname)-8s: %(message)s",
-        datefmt="%m-%d %H:%M",
+        "%(asctime)s.%(msecs)03d %(name)s %(levelname)-8s: %(message)s",
+        datefmt="%y-%m-%d %H:%M:%S",
     )
 
     if any([type(h) == logging.StreamHandler for h in logger.handlers]) is False:
