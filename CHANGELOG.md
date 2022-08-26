@@ -1,5 +1,6 @@
 ## 1.17.0 [26/08/2022]
 
+ - dropped python 3.7 support
  - dropped dependency on `lalapps` and now requiring `lalpulsar>=5.0.0` instead,
    where LALSuite executables now live
    (corresponding to `lalsuite>=7.7`)
