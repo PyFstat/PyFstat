@@ -783,9 +783,9 @@ class GridSearch(BaseSearchClass):
         i.e. the maximum value and its corresponding parameters.
         """
         d = self.get_max_twoF()
-        print("Grid point with max(twoF) for {}:".format(self.label))
+        logger.info("Grid point with max(twoF) for {}:".format(self.label))
         for k, v in d.items():
-            print("  {}={}".format(k, v))
+            logger.info("  {}={}".format(k, v))
 
     def generate_loudest(self):
         """Use ComputeFstatistic_v2 executable to produce a .loudest file"""
