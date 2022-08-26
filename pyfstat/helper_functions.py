@@ -692,6 +692,10 @@ def get_commandline_from_SFTDescriptor(descriptor):
     Most LALSuite SFT creation tools save their commandline into that entry,
     so we can extract it and reuse it to reproduce that data.
 
+    Since lalapps 9.0.0 / lalpulsar 5.0.0
+    the relevant executables have been moved to lalpulsar,
+    but we allow for lalapps backwards compatibility here,
+
     Parameters
     ----------
     descriptor: SFTDescriptor
@@ -980,7 +984,7 @@ def predict_fstat(
     Parameters
     ----------
     h0, cosi, psi, Alpha, Delta : float
-        Signal parameters, see `lalapps_PredictFstat --help` for more info.
+        Signal parameters, see `lalpulsar_PredictFstat --help` for more info.
     F0: float or None
         Signal frequency.
         Only needed for noise floor estimation when given `sftfilepattern`
@@ -1015,11 +1019,11 @@ def predict_fstat(
         Ephemerides files, defaults will be used if `None`.
     transientWindowType: str
         Optional parameter for transient signals,
-        see `lalapps_PredictFstat --help`.
+        see `lalpulsar_PredictFstat --help`.
         Default of `none` means a classical Continuous Wave signal.
     transientStartTime, transientTau: int or None
         Optional parameters for transient signals,
-        see `lalapps_PredictFstat --help`.
+        see `lalpulsar_PredictFstat --help`.
 
     Returns
     -------
@@ -1230,9 +1234,11 @@ def gps_to_datestr_utc(gps):
 def get_lal_exec(cmd):
     """Get a lalpulsar/lalapps executable name with the right prefix.
 
-    This is purely to allow for backwards compatibility while
-    https://git.ligo.org/lscsoft/lalsuite/-/merge_requests/1904/
-    has been merged to LALSuite master but not yet released.
+    This is purely to allow for backwards compatibility
+    if, for whatever reason,
+    someone needs to run with old releases
+    (lalapps<9.0.0 and lalpulsar<5.0.0)
+    from before the executables were moved.
 
     Parameters
     -------
