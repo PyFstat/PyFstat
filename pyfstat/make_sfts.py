@@ -9,7 +9,8 @@ import pkgutil
 import lal
 import lalpulsar
 import numpy as np
-from tqdm import tqdm
+from tqdm import tqdm, trange
+from tqdm.contribu.logging import logging_redirect_tqdm
 
 import pyfstat.helper_functions as helper_functions
 from pyfstat import injection_parameters
@@ -1561,18 +1562,20 @@ class FrequencyModulatedArtifactWriter(Writer):
 
         linePhi = 0
         lineFreq_old = 0
-        for i in tqdm(list(range(self.nsfts))):
-            mid_time = self.tstart + (i + 0.5) * self.Tsft
-            lineFreq = self.get_frequency(mid_time)
 
-            self.mid_times.append(mid_time)
-            self.lineFreqs.append(lineFreq)
-            self.linePhis.append(
-                linePhi + np.pi * self.Tsft * (lineFreq_old + lineFreq)
-            )
-            self.lineh0s.append(self.get_h0(mid_time))
+        with logging_redirect_tqdm():
+            for i in trange(self.nsfts):
+                mid_time = self.tstart + (i + 0.5) * self.Tsft
+                lineFreq = self.get_frequency(mid_time)
 
-            lineFreq_old = lineFreq
+                self.mid_times.append(mid_time)
+                self.lineFreqs.append(lineFreq)
+                self.linePhis.append(
+                    linePhi + np.pi * self.Tsft * (lineFreq_old + lineFreq)
+                )
+                self.lineh0s.append(self.get_h0(mid_time))
+
+                lineFreq_old = lineFreq
 
     def make_ith_sft(self, i):
         """Call MFDv4 to create a single SFT with evolved artifact parameters."""
@@ -1630,7 +1633,7 @@ class FrequencyModulatedArtifactWriter(Writer):
                 "No multiprocessing requested or `pathos` not install, cont."
                 " without multiprocessing"
             )
-            for i in tqdm(list(range(self.nsfts))):
+            for i in trange(self.nsfts):
                 self.make_ith_sft(i)
 
         self.concatenate_sft_files()
