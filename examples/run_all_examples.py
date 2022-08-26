@@ -2,18 +2,21 @@ import os
 import shutil
 from glob import glob
 
-from pyfstat.helper_functions import run_commandline
+from pyfstat.helper_functions import run_commandline, set_up_logger
 
 exit_on_first_failure = False
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 outdir = "PyFstat_example_data"
+logger = set_up_logger(outdir=outdir, label="run_all_examples")
+
 # make sure we start from a clean output directory
 # and scripts don't just recycle old output
 if os.path.isdir(outdir):
-    print(f"Removing old output directory {outdir}...")
+    logger.info(f"Removing old output directory {outdir}...")
     shutil.rmtree(outdir)
+
 
 # In some examples directories, scripts must be executed in a certain order.
 # Those need to be manually maintained here.
@@ -46,25 +49,27 @@ for case in os.listdir(basedir):
             ]
         else:
             scripts = sorted(glob(os.path.join(exdir, "PyFstat_example_*.py")))
-        print(f"Executing {len(scripts)} script(s) in example directory {exdir}...")
+        logger.info(
+            f"Executing {len(scripts)} script(s) in example directory {exdir}..."
+        )
         for script in scripts:
             Nscripts += 1
             cl = "python " + script
-            print(f"Running: {script}")
+            logger.info(f"Running: {script}")
             try:
                 run_commandline(cl, return_output=False)
             except Exception as e:
-                print(f"FAILED to run {script}")
+                logger.info(f"FAILED to run {script}")
                 failures.append(script)
                 if exit_on_first_failure:
-                    print("Exception was:")
-                    print(e)
+                    logger.info("Exception was:")
+                    logger.info(e)
                     raise RuntimeError("Exiting on first failure as requested.")
                 else:
-                    print("\n")
+                    logger.info("\n")
             else:
-                print(f"Successfully ran: {script}\n")
-        print("")
+                logger.info(f"Successfully ran: {script}\n")
+        logger.info("")
 
 if len(failures) > 0:
     raise RuntimeError(
@@ -72,4 +77,4 @@ if len(failures) > 0:
         + "\n".join(failures)
     )
 else:
-    print(f"Successfully ran {Nscripts} example scripts.")
+    logger.info(f"Successfully ran {Nscripts} example scripts.")

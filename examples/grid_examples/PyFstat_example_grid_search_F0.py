@@ -75,7 +75,7 @@ search.run()
 
 # report details of the maximum point
 max_dict = search.get_max_twoF()
-print(
+logger.info(
     "max2F={:.4f} from GridSearch, offsets from injection: {:s}.".format(
         max_dict["twoF"],
         ", ".join(
@@ -89,7 +89,7 @@ print(
 )
 search.generate_loudest()
 
-print("Plotting 2F(F0)...")
+logger.info("Plotting 2F(F0)...")
 fig, ax = plt.subplots()
 frequencies = search.data["F0"]
 twoF = search.data["twoF"]

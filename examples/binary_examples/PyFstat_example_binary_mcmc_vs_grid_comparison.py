@@ -54,7 +54,7 @@ signal_parameters = {
 }
 
 
-print("Generating SFTs with injected signal...")
+logger.info("Generating SFTs with injected signal...")
 writer = pyfstat.BinaryModulatedWriter(
     label="simulated_signal",
     outdir=outdir,
@@ -62,9 +62,9 @@ writer = pyfstat.BinaryModulatedWriter(
     **signal_parameters,
 )
 writer.make_data()
-print("")
+logger.info("")
 
-print("Performing Grid Search...")
+logger.info("Performing Grid Search...")
 
 # Create ad-hoc grid and compute Fstatistic around injection point
 # There's no class supporting a binary search in the same way as
@@ -117,9 +117,9 @@ for ind in range(grid_points.shape[0]):
         argp=point[3],
         ecc=point[4],
     )
-print(f"2Fstat computed on {grid_points.shape[0]} points")
-print("")
-print("Plotting results...")
+logger.info(f"2Fstat computed on {grid_points.shape[0]} points")
+logger.info("")
+logger.info("Plotting results...")
 dim = len(search_keys)
 fig, ax = plt.subplots(dim, 1, figsize=(10, 10))
 for ind in range(dim):
@@ -132,7 +132,7 @@ plt.tight_layout()
 fig.savefig(os.path.join(outdir, "grid_twoF_per_dimension.png"))
 
 
-print("Performing MCMCSearch...")
+logger.info("Performing MCMCSearch...")
 # Fixed points in frequency and sky parameters
 theta_prior = {
     "F0": signal_parameters["F0"],
@@ -185,15 +185,15 @@ mcmcsearch.print_summary()
 
 # call some built-in plotting methods
 # these can all highlight the injection parameters, too
-print("Making MCMCSearch {:s} corner plot...".format("-".join(search_keys)))
+logger.info("Making MCMCSearch {:s} corner plot...".format("-".join(search_keys)))
 mcmcsearch.plot_corner(truths=signal_parameters)
-print("Making MCMCSearch prior-posterior comparison plot...")
+logger.info("Making MCMCSearch prior-posterior comparison plot...")
 mcmcsearch.plot_prior_posterior(injection_parameters=signal_parameters)
-print("")
+logger.info("")
 
-print("*" * 20)
-print("Quantitative comparisons:")
-print("*" * 20)
+logger.info("*" * 20)
+logger.info("Quantitative comparisons:")
+logger.info("*" * 20)
 
 # some informative command-line output comparing search results and injection
 # get max twoF and binary Doppler parameters
@@ -203,7 +203,7 @@ max_grid_parameters = grid_points[max_grid_index]
 
 # same for MCMCSearch, here twoF is separate, and non-sampled parameters are not included either
 max_dict_mcmc, max_2F_mcmc = mcmcsearch.get_max_twoF()
-print(
+logger.info(
     "Grid Search:\n\tmax2F={:.4f}\n\tOffsets from injection parameters (relative error): {:s}.".format(
         max_grid_2F,
         ", ".join(
@@ -224,7 +224,7 @@ print(
         ),
     )
 )
-print(
+logger.info(
     "Max 2F candidate from MCMC Search:\n\tmax2F={:.4f}"
     "\n\tOffsets from injection parameters (relative error): {:s}.".format(
         max_2F_mcmc,
@@ -244,7 +244,7 @@ print(
 )
 # get additional point and interval estimators
 stats_dict_mcmc = mcmcsearch.get_summary_stats()
-print(
+logger.info(
     "Mean from MCMCSearch:\n\tOffset from injection parameters (relative error): {:s}"
     "\n\tExpressed as fractions of 2sigma intervals: {:s}.".format(
         ", ".join(
@@ -272,7 +272,7 @@ print(
         ),
     )
 )
-print(
+logger.info(
     "Median from MCMCSearch:\n\tOffset from injection parameters (relative error): {:s},"
     "\n\tExpressed as fractions of 90% confidence intervals: {:s}.".format(
         ", ".join(

@@ -67,7 +67,7 @@ data.make_data()
 
 # The predicted twoF, given by lalapps_predictFstat can be accessed by
 twoF = data.predict_fstat()
-print("Predicted twoF value: {}\n".format(twoF))
+logger.info("Predicted twoF value: {}\n".format(twoF))
 
 # Create a search object for each of the possible SFT combinations
 # (H1 only, L1 only, H1 + L1).

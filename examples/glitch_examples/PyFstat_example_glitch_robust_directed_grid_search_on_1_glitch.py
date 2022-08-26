@@ -72,7 +72,7 @@ delta_F0s_vals = np.unique(search.data["delta_F0"]) - delta_F0
 tglitch_vals = np.unique(search.data["tglitch"])
 tglitch_vals_days = (tglitch_vals - tstart) / 86400.0 - dtglitch / 86400.0
 
-print("Making gridcorner plot...")
+logger.info("Making gridcorner plot...")
 twoF = search.data["twoF"].reshape(
     (len(F0_vals), len(F1_vals), len(delta_F0s_vals), len(tglitch_vals))
 )
@@ -98,6 +98,6 @@ fig, axes = pyfstat.gridcorner(
 fig.savefig("{}/{}_projection_matrix.png".format(outdir, label), bbox_inches="tight")
 
 
-print(("Prior widths =", F0_width, F1_width))
-print(("Actual run time = {}".format(dT)))
-print(("Actual number of grid points = {}".format(search.data.shape[0])))
+logger.info(("Prior widths =", F0_width, F1_width))
+logger.info(("Actual run time = {}".format(dT)))
+logger.info(("Actual number of grid points = {}".format(search.data.shape[0])))

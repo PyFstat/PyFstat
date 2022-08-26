@@ -55,7 +55,7 @@ data = pyfstat.BinaryModulatedWriter(
 )
 data.make_data()
 
-print("Loading SFT data and computing normalized power...")
+logger.info("Loading SFT data and computing normalized power...")
 freqs, times, sft_data = pyfstat.helper_functions.get_sft_as_arrays(data.sftfilepath)
 sft_power = sft_data["H1"].real ** 2 + sft_data["H1"].imag ** 2
 normalized_power = (
@@ -63,7 +63,7 @@ normalized_power = (
 )
 
 plotfile = os.path.join(outdir, label + ".png")
-print(f"Plotting to file: {plotfile}")
+logger.info(f"Plotting to file: {plotfile}")
 fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))
 ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]", ylim=(99.98, 100.02))
 c = ax.pcolormesh(
