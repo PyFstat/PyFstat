@@ -15,8 +15,8 @@ dependencies:
   - peakutils
   - pathos
   - python-lal >=7.1.5
-  - python-lalpulsar >=3.1.1
-  - lalapps >=7.4.0
+  - python-lalpulsar >=5.0.0
+  - lalpulsar >=5.0.0
   - pip
   - pip:
     - -e ../[dev]
