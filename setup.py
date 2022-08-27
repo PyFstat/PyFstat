@@ -48,7 +48,7 @@ extras_require = {
     "test": ["pytest", "pytest-cov", "flaky"],
     "wheel": ["wheel", "check-wheel-contents"],
 }
-for key in ["style", "test", "wheel"]:
+for key in ["docs", "style", "test", "wheel"]:
     extras_require["dev"] += extras_require[key]
 
 setup(

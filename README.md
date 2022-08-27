@@ -182,7 +182,7 @@ plotting methods and some of the [example scripts](./examples).
 * `test`: For running the test suite locally using [pytest](https://docs.pytest.org) and some of its addons
   (`python -m pytest tests/`).
 * `wheel`: Includes `wheel` and `check-wheel-contents`.
-* `dev`: Collects `style`, `test` and `wheel`.
+* `dev`: Collects `docs`, `style`, `test` and `wheel`.
 * `docs`: Required dependencies to build the documentation.
 
 Installation can be done by adding one or more of the aforementioned tags to the installation command.
