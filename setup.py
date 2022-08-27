@@ -24,6 +24,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 # Extra dependencies
 extras_require = {
+    "chainconsumer": ["chainconsumer"],
     "dev": [
         "pre-commit",
     ],
@@ -35,7 +36,6 @@ extras_require = {
         "mistune<2.0.0",
         "Pillow==8.4.0",
     ],
-    "chainconsumer": ["chainconsumer"],
     "pycuda": ["pycuda"],
     "style": [
         "black",

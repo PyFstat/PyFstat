@@ -172,6 +172,8 @@ Available sets of optional dependencies are:
 
 * `chainconsumer` ([Samreay/Chainconsumer](https://github.com/Samreay/ChainConsumer)): Required to run some optional
 plotting methods and some of the [example scripts](./examples).
+* `dev`: Collects `docs`, `style`, `test` and `wheel`.
+* `docs`: Required dependencies to build the documentation.
 * `pycuda` ([PyPI](https://pypi.org/project/pycuda/)): Required for the `tCWFstatMapVersion=pycuda`
   option of the `TransientGridSearch` class. (Note: Installing `pycuda` requires a working
   `nvcc` compiler in your path.)
@@ -182,8 +184,6 @@ plotting methods and some of the [example scripts](./examples).
 * `test`: For running the test suite locally using [pytest](https://docs.pytest.org) and some of its addons
   (`python -m pytest tests/`).
 * `wheel`: Includes `wheel` and `check-wheel-contents`.
-* `dev`: Collects `docs`, `style`, `test` and `wheel`.
-* `docs`: Required dependencies to build the documentation.
 
 Installation can be done by adding one or more of the aforementioned tags to the installation command.
 
