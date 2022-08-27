@@ -4,19 +4,20 @@ channels:
   - conda-forge
 
 dependencies:
-  - python >=3.8
-  - numpy
-  - matplotlib-base >=2.1
-  - scipy
-  - ptemcee
+  - attrs
   - corner
   - dill
-  - tqdm
+  - lalpulsar >=5.0.0
+  - matplotlib-base >=2.1
+  - numpy
   - peakutils
   - pathos
+  - pip
+  - ptemcee
+  - python >=3.8
   - python-lal >=7.1.5
   - python-lalpulsar >=5.0.0
-  - lalpulsar >=5.0.0
-  - pip
+  - scipy
+  - tqdm
   - pip:
     - -e ../[dev]
