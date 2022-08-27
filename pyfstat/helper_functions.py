@@ -11,7 +11,6 @@ import logging
 import os
 import shutil
 import subprocess
-import sys
 from datetime import datetime, timezone
 from functools import wraps
 
@@ -41,74 +40,6 @@ else:
 def set_up_matplotlib_defaults():
     """Sets some defaults for matplotlib plotting."""
     plt.rcParams["axes.formatter.useoffset"] = False
-
-
-def set_up_logger(outdir=None, label="pyfstat", log_level="INFO"):
-    """Setup the logger.
-
-    Based on the implementation in Nessai:
-    https://github.com/mj-will/nessai/blob/main/nessai/utils/logging.py
-
-    Parameters
-    ----------
-    outdir : str, optional
-        Path to outdir directory.
-    label : str, optional
-        Label for this instance of the logger.
-        Defaults to `pyfstat`, which is the "root" logger of this package.
-    log_level : {'ERROR', 'WARNING', 'INFO', 'DEBUG'}, optional
-        Level of logging passed to logger.
-
-    Returns
-    -------
-    obj:`logging.Logger`
-        Instance of the Logger class.
-
-    """
-    from . import __version__ as version
-
-    if type(log_level) is str:
-        try:
-            level = getattr(logging, log_level.upper())
-        except AttributeError:
-            raise ValueError("log_level {} not understood".format(log_level))
-    else:
-        level = int(log_level)
-
-    logger = logging.getLogger("pyfstat")
-    logger.setLevel(level)
-
-    common_formatter = logging.Formatter(
-        "%(asctime)s.%(msecs)03d %(name)s %(levelname)-8s: %(message)s",
-        datefmt="%y-%m-%d %H:%M:%S",
-    )
-
-    if any([type(h) == logging.StreamHandler for h in logger.handlers]) is False:
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setFormatter(common_formatter)
-        stream_handler.setLevel(level)
-        logger.addHandler(stream_handler)
-
-    if any([type(h) == logging.FileHandler for h in logger.handlers]) is False:
-        if label:
-            if outdir:
-                if not os.path.exists(outdir):
-                    os.makedirs(outdir, exist_ok=True)
-            else:
-                outdir = "."
-            log_file = os.path.join(outdir, f"{label}.log")
-            file_handler = logging.FileHandler(log_file)
-            file_handler.setFormatter(common_formatter)
-
-            file_handler.setLevel(level)
-            logger.addHandler(file_handler)
-
-    for handler in logger.handlers:
-        handler.setLevel(level)
-
-    logger.info(f"Running PyFstat version {version}")
-
-    return logger
 
 
 def get_ephemeris_files():
