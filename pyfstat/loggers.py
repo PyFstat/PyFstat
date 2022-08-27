@@ -15,6 +15,18 @@ import sys
 from pyfstat.helper_functions import get_version_string
 
 
+def _parse_log_level(log_level):
+    # Missing the STDOUT
+    if type(log_level) is str:
+        try:
+            level = getattr(logging, log_level.upper())
+        except AttributeError:
+            raise ValueError("log_level {} not understood".format(log_level))
+    else:
+        level = int(log_level)
+    return level
+
+
 def set_up_logger(outdir=None, label="pyfstat", log_level="INFO"):
     """Setup the logger.
 
@@ -37,20 +49,14 @@ def set_up_logger(outdir=None, label="pyfstat", log_level="INFO"):
         Instance of the Logger class.
 
     """
-    if type(log_level) is str:
-        try:
-            level = getattr(logging, log_level.upper())
-        except AttributeError:
-            raise ValueError("log_level {} not understood".format(log_level))
-    else:
-        level = int(log_level)
+    level = _parse_log_level(log_level)
 
     logger = logging.getLogger("pyfstat")
     logger.setLevel(level)
 
     common_formatter = logging.Formatter(
         "%(asctime)s.%(msecs)03d %(name)s %(levelname)-8s: %(message)s",
-        datefmt="%y-%m-%d %H:%M:%S",
+        datefmt="%y-%m-%d %H:%M:%S",  # intended to match LALSuite's format
     )
 
     if not any([type(h) == logging.StreamHandler for h in logger.handlers]):
