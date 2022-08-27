@@ -1,3 +1,13 @@
+"""
+Description of logging implementation in PyFstat.
+
+We currently support 3 modes of operation, depending on user input:
+
+    1. Default logging
+    2.
+    3.
+"""
+
 import logging
 import os
 import sys
