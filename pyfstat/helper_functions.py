@@ -99,9 +99,12 @@ def set_up_logger(outdir=None, label="pyfstat", log_level="INFO"):
             file_handler.setLevel(level)
             logger.addHandler(file_handler)
             # need the following because the file didn't catch any previous version logs yet
-            logger_file_only = logging.Logger("pyfstat")
-            logger_file_only.addHandler(file_handler)
-            logger_file_only.info(f"Running PyFstat version {get_version_string()}")
+            for h in logger.handlers:
+                if not type(h) == logging.FileHandler:
+                    h.setLevel(
+                        logging.WARNING
+                    )  # temporarily, to skip duplicate version info on other handlers
+            logger.info(f"Running PyFstat version {get_version_string()}")
 
     for handler in logger.handlers:
         handler.setLevel(level)
