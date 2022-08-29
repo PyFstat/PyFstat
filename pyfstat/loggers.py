@@ -1,47 +1,73 @@
 """
-Description of logging implementation in PyFstat.
+PyFstat's logging implementation.
 
-We currently support 3 modes of operation, depending on user input:
+PyFstat main logger is called `pyfstat` and be accessed via
+```
+import logging
+logger = logging.getLoger('pyfstat')
+```
 
-    1. Default logging
-    2.
-    3.
+ELI5 of logging: For all our purposes, there are ``logger'' objects
+and ``handler'' objects. Loggers are the ones in charge of logging,
+hence you call them to emit a logging message with a specific logging
+level (e.g. `logger.info`); handlers are in charge of redirecting that
+message to a specific place (e.g. a file or your terminal, which is
+usually referred to as a ``stream'').
+
+The default behaviour is to attach a `logging.StreamHandler` to
+the 'pyfstat' printing out to `sys.stdout` upon importing the package.
+If, for any reason, `logging` cannot access `sys.stdout` at import time,
+the exception is reported via `print` and no handlers are attached
+(i.e. the logger won't print to `sys.stoud`).
+
+The user can modify the logger's behaviour at run-time using `set_up_logger`.
+This function attaches extra `logging.StreamHandler` and `logging.FileHandler`
+handlers to the logger, allowing to redirect loggin messages to either a different
+stream or a specific output file specified using the `outdir, label` variables
+(with the same format as in the rest of the package).
+
+Finally, logging can be disable at run-time by manually configuring the 'pyfstat'
+logger. For example, the following block of code will suppress logging messages
+below `WARNING`:
+```
+import logging
+logging.getLoger('pyfstat').setLevel(logging.WARNING)
+```
 """
 
 import logging
 import os
 import sys
 
-from pyfstat.helper_functions import get_version_string
 
-
-def _parse_log_level(log_level):
-    # Missing the STDOUT
-    if type(log_level) is str:
-        try:
-            level = getattr(logging, log_level.upper())
-        except AttributeError:
-            raise ValueError("log_level {} not understood".format(log_level))
-    else:
-        level = int(log_level)
-    return level
-
-
-def set_up_logger(outdir=None, label="pyfstat", log_level="INFO"):
-    """Setup the logger.
-
-    Based on the implementation in Nessai:
-    https://github.com/mj-will/nessai/blob/main/nessai/utils/logging.py
+def set_up_logger(
+    outdir=None,
+    label="pyfstat",
+    log_level="INFO",
+    streams=None,
+    append=True,
+) -> logging.Logger:
+    """Add file and stream handlers to the `pyfstat` logger.
 
     Parameters
     ----------
-    outdir : str, optional
-        Path to outdir directory.
-    label : str, optional
+    outdir: str, optional
+        Path to outdir directory. If `None`, no file handler will be added.
+    label: str, optional
         Label for this instance of the logger.
-        Defaults to `pyfstat`, which is the "root" logger of this package.
-    log_level : {'ERROR', 'WARNING', 'INFO', 'DEBUG'}, optional
-        Level of logging passed to logger.
+        This is consistent with the rest of the package: ``label'' referes
+        to the string prepended at every file produced by a script.
+        Required, in conjunction with `outdir`, to add a file handler.
+    log_level: {'ERROR', 'WARNING', 'INFO', 'DEBUG'}, optional
+        Level of logging. This level is imposed the logger itself and
+        *every single handler* attached to it.
+    streams: io.TextIOWrapper, optional
+        Stream to which logging messages will be passed using a
+        StreamHandler object. If `None`, a handler to `sys.stdout`
+        will be attached unless it already exists.
+        Other common streams include e.g. `sys.stderr`.
+    append: bool, optional
+        If True, removes all handlers from the `pyfstat` logger.
 
     Returns
     -------
@@ -49,37 +75,52 @@ def set_up_logger(outdir=None, label="pyfstat", log_level="INFO"):
         Instance of the Logger class.
 
     """
-    level = _parse_log_level(log_level)
-
     logger = logging.getLogger("pyfstat")
-    logger.setLevel(level)
+    logger.setLevel(log_level)
+
+    if not append:
+        while logger.hasHandlers():
+            logger.removeHandler(logger.hadlers[0])
+        stream_names = []
+        file_names = []
+    else:
+        for handler in logger.handlers:
+            handler.setLevel(log_level)
+        stream_names = [
+            handler.stream.name
+            for handler in logger.handlers
+            if type(handler) == logging.StreamHandler
+        ]
+        file_names = [
+            handler.fileBasename
+            for handler in logger.handlers
+            if type(handler) == logging.FileHandler
+        ]
+
+    streams = streams or ([sys.stdout] if sys.stdout.name not in stream_names else [])
 
     common_formatter = logging.Formatter(
         "%(asctime)s.%(msecs)03d %(name)s %(levelname)-8s: %(message)s",
         datefmt="%y-%m-%d %H:%M:%S",  # intended to match LALSuite's format
     )
 
-    if not any([type(h) == logging.StreamHandler for h in logger.handlers]):
-        stream_handler = logging.StreamHandler(sys.stdout)
+    for stream in streams:
+        if stream.name in stream_names:
+            continue
+        stream_handler = logging.StreamHandler(stream)
         stream_handler.setFormatter(common_formatter)
-        stream_handler.setLevel(level)
+        stream_handler.setLevel(log_level)
         logger.addHandler(stream_handler)
 
-    if (
-        label
-        and outdir
-        and (not any([type(h) == logging.FileHandler for h in logger.handlers]))
-    ):
+    if label and outdir:
         os.makedirs(outdir, exist_ok=True)
         log_file = os.path.join(outdir, f"{label}.log")
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(common_formatter)
-        file_handler.setLevel(level)
-        logger.addHandler(file_handler)
 
-    for handler in logger.handlers:
-        handler.setLevel(level)
+        if log_file not in file_names:
 
-    logger.info(f"Running PyFstat version {get_version_string()}")
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setFormatter(common_formatter)
+            file_handler.setLevel(log_level)
+            logger.addHandler(file_handler)
 
     return logger

@@ -41,3 +41,12 @@ from .tcw_fstat_map_funcs import pyTransientFstatMap
 
 __version__ = get_versions()["version"]
 del get_versions
+
+try:
+    logger = set_up_logger()
+    logger.info(f"Running PyFstat version {__version__}")
+except Exception as e:
+    print(
+        "Logging setup failed with exception: {e}\n"
+        "Proceeding without default logging."
+    )
