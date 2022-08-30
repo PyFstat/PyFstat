@@ -1,12 +1,12 @@
 """
 PyFstat's logging implementation.
 
-PyFstat main logger is called `pyfstat` and be accessed via::
+PyFstat main logger is called `pyfstat` and can be accessed via::
 
     import logging
     logger = logging.getLoger('pyfstat')
 
-ELI5 of logging: For all our purposes, there are *logger* objects
+Basics of logging: For all our purposes, there are *logger* objects
 and *handler* objects. Loggers are the ones in charge of logging,
 hence you call them to emit a logging message with a specific logging
 level (e.g. ``logger.info``); handlers are in charge of redirecting that
@@ -14,20 +14,20 @@ message to a specific place (e.g. a file or your terminal, which is
 usually referred to as a *stream*).
 
 The default behaviour is to attach a ``logging.StreamHandler`` to
-the *pyfstat* printing out to ``sys.stdout`` upon importing the package.
+the *pyfstat* logger, printing out to ``sys.stdout`` upon importing the package.
 If, for any reason, ``logging`` cannot access ``sys.stdout`` at import time,
 the exception is reported via ``print`` and no handlers are attached
-(i.e. the logger won't print to ``sys.stoud``).
+(i.e. the logger won't print to ``sys.stdout``).
 
 The user can modify the logger's behaviour at run-time using ``set_up_logger``.
 This function attaches extra ``logging.StreamHandler`` and ``logging.FileHandler``
-handlers to the logger, allowing to redirect loggin messages to either a different
+handlers to the logger, allowing to redirect logging messages to a different
 stream or a specific output file specified using the ``outdir, label`` variables
 (with the same format as in the rest of the package).
 
-Finally, logging can be disable at run-time by manually configuring the *pyfstat*
-logger. For example, the following block of code will suppress logging messages
-below ``WARNING``:::
+Finally, logging can be disabled, or the level changed, at run-time by
+manually configuring the *pyfstat* logger. For example, the following block of code
+will suppress logging messages below ``WARNING``:::
 
     import logging
     logging.getLoger('pyfstat').setLevel(logging.WARNING)
@@ -56,12 +56,11 @@ def set_up_logger(
     outdir:
         Path to outdir directory. If `None`, no file handler will be added.
     label:
-        Label for this instance of the logger.
-        This is consistent with the rest of the package: ``label'' referes
-        to the string prepended at every file produced by a script.
+        Label for the file output handler, i.e.
+        the log file will be called `label.log`.
         Required, in conjunction with `outdir`, to add a file handler.
     log_level:
-        Level of logging. This level is imposed the logger itself and
+        Level of logging. This level is imposed on the logger itself and
         *every single handler* attached to it.
     streams:
         Stream to which logging messages will be passed using a
@@ -69,7 +68,7 @@ def set_up_logger(
         will be attached unless it already exists.
         Other common streams include e.g. `sys.stderr`.
     append:
-        If True, removes all handlers from the `pyfstat` logger.
+        If False, removes all handlers from the `pyfstat` logger.
 
     Returns
     -------
@@ -82,7 +81,7 @@ def set_up_logger(
 
     if not append:
         while logger.hasHandlers():
-            logger.removeHandler(logger.hadlers[0])
+            logger.removeHandler(logger.handlers[0])
         stream_names = []
         file_names = []
     else:
