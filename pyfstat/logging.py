@@ -71,6 +71,7 @@ def set_up_logger(
         Label for the file output handler, i.e.
         the log file will be called `label.log`.
         Required, in conjunction with ``outdir``, to add a file handler.
+        Ignored otherwise.
     log_level:
         Level of logging. This level is imposed on the logger itself and
         *every single handler* attached to it.
@@ -91,8 +92,8 @@ def set_up_logger(
     logger.setLevel(log_level)
 
     if not append:
-        while logger.hasHandlers():
-            logger.removeHandler(logger.handlers[0])
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
     else:
         for handler in logger.handlers:
             handler.setLevel(log_level)
@@ -113,7 +114,7 @@ def set_up_logger(
         datefmt="%y-%m-%d %H:%M:%S",  # intended to match LALSuite's format
     )
 
-    for stream in streams:
+    for stream in streams or []:
         if stream.name in stream_names:
             continue
         stream_handler = logging.StreamHandler(stream)
