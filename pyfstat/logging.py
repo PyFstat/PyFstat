@@ -36,7 +36,7 @@ will suppress logging messages below ``WARNING``:::
 import logging
 import os
 import sys
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Iterable, Literal, Optional
 
 if TYPE_CHECKING:
     import io
@@ -46,34 +46,37 @@ def set_up_logger(
     outdir: Optional[str] = None,
     label: Optional[str] = "pyfstat",
     log_level: Literal["ERROR", "WARNING", "INFO", "DEBUG"] = "INFO",
-    streams: Optional["io.TextIOWrapper"] = None,
+    streams: Optional[Iterable["io.TextIOWrapper"]] = (sys.stdout,),
     append: bool = True,
 ) -> logging.Logger:
     """Add file and stream handlers to the `pyfstat` logger.
 
+    Handler names generated from ``streams`` and ``outdir, label``
+    must be unique and no duplicated handler will be attached by
+    this function.
+
     Parameters
     ----------
     outdir:
-        Path to outdir directory. If `None`, no file handler will be added.
+        Path to outdir directory. If ``None``, no file handler will be added.
     label:
         Label for the file output handler, i.e.
         the log file will be called `label.log`.
-        Required, in conjunction with `outdir`, to add a file handler.
+        Required, in conjunction with ``outdir``, to add a file handler.
     log_level:
         Level of logging. This level is imposed on the logger itself and
         *every single handler* attached to it.
     streams:
         Stream to which logging messages will be passed using a
-        StreamHandler object. If `None`, a handler to `sys.stdout`
-        will be attached unless it already exists.
-        Other common streams include e.g. `sys.stderr`.
+        StreamHandler object. By default, log to ``sys.stdout``.
+        Other common streams include e.g. ``sys.stderr``.
     append:
-        If False, removes all handlers from the `pyfstat` logger.
+        If ``False``, removes all handlers from the `pyfstat` logger.
 
     Returns
     -------
-    obj:`logging.Logger`
-        Instance of the Logger class.
+    obj:
+        Configured instance of the ``logging.Logger`` class.
 
     """
     logger = logging.getLogger("pyfstat")
@@ -82,23 +85,20 @@ def set_up_logger(
     if not append:
         while logger.hasHandlers():
             logger.removeHandler(logger.handlers[0])
-        stream_names = []
-        file_names = []
     else:
         for handler in logger.handlers:
             handler.setLevel(log_level)
-        stream_names = [
-            handler.stream.name
-            for handler in logger.handlers
-            if type(handler) == logging.StreamHandler
-        ]
-        file_names = [
-            handler.fileBasename
-            for handler in logger.handlers
-            if type(handler) == logging.FileHandler
-        ]
 
-    streams = streams or ([sys.stdout] if sys.stdout.name not in stream_names else [])
+    stream_names = [
+        handler.stream.name
+        for handler in logger.handlers
+        if type(handler) == logging.StreamHandler
+    ]
+    file_names = [
+        handler.fileBasename
+        for handler in logger.handlers
+        if type(handler) == logging.FileHandler
+    ]
 
     common_formatter = logging.Formatter(
         "%(asctime)s.%(msecs)03d %(name)s %(levelname)-8s: %(message)s",
