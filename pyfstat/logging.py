@@ -42,6 +42,14 @@ if TYPE_CHECKING:
     import io
 
 
+def _get_default_logger() -> logging.Logger:
+    return (
+        root_logger
+        if (root_logger := logging.getLogger()).handlers
+        else set_up_logger()
+    )
+
+
 def set_up_logger(
     outdir: Optional[str] = None,
     label: Optional[str] = "pyfstat",

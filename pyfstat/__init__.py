@@ -20,7 +20,7 @@ from .injection_parameters import (
     AllSkyInjectionParametersGenerator,
     InjectionParametersGenerator,
 )
-from .logging import set_up_logger
+from .logging import _get_default_logger, set_up_logger
 from .make_sfts import (
     BinaryModulatedWriter,
     FrequencyAmplitudeModulatedArtifactWriter,
@@ -43,7 +43,7 @@ __version__ = get_versions()["version"]
 del get_versions
 
 try:
-    logger = set_up_logger()
+    logger = _get_default_logger()
     logger.info(f"Running PyFstat version {__version__}")
 except Exception as e:
     print(
