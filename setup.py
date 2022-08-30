@@ -29,6 +29,7 @@ extras_require = {
     ],
     "docs": [
         "sphinx==4.3.1",
+        "sphinx_autodoctypehints==1.19.2",
         "sphinx_rtd_theme==1.0.0",
         "sphinx_gallery==0.10.1",
         "m2r2==0.3.1",

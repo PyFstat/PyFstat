@@ -49,6 +49,14 @@ pyfstat.injection\_parameters module
    :undoc-members:
    :show-inheritance:
 
+pyfstat.logging module
+----------------------
+
+.. automodule:: pyfstat.logging
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pyfstat.make\_sfts module
 -------------------------
 

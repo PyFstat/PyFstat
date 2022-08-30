@@ -37,7 +37,8 @@ release = version
 extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.autodoc",
-    "sphinx.ext.napoleon",
+    "sphinx.ext.napoleon",  # https://github.com/tox-dev/sphinx-autodoc-typehints/issues/15
+    "sphinx_autodoc_typehints",  # Must import napoleon before typehints
     "sphinx.ext.viewcode",
     "sphinx_gallery.gen_gallery",
     "m2r2",
