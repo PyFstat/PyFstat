@@ -1,3 +1,11 @@
+# important notes:
+# 1. to ensure correct relative path for the editable mode installation,
+# always create your environment while at the root directory of your pyfstat git clone.
+#
+# 2. to avoid having duplicate lalsuite packages from both conda and pip,
+# please always run as
+# NO_LALSUITE_FROM_PYPI=1 mamba env create -f etc/pyfstat-dev.yml
+
 name: pyfstat-dev
 
 channels:
