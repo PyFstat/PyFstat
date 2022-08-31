@@ -13,8 +13,11 @@ level (e.g. ``logger.info``); handlers are in charge of redirecting that
 message to a specific place (e.g. a file or your terminal, which is
 usually referred to as a *stream*).
 
-The default behaviour is to attach a ``logging.StreamHandler`` to
-the *pyfstat* logger, printing out to ``sys.stdout`` upon importing the package.
+The default behaviour upon importing ``pyfstat`` is to attach a ``logging.StreamHandler`` to
+the *pyfstat* logger, printing out to ``sys.stdout``.
+This is only done if the root logger has no handlers attached yet;
+if it does have at least one handler already,
+then we inherit those and do not add any extra handlers by default.
 If, for any reason, ``logging`` cannot access ``sys.stdout`` at import time,
 the exception is reported via ``print`` and no handlers are attached
 (i.e. the logger won't print to ``sys.stdout``).
