@@ -45,7 +45,7 @@ del get_versions
 try:
     logger = _get_default_logger()
     logger.info(f"Running PyFstat version {__version__}")
-except Exception as e:
+except Exception as e:  # pragma: no cover
     print(
         "Logging setup failed with exception: {e}\n"
         "Proceeding without default logging."

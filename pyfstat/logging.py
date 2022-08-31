@@ -53,7 +53,7 @@ def _get_default_logger() -> logging.Logger:
 def set_up_logger(
     outdir: Optional[str] = None,
     label: Optional[str] = "pyfstat",
-    log_level: Literal["ERROR", "WARNING", "INFO", "DEBUG"] = "INFO",
+    log_level: Literal["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"] = "INFO",
     streams: Optional[Iterable["io.TextIOWrapper"]] = (sys.stdout,),
     append: bool = True,
 ) -> logging.Logger:
@@ -80,7 +80,8 @@ def set_up_logger(
         StreamHandler object. By default, log to ``sys.stdout``.
         Other common streams include e.g. ``sys.stderr``.
     append:
-        If ``False``, removes all handlers from the `pyfstat` logger.
+        If ``False``, removes all handlers from the `pyfstat` logger
+        before adding new ones.
 
     Returns
     -------
