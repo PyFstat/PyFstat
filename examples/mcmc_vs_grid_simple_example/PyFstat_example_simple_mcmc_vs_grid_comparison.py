@@ -20,6 +20,7 @@ sky = False
 outdir = os.path.join(
     "PyFstat_example_data", "PyFstat_example_simple_mcmc_vs_grid_comparison"
 )
+logger = pyfstat.set_up_logger(label="mcmc_vs_grid", outdir=outdir)
 if sky:
     outdir += "AlphaDelta"
 
@@ -113,7 +114,7 @@ def plot_2F_scatter(res, label, xkey, ykey):
 
 if __name__ == "__main__":
 
-    print("Generating SFTs with injected signal...")
+    logger.info("Generating SFTs with injected signal...")
     writer = pyfstat.Writer(
         label="simulated_signal",
         outdir=outdir,
@@ -126,7 +127,7 @@ if __name__ == "__main__":
         Band=1,  # default band estimation would be too narrow for a wide grid/prior
     )
     writer.make_data()
-    print("")
+    logger.info("")
 
     # set up square search grid with fixed (F0,F1) mismatch
     # and (optionally) some ad-hoc sky coverage
@@ -154,7 +155,7 @@ if __name__ == "__main__":
         Deltas = [inj["Delta"]]
     search_keys_label = "".join(search_keys)
 
-    print("Performing GridSearch...")
+    logger.info("Performing GridSearch...")
     gridsearch = pyfstat.GridSearch(
         label="grid_search_" + search_keys_label,
         outdir=outdir,
@@ -172,11 +173,11 @@ if __name__ == "__main__":
 
     # do some plots of the GridSearch results
     if not sky:  # this plotter can't currently deal with too large result arrays
-        print("Plotting 1D 2F distributions...")
+        logger.info("Plotting 1D 2F distributions...")
         for key in search_keys:
             gridsearch.plot_1D(xkey=key, xlabel=labels[key], ylabel=labels["2F"])
 
-    print("Making GridSearch {:s} corner plot...".format("-".join(search_keys)))
+    logger.info("Making GridSearch {:s} corner plot...".format("-".join(search_keys)))
     vals = [np.unique(gridsearch.data[key]) - inj[key] for key in search_keys]
     twoF = gridsearch.data["twoF"].reshape([len(kval) for kval in vals])
     corner_labels = [
@@ -192,9 +193,9 @@ if __name__ == "__main__":
     )
     gridcorner_fig.savefig(os.path.join(outdir, gridsearch.label + "_corner.png"))
     plt.close(gridcorner_fig)
-    print("")
+    logger.info("")
 
-    print("Performing MCMCSearch...")
+    logger.info("Performing MCMCSearch...")
     # set up priors in F0 and F1 (over)covering the grid ranges
     if sky:  # MCMC will still be fast in 4D with wider range than grid
         DeltaF0 *= 50
@@ -252,11 +253,11 @@ if __name__ == "__main__":
 
     # call some built-in plotting methods
     # these can all highlight the injection parameters, too
-    print("Making MCMCSearch {:s} corner plot...".format("-".join(search_keys)))
+    logger.info("Making MCMCSearch {:s} corner plot...".format("-".join(search_keys)))
     mcmcsearch.plot_corner(truths=inj)
-    print("Making MCMCSearch prior-posterior comparison plot...")
+    logger.info("Making MCMCSearch prior-posterior comparison plot...")
     mcmcsearch.plot_prior_posterior(injection_parameters=inj)
-    print("")
+    logger.info("")
 
     # NOTE: everything below here is just custom commandline output and plotting
     # for this particular example, which uses the PyFstat outputs,
@@ -267,7 +268,7 @@ if __name__ == "__main__":
     max_dict_grid = gridsearch.get_max_twoF()
     # same for MCMCSearch, here twoF is separate, and non-sampled parameters are not included either
     max_dict_mcmc, max_2F_mcmc = mcmcsearch.get_max_twoF()
-    print(
+    logger.info(
         "max2F={:.4f} from GridSearch, offsets from injection: {:s}.".format(
             max_dict_grid["twoF"],
             ", ".join(
@@ -278,7 +279,7 @@ if __name__ == "__main__":
             ),
         )
     )
-    print(
+    logger.info(
         "max2F={:.4f} from MCMCSearch, offsets from injection: {:s}.".format(
             max_2F_mcmc,
             ", ".join(
@@ -291,7 +292,7 @@ if __name__ == "__main__":
     )
     # get additional point and interval estimators
     stats_dict_mcmc = mcmcsearch.get_summary_stats()
-    print(
+    logger.info(
         "mean   from MCMCSearch: offset from injection by      {:s},"
         " or in fractions of 2sigma intervals: {:s}.".format(
             ", ".join(
@@ -315,7 +316,7 @@ if __name__ == "__main__":
             ),
         )
     )
-    print(
+    logger.info(
         "median from MCMCSearch: offset from injection by      {:s},"
         " or in fractions of 90% confidence intervals: {:s}.".format(
             ", ".join(
@@ -342,10 +343,10 @@ if __name__ == "__main__":
             ),
         )
     )
-    print()
+    logger.info()
 
     # do additional custom plotting
-    print("Loading grid and MCMC search results for custom comparison plots...")
+    logger.info("Loading grid and MCMC search results for custom comparison plots...")
     gridfile = os.path.join(outdir, gridsearch.label + "_NA_GridSearch.txt")
     if not os.path.isfile(gridfile):
         raise RuntimeError(
@@ -368,7 +369,7 @@ if __name__ == "__main__":
 
     # we'll use the two local plotting functions defined above
     # to avoid code duplication in the sky case
-    print("Creating MCMC-grid comparison plots...")
+    logger.info("Creating MCMC-grid comparison plots...")
     plot_grid_vs_samples(grid_res, mcmc_res, "F0", "F1")
     plot_2F_scatter(grid_res, "grid", "F0", "F1")
     plot_2F_scatter(mcmc_res, "mcmc", "F0", "F1")

@@ -13,6 +13,7 @@ import pyfstat
 
 label = "PyFstat_example_grid_search_F0F1F2"
 outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 # Properties of the GW data
 sqrtSX = 1e-23
@@ -75,7 +76,7 @@ search.run()
 
 # report details of the maximum point
 max_dict = search.get_max_twoF()
-print(
+logger.info(
     "max2F={:.4f} from GridSearch, offsets from injection: {:s}.".format(
         max_dict["twoF"],
         ", ".join(
@@ -92,24 +93,24 @@ search.generate_loudest()
 # FIXME: workaround for matplotlib "Exceeded cell block limit" errors
 agg_chunksize = 10000
 
-print("Plotting 2F(F0)...")
+logger.info("Plotting 2F(F0)...")
 search.plot_1D(
     xkey="F0", xlabel="freq [Hz]", ylabel="$2\\mathcal{F}$", agg_chunksize=agg_chunksize
 )
-print("Plotting 2F(F1)...")
+logger.info("Plotting 2F(F1)...")
 search.plot_1D(xkey="F1", agg_chunksize=agg_chunksize)
-print("Plotting 2F(F2)...")
+logger.info("Plotting 2F(F2)...")
 search.plot_1D(xkey="F2", agg_chunksize=agg_chunksize)
-print("Plotting 2F(Alpha)...")
+logger.info("Plotting 2F(Alpha)...")
 search.plot_1D(xkey="Alpha", agg_chunksize=agg_chunksize)
-print("Plotting 2F(Delta)...")
+logger.info("Plotting 2F(Delta)...")
 search.plot_1D(xkey="Delta", agg_chunksize=agg_chunksize)
 # 2D plots will currently not work for >2 non-trivial (gridded) search dimensions
 # search.plot_2D(xkey="F0",ykey="F1",colorbar=True)
 # search.plot_2D(xkey="F0",ykey="F2",colorbar=True)
 # search.plot_2D(xkey="F1",ykey="F2",colorbar=True)
 
-print("Making gridcorner plot...")
+logger.info("Making gridcorner plot...")
 F0_vals = np.unique(search.data["F0"]) - inj["F0"]
 F1_vals = np.unique(search.data["F1"]) - inj["F1"]
 F2_vals = np.unique(search.data["F2"]) - inj["F2"]

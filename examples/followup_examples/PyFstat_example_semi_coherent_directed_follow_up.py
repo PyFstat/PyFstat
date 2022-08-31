@@ -14,6 +14,7 @@ import pyfstat
 
 label = "PyFstat_example_semi_coherent_directed_follow_up"
 outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 # Properties of the GW data
 data_parameters = {
@@ -45,7 +46,7 @@ data.make_data()
 
 # The predicted twoF, given by lalapps_predictFstat can be accessed by
 twoF = data.predict_fstat()
-print("Predicted twoF value: {}\n".format(twoF))
+logger.info("Predicted twoF value: {}\n".format(twoF))
 
 # Search
 VF0 = VF1 = 1e5

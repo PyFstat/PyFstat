@@ -14,6 +14,7 @@ import pyfstat
 
 label = "PyFstat_example_grid_search_F0"
 outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 # Properties of the GW data
 sqrtS = "1e-23"
@@ -74,7 +75,7 @@ search.run()
 
 # report details of the maximum point
 max_dict = search.get_max_twoF()
-print(
+logger.info(
     "max2F={:.4f} from GridSearch, offsets from injection: {:s}.".format(
         max_dict["twoF"],
         ", ".join(
@@ -88,7 +89,7 @@ print(
 )
 search.generate_loudest()
 
-print("Plotting 2F(F0)...")
+logger.info("Plotting 2F(F0)...")
 fig, ax = plt.subplots()
 frequencies = search.data["F0"]
 twoF = search.data["twoF"]

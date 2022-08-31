@@ -25,6 +25,9 @@ tCWFstatMapVersion = "lal"
 
 if __name__ == "__main__":
 
+    logger = pyfstat.set_up_logger(
+        label="short_transient_grid_search", outdir=data.outdir
+    )
     if not os.path.isdir(data.outdir) or not np.any(
         [f.endswith(".sft") for f in os.listdir(data.outdir)]
     ):
@@ -46,7 +49,7 @@ if __name__ == "__main__":
     BSGL = False
     BtSG = False
 
-    print("Standard CW search:")
+    logger.info("Standard CW search:")
     search1 = pyfstat.GridSearch(
         label=f"CW{'_BSGL' if BSGL else ''}",
         outdir=data.outdir,
@@ -65,7 +68,7 @@ if __name__ == "__main__":
         xkey="F0", xlabel="freq [Hz]", ylabel=search1.tex_labels[search1.detstat]
     )
 
-    print("with t0,tau bands:")
+    logger.info("with t0,tau bands:")
     label = f"tCW{'_BSGL' if BSGL else ''}{'_BtSG' if BtSG else ''}_FstatMap_{tCWFstatMapVersion}"
     search2 = pyfstat.TransientGridSearch(
         label=label,

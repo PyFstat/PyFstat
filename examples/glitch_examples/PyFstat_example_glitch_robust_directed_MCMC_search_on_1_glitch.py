@@ -28,6 +28,7 @@ from PyFstat_example_make_data_for_search_on_1_glitch import (
 import pyfstat
 
 label = "PyFstat_example_glitch_robust_directed_MCMC_search_on_1_glitch"
+logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 Nstar = 1000
 F0_width = np.sqrt(Nstar) * np.sqrt(12) / (np.pi * duration)
@@ -89,7 +90,7 @@ mcmc.run(save_loudest=False)  # uses CFSv2 which doesn't support glitch paramete
 dT = time.time() - t1
 mcmc.print_summary()
 
-print("Making corner plot...")
+logger.info("Making corner plot...")
 mcmc.plot_corner(
     label_offset=0.25,
     truths={"F0": F0, "F1": F1, "delta_F0": delta_F0, "tglitch": tstart + dtglitch},
@@ -100,5 +101,5 @@ mcmc.plot_corner(
 
 mcmc.plot_cumulative_max(savefig=True)
 
-print(("Prior widths =", F0_width, F1_width))
-print(("Actual run time = {}".format(dT)))
+logger.info(("Prior widths =", F0_width, F1_width))
+logger.info(("Actual run time = {}".format(dT)))

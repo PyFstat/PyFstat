@@ -57,11 +57,14 @@ import numpy as np
 from ptemcee import Sampler as PTSampler
 from scipy.stats import lognorm
 from tqdm import tqdm
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 import pyfstat.core as core
 import pyfstat.helper_functions as helper_functions
 import pyfstat.optimal_setup_functions as optimal_setup_functions
 from pyfstat.core import BaseSearchClass
+
+logger = logging.getLogger(__name__)
 
 
 class MCMCSearch(BaseSearchClass):
@@ -250,14 +253,13 @@ class MCMCSearch(BaseSearchClass):
 
         os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
-        self._add_log_file(self.output_file_header)
-        logging.info("Set-up MCMC search for model {}".format(self.label))
+        logger.info("Set-up MCMC search for model {}".format(self.label))
         if sftfilepattern:
-            logging.info("Using data {}".format(self.sftfilepattern))
+            logger.info("Using data {}".format(self.sftfilepattern))
         else:
-            logging.info("No sftfilepattern given")
+            logger.info("No sftfilepattern given")
         if injectSources:
-            logging.info("Inject sources: {}".format(injectSources))
+            logger.info("Inject sources: {}".format(injectSources))
         self.pickle_path = os.path.join(self.outdir, self.label + "_saved_data.p")
         self._unpack_input_theta()
         self.ndim = len(self.theta_keys)
@@ -302,11 +304,11 @@ class MCMCSearch(BaseSearchClass):
             self.likelihoodcoef = np.log(70.0 / self.rhohatmax**4)
 
     def _log_input(self):
-        logging.info("theta_prior = {}".format(self.theta_prior))
-        logging.info("nwalkers={}".format(self.nwalkers))
-        logging.info("nsteps = {}".format(self.nsteps))
-        logging.info("ntemps = {}".format(self.ntemps))
-        logging.info("log10beta_min = {}".format(self.log10beta_min))
+        logger.info("theta_prior = {}".format(self.theta_prior))
+        logger.info("nwalkers={}".format(self.nwalkers))
+        logger.info("nsteps = {}".format(self.nsteps))
+        logger.info("ntemps = {}".format(self.ntemps))
+        logger.info("log10beta_min = {}".format(self.log10beta_min))
 
     def _get_search_ranges(self):
         """take prior widths as proxy "search ranges" to allow covering band estimate"""
@@ -314,7 +316,7 @@ class MCMCSearch(BaseSearchClass):
             normal_stds = 3  # this might not always be enough
             prior_bounds, norm_trunc_warn = self._get_prior_bounds(normal_stds)
             if norm_trunc_warn:
-                logging.warning(
+                logger.warning(
                     "Gaussian priors (normal / half-normal) have been truncated"
                     " at {:f} standard deviations for estimating the coverage"
                     " frequency band. If sampling fails at any point, please"
@@ -335,7 +337,7 @@ class MCMCSearch(BaseSearchClass):
             return None
 
     def _initiate_search_object(self):
-        logging.info("Setting up search object")
+        logger.info("Setting up search object")
         search_ranges = self._get_search_ranges()
         self.search = core.ComputeFstat(
             tref=self.tref,
@@ -445,10 +447,10 @@ class MCMCSearch(BaseSearchClass):
 
     def _check_initial_points(self, p0):
         for nt in range(self.ntemps):
-            logging.info("Checking temperature {} chains".format(nt))
+            logger.info("Checking temperature {} chains".format(nt))
             num = sum(self._evaluate_logpost(p0[nt]) == -np.inf)
             if num > 0:
-                logging.warning(
+                logger.warning(
                     "Of {} initial values, {} are -np.inf due to the prior".format(
                         len(p0[0]), num
                     )
@@ -456,7 +458,7 @@ class MCMCSearch(BaseSearchClass):
                 p0 = self._generate_new_p0_to_fix_initial_points(p0, nt)
 
     def _generate_new_p0_to_fix_initial_points(self, p0, nt):
-        logging.info("Attempting to correct intial values")
+        logger.info("Attempting to correct intial values")
         init_logpost = self._evaluate_logpost(p0[nt])
         idxs = np.arange(self.nwalkers)[init_logpost == -np.inf]
         count = 0
@@ -469,9 +471,9 @@ class MCMCSearch(BaseSearchClass):
             count += 1
 
         if sum(init_logpost == -np.inf) > 0:
-            logging.info("Failed to fix initial priors")
+            logger.info("Failed to fix initial priors")
         else:
-            logging.info("Suceeded to fix initial priors")
+            logger.info("Suceeded to fix initial priors")
 
         return p0
 
@@ -496,7 +498,7 @@ class MCMCSearch(BaseSearchClass):
             deviation `diag(scatter_val * p)`.
         """
 
-        logging.info(
+        logger.info(
             "Setting up initialisation with nburn0={}, scatter_val={}".format(
                 nburn0, scatter_val
             )
@@ -505,20 +507,21 @@ class MCMCSearch(BaseSearchClass):
         self.scatter_val = scatter_val
 
     def _run_sampler(self, p0, nprod=0, nburn=0, window=50):
-        for result in tqdm(
-            self.sampler.sample(p0, iterations=nburn + nprod), total=nburn + nprod
-        ):
-            pass
+        with logging_redirect_tqdm():
+            for result in tqdm(
+                self.sampler.sample(p0, iterations=nburn + nprod), total=nburn + nprod
+            ):
+                pass
 
         self.mean_acceptance_fraction = np.mean(
             self.sampler.acceptance_fraction, axis=1
         )
-        logging.info(
+        logger.info(
             "Mean acceptance fraction: {}".format(self.mean_acceptance_fraction)
         )
         if self.ntemps > 1:
             self.tswap_acceptance_fraction = self.sampler.tswap_acceptance_fraction
-            logging.info(
+            logger.info(
                 "Tswap acceptance fraction: {}".format(
                     self.sampler.tswap_acceptance_fraction
                 )
@@ -526,7 +529,7 @@ class MCMCSearch(BaseSearchClass):
         self.autocorr_time = self._get_autocorr_time(
             sampler=self.sampler, window=window
         )
-        logging.info("Autocorrelation length: {}".format(self.autocorr_time))
+        logger.info("Autocorrelation length: {}".format(self.autocorr_time))
 
     def _get_autocorr_time(self, sampler, window=50):
         """
@@ -677,7 +680,7 @@ class MCMCSearch(BaseSearchClass):
             if getattr(self, "nsegs", 1) > 1:
                 time += (tau0C + tau0T * Nsfts) * self.nsegs * numb_evals
 
-        logging.info(
+        logger.info(
             "Estimated run-time = {} s = {:1.0f}:{:1.0f} m".format(
                 time, *divmod(time, 60)
             )
@@ -732,7 +735,7 @@ class MCMCSearch(BaseSearchClass):
 
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
         if self.old_data_is_okay_to_use is True:
-            logging.warning("Using saved data from {}".format(self.pickle_path))
+            logger.warning("Using saved data from {}".format(self.pickle_path))
             d = self.get_saved_data_dictionary()
             self.samples = d["samples"]
             self.lnprobs = d["lnprobs"]
@@ -764,7 +767,7 @@ class MCMCSearch(BaseSearchClass):
         # Run initialisation steps if required
         ninit_steps = len(self.nsteps) - 2
         for j, n in enumerate(self.nsteps[:-2]):
-            logging.info(
+            logger.info(
                 "Running {}/{} initialisation with {} steps".format(j, ninit_steps, n)
             )
             self._run_sampler(p0, nburn=n, window=window)
@@ -779,7 +782,7 @@ class MCMCSearch(BaseSearchClass):
                     )
                     plt.close(walker_fig)
                 except Exception as e:
-                    logging.warning(
+                    logger.warning(
                         "Failed to plot initialisation walkers due to Error {}".format(
                             e
                         )
@@ -795,7 +798,7 @@ class MCMCSearch(BaseSearchClass):
         else:
             nburn = 0
         nprod = self.nsteps[-1]
-        logging.info("Running final burn and prod with {} steps".format(nburn + nprod))
+        logger.info("Running final burn and prod with {} steps".format(nburn + nprod))
         self._run_sampler(p0, nburn=nburn, nprod=nprod)
 
         samples = self.sampler.chain[0, :, nburn:, :].reshape((-1, self.ndim))
@@ -821,7 +824,7 @@ class MCMCSearch(BaseSearchClass):
                 )
                 walkers_fig.tight_layout()
             except Exception as e:
-                logging.warning("Failed to plot walkers due to Error {}".format(e))
+                logger.warning("Failed to plot walkers due to Error {}".format(e))
             if (walker_plot_args.get("fig") is not None) and (
                 walker_plot_args.get("axes") is not None
             ):
@@ -834,7 +837,7 @@ class MCMCSearch(BaseSearchClass):
                     )
                     plt.close(walkers_fig)
                 except Exception as e:
-                    logging.warning(
+                    logger.warning(
                         "Failed to save walker plots due to Error {}".format(e)
                     )
 
@@ -990,7 +993,7 @@ class MCMCSearch(BaseSearchClass):
 
             missing_keys = set(self.theta_keys) - kwargs["truths"].keys()
             if missing_keys:
-                logging.warning(
+                logger.warning(
                     f"plot_corner(): Missing keys {missing_keys} in 'truths' dictionary,"
                     " argument will be ignored."
                 )
@@ -1121,7 +1124,7 @@ class MCMCSearch(BaseSearchClass):
         try:
             import chainconsumer
         except ImportError:
-            logging.warning(
+            logger.warning(
                 "Could not import 'chainconsumer' package, please install it to use this method."
             )
             return
@@ -1135,7 +1138,7 @@ class MCMCSearch(BaseSearchClass):
                 raise ValueError("'truth' must be a dictionary.")
             missing_keys = np.setdiff1d(self.theta_keys, list(kwargs["truth"].keys()))
             if len(missing_keys) > 0:
-                logging.warning(
+                logger.warning(
                     "plot_chainconsumer(): Missing keys {} in 'truth' dictionary,"
                     " argument will be ignored.".format(missing_keys)
                 )
@@ -1298,7 +1301,7 @@ class MCMCSearch(BaseSearchClass):
         injection_parameters = injection_parameters or {}
         missing_keys = set(self.theta_keys) - injection_parameters.keys()
         if missing_keys:
-            logging.warning(
+            logger.warning(
                 f"plot_prior_posterior(): Missing keys {missing_keys} in 'injection_parameters',"
                 " no injection parameters will be highlighted."
             )
@@ -1372,7 +1375,7 @@ class MCMCSearch(BaseSearchClass):
         Unlike the core function, here savefig=True is the default,
         for consistency with other MCMC plotting functions.
         """
-        logging.info("Getting cumulative 2F")
+        logger.info("Getting cumulative 2F")
         d, maxtwoF = self.get_max_twoF()
         for key, val in self.theta_prior.items():
             if key not in d:
@@ -1463,7 +1466,7 @@ class MCMCSearch(BaseSearchClass):
                 x, s=kwargs["scale"], scale=np.exp(kwargs["loc"])
             )
         else:
-            logging.info("kwargs:", kwargs)
+            logger.info("kwargs:", kwargs)
             raise ValueError("Prior pdf type {:s} unknown.".format(kwargs["type"]))
 
     def _generate_rv(self, **kwargs):
@@ -1511,7 +1514,7 @@ class MCMCSearch(BaseSearchClass):
 
             missing_keys = set(self.theta_keys) - injection_parameters.keys()
             if missing_keys:
-                logging.warning(
+                logger.warning(
                     f"plot_walkers(): Missing keys {missing_keys} in 'injection_parameters',"
                     " argument will be ignored."
                 )
@@ -1546,7 +1549,7 @@ class MCMCSearch(BaseSearchClass):
         if len(shape) == 4:
             ntemps, nwalkers, nsteps, ndim = shape
             if temp < ntemps:
-                logging.info("Plotting temperature {} chains".format(temp))
+                logger.info("Plotting temperature {} chains".format(temp))
             else:
                 raise ValueError(
                     ("Requested temperature {} outside of" "available range").format(
@@ -1646,7 +1649,7 @@ class MCMCSearch(BaseSearchClass):
                             detstat_burnin, bins=50, histtype="step", color="C3"
                         )
                     except ValueError:
-                        logging.info(
+                        logger.info(
                             "Histogram of detection statistic failed, "
                             "most likely all values were the same."
                         )
@@ -1660,7 +1663,7 @@ class MCMCSearch(BaseSearchClass):
                     ) / self.likelihooddetstatmultiplier
                     axes[-1].hist(detstat, bins=50, histtype="step", color="k")
                 except ValueError:
-                    logging.info(
+                    logger.info(
                         "Histogram of detection statistic failed, "
                         "most likely all values were the same."
                     )
@@ -1702,7 +1705,7 @@ class MCMCSearch(BaseSearchClass):
         """Generate a set of init vals for the walkers"""
 
         if type(self.theta_initial) == dict:
-            logging.info("Generate initial values from initial dictionary")
+            logger.info("Generate initial values from initial dictionary")
             if hasattr(self, "nglitch") and self.nglitch > 1:
                 raise ValueError("Initial dict not implemented for nglitch>1")
             p0 = [
@@ -1716,7 +1719,7 @@ class MCMCSearch(BaseSearchClass):
                 for j in range(self.ntemps)
             ]
         elif self.theta_initial is None:
-            logging.info("Generate initial values from prior dictionary")
+            logger.info("Generate initial values from prior dictionary")
             p0 = [
                 [
                     [
@@ -1746,17 +1749,17 @@ class MCMCSearch(BaseSearchClass):
 
         # General warnings about the state of lnp
         if np.any(np.isnan(lnp)):
-            logging.warning(
+            logger.warning(
                 "Of {} lnprobs {} are nan".format(np.shape(lnp), np.sum(np.isnan(lnp)))
             )
         if np.any(np.isposinf(lnp)):
-            logging.warning(
+            logger.warning(
                 "Of {} lnprobs {} are +np.inf".format(
                     np.shape(lnp), np.sum(np.isposinf(lnp))
                 )
             )
         if np.any(np.isneginf(lnp)):
-            logging.warning(
+            logger.warning(
                 "Of {} lnprobs {} are -np.inf".format(
                     np.shape(lnp), np.sum(np.isneginf(lnp))
                 )
@@ -1768,7 +1771,7 @@ class MCMCSearch(BaseSearchClass):
         p = pF[idx]
         p0 = self._generate_scattered_p0(p)
 
-        logging.info(
+        logger.info(
             (
                 "Gen. new p0 from pos {} which had det. stat.={:2.1f}"
                 " and lnp={:2.1f}"
@@ -1800,7 +1803,7 @@ class MCMCSearch(BaseSearchClass):
         d["all_lnlikelihood"] = all_lnlikelihood
 
         if os.path.isfile(self.pickle_path):
-            logging.info(
+            logger.info(
                 "Saving backup of {} as {}.old".format(
                     self.pickle_path, self.pickle_path
                 )
@@ -1823,7 +1826,7 @@ class MCMCSearch(BaseSearchClass):
 
     def _check_old_data_is_okay_to_use(self):
         if os.path.isfile(self.pickle_path) is False:
-            logging.info("No pickled data found")
+            logger.info("No pickled data found")
             return False
 
         if self.sftfilepattern is not None:
@@ -1831,7 +1834,7 @@ class MCMCSearch(BaseSearchClass):
                 [os.path.getmtime(f) for f in self._get_list_of_matching_sfts()]
             )
             if os.path.getmtime(self.pickle_path) < oldest_sft:
-                logging.info("Pickled data outdates sft files")
+                logger.info("Pickled data outdates sft files")
                 return False
 
         old_d = self.get_saved_data_dictionary().copy()
@@ -1859,16 +1862,16 @@ class MCMCSearch(BaseSearchClass):
         if len(mod_keys) == 0:
             return True
         else:
-            logging.warning("Saved data differs from requested")
-            logging.info("Differences found in following keys:")
+            logger.warning("Saved data differs from requested")
+            logger.info("Differences found in following keys:")
             for key in mod_keys:
                 if len(key) == 3:
                     if np.isscalar(key[1]) or key[0] == "nsteps":
-                        logging.info("    {} : {} -> {}".format(*key))
+                        logger.info("    {} : {} -> {}".format(*key))
                     else:
-                        logging.info("    " + key[0])
+                        logger.info("    " + key[0])
                 else:
-                    logging.info(key)
+                    logger.info(key)
             return False
 
     def _get_savetxt_fmt_dict(self):
@@ -1893,7 +1896,7 @@ class MCMCSearch(BaseSearchClass):
         Export MCMC samples into a text file using `numpy.savetxt`.
         """
         self.samples_file = os.path.join(self.outdir, self.label + "_samples.dat")
-        logging.info("Exporting samples to {}".format(self.samples_file))
+        logger.info("Exporting samples to {}".format(self.samples_file))
         header = "\n".join(self.output_file_header)
         header += "\n" + " ".join(self.output_keys)
         outfmt = self._get_savetxt_gmt_list()
@@ -1959,11 +1962,11 @@ class MCMCSearch(BaseSearchClass):
                 "Object has no self.lnlikes attribute, please execute .run() first."
             )
         if any(np.isposinf(self.lnlikes)):
-            logging.info("lnlike values contain positive infinite values")
+            logger.info("lnlike values contain positive infinite values")
         if any(np.isneginf(self.lnlikes)):
-            logging.info("lnlike values contain negative infinite values")
+            logger.info("lnlike values contain negative infinite values")
         if any(np.isnan(self.lnlikes)):
-            logging.info("lnlike values contain nan")
+            logger.info("lnlike values contain nan")
         idxs = np.isfinite(self.lnlikes)
         jmax = np.nanargmax(self.lnlikes[idxs])
         d = OrderedDict()
@@ -2066,7 +2069,7 @@ class MCMCSearch(BaseSearchClass):
                         edges.append(bound)
                         fracs.append(str(100 * float(np.sum(bools)) / len(bools)))
                 if len(edges) > 0:
-                    logging.warning(
+                    logger.warning(
                         "{}% of the {} posterior is railing on the {} edges".format(
                             "% & ".join(fracs), k, " & ".join(edges)
                         )
@@ -2088,11 +2091,11 @@ class MCMCSearch(BaseSearchClass):
         if method in ["median", "mean"]:
             summary_stats = self.get_summary_stats()
             filename = os.path.join(self.outdir, self.label + "_" + method + ".par")
-            logging.info("Writing {} using {} parameters.".format(filename, method))
+            logger.info("Writing {} using {} parameters.".format(filename, method))
         elif method == "twoFmax":
             max_twoF_d, max_twoF = self.get_max_twoF()
             filename = os.path.join(self.outdir, self.label + "_max2F.par")
-            logging.info("Writing {} at max twoF = {}.".format(filename, max_twoF))
+            logger.info("Writing {} at max twoF = {}.".format(filename, max_twoF))
         else:
             raise ValueError("Method '{}' not supported.".format(method))
 
@@ -2126,7 +2129,7 @@ class MCMCSearch(BaseSearchClass):
         for key in ["transient-t0Epoch", "transient-t0Offset", "transient-tau"]:
             if key in max_params and not int(max_params[key]) == max_params[key]:
                 rounded = int(round(max_params[key]))
-                logging.warning(
+                logger.warning(
                     "Rounding {:s}={:f} to {:d} for CFSv2 call.".format(
                         key, max_params[key], rounded
                     )
@@ -2194,22 +2197,22 @@ class MCMCSearch(BaseSearchClass):
         """Prints a summary of the max twoF found to the terminal"""
         max_twoFd, max_twoF = self.get_max_twoF()
         summary_stats = self.get_summary_stats()
-        logging.info("Summary:")
+        logger.info("Summary:")
         if hasattr(self, "theta0_idx"):
-            logging.info("theta0 index: {}".format(self.theta0_idx))
-        logging.info("Max twoF: {} with parameters:".format(max_twoF))
+            logger.info("theta0 index: {}".format(self.theta0_idx))
+        logger.info("Max twoF: {} with parameters:".format(max_twoF))
         for k in np.sort(list(max_twoFd.keys())):
-            logging.info("  {:10s} = {:1.9e}".format(k, max_twoFd[k]))
-        logging.info("Mean +- std for production values:")
+            logger.info("  {:10s} = {:1.9e}".format(k, max_twoFd[k]))
+        logger.info("Mean +- std for production values:")
         for k in np.sort(list(summary_stats.keys())):
-            logging.info(
+            logger.info(
                 "  {:10s} = {:1.9e} +/- {:1.9e}".format(
                     k, summary_stats[k]["mean"], summary_stats[k]["std"]
                 )
             )
-        logging.info("Median and 90% quantiles for production values:")
+        logger.info("Median and 90% quantiles for production values:")
         for k in np.sort(list(summary_stats.keys())):
-            logging.info(
+            logger.info(
                 "  {:10s} = {:1.9e} - {:1.9e} + {:1.9e}".format(
                     k,
                     summary_stats[k]["median"],
@@ -2217,7 +2220,7 @@ class MCMCSearch(BaseSearchClass):
                     summary_stats[k]["upper90"] - summary_stats[k]["median"],
                 )
             )
-        logging.info("\n")
+        logger.info("\n")
 
     def _CF_twoFmax(self, theta, twoFmax, ntrials):
         Fmax = twoFmax / 2.0
@@ -2288,7 +2291,7 @@ class MCMCSearch(BaseSearchClass):
         deltaTs = np.diff(tboundaries)
         ntrials = [time_trials + delta_F0 * dT for dT in deltaTs]
         p_val = self._p_val_twoFhat(max_twoF, ntrials)
-        logging.info("p-value = {}".format(p_val))
+        logger.info("p-value = {}".format(p_val))
         return p_val
 
     def compute_evidence(self, make_plots=False, write_to_file=None):
@@ -2315,7 +2318,7 @@ class MCMCSearch(BaseSearchClass):
         betas = betas[::-1]
 
         if any(np.isinf(mean_lnlikes)):
-            logging.warning(
+            logger.warning(
                 "mean_lnlikes contains inf: recalculating without"
                 " the {} infs".format(len(betas[np.isinf(mean_lnlikes)]))
             )
@@ -2328,7 +2331,7 @@ class MCMCSearch(BaseSearchClass):
         z2 = np.trapz(mean_lnlikes[::-1][::2][::-1], betas[::-1][::2][::-1])
         log10evidence_err = np.abs(z1 - z2) / np.log(10)
 
-        logging.info(
+        logger.info(
             "log10 evidence for {} = {} +/- {}".format(
                 self.label, log10evidence, log10evidence_err
             )
@@ -2509,8 +2512,7 @@ class MCMCGlitchSearch(MCMCSearch):
         self._set_init_params_dict(locals())
         os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
-        self._add_log_file(self.output_file_header)
-        logging.info(
+        logger.info(
             (
                 "Set-up MCMC glitch search with {} glitches for model {}" " on data {}"
             ).format(self.nglitch, self.label, self.sftfilepattern)
@@ -2542,7 +2544,7 @@ class MCMCGlitchSearch(MCMCSearch):
         self.likelihoodcoef *= self.nglitch + 1
 
     def _initiate_search_object(self):
-        logging.info("Setting up search object")
+        logger.info("Setting up search object")
         search_ranges = self._get_search_ranges()
         self.search = core.SemiCoherentGlitchSearch(
             label=self.label,
@@ -2710,7 +2712,7 @@ class MCMCGlitchSearch(MCMCSearch):
             If false, return an axis object.
         """
 
-        logging.info("Getting cumulative 2F")
+        logger.info("Getting cumulative 2F")
         fig, ax = plt.subplots()
         d, maxtwoF = self.get_max_twoF()
         for key, val in self.theta_prior.items():
@@ -2736,7 +2738,7 @@ class MCMCGlitchSearch(MCMCSearch):
             ts = tboundaries[j]
             te = tboundaries[j + 1]
             if (te - ts) / 86400 < 5:
-                logging.info("Period too short to perform cumulative search")
+                logger.info("Period too short to perform cumulative search")
                 continue
             if j < self.theta0_idx:
                 summed_deltaF0 = np.sum(delta_F0s[j : self.theta0_idx])
@@ -2862,8 +2864,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
 
         os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
-        self._add_log_file(self.output_file_header)
-        logging.info(
+        logger.info(
             ("Set-up MCMC semi-coherent search for model {} on data" "{}").format(
                 self.label, self.sftfilepattern
             )
@@ -2883,7 +2884,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         if self.nsegs:
             self._set_likelihoodcoef()
         else:
-            logging.info("Value `nsegs` not yet provided")
+            logger.info("Value `nsegs` not yet provided")
 
     def _set_likelihoodcoef(self):
         """Additional constant terms to turn a detection statistic into a likelihood.
@@ -2911,7 +2912,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         return d
 
     def _initiate_search_object(self):
-        logging.info("Setting up search object")
+        logger.info("Setting up search object")
         search_ranges = self._get_search_ranges()
         self.search = core.SemiCoherentSearch(
             label=self.label,
@@ -3018,8 +3019,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
 
         os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
-        self._add_log_file(self.output_file_header)
-        logging.info(
+        logger.info(
             ("Set-up MCMC semi-coherent search for model {} on data" "{}").format(
                 self.label, self.sftfilepattern
             )
@@ -3039,7 +3039,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
         if self.nsegs:
             self._set_likelihoodcoef()
         else:
-            logging.info("Value `nsegs` not yet provided")
+            logger.info("Value `nsegs` not yet provided")
 
     def _get_data_dictionary_to_save(self):
         d = dict(
@@ -3099,7 +3099,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
 
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
         if self.old_data_is_okay_to_use is True:
-            logging.warning("Using saved data from {}".format(self.pickle_path))
+            logger.warning("Using saved data from {}".format(self.pickle_path))
             d = self.get_saved_data_dictionary()
             self.samples = d["samples"]
             self.lnprobs = d["lnprobs"]
@@ -3131,13 +3131,13 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
             )
 
             Tcoh = (self.maxStartTime - self.minStartTime) / nseg / 86400.0
-            logging.info(
+            logger.info(
                 (
                     "Running {}/{} with {} steps and {} nsegs " "(Tcoh={:1.2f} days)"
                 ).format(j + 1, len(run_setup), (nburn, nprod), nseg, Tcoh)
             )
             self._run_sampler(p0, nburn=nburn, nprod=nprod, window=window)
-            logging.info(
+            logger.info(
                 "Max detection statistic of run was {}".format(
                     np.max(self.sampler.loglikelihood)
                 )
@@ -3151,7 +3151,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
                     for ax in walkers_axes[: self.ndim]:
                         ax.axvline(nsteps_total, color="k", ls="--", lw=0.25)
                 except Exception as e:
-                    logging.warning("Failed to plot walkers due to Error {}".format(e))
+                    logger.warning("Failed to plot walkers due to Error {}".format(e))
 
             nsteps_total += nburn + nprod
 
@@ -3189,7 +3189,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
             try:
                 walkers_fig.tight_layout()
             except Exception as e:
-                logging.warning(
+                logger.warning(
                     "Failed to set tight layout for walkers plot due to Error {}".format(
                         e
                     )
@@ -3206,12 +3206,12 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
                     )
                     plt.close(walkers_fig)
                 except Exception as e:
-                    logging.warning(
+                    logger.warning(
                         "Failed to save walker plots due to Error {}".format(e)
                     )
 
     def _update_search_object(self):
-        logging.info("Update search object")
+        logger.info("Update search object")
         self.search.init_computefstatistic()
 
     def init_run_setup(
@@ -3238,7 +3238,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
             Use `MCMCFollowUpSearch.read_setup_input_file` to read a previous
             setup file.
         log_table: bool
-            Log follow-up setup using `logging.info` as a table.
+            Log follow-up setup using `logger.info` as a table.
         gen_tex_table: bool
             Dump follow-up setup into a text file as a tex table.
             File is constructed as `os.path.join(self.outdir, self.label + "_run_setup.tex")`.
@@ -3254,14 +3254,14 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
                 " from which the optimal run_setup can be estimated"
             )
         if run_setup is None:
-            logging.info("No run_setup provided")
+            logger.info("No run_setup provided")
 
             run_setup_input_file = os.path.join(
                 self.outdir, self.label + "_run_setup.p"
             )
 
             if os.path.isfile(run_setup_input_file):
-                logging.info(
+                logger.info(
                     "Checking old setup input file {}".format(run_setup_input_file)
                 )
                 old_setup = self.read_setup_input_file(run_setup_input_file)
@@ -3271,7 +3271,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
                     Nsegs0=Nsegs0,
                     theta_prior=self.theta_prior,
                 ):
-                    logging.info(
+                    logger.info(
                         "Using old setup with NstarMax={}, Nsegs0={}".format(
                             NstarMax, Nsegs0
                         )
@@ -3309,7 +3309,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
             run_setup.append(((self.nsteps[0], self.nsteps[1]), nsegs_vals[-1], False))
 
         else:
-            logging.info("Calculating the number of templates for this setup")
+            logger.info("Calculating the number of templates for this setup")
             Nstar_vals = []
             for i, rs in enumerate(run_setup):
                 rs = list(rs)
@@ -3333,15 +3333,15 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
                     Nstar_vals.append(Nstar)
 
         if log_table:
-            logging.info("Using run-setup as follows:")
-            logging.info("Stage | nburn | nprod | nsegs | Tcoh d | resetp0 | Nstar")
+            logger.info("Using run-setup as follows:")
+            logger.info("Stage | nburn | nprod | nsegs | Tcoh d | resetp0 | Nstar")
             for i, rs in enumerate(run_setup):
                 Tcoh = (self.maxStartTime - self.minStartTime) / rs[1] / 86400
                 if Nstar_vals[i] is None:
                     vtext = "N/A"
                 else:
                     vtext = "{:0.3e}".format(int(Nstar_vals[i]))
-                logging.info(
+                logger.info(
                     "{} | {} | {} | {} | {} | {} | {}".format(
                         str(i).ljust(5),
                         str(rs[0][0]).ljust(5),
@@ -3380,7 +3380,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
                 f.write(r"\end{tabular}" + "\n")
 
         if setup_only:
-            logging.info("Exit as requested by setup_only flag")
+            logger.info("Exit as requested by setup_only flag")
             sys.exit()
         else:
             return run_setup
@@ -3415,9 +3415,9 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
             if all(truths):
                 return True
             else:
-                logging.info("Old setup doesn't match one of NstarMax, Nsegs0 or prior")
+                logger.info("Old setup doesn't match one of NstarMax, Nsegs0 or prior")
         except KeyError as e:
-            logging.info("Error found when comparing with old setup: {}".format(e))
+            logger.info("Error found when comparing with old setup: {}".format(e))
             return False
 
     def _get_p0_per_stage(self, reset_p0=False):
@@ -3483,7 +3483,7 @@ class MCMCTransientSearch(MCMCSearch):
     """
 
     def _initiate_search_object(self):
-        logging.info("Setting up search object")
+        logger.info("Setting up search object")
         if not self.transientWindowType:
             self.transientWindowType = "rect"
         search_ranges = self._get_search_ranges()

@@ -17,6 +17,7 @@ import pyfstat
 
 label = "PyFstat_example_injection_into_noise_sfts"
 outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 tstart = 1269734418
 duration_Tsft = 100
@@ -133,6 +134,6 @@ FS_2 = coherent_search.get_fullycoherent_twoF(
     add_signal_writer.Delta,
 )
 
-print("Base case Fstat: {}".format(FS_1))
-print("Noise + Signal Fstat: {}".format(FS_2))
-print("Relative Difference: {}".format(np.abs(FS_2 - FS_1) / FS_1))
+logger.info("Base case Fstat: {}".format(FS_1))
+logger.info("Noise + Signal Fstat: {}".format(FS_2))
+logger.info("Relative Difference: {}".format(np.abs(FS_2 - FS_1) / FS_1))

@@ -13,6 +13,7 @@ import pyfstat
 
 label = "PyFstat_example_semi_coherent_MCMC_search"
 outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 # Properties of the GW data
 data_parameters = {
@@ -44,13 +45,13 @@ data.make_data()
 
 # The predicted twoF, given by lalapps_predictFstat can be accessed by
 twoF = data.predict_fstat()
-print("Predicted twoF value: {}\n".format(twoF))
+logger.info("Predicted twoF value: {}\n".format(twoF))
 
 DeltaF0 = 1e-7
 DeltaF1 = 1e-13
 VF0 = (np.pi * data_parameters["duration"] * DeltaF0) ** 2 / 3.0
 VF1 = (np.pi * data_parameters["duration"] ** 2 * DeltaF1) ** 2 * 4 / 45.0
-print("\nV={:1.2e}, VF0={:1.2e}, VF1={:1.2e}\n".format(VF0 * VF1, VF0, VF1))
+logger.info("\nV={:1.2e}, VF0={:1.2e}, VF1={:1.2e}\n".format(VF0 * VF1, VF0, VF1))
 
 theta_prior = {
     "F0": {

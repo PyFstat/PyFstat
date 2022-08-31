@@ -20,6 +20,7 @@ from .injection_parameters import (
     AllSkyInjectionParametersGenerator,
     InjectionParametersGenerator,
 )
+from .logging import _get_default_logger, set_up_logger
 from .make_sfts import (
     BinaryModulatedWriter,
     FrequencyAmplitudeModulatedArtifactWriter,
@@ -40,3 +41,12 @@ from .tcw_fstat_map_funcs import pyTransientFstatMap
 
 __version__ = get_versions()["version"]
 del get_versions
+
+try:
+    logger = _get_default_logger()
+    logger.info(f"Running PyFstat version {__version__}")
+except Exception as e:  # pragma: no cover
+    print(
+        f"Logging setup failed with exception: {e}\n"
+        "Proceeding without default logging."
+    )

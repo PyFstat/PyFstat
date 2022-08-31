@@ -14,10 +14,12 @@ from pyfstat import (
     AllSkyInjectionParametersGenerator,
     InjectionParametersGenerator,
     Writer,
+    set_up_logger,
 )
 
 label = "PyFstat_example_InjectionParametersGenerator"
 outdir = os.path.join("PyFstat_example_data", label)
+logger = set_up_logger(label=label, outdir=outdir)
 
 # Properties of the GW data
 gw_data = {
@@ -29,7 +31,7 @@ gw_data = {
     "Tsft": 1800,
 }
 
-print("Drawing random signal parameters...")
+logger.info("Drawing random signal parameters...")
 
 # Draw random signal phase parameters.
 # The AllSkyInjectionParametersGenerator covers [Alpha,Delta] priors automatically.
@@ -74,27 +76,27 @@ phase_parameters = [phase_params_generator.draw() for n in range(Ndraws)]
 Alphas = np.array([p["Alpha"] for p in phase_parameters])
 Deltas = np.array([p["Delta"] for p in phase_parameters])
 plotfile = os.path.join(outdir, label + "_allsky.png")
-print(f"Plotting sky distribution of {Ndraws} points to file: {plotfile}")
+logger.info(f"Plotting sky distribution of {Ndraws} points to file: {plotfile}")
 plt.subplot(111, projection="aitoff")
 plt.plot(Alphas - np.pi, Deltas, ".", markersize=1)
 plt.savefig(plotfile, dpi=300)
 plt.close()
 plotfile = os.path.join(outdir, label + "_alpha_hist.png")
-print(f"Plotting Alpha distribution of {Ndraws} points to file: {plotfile}")
+logger.info(f"Plotting Alpha distribution of {Ndraws} points to file: {plotfile}")
 plt.hist(Alphas, 50)
 plt.xlabel("Alpha")
 plt.ylabel("draws")
 plt.savefig(plotfile, dpi=100)
 plt.close()
 plotfile = os.path.join(outdir, label + "_delta_hist.png")
-print(f"Plotting Delta distribution of {Ndraws} points to file: {plotfile}")
+logger.info(f"Plotting Delta distribution of {Ndraws} points to file: {plotfile}")
 plt.hist(Deltas, 50)
 plt.xlabel("Delta")
 plt.ylabel("draws")
 plt.savefig(plotfile, dpi=100)
 plt.close()
 plotfile = os.path.join(outdir, label + "_sindelta_hist.png")
-print(f"Plotting sin(Delta) distribution of {Ndraws} points to file: {plotfile}")
+logger.info(f"Plotting sin(Delta) distribution of {Ndraws} points to file: {plotfile}")
 plt.hist(np.sin(Deltas), 50)
 plt.xlabel("sin(Delta)")
 plt.ylabel("draws")

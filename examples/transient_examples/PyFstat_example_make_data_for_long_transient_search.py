@@ -14,6 +14,7 @@ import os
 import pyfstat
 
 outdir = os.path.join("PyFstat_example_data", "PyFstat_example_long_transient_search")
+logger = pyfstat.set_up_logger(outdir=outdir, label="short_transient_search")
 
 F0 = 30.0
 F1 = -1e-10
@@ -58,4 +59,4 @@ if __name__ == "__main__":
         transientWindowType=transientWindowType,
     )
     transient.make_data()
-    print("Predicted 2F from injection Writer:", transient.predict_fstat())
+    logger.info("Predicted 2F from injection Writer:", transient.predict_fstat())

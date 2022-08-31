@@ -15,6 +15,10 @@ from pyfstat.helper_functions import get_predict_fstat_parameters_from_dict
 
 if __name__ == "__main__":
 
+    logger = pyfstat.set_up_logger(
+        label="short_transient_mcmc_search", outdir=data.outdir
+    )
+
     if not os.path.isdir(data.outdir) or not np.any(
         [f.endswith(".sft") for f in os.listdir(data.outdir)]
     ):

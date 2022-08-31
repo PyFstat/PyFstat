@@ -16,6 +16,7 @@ import pyfstat
 
 label = "PyFstat_example_grid_search_BSGL"
 outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 F0 = 30.0
 F1 = 0
@@ -106,7 +107,7 @@ searchF = pyfstat.GridSearch(
 )
 searchF.run()
 
-print("Plotting 2F(F0)...")
+logger.info("Plotting 2F(F0)...")
 searchF.plot_1D(xkey="F0")
 
 # second search: line-robust statistic BSGL activated
@@ -129,5 +130,5 @@ searchBSGL.run()
 # The actual output statistic is log10BSGL.
 # The peak at the higher frequency from the "line artifact" should now
 # be massively suppressed.
-print("Plotting log10BSGL(F0)...")
+logger.info("Plotting log10BSGL(F0)...")
 searchBSGL.plot_1D(xkey="F0")
