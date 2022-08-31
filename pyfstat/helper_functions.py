@@ -13,6 +13,7 @@ import shutil
 import subprocess
 from datetime import datetime, timezone
 from functools import wraps
+from typing import Union
 
 import lal
 import lalpulsar
@@ -246,28 +247,25 @@ def get_comb_values(F0, frequencies, twoF, period, N=4):
     return comb_frequencies, twoF[comb_idxs], freq_err * np.ones(len(comb_idxs))
 
 
-def run_commandline(cl, raise_error=True, return_output=True):
+def run_commandline(
+    cl: str, raise_error: bool = True, return_output: bool = True
+) -> Union[str, int, None]:
     """Run a string cmd as a subprocess, check for errors and return output.
 
     Parameters
     ----------
-    cl: str
+    cl:
         Command to run
-    log_level: int
-        Sets the logging level for some of this function's messages.
-        See https://docs.python.org/library/logging.html#logging-levels
-        Default is '20' (INFO).
-        FIXME: Not used for all messages.
-    raise_error: bool
+    raise_error:
         If True, raise an error if the subprocess fails.
         If False, continue and just return `0`.
-    return_output: bool
+    return_output:
         If True, return the captured output of the subprocess (stdout and stderr).
         If False, return nothing on successful execution.
 
     Returns
     ----------
-    out: str or int, optional
+    out:
         The captured output of the subprocess (stdout and stderr)
         if `return_output=True`.
         0 on failed execution if `raise_error=False`.
@@ -276,29 +274,29 @@ def run_commandline(cl, raise_error=True, return_output=True):
     logger.info("Now executing: " + cl)
     if "|" in cl:
         logger.warning(
-            "Pipe ('|') found in commandline, errors may not be" " properly caught!"
+            "Pipe ('|') found in commandline, errors may not be  properly caught!"
         )
     try:
-        if return_output:
-            out = subprocess.check_output(
-                cl,  # what to run
-                stderr=subprocess.STDOUT,  # catch errors
-                shell=True,  # proper environment etc
-                universal_newlines=True,  # properly display linebreaks in error/output printing
-            )
-        else:
-            subprocess.check_call(cl, shell=True)
+        completed_process = subprocess.run(
+            cl,
+            check=True,
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+        if msg := completed_process.stdout:
+            logger.info(msg)
+        if msg := completed_process.stderr:
+            logger.error(msg)
     except subprocess.CalledProcessError as e:
-        logger.error("Execution failed: {}".format(e))
-        if e.output:
-            logger.error(e.output)
+        logger.error(f"Execution failed: {e}")
+        if msg := e.output:
+            logger.error(msg)
         if raise_error:
             raise
-        elif return_output:
-            out = 0
-    os.system("\n")
+
     if return_output:
-        return out
+        return getattr(completed_process, "returncode", 0)
 
 
 def convert_array_to_gsl_matrix(array):
