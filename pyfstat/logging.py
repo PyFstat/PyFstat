@@ -106,7 +106,7 @@ def set_up_logger(
         if type(handler) == logging.StreamHandler
     ]
     file_names = [
-        handler.fileBasename
+        handler.baseFilename
         for handler in logger.handlers
         if type(handler) == logging.FileHandler
     ]
