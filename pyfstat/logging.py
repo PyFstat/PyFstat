@@ -81,7 +81,8 @@ def set_up_logger(
         Other common streams include e.g. ``sys.stderr``.
     append:
         If ``False``, removes all handlers from the `pyfstat` logger
-        before adding new ones.
+        before adding new ones. This removal is not propagated to
+        handlers on the `root` logger.
 
     Returns
     -------
