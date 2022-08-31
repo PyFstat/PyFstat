@@ -47,6 +47,6 @@ try:
     logger.info(f"Running PyFstat version {__version__}")
 except Exception as e:  # pragma: no cover
     print(
-        "Logging setup failed with exception: {e}\n"
+        f"Logging setup failed with exception: {e}\n"
         "Proceeding without default logging."
     )
