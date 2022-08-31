@@ -288,15 +288,16 @@ def run_commandline(
             logger.info(msg)
         if msg := completed_process.stderr:
             logger.error(msg)
+        if return_output:
+            return getattr(completed_process, "returncode", 0)
     except subprocess.CalledProcessError as e:
         logger.error(f"Execution failed: {e}")
         if msg := e.output:
             logger.error(msg)
         if raise_error:
             raise
-
-    if return_output:
-        return getattr(completed_process, "returncode", 0)
+        elif return_output:
+            return
 
 
 def convert_array_to_gsl_matrix(array):
