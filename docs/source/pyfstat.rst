@@ -1,8 +1,10 @@
-   sphinx-apidoc -f -o source ../ ../versioneer.py ../setup.py
-   (everything after the first "../" are exclude patterns)
-
-PyFstat module documentation
+pyfstat package
 ===============
+
+These pages document the full API and set of classes provided by PyFstat.
+
+See :doc:`here <readme>` for installation instructions and
+other general information.
 
 Submodules
 ----------
