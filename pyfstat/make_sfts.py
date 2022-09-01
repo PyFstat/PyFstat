@@ -10,7 +10,6 @@ import lal
 import lalpulsar
 import numpy as np
 from tqdm import tqdm, trange
-from tqdm.contrib.logging import logging_redirect_tqdm
 
 import pyfstat.helper_functions as helper_functions
 from pyfstat import injection_parameters
@@ -1563,19 +1562,18 @@ class FrequencyModulatedArtifactWriter(Writer):
         linePhi = 0
         lineFreq_old = 0
 
-        with logging_redirect_tqdm():
-            for i in trange(self.nsfts):
-                mid_time = self.tstart + (i + 0.5) * self.Tsft
-                lineFreq = self.get_frequency(mid_time)
+        for i in trange(self.nsfts):
+            mid_time = self.tstart + (i + 0.5) * self.Tsft
+            lineFreq = self.get_frequency(mid_time)
 
-                self.mid_times.append(mid_time)
-                self.lineFreqs.append(lineFreq)
-                self.linePhis.append(
-                    linePhi + np.pi * self.Tsft * (lineFreq_old + lineFreq)
-                )
-                self.lineh0s.append(self.get_h0(mid_time))
+            self.mid_times.append(mid_time)
+            self.lineFreqs.append(lineFreq)
+            self.linePhis.append(
+                linePhi + np.pi * self.Tsft * (lineFreq_old + lineFreq)
+            )
+            self.lineh0s.append(self.get_h0(mid_time))
 
-                lineFreq_old = lineFreq
+            lineFreq_old = lineFreq
 
     def make_ith_sft(self, i):
         """Call MFDv4 to create a single SFT with evolved artifact parameters."""
