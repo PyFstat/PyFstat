@@ -28,4 +28,4 @@ dependencies:
   - scipy
   - tqdm
   - pip:
-    - -e ../[dev]
+    - -e ../[dev]  # the ".." is needed because pip seems to get called from within "etc"
