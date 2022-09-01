@@ -33,10 +33,10 @@ pyfstat.gridcorner module
    :undoc-members:
    :show-inheritance:
 
-pyfstat.helper\_functions module
+pyfstat.utils module
 --------------------------------
 
-.. automodule:: pyfstat.helper_functions
+.. automodule:: pyfstat.utils
    :members:
    :undoc-members:
    :show-inheritance:
