@@ -291,9 +291,7 @@ def run_commandline(
         if return_output:
             return getattr(completed_process, "returncode", 0)
     except subprocess.CalledProcessError as e:
-        logger.error(f"Execution failed: {e}")
-        if msg := e.output:
-            logger.error(msg)
+        logger.error(f"Execution failed: {e.output}")
         if raise_error:
             raise
         elif return_output:

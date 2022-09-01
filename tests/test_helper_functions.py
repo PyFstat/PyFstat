@@ -39,6 +39,6 @@ def test_run_commandline(caplog):
 
     # Test in case of errors
     with pytest.raises(CalledProcessError):
-        run_commandline("ls shrubbery", raise_error=True)
+        run_commandline("ls shrubbery 1>&2", raise_error=True)
     assert caplog.record_tuples[-1][1] == 40
     assert run_commandline("ls shrubbery", raise_error=False) is None
