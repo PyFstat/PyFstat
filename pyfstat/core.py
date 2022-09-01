@@ -19,22 +19,11 @@ import scipy.special
 import pyfstat.tcw_fstat_map_funcs as tcw
 import pyfstat.utils as utils
 
+plt = utils.safe_X_less_plt()
+
+
 logger = logging.getLogger(__name__)
 
-# workaround for matplotlib on X-less remote logins
-if "DISPLAY" in os.environ:
-    import matplotlib.pyplot as plt
-else:
-    logger.info(
-        'No $DISPLAY environment variable found, so importing \
-                  matplotlib.pyplot with non-interactive "Agg" backend.'
-    )
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-utils.set_up_matplotlib_defaults()
 detector_colors = {"h1": "C0", "l1": "C1"}
 
 

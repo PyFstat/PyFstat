@@ -15,7 +15,7 @@ from .converting import (
 from .ephemeris import get_ephemeris_files
 from .formatting import get_doppler_params_output_format, round_to_n, texify_float
 from .gsl import convert_array_to_gsl_matrix
-from .importing import initializer, safe_X_less_plt, set_up_matplotlib_defaults
+from .importing import initializer, safe_X_less_plt
 from .io import (
     get_parameters_dict_from_file_header,
     read_par,

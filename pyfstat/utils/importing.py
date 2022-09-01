@@ -24,35 +24,19 @@ def initializer(func):
     return wrapper
 
 
-def set_up_matplotlib_defaults():
-    """Sets some defaults for matplotlib plotting."""
-    plt = safe_X_less_plt()
-    plt.rcParams["axes.formatter.useoffset"] = False
-
-
 def safe_X_less_plt():
 
     if "DISPLAY" in os.environ:
         import matplotlib.pyplot as plt
     else:
-        # logger.info(
-        #    'No $DISPLAY environment variable found, so importing \
-        #              matplotlib.pyplot with non-interactive "Agg" backend.'
-        # )
+        logger.info(
+            'No $DISPLAY environment variable found, so importing \
+                     matplotlib.pyplot with non-interactive "Agg" backend.'
+        )
         import matplotlib
 
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+
+    plt.rcParams["axes.formatter.useoffset"] = False
     return plt
-
-
-if __name__ == "__main__":
-    plt = safe_X_less_plt()
-    import matplotlib
-
-    print(matplotlib.get_backend())
-
-    del os.environ["DISPLAY"]
-    plt = safe_X_less_plt()
-    # import matplotlib
-    print(matplotlib.get_backend())
