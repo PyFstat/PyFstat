@@ -42,6 +42,7 @@ def read_par(
         d = get_dictionary_from_lines(f, comments, raise_error)
     return d
 
+
 def read_txt_file_with_header(f, names=True, comments="#"):
     """Wrapper to np.genfromtxt with smarter handling of variable-length commented headers.
 
@@ -133,6 +134,7 @@ def read_parameters_dict_lines_from_file_header(
             )
         )
     return dict_lines
+
 
 def get_parameters_dict_from_file_header(outfile, comments="#", eval_values=False):
     """Load a parameters dict from a commented file header.

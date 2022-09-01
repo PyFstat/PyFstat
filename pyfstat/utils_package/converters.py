@@ -41,8 +41,6 @@ def get_dictionary_from_lines(lines, comments, raise_error):
     return d
 
 
-
-
 def parse_list_of_numbers(val):
     """Convert a number, list of numbers or comma-separated str into a list of numbers.
 
@@ -103,5 +101,3 @@ def gps_to_datestr_utc(gps):
         tzinfo=timezone.utc,
     )
     return dt.strftime("%c %Z")
-
-

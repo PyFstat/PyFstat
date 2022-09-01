@@ -1,5 +1,6 @@
 import os
 
+
 def get_ephemeris_files():
     """Set the ephemeris files to use for the Earth and Sun.
 
@@ -51,4 +52,3 @@ def get_ephemeris_files():
     else:
         logger.info(f"No {config_file} file found. {please}")
     return earth_ephem, sun_ephem
-

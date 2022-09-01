@@ -1,32 +1,36 @@
 import os
 
+
 def set_up_matplotlib_defaults():
     """Sets some defaults for matplotlib plotting."""
     plt.rcParams["axes.formatter.useoffset"] = False
+
 
 def X_less_plt():
 
     if "DISPLAY" in os.environ:
         import matplotlib.pyplot as plt
     else:
-        #logger.info(
+        # logger.info(
         #    'No $DISPLAY environment variable found, so importing \
         #              matplotlib.pyplot with non-interactive "Agg" backend.'
-        #)
+        # )
         import matplotlib
 
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     return plt
 
+
 if __name__ == "__main__":
     plt = X_less_plt()
     import matplotlib
+
     print(matplotlib.get_backend())
 
     del os.environ["DISPLAY"]
     plt = X_less_plt()
-    #import matplotlib
+    # import matplotlib
     print(matplotlib.get_backend())
 
 

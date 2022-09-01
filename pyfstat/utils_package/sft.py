@@ -1,5 +1,6 @@
-import lalpulsar 
+import lalpulsar
 import np
+
 
 def get_sft_as_arrays(sftfilepattern, fMin=None, fMax=None, constraints=None):
     """
@@ -75,6 +76,7 @@ def get_sft_as_arrays(sftfilepattern, fMin=None, fMax=None, constraints=None):
 
     return frequencies, times, amplitudes
 
+
 def get_commandline_from_SFTDescriptor(descriptor):
     """Extract a commandline from the 'comment' entry of a SFT descriptor.
 
@@ -105,4 +107,3 @@ def get_commandline_from_SFTDescriptor(descriptor):
     return next(
         (line for line in comment_lines if "lalpulsar" in line or "lalapps" in line), ""
     )
-

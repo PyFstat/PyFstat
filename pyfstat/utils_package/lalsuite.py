@@ -24,6 +24,7 @@ def get_lal_exec(cmd):
         )
     return os.path.basename(full_cmd)
 
+
 def get_covering_band(
     tref,
     tstart,
@@ -98,6 +99,7 @@ def get_covering_band(
             " lalpulsar.CWSignalCoveringBand.".format(minCoverFreq, maxCoverFreq)
         )
     return minCoverFreq, maxCoverFreq
+
 
 def predict_fstat(
     h0=None,
@@ -232,6 +234,7 @@ def predict_fstat(
     os.remove(tempory_filename)
     return twoF_expected, twoF_sigma
 
+
 def generate_loudest_file(
     max_params,
     tref,
@@ -306,4 +309,3 @@ def generate_loudest_file(
 
     run_commandline(cmd, return_output=False)
     return loudest_file
-

@@ -2,6 +2,7 @@ import lal
 
 logger = logging.getLogger(__name__)
 
+
 def convert_array_to_gsl_matrix(array):
     """Convert a numpy array to a LAL-wrapped GSL matrix.
 

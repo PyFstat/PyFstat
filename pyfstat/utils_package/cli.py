@@ -1,6 +1,7 @@
 import subprocess
 from typing import Union
 
+
 def run_commandline(
     cl: str, raise_error: bool = True, return_output: bool = False
 ) -> Union[subprocess.CompletedProcess, None]:
@@ -50,6 +51,7 @@ def run_commandline(
             raise
 
     return None
+
 
 def match_commandlines(cl1, cl2, be_strict_about_full_executable_path=False):
     """Check if two commandline strings match element-by-element, regardless of order.
