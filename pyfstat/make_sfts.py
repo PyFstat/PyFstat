@@ -11,7 +11,7 @@ import lalpulsar
 import numpy as np
 from tqdm import tqdm, trange
 
-import pyfstat.helper_functions as helper_functions
+import pyfstat.utils as utils
 from pyfstat import injection_parameters
 from pyfstat.core import BaseSearchClass, SearchForSignalWithJumps
 
@@ -35,7 +35,7 @@ class Writer(BaseSearchClass):
     for more detailed help with some of the parameters.
     """
 
-    mfd = helper_functions.get_lal_exec("Makefakedata_v5")
+    mfd = utils.get_lal_exec("Makefakedata_v5")
     """The executable; can be overridden by child classes."""
 
     signal_parameter_labels = [
@@ -79,7 +79,7 @@ class Writer(BaseSearchClass):
     silently given by Makefakedata_v5
     """
 
-    @helper_functions.initializer
+    @utils.initializer
     def __init__(
         self,
         label="PyFstat",
@@ -167,7 +167,7 @@ class Writer(BaseSearchClass):
         earth_ephem, sun_ephem: str or None
             Paths of the two files containing positions of Earth and Sun.
             If None, will check standard sources as per
-            helper_functions.get_ephemeris_files().
+            utils.get_ephemeris_files().
         transientWindowType: str
             If `none`, a fully persistent CW signal is simulated.
             If `rect` or `exp`, a transient signal with the corresponding
@@ -519,7 +519,7 @@ class Writer(BaseSearchClass):
                 " of signal to inject plus {:d} extra bins either side"
                 " (corresponding to default F-statistic settings).".format(extraBins)
             )
-            minCoverFreq, maxCoverFreq = helper_functions.get_covering_band(
+            minCoverFreq, maxCoverFreq = utils.get_covering_band(
                 tref=self.tref,
                 tstart=self.tstart,
                 tend=self.tend,
@@ -643,16 +643,14 @@ class Writer(BaseSearchClass):
         # matching CLs
         for sftfile in self.sftfilenames:
             catalog = lalpulsar.SFTdataFind(sftfile, None)
-            cl_old = helper_functions.get_commandline_from_SFTDescriptor(
-                catalog.data[0]
-            )
+            cl_old = utils.get_commandline_from_SFTDescriptor(catalog.data[0])
             if len(cl_old) == 0:
                 logger.info(
                     "......could not obtain comparison commandline from first SFT"
                     " header in old file '{}'. {}".format(sftfile, need_new)
                 )
                 return False
-            if not helper_functions.match_commandlines(cl_old, cl_mfd):
+            if not utils.match_commandlines(cl_old, cl_mfd):
                 logger.info(
                     "......commandlines unmatched for first SFT in old"
                     " file '{}':".format(sftfile)
@@ -720,7 +718,7 @@ class Writer(BaseSearchClass):
 
         check_ok = self.check_cached_data_okay_to_use(cl_mfd)
         if check_ok is False:
-            helper_functions.run_commandline(cl_mfd)
+            utils.run_commandline(cl_mfd)
             if not np.all([os.path.isfile(f) for f in self.sftfilenames]):
                 raise IOError(
                     f"It seems we successfully ran {self.mfd},"
@@ -747,7 +745,7 @@ class Writer(BaseSearchClass):
             )
         elif self.noiseSFTs is not None:
             if self.sqrtSX and np.any(
-                [s > 0 for s in helper_functions.parse_list_of_numbers(self.sqrtSX)]
+                [s > 0 for s in utils.parse_list_of_numbers(self.sqrtSX)]
             ):
                 logger.warning(
                     "In addition to using noiseSFTs, you are adding "
@@ -795,7 +793,7 @@ class Writer(BaseSearchClass):
     def predict_fstat(self, assumeSqrtSX=None):
         """Predict the expected F-statistic value for the injection parameters.
 
-        Through helper_functions.predict_fstat(), this wraps
+        Through utils.predict_fstat(), this wraps
         the PredictFstat executable.
 
         Parameters
@@ -808,7 +806,7 @@ class Writer(BaseSearchClass):
             and the data in self.sftfilepath.
             Detectors will be paired to list elements following alphabetical order.
         """
-        twoF_expected, twoF_sigma = helper_functions.predict_fstat(
+        twoF_expected, twoF_sigma = utils.predict_fstat(
             h0=self.h0,
             cosi=self.cosi,
             psi=self.psi,
@@ -833,7 +831,7 @@ class Writer(BaseSearchClass):
 class BinaryModulatedWriter(Writer):
     """Special Writer variant for simulating a CW signal for a source in a binary system."""
 
-    @helper_functions.initializer
+    @utils.initializer
     def __init__(
         self,
         label="PyFstat",
@@ -931,7 +929,7 @@ class LineWriter(Writer):
     NOTE: All signal parameters except for `h0`, `Freq`, `phi0` and transient parameters will be ignored.
     """
 
-    mfd = helper_functions.get_lal_exec("Makefakedata_v4")
+    mfd = utils.get_lal_exec("Makefakedata_v4")
     """The executable (older version that supports the `--lineFeature` option)."""
 
     required_signal_parameters = [
@@ -1024,7 +1022,7 @@ class LineWriter(Writer):
             )
         elif self.noiseSFTs is not None:
             if self.sqrtSX and np.any(
-                [s > 0 for s in helper_functions.parse_list_of_numbers(self.sqrtSX)]
+                [s > 0 for s in utils.parse_list_of_numbers(self.sqrtSX)]
             ):
                 logger.warning(
                     "In addition to using noiseSFTs, you are adding "
@@ -1071,7 +1069,7 @@ class LineWriter(Writer):
 class GlitchWriter(SearchForSignalWithJumps, Writer):
     """Special Writer variant for simulating a CW signal containing a timing glitch."""
 
-    @helper_functions.initializer
+    @utils.initializer
     def __init__(
         self,
         label="PyFstat",
@@ -1314,7 +1312,7 @@ class FrequencyModulatedArtifactWriter(Writer):
     for more detailed help with some of the parameters.
     """
 
-    @helper_functions.initializer
+    @utils.initializer
     def __init__(
         self,
         label,
@@ -1379,7 +1377,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         earth_ephem, sun_ephem: str or None
             Paths of the two files containing positions of Earth and Sun.
             If None, will check standard sources as per
-            helper_functions.get_ephemeris_files().
+            utils.get_ephemeris_files().
         randSeed: int or None
             Optionally fix the random seed of Gaussian noise generation
             for reproducibility.
@@ -1530,12 +1528,12 @@ class FrequencyModulatedArtifactWriter(Writer):
             os.remove(SFTFile_fullpath)
 
         inpattern = os.path.join(self.tmp_outdir, "*sft")
-        cl_splitSFTS = helper_functions.get_lal_exec("splitSFTs")
+        cl_splitSFTS = utils.get_lal_exec("splitSFTs")
         cl_splitSFTS += " -fs {} -fb {} -fe {} -n {} -- {}".format(
             self.fmin, self.Band, self.fmin + self.Band, self.outdir, inpattern
         )
-        helper_functions.run_commandline(cl_splitSFTS)
-        helper_functions.run_commandline(f"rm -r {self.tmp_outdir}")
+        utils.run_commandline(cl_splitSFTS)
+        utils.run_commandline(f"rm -r {self.tmp_outdir}")
         outglob = glob.glob(SFTFile_fullpath)
         if len(outglob) != 1:
             raise IOError(
@@ -1639,7 +1637,7 @@ class FrequencyModulatedArtifactWriter(Writer):
     def run_makefakedata_v4(self, mid_time, lineFreq, linePhi, h0, tmp_outdir):
         """Generate SFT data using the MFDv4 code with the --lineFeature option."""
         cl_mfd = []
-        cl_mfd.append(helper_functions.get_lal_exec("Makefakedata_v4"))
+        cl_mfd.append(utils.get_lal_exec("Makefakedata_v4"))
         cl_mfd.append("--outSingleSFT=FALSE")
         cl_mfd.append('--outSFTbname="{}"'.format(tmp_outdir))
         cl_mfd.append("--IFO={}".format(self.detectors))
@@ -1664,7 +1662,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         if self.randSeed:
             cl_mfd.append("--randSeed={}".format(self.randSeed))
         cl_mfd = " ".join(cl_mfd)
-        helper_functions.run_commandline(cl_mfd)
+        utils.run_commandline(cl_mfd)
 
 
 class FrequencyAmplitudeModulatedArtifactWriter(FrequencyModulatedArtifactWriter):

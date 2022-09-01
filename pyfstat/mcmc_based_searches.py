@@ -59,8 +59,8 @@ from scipy.stats import lognorm
 from tqdm import tqdm
 
 import pyfstat.core as core
-import pyfstat.helper_functions as helper_functions
 import pyfstat.optimal_setup_functions as optimal_setup_functions
+import pyfstat.utils as utils
 from pyfstat.core import BaseSearchClass
 
 logger = logging.getLogger(__name__)
@@ -1873,7 +1873,7 @@ class MCMCSearch(BaseSearchClass):
             return False
 
     def _get_savetxt_fmt_dict(self):
-        fmt_dict = helper_functions.get_doppler_params_output_format(self.theta_keys)
+        fmt_dict = utils.get_doppler_params_output_format(self.theta_keys)
         fmt_dict["twoF"] = "%.9g"
         if self.BSGL:
             fmt_dict["log10BSGL"] = "%.9g"
@@ -2146,7 +2146,7 @@ class MCMCSearch(BaseSearchClass):
                 " not expected from signal parameters being searched over:"
                 f" {pardiff} not in {signal_parameter_keys}."
             )
-        self.loudest_file = helper_functions.generate_loudest_file(
+        self.loudest_file = utils.generate_loudest_file(
             max_params=max_params,
             tref=self.tref,
             outdir=self.outdir,
@@ -2186,8 +2186,8 @@ class MCMCSearch(BaseSearchClass):
                     u = self.unit_dictionary[key]
                     s = self.symbol_dictionary[key]
                     f.write("\n")
-                    a = helper_functions.texify_float(a)
-                    b = helper_functions.texify_float(b)
+                    a = utils.texify_float(a)
+                    b = utils.texify_float(b)
                     f.write(" " + line.format(s, a, b, u) + r" \\")
             f.write("\n\\end{tabular}\n")
 
@@ -2461,7 +2461,7 @@ class MCMCGlitchSearch(MCMCSearch):
         `unit` by which to transform by and update the units.
     """
 
-    @helper_functions.initializer
+    @utils.initializer
     def __init__(
         self,
         theta_prior,
@@ -2772,7 +2772,7 @@ class MCMCGlitchSearch(MCMCSearch):
         return ax
 
     def _get_savetxt_fmt_dict(self):
-        fmt_dict = helper_functions.get_doppler_params_output_format(self.theta_keys)
+        fmt_dict = utils.get_doppler_params_output_format(self.theta_keys)
         if "tglitch" in self.theta_keys:
             fmt_dict["tglitch"] = "%d"
         if "delta_F0" in self.theta_keys:
@@ -3372,7 +3372,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
                         i,
                         rs[1],
                         "{:1.1f}".format(Tcoh),
-                        helper_functions.texify_float(Nstar),
+                        utils.texify_float(Nstar),
                     )
                     f.write(line)
                 f.write(r"\end{tabular}" + "\n")
@@ -3598,7 +3598,7 @@ class MCMCTransientSearch(MCMCSearch):
             self.output_keys.append("log10BSGL")
 
     def _get_savetxt_fmt_dict(self):
-        fmt_dict = helper_functions.get_doppler_params_output_format(self.theta_keys)
+        fmt_dict = utils.get_doppler_params_output_format(self.theta_keys)
         if "transient_tstart" in self.theta_keys:
             fmt_dict["transient_tstart"] = "%d"
         if "transient_duration" in self.theta_keys:

@@ -825,7 +825,7 @@ def get_predict_fstat_parameters_from_dict(signal_parameters, transientWindowTyp
     """Extract a subset of parameters as needed for predicting F-stats.
 
     Given a dictionary with arbitrary signal parameters,
-    this extracts only those ones required by `helper_functions.predict_fstat()`:
+    this extracts only those ones required by `utils.predict_fstat()`:
     Freq, Alpha, Delta, h0, cosi, psi.
     Also preserves transient parameters, if included in the input dict.
 
@@ -833,7 +833,7 @@ def get_predict_fstat_parameters_from_dict(signal_parameters, transientWindowTyp
     ----------
     signal_parameters: dict
         Dictionary containing at least those signal parameters required by
-        helper_functions.predict_fstat.
+        utils.predict_fstat.
         This dictionary's keys must follow
         the PyFstat convention (e.g. F0 instead of Freq).
     transientWindowType: str
