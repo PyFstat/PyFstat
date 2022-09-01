@@ -1,4 +1,4 @@
-from subprocess import CalledProcessError
+from subprocess import CalledProcessError, CompletedProcess
 
 import pytest
 
@@ -30,12 +30,16 @@ def test_run_commandline(caplog):
     assert (messages[1][1] == 20) and (messages[1][2] == msg + "\n")
     assert (messages[2][1] == 40) and (messages[2][2] == msg + "\n")
 
-    # Test proper return
-    for return_output, return_value in zip([True, False], [0, None]):
-        assert (
-            run_commandline("echo 'Testing returns'", return_output=return_output)
-            is return_value
-        )
+    # Test proper return without errors
+    return_obj = run_commandline(
+        "echo 'Testing return' | tee /dev/stderr", return_output=True
+    )
+    messages = caplog.record_tuples[-2:]
+    assert type(return_obj) is CompletedProcess
+    assert (messages[0][1] == 20) and (return_obj.stdout == messages[0][2])
+    assert (messages[1][1] == 40) and (return_obj.stderr == messages[1][2])
+
+    assert run_commandline("echo 'Testing no return'", return_output=False) is None
 
     # Test in case of errors
     with pytest.raises(CalledProcessError):

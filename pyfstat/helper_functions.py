@@ -248,9 +248,9 @@ def get_comb_values(F0, frequencies, twoF, period, N=4):
 
 
 def run_commandline(
-    cl: str, raise_error: bool = True, return_output: bool = True
-) -> Union[str, int, None]:
-    """Run a string cmd as a subprocess, check for errors and return output.
+    cl: str, raise_error: bool = True, return_output: bool = False
+) -> Union[subprocess.CompletedProcess, None]:
+    """Run a string command as a subprocess.
 
     Parameters
     ----------
@@ -258,17 +258,17 @@ def run_commandline(
         Command to run
     raise_error:
         If True, raise an error if the subprocess fails.
-        If False, continue and just return `0`.
+        If False, just log the error, continue, and return ``None``.
     return_output:
-        If True, return the captured output of the subprocess (stdout and stderr).
-        If False, return nothing on successful execution.
+        If True, return the ``subprocess.CompletedProcess`` object.
+        If False, return ``None``.
 
     Returns
     ----------
     out:
-        The captured output of the subprocess (stdout and stderr)
-        if `return_output=True`.
-        0 on failed execution if `raise_error=False`.
+        The ```subprocess.CompletedProcess`` of the subprocess
+        if ``return_output=True``. ``None`` if ``return_output=False``
+        or on  failed execution if ``raise_error=False``.
     """
 
     logger.info("Now executing: " + cl)
@@ -289,13 +289,13 @@ def run_commandline(
         if msg := completed_process.stderr:
             logger.error(msg)
         if return_output:
-            return getattr(completed_process, "returncode", 0)
+            return completed_process
     except subprocess.CalledProcessError as e:
         logger.error(f"Execution failed: {e.output}")
         if raise_error:
             raise
-        elif return_output:
-            return
+
+    return None
 
 
 def convert_array_to_gsl_matrix(array):
