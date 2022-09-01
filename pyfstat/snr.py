@@ -444,7 +444,7 @@ class DetectorStates:
 
             logger.debug("Retrieving detectors from timestamps dictionary.")
             detectors = list(timestamps.keys())
-            timestamps = timestamps.values()
+            timestamps = (np.array(ts) for ts in timestamps.values())
 
         elif detectors is not None:
             if isinstance(detectors, str):
