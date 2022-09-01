@@ -96,13 +96,13 @@ class TestGridSearch(BaseForTestsWithData):
         )
         self.search.run()
         self.assertTrue(os.path.isfile(self.search.out_file))
-        pyfstat_out = pyfstat.helper_functions.read_txt_file_with_header(
+        pyfstat_out = pyfstat.utils.read_txt_file_with_header(
             self.search.out_file, comments="#"
         )
         CFSv2_out_file = os.path.join(self.outdir, "CFSv2_Fstat_out.txt")
         CFSv2_loudest_file = os.path.join(self.outdir, "CFSv2_Fstat_loudest.txt")
         cl_CFSv2 = []
-        cl_CFSv2.append(pyfstat.helper_functions.get_lal_exec("ComputeFstatistic_v2"))
+        cl_CFSv2.append(pyfstat.utils.get_lal_exec("ComputeFstatistic_v2"))
         cl_CFSv2.append("--Alpha {} --AlphaBand 0".format(self.Alpha))
         cl_CFSv2.append("--Delta {} --DeltaBand 0".format(self.Delta))
         cl_CFSv2.append("--Freq {}".format(self.F0s[0]))
@@ -117,10 +117,10 @@ class TestGridSearch(BaseForTestsWithData):
         # CFSv2 versions, set the RngMedWindow manually:
         cl_CFSv2.append("--RngMedWindow=101")
         cl_CFSv2 = " ".join(cl_CFSv2)
-        pyfstat.helper_functions.run_commandline(cl_CFSv2)
+        pyfstat.utils.run_commandline(cl_CFSv2)
         self.assertTrue(os.path.isfile(CFSv2_out_file))
         self.assertTrue(os.path.isfile(CFSv2_loudest_file))
-        CFSv2_out = pyfstat.helper_functions.read_txt_file_with_header(
+        CFSv2_out = pyfstat.utils.read_txt_file_with_header(
             CFSv2_out_file, comments="%"
         )
         self.assertTrue(
@@ -136,7 +136,7 @@ class TestGridSearch(BaseForTestsWithData):
         for run, f in zip(
             ["CFSv2", "PyFstat"], [CFSv2_loudest_file, self.search.loudest_file]
         ):
-            loudest[run] = pyfstat.helper_functions.read_par(
+            loudest[run] = pyfstat.utils.read_par(
                 filename=f,
                 suffix="loudest",
                 raise_error=False,
@@ -302,9 +302,7 @@ class TestTransientGridSearch(BaseForTestsWithData):
         max2F_point = search.get_max_twoF()
         self.assertTrue(np.all(max2F_point["twoF"] >= search.data["twoF"]))
         tCWfile = search.get_transient_fstat_map_filename(max2F_point)
-        tCW_out = pyfstat.helper_functions.read_txt_file_with_header(
-            tCWfile, comments="#"
-        )
+        tCW_out = pyfstat.utils.read_txt_file_with_header(tCWfile, comments="#")
         max2Fidx = np.argmax(tCW_out["2F"])
         self.assertTrue(
             np.isclose(max2F_point["twoF"], tCW_out["2F"][max2Fidx], rtol=1e-6, atol=0)

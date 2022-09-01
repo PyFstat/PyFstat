@@ -11,7 +11,7 @@ import os
 import numpy as np
 
 import pyfstat
-from pyfstat.helper_functions import get_predict_fstat_parameters_from_dict
+from pyfstat.utils import get_predict_fstat_parameters_from_dict
 
 label = "PyFstat_example_fully_coherent_MCMC_search"
 outdir = os.path.join("PyFstat_example_data", label)

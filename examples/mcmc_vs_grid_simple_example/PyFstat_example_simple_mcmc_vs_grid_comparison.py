@@ -353,14 +353,14 @@ if __name__ == "__main__":
             "Failed to load GridSearch results from file '{:s}',"
             " something must have gone wrong!".format(gridfile)
         )
-    grid_res = pyfstat.helper_functions.read_txt_file_with_header(gridfile)
+    grid_res = pyfstat.utils.read_txt_file_with_header(gridfile)
     mcmc_file = os.path.join(outdir, mcmcsearch.label + "_samples.dat")
     if not os.path.isfile(mcmc_file):
         raise RuntimeError(
             "Failed to load MCMCSearch results from file '{:s}',"
             " something must have gone wrong!".format(mcmc_file)
         )
-    mcmc_res = pyfstat.helper_functions.read_txt_file_with_header(mcmc_file)
+    mcmc_res = pyfstat.utils.read_txt_file_with_header(mcmc_file)
 
     zoom = {
         "F0": [inj["F0"] - 10 * dF0, inj["F0"] + 10 * dF0],

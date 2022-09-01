@@ -145,11 +145,9 @@ class TestWriter(BaseForTestsWithData):
             noise_and_signal_freqs,
             times,
             noise_and_signal_data,
-        ) = pyfstat.helper_functions.get_sft_as_arrays(
-            noise_and_signal_writer.sftfilepath
-        )
+        ) = pyfstat.utils.get_sft_as_arrays(noise_and_signal_writer.sftfilepath)
 
-        noise_freqs, _, noise_data = pyfstat.helper_functions.get_sft_as_arrays(
+        noise_freqs, _, noise_data = pyfstat.utils.get_sft_as_arrays(
             noise_writer.sftfilepath
         )
 
@@ -157,9 +155,9 @@ class TestWriter(BaseForTestsWithData):
             add_signal_freqs,
             _,
             add_signal_data,
-        ) = pyfstat.helper_functions.get_sft_as_arrays(add_signal_writer.sftfilepath)
+        ) = pyfstat.utils.get_sft_as_arrays(add_signal_writer.sftfilepath)
 
-        constr_freqs, _, constr_data = pyfstat.helper_functions.get_sft_as_arrays(
+        constr_freqs, _, constr_data = pyfstat.utils.get_sft_as_arrays(
             add_signal_writer_constr.sftfilepath
         )
 
@@ -307,13 +305,13 @@ class TestWriter(BaseForTestsWithData):
         )
         writer.make_data(verbose=True)
         # split them by frequency
-        cl_split = pyfstat.helper_functions.get_lal_exec("splitSFTs")
+        cl_split = pyfstat.utils.get_lal_exec("splitSFTs")
         cl_split += " --frequency-bandwidth 1"
         cl_split += f" --start-frequency {writer.fmin}"
         cl_split += f" --end-frequency {writer.fmin+writer.Band}"
         cl_split += f" --output-directory {self.outdir}"
         cl_split += f" -- {writer.sftfilepath}"
-        pyfstat.helper_functions.run_commandline(cl_split)
+        pyfstat.utils.run_commandline(cl_split)
         # reuse the split SFTs as noiseSFTs
         NB_recycling_writer = self.writer_class_to_test(
             label="test_noiseSFTs_recycle",
@@ -531,9 +529,7 @@ class TestLineWriter(TestWriter):
         self.assertFalse(first_time == third_time)
 
     def _check_maximum_power_consistency(self, writer):
-        freqs, times, data = pyfstat.helper_functions.get_sft_as_arrays(
-            writer.sftfilepath
-        )
+        freqs, times, data = pyfstat.utils.get_sft_as_arrays(writer.sftfilepath)
         for ifo in times.keys():
             max_power_freq_index = np.argmax(np.abs(data[ifo]), axis=0)
             line_active_mask = (writer.transientStartTime <= times[ifo]) & (
@@ -686,17 +682,17 @@ class TestGlitchWriter(TestWriter):
             freqs_vanilla,
             times_vanilla,
             data_vanilla,
-        ) = pyfstat.helper_functions.get_sft_as_arrays(vanillaWriter.sftfilepath)
+        ) = pyfstat.utils.get_sft_as_arrays(vanillaWriter.sftfilepath)
         (
             freqs_noglitch,
             times_noglitch,
             data_noglitch,
-        ) = pyfstat.helper_functions.get_sft_as_arrays(noGlitchWriter.sftfilepath)
+        ) = pyfstat.utils.get_sft_as_arrays(noGlitchWriter.sftfilepath)
         (
             freqs_glitch,
             times_glitch,
             data_glitch,
-        ) = pyfstat.helper_functions.get_sft_as_arrays(glitchWriter.sftfilepath)
+        ) = pyfstat.utils.get_sft_as_arrays(glitchWriter.sftfilepath)
 
         for ifo in self.detectors.split(","):
             max_freq_vanilla = freqs_vanilla[

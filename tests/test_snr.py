@@ -157,7 +157,7 @@ def test_SignalToNoiseRatio(writer, multi_detector_states):
     )
     twoF_from_snr2, twoF_stdev_from_snr2 = snr.compute_twoF(**params)
 
-    predicted_twoF, predicted_stdev_twoF = pyfstat.helper_functions.predict_fstat(
+    predicted_twoF, predicted_stdev_twoF = pyfstat.utils.predict_fstat(
         **params_pfs,
         minStartTime=writer.tstart,
         duration=writer.duration,
@@ -175,7 +175,7 @@ def test_SignalToNoiseRatio(writer, multi_detector_states):
         time_offset=writer.Tsft / 2,
     )
     twoF_from_snr2, twoF_stdev_from_snr2 = snr.compute_twoF(**params)
-    predicted_twoF, predicted_stdev_twoF = pyfstat.helper_functions.predict_fstat(
+    predicted_twoF, predicted_stdev_twoF = pyfstat.utils.predict_fstat(
         **params_pfs,
         F0=writer.F0,
         sftfilepattern=writer.sftfilepath,

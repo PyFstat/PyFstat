@@ -24,11 +24,11 @@ class TestReadParFile(BaseForTestsWithOutdir):
         parfile = os.path.join(self.outdir, self.label + ".par")
         os.system('echo "x=100\ny=10" > ' + parfile)
 
-        par = pyfstat.helper_functions.read_par(filename=parfile)
+        par = pyfstat.utils.read_par(filename=parfile)
         self.assertTrue(par["x"] == 100)
         self.assertTrue(par["y"] == 10)
 
-        par = pyfstat.helper_functions.read_par(outdir=self.outdir, label=self.label)
+        par = pyfstat.utils.read_par(outdir=self.outdir, label=self.label)
         self.assertTrue(par["x"] == 100)
         self.assertTrue(par["y"] == 10)
 
@@ -39,7 +39,7 @@ class TestPredictFstat(BaseForTestsWithOutdir):
     # which itself is tested through the Writer and Search classes
 
     def test_PFS_noise(self):
-        twoF_expected, twoF_sigma = pyfstat.helper_functions.predict_fstat(
+        twoF_expected, twoF_sigma = pyfstat.utils.predict_fstat(
             minStartTime=default_Writer_params["tstart"],
             duration=default_Writer_params["duration"],
             IFOs=default_Writer_params["detectors"],
@@ -65,7 +65,7 @@ class TestPredictFstat(BaseForTestsWithOutdir):
                         default_Writer_params["tstart"] + default_Writer_params["Tsft"],
                     )
                 )
-        twoF_expected, twoF_sigma = pyfstat.helper_functions.predict_fstat(
+        twoF_expected, twoF_sigma = pyfstat.utils.predict_fstat(
             timestampsFiles=",".join(TSfiles),
             IFOs=",".join(IFOs),
             assumeSqrtSX=1,
@@ -78,7 +78,7 @@ class TestPredictFstat(BaseForTestsWithOutdir):
 
     def test_PFS_signal(self):
         duration = 10 * default_Writer_params["duration"]
-        twoF_expected, twoF_sigma = pyfstat.helper_functions.predict_fstat(
+        twoF_expected, twoF_sigma = pyfstat.utils.predict_fstat(
             h0=1,
             cosi=0,
             psi=0,
@@ -102,8 +102,8 @@ class TestPredictFstat(BaseForTestsWithOutdir):
             "F0": 0,
             "F1": 0,
         }
-        params = pyfstat.helper_functions.get_predict_fstat_parameters_from_dict(params)
-        twoF_expected_dict, twoF_sigma_dict = pyfstat.helper_functions.predict_fstat(
+        params = pyfstat.utils.get_predict_fstat_parameters_from_dict(params)
+        twoF_expected_dict, twoF_sigma_dict = pyfstat.utils.predict_fstat(
             **params,
             minStartTime=default_Writer_params["tstart"],
             duration=duration,
@@ -119,11 +119,8 @@ class TestPredictFstat(BaseForTestsWithOutdir):
         params["transientWindowType"] = "rect"
         params["transient_tstart"] = default_Writer_params["tstart"]
         params["transient_duration"] = 0.5 * duration
-        params = pyfstat.helper_functions.get_predict_fstat_parameters_from_dict(params)
-        (
-            twoF_expected_transient,
-            twoF_sigma_transient,
-        ) = pyfstat.helper_functions.predict_fstat(
+        params = pyfstat.utils.get_predict_fstat_parameters_from_dict(params)
+        (twoF_expected_transient, twoF_sigma_transient,) = pyfstat.utils.predict_fstat(
             **params,
             minStartTime=default_Writer_params["tstart"],
             duration=duration,
@@ -722,7 +719,7 @@ class TestComputeFstatNoNoise(BaseForTestsWithData):
         (
             earth_ephem_default,
             sun_ephem_default,
-        ) = pyfstat.helper_functions.get_ephemeris_files()
+        ) = pyfstat.utils.get_ephemeris_files()
 
         search = pyfstat.ComputeFstat(
             tref=self.Writer.tref,
