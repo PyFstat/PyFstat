@@ -1,5 +1,5 @@
+import os
 import sys
-from os import path
 
 from setuptools import find_packages, setup
 
@@ -17,13 +17,28 @@ else:
     print("Confirmed Python version %s.%s.%s or above" % min_python_version[:3])
 
 
-here = path.abspath(path.dirname(__file__))
+here = os.path.abspath(os.path.dirname(__file__))
 # Get the long description from the README file
-with open(path.join(here, "README.md"), encoding="utf-8") as f:
+with open(os.path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
-# Extra dependencies
+# dependencies
+requires = [
+    "attrs",
+    "corner",
+    "dill",
+    "matplotlib>=2.1",
+    "numpy",
+    "pathos",
+    "peakutils",
+    "ptemcee",
+    "scipy",
+    "tqdm",
+    "versioneer",
+]
+lalsuite = "lalsuite>=7.7"
 extras_require = {
+    "chainconsumer": ["chainconsumer"],
     "dev": [
         "pre-commit",
     ],
@@ -36,7 +51,6 @@ extras_require = {
         "mistune==0.8.4",
         "Pillow==9.2.0",
     ],
-    "chainconsumer": ["chainconsumer"],
     "pycuda": ["pycuda"],
     "style": [
         "black",
@@ -49,7 +63,7 @@ extras_require = {
     "test": ["pytest", "pytest-cov", "flaky"],
     "wheel": ["wheel", "check-wheel-contents"],
 }
-for key in ["style", "test", "wheel"]:
+for key in ["docs", "style", "test", "wheel"]:
     extras_require["dev"] += extras_require[key]
 
 setup(
@@ -88,19 +102,7 @@ setup(
         "Topic :: Scientific/Engineering :: Physics",
     ],
     python_requires=">=%s.%s.%s" % min_python_version[:3],
-    install_requires=[
-        "attrs",
-        "corner",
-        "dill",
-        "lalsuite>=7.7",
-        "matplotlib>=2.1",
-        "numpy",
-        "pathos",
-        "peakutils",
-        "ptemcee",
-        "scipy",
-        "tqdm",
-        "versioneer",
-    ],
+    install_requires=requires
+    + ([] if os.environ.get("NO_LALSUITE_FROM_PYPI", False) else [lalsuite]),
     extras_require=extras_require,
 )

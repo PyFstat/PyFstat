@@ -79,7 +79,8 @@ pip install --upgrade pip setuptools
 See [this wiki page](https://github.com/PyFstat/PyFstat/wiki/conda-environments)
 for further instructions on installing conda itself,
 installing PyFstat into an existing environment,
-or for a minimal .yml recipe to set up a PyFstat-specific environment.
+or for .yml recipes to set up a PyFstat-specific environment
+both for normal users and for developers.
 
 If getting PyFstat from conda-forge, it already includes the required ephemerides files.
 
@@ -172,6 +173,8 @@ Available sets of optional dependencies are:
 
 * `chainconsumer` ([Samreay/Chainconsumer](https://github.com/Samreay/ChainConsumer)): Required to run some optional
 plotting methods and some of the [example scripts](./examples).
+* `dev`: Collects `docs`, `style`, `test` and `wheel`.
+* `docs`: Required dependencies to build the documentation.
 * `pycuda` ([PyPI](https://pypi.org/project/pycuda/)): Required for the `tCWFstatMapVersion=pycuda`
   option of the `TransientGridSearch` class. (Note: Installing `pycuda` requires a working
   `nvcc` compiler in your path.)
@@ -182,8 +185,6 @@ plotting methods and some of the [example scripts](./examples).
 * `test`: For running the test suite locally using [pytest](https://docs.pytest.org) and some of its addons
   (`python -m pytest tests/`).
 * `wheel`: Includes `wheel` and `check-wheel-contents`.
-* `dev`: Collects `style`, `test` and `wheel`.
-* `docs`: Required dependencies to build the documentation.
 
 Installation can be done by adding one or more of the aforementioned tags to the installation command.
 
@@ -194,17 +195,27 @@ pip install pyfstat[chainconsumer,pycuda,style]
 ```
 This command accepts the "development mode" tag `-e`.
 
+Note that LALSuite is a default requirement, not an optional one,
+but its installation from PyPI can be disabled
+by setting the `NO_LALSUITE_FROM_PYPI` environment variable,
+e.g. for a development install from a local git clone:
+```
+NO_LALSUITE_FROM_PYPI=1 pip install -e .
+```
+This can be useful to avoid duplication when in a conda environment
+or installing LALSuite from source.
+
 ### Using LALSuite built from source
 
 If you prefer to make your own LALSuite installation
 [from source](https://git.ligo.org/lscsoft/lalsuite/),
-make sure it is **swig-enabled** and contains at least the `lalpulsar` and `lalapps` packages.
+make sure it is **swig-enabled** and contains at least the `lal` and `lalpulsar` packages.
 
 Following the instructions from their README,
 at the step where it tells you to run `./configure`,
 an example minimal line would be e.g.:
 ```
-./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpulsar --enable-lalapps --enable-swig-python
+./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpulsar --enable-swig-python
 ```
 
 Then after the `make && make install` step,
