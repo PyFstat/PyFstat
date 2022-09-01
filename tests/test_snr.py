@@ -117,6 +117,13 @@ def test_DetectorStates(data_parameters, writer):
     ]
     assert compare_multi_detector_states_series(*mds)
 
+    # test again with plain list instead of np.array
+    mds2 = pyfstat.DetectorStates().get_multi_detector_states(
+        Tsft=writer.Tsft, timestamps={key: list(common_ts) for key in ("H1", "L1")}
+    )
+    assert compare_multi_detector_states_series(*[mds[0], mds2])
+
+    # test a wrong input that shouldn't work
     with pytest.raises(Exception):
         pyfstat.DetectorStates().get_multi_detector_states(
             Tsft=writer.Tsft, timestamps={"H1,L1": [0]}
