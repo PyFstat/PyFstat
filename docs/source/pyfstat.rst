@@ -33,14 +33,6 @@ pyfstat.gridcorner module
    :undoc-members:
    :show-inheritance:
 
-pyfstat.utils module
---------------------------------
-
-.. automodule:: pyfstat.utils
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 pyfstat.injection\_parameters module
 ------------------------------------
 
