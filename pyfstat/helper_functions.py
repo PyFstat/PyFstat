@@ -396,68 +396,6 @@ def get_sft_as_arrays(sftfilepattern, fMin=None, fMax=None, constraints=None):
     return frequencies, times, amplitudes
 
 
-def get_sft_array(sftfilepattern, F0=None, dF0=None):
-    """Return the raw data (absolute values) from a set of SFTs.
-
-    FIXME: currently only returns data for first detector.
-
-    Parameters
-    ----------
-    sftfilepattern: str
-            Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
-            multiple patterns can be given separated by colons.
-    F0, dF0: float or None
-        Restrict frequency range to `[F0-dF0,F0+dF0]`.
-
-    Returns
-    ----------
-    times: np.ndarray
-        The SFT starttimes as a 1D array.
-    freqs: np.ndarray
-        The frequency bins in each SFT.
-        These will be the same for each SFT,
-        so only a single 1D array is returned.
-    data: np.ndarray
-        A 2D array of the absolute values of the SFT data
-        in each frequency bin at each timestamp.
-    """
-    if True:  # pragma: no cover
-        import warnings
-
-        warnings.warn(
-            "`get_sft_array` is deprecated and will be removed in a future release. "
-            "Please, use `get_sft_as_arrays` to load SFT complex amplitudes."
-        )
-
-    if F0 is None and dF0 is None:
-        fMin = -1
-        fMax = -1
-    elif F0 is None or dF0 is None:
-        raise ValueError("Need either none or both of F0, dF0.")
-    else:
-        fMin = F0 - dF0
-        fMax = F0 + dF0
-
-    SFTCatalog = lalpulsar.SFTdataFind(sftfilepattern, lalpulsar.SFTConstraints())
-    MultiSFTs = lalpulsar.LoadMultiSFTs(SFTCatalog, fMin, fMax)
-    ndet = MultiSFTs.length
-    if ndet > 1:
-        logger.warning(
-            "Loaded SFTs from {:d} detectors, only using the first.".format(ndet)
-        )
-
-    SFTs = MultiSFTs.data[0]
-    times = np.array([sft.epoch.gpsSeconds for sft in SFTs.data])
-    data = [np.abs(sft.data.data) for sft in SFTs.data]
-    data = np.array(data).T
-    nbins, nsfts = data.shape
-
-    sft0 = SFTs.data[0]
-    freqs = np.linspace(sft0.f0, sft0.f0 + (nbins - 1) * sft0.deltaF, nbins)
-
-    return times, freqs, data
-
-
 def get_covering_band(
     tref,
     tstart,
