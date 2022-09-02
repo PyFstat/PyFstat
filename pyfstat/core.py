@@ -19,6 +19,8 @@ import scipy.special
 import pyfstat.tcw_fstat_map_funcs as tcw
 import pyfstat.utils as utils
 
+from ._version import get_versions
+
 plt = utils.safe_X_less_plt()
 
 
@@ -114,7 +116,7 @@ class BaseSearchClass:
             "date: {}".format(str(datetime.now())),
             "user: {}".format(getpass.getuser()),
             "hostname: {}".format(socket.gethostname()),
-            "PyFstat: {}".format(utils.get_version_string()),
+            "PyFstat: {}".format(get_versions()["version"]),
         ]
         lalVCSinfo = lal.VCSInfoString(lalpulsar.PulsarVCSInfoList, 0, "")
         header += filter(None, lalVCSinfo.split("\n"))
