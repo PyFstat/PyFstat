@@ -6,6 +6,11 @@
    - recommended to further call `pyfstat.set_up_logger` and define an output log file,
      as demonstrated in our examples
    - see https://pyfstat.readthedocs.io/en/v1.18.0/pyfstat.html#module-pyfstat.logging for details
+   - removed the last global argparse options `--quite` and `--verbose`,
+     along with the remainders of the `helper_functions.set_up_command_line_arguments()` function.
+     Please use `pyfstat.set_up_logger` instead to determine verbosity level.
+   - `helper_functions.run_commandline()` no longer supports `log_level` argument
+     (please use `pyfstat.set_up_logger` instead)
    - tests now by default print all >=WARNING messages even for passing cases
      and full >=INFO for failing cases
    - capture and handling of output from LALSuite
