@@ -291,7 +291,10 @@ def run_commandline(
         if return_output:
             return completed_process
     except subprocess.CalledProcessError as e:
-        logger.error(f"Execution failed: {e.output}")
+        logger.error(f"Execution failed: {e}")
+        for label in ["stderr", "output"]:
+            if msg := getattr(e, label, None):
+                logger.error(msg)
         if raise_error:
             raise
 
