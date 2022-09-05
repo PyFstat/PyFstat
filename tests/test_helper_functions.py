@@ -46,3 +46,33 @@ def test_run_commandline(caplog):
         run_commandline("ls shrubbery 1>&2", raise_error=True)
     assert caplog.record_tuples[-1][1] == 40
     assert run_commandline("ls shrubbery", raise_error=False) is None
+
+
+def test_run_commandline_on_lal(caplog):
+
+    # Basic print should come out as INFO
+    return_obj = run_commandline("lalpulsar_version", return_output=True)
+
+    _, log_level, log_message = caplog.record_tuples[-1]
+    assert log_level == 20
+    assert return_obj.stdout == log_message
+    assert return_obj.stderr == ""
+    assert return_obj.returncode == 0
+
+    # "Return" values should go through stdout
+    input_time = "2020-04-07T08:00:00"
+    output_time = 1270281618
+    return_obj = run_commandline(
+        f"lalpulsar_tconvert '{input_time}'", return_output=True
+    )
+    assert return_obj.stdout[:-1] == str(output_time)  # stdout contains an extra \n
+    assert int(return_obj.stdout) == output_time
+
+    # Errors should go through stderr and come out as ERROR
+    with pytest.raises(CalledProcessError):
+        return_obj = run_commandline("lalpulsar_Makefakedata_v5", return_output=True)
+        _, log_level, log_message = caplog.record_tuples[-1]
+        assert log_level == 40
+        assert return_obj.stderr == log_message
+        assert return_obj.stdout == ""
+        assert return_obj.returncode != 0
