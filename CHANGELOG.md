@@ -1,4 +1,4 @@
-## 1.18.0 [??/09/2022]
+## 1.18.0 [06/09/2022]
 
  - refurbished logging system: 
    - on `import.pyfstat`, stdout logging at INFO level is activated
@@ -9,13 +9,26 @@
    - removed the last global argparse options `--quite` and `--verbose`,
      along with the remainders of the `helper_functions.set_up_command_line_arguments()` function.
      Please use `pyfstat.set_up_logger` instead to determine verbosity level.
-   - `helper_functions.run_commandline()` no longer supports `log_level` argument
-     (please use `pyfstat.set_up_logger` instead)
    - tests now by default print all >=WARNING messages even for passing cases
      and full >=INFO for failing cases
-   - capture and handling of output from LALSuite
-     (both executables and SWIG-wrapped functions)
+   - improved handling of LALSuite executables through `run_commandline`
+     - better stderr/stdout capture
+     - return is now either a `subprocess.CompletedProcess` object
+       or `None`
+     - default is now `return_output=False`
+     - `log_level` argument removed
+       (please use `pyfstat.set_up_logger` instead)
+   - capture and handling of output from SWIG-wrapped LALSuite functions
      likely to be further improved in future versions
+ - refactored `helper_functions` module into `utils` subpackage
+   with multiple source files;
+   - user can access all functions directly as `utils.some_function`
+     without worrying about the level one further down
+   - moved `matplotlib` setup into new `utils.safe_X_less_plt()`
+   - removed deprecated/unused helper functions
+     X,
+     Y,
+     Z
  - can install with `NO_LALSUITE_FROM_PYPI` environment variable,
    e.g. to avoid duplication of dependencies from conda and pip
    (now used this way in recommended `pyfstat-dev.yml`)
