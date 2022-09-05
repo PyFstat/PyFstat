@@ -1,4 +1,5 @@
 import logging
+from typing import Optional, Tuple
 
 import lalpulsar
 import numpy as np
@@ -6,34 +7,42 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def get_sft_as_arrays(sftfilepattern, fMin=None, fMax=None, constraints=None):
+def get_sft_as_arrays(
+    sftfilepattern: str,
+    fMin: Optional[float] = None,
+    fMax: Optional[float] = None,
+    constraints: Optional[lalpulsar.SFTConstraints] = None,
+) -> Tuple[np.ndarray, dict, dict]:
+
     """
+    Read binary SFT files into NumPy arrays.
 
     Parameters
     ----------
-    sftfilepattern: str
-            Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
-            multiple patterns can be given separated by colons.
-    fMin, fMax: float or None
+    sftfilepattern:
+        Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
+        multiple patterns can be given separated by colons.
+    fMin, fMax:
         Restrict frequency range to `[fMin, fMax]`.
         If None, retreive the full frequency range.
-    constraints: lalpulsar.SFTConstraints() or None
+    constraints:
         Constrains to be fed into XLALSFTdataFind to specify detector,
         GPS time range or timestamps to be retrieved.
 
     Returns
     ----------
-    freqs: np.ndarray
-        The frequency bins in each SFT.
-        These will be the same for each SFT,
+    freqs:
+        The frequency bins in each SFT. These will be the same for each SFT,
         so only a single 1D array is returned.
-    times: dict of np.ndarray
+    times:
         The SFT start times as a dictionary of 1D arrays, one for each detector.
-        Keys correspond to the official detector names as returned by XLALlalpulsar.ListIFOsInCatalog.
-    data: dict of np.ndarray
+        Keys correspond to the official detector names as returned by
+        lalpulsar.ListIFOsInCatalog.
+    data:
         A dictionary of 2D arrays of the complex Fourier amplitudes of the SFT data
         for each detector in each frequency bin at each timestamp.
-        Keys correspond to the official detector names as returned by XLALlalpulsar.ListIFOsInCatalog.
+        Keys correspond to the official detector names as returned by
+        lalpulsar.ListIFOsInCatalog.
     """
 
     constraints = constraints or lalpulsar.SFTConstraints()
@@ -45,11 +54,11 @@ def get_sft_as_arrays(sftfilepattern, fMin=None, fMax=None, constraints=None):
     sft_catalog = lalpulsar.SFTdataFind(sftfilepattern, constraints)
     ifo_labels = lalpulsar.ListIFOsInCatalog(sft_catalog)
 
-    logger.info(
+    logger.debug(
         f"Loading {sft_catalog.length} SFTs from {', '.join(ifo_labels.data)}..."
     )
     multi_sfts = lalpulsar.LoadMultiSFTs(sft_catalog, fMin, fMax)
-    logger.info("done!")
+    logger.debug("done!")
 
     times = {}
     amplitudes = {}
@@ -64,7 +73,7 @@ def get_sft_as_arrays(sftfilepattern, fMin=None, fMax=None, constraints=None):
 
         nbins, nsfts = amplitudes[ifo].shape
 
-        logger.info(f"{nsfts} retrieved from {ifo}.")
+        logger.debug(f"{nsfts} retrieved from {ifo}.")
 
         f0 = sfts.data[0].f0
         df = sfts.data[0].deltaF
