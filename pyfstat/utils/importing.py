@@ -35,7 +35,7 @@ def safe_X_less_plt():
         )
         import matplotlib
 
-        matplotlib.use("Agg")
+        matplotlib.use("agg")
         import matplotlib.pyplot as plt
 
     plt.rcParams["axes.formatter.useoffset"] = False

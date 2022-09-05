@@ -33,6 +33,6 @@ def test_safe_X_less_plt_without_X(caplog):
     # Backend is fixed by the function
     import matplotlib
 
-    assert matplotlib.get_backend() == "Agg"
+    assert matplotlib.get_backend().lower() == "agg"
     assert log_level == 20
     assert "No $DISPLAY environment variable" in log_message
