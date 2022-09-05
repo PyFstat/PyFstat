@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
-import pyfstat.helper_functions as helper_functions
+import pyfstat.utils as utils
 from pyfstat.core import (
     BaseSearchClass,
     ComputeFstat,
@@ -69,7 +69,7 @@ class GridSearch(BaseSearchClass):
     fmt_detstat = "%.9g"
     """Standard output precision for detection statistics."""
 
-    @helper_functions.initializer
+    @utils.initializer
     def __init__(
         self,
         label,
@@ -254,7 +254,7 @@ class GridSearch(BaseSearchClass):
            matches in dimension with current grid,
            and the values in those input columns match with the current grid.
 
-        Through `helper_functions.read_txt_file_with_header()`,
+        Through `utils.read_txt_file_with_header()`,
         the existing file is read in with `np.genfromtxt()`.
         """
         if self.clean:
@@ -278,8 +278,8 @@ class GridSearch(BaseSearchClass):
                 return False
 
         logger.info("Checking header of '{:s}'".format(self.out_file))
-        old_params_dict_str_list = (
-            helper_functions.read_parameters_dict_lines_from_file_header(self.out_file)
+        old_params_dict_str_list = utils.read_parameters_dict_lines_from_file_header(
+            self.out_file
         )
         new_params_dict_str_list = [
             line.strip(" ") for line in self.pprint_init_params_dict()[1:-1]
@@ -297,7 +297,7 @@ class GridSearch(BaseSearchClass):
             )
 
         logger.info("Loading old data from '{:s}'.".format(self.out_file))
-        old_data = helper_functions.read_txt_file_with_header(self.out_file, names=True)
+        old_data = utils.read_txt_file_with_header(self.out_file, names=True)
         if len(old_data) != len(self.input_data):
             logger.info(
                 "Old data found in '{:s}', but differs"
@@ -412,7 +412,7 @@ class GridSearch(BaseSearchClass):
 
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
-        fmt_dict = helper_functions.get_doppler_params_output_format(self.output_keys)
+        fmt_dict = utils.get_doppler_params_output_format(self.output_keys)
         fmt_dict["twoF"] = self.fmt_detstat
         if self.search.singleFstats:
             for IFO in self.search.detector_names:
@@ -793,7 +793,7 @@ class GridSearch(BaseSearchClass):
         max_params = self.get_max_twoF()
         max_params.pop("twoF")
         max_params = self.translate_keys_to_lal(max_params)
-        self.loudest_file = helper_functions.generate_loudest_file(
+        self.loudest_file = utils.generate_loudest_file(
             max_params=max_params,
             tref=self.tref,
             outdir=self.outdir,
@@ -888,7 +888,7 @@ class TransientGridSearch(GridSearch):
     only the additional ones are documented here:
     """
 
-    @helper_functions.initializer
+    @utils.initializer
     def __init__(
         self,
         label,
@@ -1168,7 +1168,7 @@ class TransientGridSearch(GridSearch):
 
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
-        fmt_dict = helper_functions.get_doppler_params_output_format(self.output_keys)
+        fmt_dict = utils.get_doppler_params_output_format(self.output_keys)
         fmt_dict["twoF"] = self.fmt_detstat
         if self.search.singleFstats:
             for IFO in self.search.detector_names:
@@ -1203,7 +1203,7 @@ class GridGlitchSearch(GridSearch):
     This class currently only works for a single glitch in the observing time.
     """
 
-    @helper_functions.initializer
+    @utils.initializer
     def __init__(
         self,
         label,
@@ -1290,7 +1290,7 @@ class GridGlitchSearch(GridSearch):
 
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
-        fmt_dict = helper_functions.get_doppler_params_output_format(self.output_keys)
+        fmt_dict = utils.get_doppler_params_output_format(self.output_keys)
         fmt_dict["delta_F0"] = "%.16g"
         fmt_dict["delta_F1"] = "%.16g"
         fmt_dict["tglitch"] = "%d"

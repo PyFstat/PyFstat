@@ -56,7 +56,7 @@ data = pyfstat.BinaryModulatedWriter(
 data.make_data()
 
 logger.info("Loading SFT data and computing normalized power...")
-freqs, times, sft_data = pyfstat.helper_functions.get_sft_as_arrays(data.sftfilepath)
+freqs, times, sft_data = pyfstat.utils.get_sft_as_arrays(data.sftfilepath)
 sft_power = sft_data["H1"].real ** 2 + sft_data["H1"].imag ** 2
 normalized_power = (
     2 * sft_power / (data_parameters["Tsft"] * data_parameters["sqrtSX"] ** 2)

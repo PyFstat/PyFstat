@@ -12,7 +12,7 @@ import lalpulsar
 import numpy as np
 import scipy.optimize
 
-import pyfstat.helper_functions as helper_functions
+import pyfstat.utils as utils
 
 logger = logging.getLogger(__name__)
 
@@ -226,12 +226,12 @@ def get_Nstar_estimate(nsegs, tref, minStartTime, maxStartTime, prior, detector_
         thickness is unity.
 
     """
-    earth_ephem, sun_ephem = helper_functions.get_ephemeris_files()
+    earth_ephem, sun_ephem = utils.get_ephemeris_files()
     in_phys, spindowns, sky, fiducial_freq = _extract_data_from_prior(prior)
     out_rssky = np.zeros(in_phys.shape)
 
-    in_phys = helper_functions.convert_array_to_gsl_matrix(in_phys)
-    out_rssky = helper_functions.convert_array_to_gsl_matrix(out_rssky)
+    in_phys = utils.convert_array_to_gsl_matrix(in_phys)
+    out_rssky = utils.convert_array_to_gsl_matrix(out_rssky)
 
     tboundaries = np.linspace(minStartTime, maxStartTime, nsegs + 1)
 

@@ -16,25 +16,16 @@ import numpy as np
 import scipy.optimize
 import scipy.special
 
-import pyfstat.helper_functions as helper_functions
 import pyfstat.tcw_fstat_map_funcs as tcw
+import pyfstat.utils as utils
+
+from ._version import get_versions
+
+plt = utils.safe_X_less_plt()
+
 
 logger = logging.getLogger(__name__)
 
-# workaround for matplotlib on X-less remote logins
-if "DISPLAY" in os.environ:
-    import matplotlib.pyplot as plt
-else:
-    logger.info(
-        'No $DISPLAY environment variable found, so importing \
-                  matplotlib.pyplot with non-interactive "Agg" backend.'
-    )
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-helper_functions.set_up_matplotlib_defaults()
 detector_colors = {"h1": "C0", "l1": "C1"}
 
 
@@ -65,7 +56,7 @@ class BaseSearchClass:
         """Set the ephemeris files to use for the Earth and Sun.
 
         NOTE: If not given explicit arguments,
-        default values from helper_functions.get_ephemeris_files()
+        default values from utils.get_ephemeris_files()
         are used.
 
         Parameters
@@ -74,7 +65,7 @@ class BaseSearchClass:
             Paths of the two files containing positions of Earth and Sun,
             respectively at evenly spaced times, as passed to CreateFstatInput
         """
-        earth_ephem_default, sun_ephem_default = helper_functions.get_ephemeris_files()
+        earth_ephem_default, sun_ephem_default = utils.get_ephemeris_files()
         self.earth_ephem = earth_ephem or earth_ephem_default
         self.sun_ephem = sun_ephem or sun_ephem_default
 
@@ -125,7 +116,7 @@ class BaseSearchClass:
             "date: {}".format(str(datetime.now())),
             "user: {}".format(getpass.getuser()),
             "hostname: {}".format(socket.gethostname()),
-            "PyFstat: {}".format(helper_functions.get_version_string()),
+            "PyFstat: {}".format(get_versions()["version"]),
         ]
         lalVCSinfo = lal.VCSInfoString(lalpulsar.PulsarVCSInfoList, 0, "")
         header += filter(None, lalVCSinfo.split("\n"))
@@ -157,7 +148,7 @@ class BaseSearchClass:
             A dictionary of the parsed `key=val` pairs.
 
         """
-        params_dict = helper_functions.read_par(
+        params_dict = utils.read_par(
             filename=filename,
             label=label or getattr(self, "label", None),
             outdir=outdir or getattr(self, "outdir", None),
@@ -252,7 +243,7 @@ class ComputeFstat(BaseSearchClass):
     or manually call the `search.finalizer_()` method where needed.
     """
 
-    @helper_functions.initializer
+    @utils.initializer
     def __init__(
         self,
         tref,
@@ -410,11 +401,11 @@ class ComputeFstat(BaseSearchClass):
         earth_ephem: str
             Earth ephemeris file path.
             If None, will check standard sources as per
-            helper_functions.get_ephemeris_files().
+            utils.get_ephemeris_files().
         sun_ephem: str
             Sun ephemeris file path.
             If None, will check standard sources as per
-            helper_functions.get_ephemeris_files().
+            utils.get_ephemeris_files().
         allowedMismatchFromSFTLength: float
             Maximum allowed mismatch from SFTs being too long
             [Default: what's hardcoded in XLALFstatMaximumSFTLength]
@@ -546,8 +537,8 @@ class ComputeFstat(BaseSearchClass):
         if len(SFT_timestamps) == 0:
             raise ValueError("Failed to load any data")
 
-        dtstr1 = helper_functions.gps_to_datestr_utc(int(SFT_timestamps[0]))
-        dtstr2 = helper_functions.gps_to_datestr_utc(int(SFT_timestamps[-1]))
+        dtstr1 = utils.gps_to_datestr_utc(int(SFT_timestamps[0]))
+        dtstr2 = utils.gps_to_datestr_utc(int(SFT_timestamps[-1]))
         logger.info(
             f"Data contains SFT timestamps from {SFT_timestamps[0]} ({dtstr1})"
             f" to (including) {SFT_timestamps[-1]} ({dtstr2})."
@@ -618,7 +609,7 @@ class ComputeFstat(BaseSearchClass):
             FstatOAs.assumeSqrtSX = lalpulsar.FstatOptionalArgsDefaults.assumeSqrtSX
         else:
             mnf = lalpulsar.MultiNoiseFloor()
-            assumeSqrtSX = helper_functions.parse_list_of_numbers(self.assumeSqrtSX)
+            assumeSqrtSX = utils.parse_list_of_numbers(self.assumeSqrtSX)
             mnf.sqrtSn[: len(assumeSqrtSX)] = assumeSqrtSX
             mnf.length = len(assumeSqrtSX)
             FstatOAs.assumeSqrtSX = mnf
@@ -664,9 +655,7 @@ class ComputeFstat(BaseSearchClass):
         else:
             FstatOAs.injectSources = lalpulsar.FstatOptionalArgsDefaults.injectSources
         if hasattr(self, "injectSqrtSX") and self.injectSqrtSX is not None:
-            self.injectSqrtSX = helper_functions.parse_list_of_numbers(
-                self.injectSqrtSX
-            )
+            self.injectSqrtSX = utils.parse_list_of_numbers(self.injectSqrtSX)
             if len(self.injectSqrtSX) != len(self.detector_names):
                 raise ValueError(
                     "injectSqrtSX must be of same length as detector_names ({}!={})".format(
@@ -1015,7 +1004,7 @@ class ComputeFstat(BaseSearchClass):
             maxOrbitEcc = 0.0
         # finally call the wrapped lalpulsar estimation function with the
         # extended PulsarSpinRange and optional binary parameters
-        self.minCoverFreq, self.maxCoverFreq = helper_functions.get_covering_band(
+        self.minCoverFreq, self.maxCoverFreq = utils.get_covering_band(
             tref=self.tref,
             tstart=self.minStartTime,
             tend=self.maxStartTime,
@@ -1496,7 +1485,7 @@ class ComputeFstat(BaseSearchClass):
         num_segments: int
             Number of segments to split [tstart,tend] into.
         predict_fstat_kwargs:
-            Other kwargs to be passed to helper_functions.predict_fstat().
+            Other kwargs to be passed to utils.predict_fstat().
 
         Returns
         -------
@@ -1514,7 +1503,7 @@ class ComputeFstat(BaseSearchClass):
             tstart, tend, num_segments
         )
         out = [
-            helper_functions.predict_fstat(
+            utils.predict_fstat(
                 minStartTime=tstart,
                 duration=duration,
                 sftfilepattern=self.sftfilepattern,
@@ -1715,7 +1704,7 @@ class SemiCoherentSearch(ComputeFstat):
     per-segment F-stats, and these are summed to get the semi-coherent result.
     """
 
-    @helper_functions.initializer
+    @utils.initializer
     def __init__(
         self,
         label,
@@ -2183,7 +2172,7 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
     F-stat.
     """
 
-    @helper_functions.initializer
+    @utils.initializer
     def __init__(
         self,
         label,

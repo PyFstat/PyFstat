@@ -2,19 +2,7 @@ from subprocess import CalledProcessError, CompletedProcess
 
 import pytest
 
-import pyfstat
-from pyfstat.helper_functions import run_commandline
-
-
-def test_gps_to_datestr_utc():
-
-    gps = 1000000000
-    # reference from lal_tconvert on en_US.UTF-8 locale
-    # but instead from the "GMT" bit it places in the middle,
-    # we put the timezone info at the end via datetime.strftime()
-    old_str = "Wed Sep 14 01:46:25 GMT 2011"
-    new_str = pyfstat.helper_functions.gps_to_datestr_utc(gps)
-    assert new_str.rstrip(" UTC") == old_str.replace(" GMT ", " ")
+from pyfstat.utils import run_commandline
 
 
 def test_run_commandline_noreturn():

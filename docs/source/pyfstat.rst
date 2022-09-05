@@ -6,6 +6,15 @@ These pages document the full API and set of classes provided by PyFstat.
 See :doc:`here <readme>` for installation instructions and
 other general information.
 
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pyfstat.utils
+
 Submodules
 ----------
 
@@ -29,14 +38,6 @@ pyfstat.gridcorner module
 -------------------------
 
 .. automodule:: pyfstat.gridcorner
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyfstat.helper\_functions module
---------------------------------
-
-.. automodule:: pyfstat.helper_functions
    :members:
    :undoc-members:
    :show-inheritance:

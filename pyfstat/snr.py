@@ -6,7 +6,7 @@ import lalpulsar
 import numpy as np
 from attrs import define, field
 
-from pyfstat.helper_functions import get_ephemeris_files
+from pyfstat.utils import get_ephemeris_files
 
 logger = logging.getLogger(__name__)
 
