@@ -30,7 +30,6 @@ requires = [
     "matplotlib>=2.1",
     "numpy",
     "pathos",
-    "peakutils",
     "ptemcee",
     "scipy",
     "tqdm",
