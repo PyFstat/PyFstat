@@ -46,13 +46,17 @@ def run_commandline(
             text=True,
         )
         if msg := completed_process.stdout:
-            logger.info(msg)
+            [logger.info(line) for line in msg.splitlines()]
         if msg := completed_process.stderr:
-            logger.error(msg)
+            [logger.error(line) for line in msg.splitlines()]
         if return_output:
             return completed_process
     except subprocess.CalledProcessError as e:
-        logger.error(f"Execution failed: {e.output}")
+        if msg := getattr(e, "output", None):
+            [logger.info(line) for line in msg.splitlines()]
+        logger.error(f"Execution failed: {e}")
+        if msg := getattr(e, "stderr", None):
+            [logger.error(line) for line in msg.splitlines()]
         if raise_error:
             raise
 

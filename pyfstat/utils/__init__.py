@@ -22,6 +22,6 @@ from .io import (
     read_parameters_dict_lines_from_file_header,
     read_txt_file_with_header,
 )
-from .predict import predict_fstat
+from .predict import get_predict_fstat_parameters_from_dict, predict_fstat
 from .runlalsuite import generate_loudest_file, get_covering_band, get_lal_exec
 from .sft import get_commandline_from_SFTDescriptor, get_sft_as_arrays

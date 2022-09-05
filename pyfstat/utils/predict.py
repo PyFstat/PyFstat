@@ -144,3 +144,42 @@ def predict_fstat(
     twoF_sigma = float(d["twoF_sigma"])
     os.remove(tempory_filename)
     return twoF_expected, twoF_sigma
+
+
+def get_predict_fstat_parameters_from_dict(signal_parameters, transientWindowType=None):
+    """Extract a subset of parameters as needed for predicting F-stats.
+    Given a dictionary with arbitrary signal parameters,
+    this extracts only those ones required by `helper_functions.predict_fstat()`:
+    Freq, Alpha, Delta, h0, cosi, psi.
+    Also preserves transient parameters, if included in the input dict.
+    Parameters
+    ----------
+    signal_parameters: dict
+        Dictionary containing at least those signal parameters required by
+        helper_functions.predict_fstat.
+        This dictionary's keys must follow
+        the PyFstat convention (e.g. F0 instead of Freq).
+    transientWindowType: str
+        Transient window type to store in the output dict.
+        Currently required because the typical input dicts
+        produced by various PyFstat functions
+        tend not to store this property.
+        If there is a key with this name already, its value will be overwritten.
+    Returns
+    -------
+    predict_fstat_params: dict
+        The dictionary of selected parameters.
+    """
+    required_keys = ["F0", "Alpha", "Delta", "h0", "cosi", "psi"]
+    transient_keys = {
+        "transientWindowType": "transientWindowType",
+        "transient_tstart": "transientStartTime",
+        "transient_duration": "transientTau",
+    }
+    predict_fstat_params = {key: signal_parameters[key] for key in required_keys}
+    for key in transient_keys:
+        if key in signal_parameters:
+            predict_fstat_params[transient_keys[key]] = signal_parameters[key]
+    if transientWindowType is not None:
+        predict_fstat_params["transientWindowType"] = transientWindowType
+    return predict_fstat_params
