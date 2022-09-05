@@ -81,3 +81,16 @@ def test_run_commandline_lal_expected_error(caplog):
         assert return_obj.stderr == log_message
         assert return_obj.stdout == ""
         assert return_obj.returncode != 0
+
+
+def test_run_commandline_lal_expected_error_and_stdout(caplog):
+    # this one should print something to stdout *before* the error
+    run_commandline(
+        "lalpulsar_ComputeFstatistic_v2 --DataFiles no_such_file --Alpha 0 --Delta 0",
+        raise_error=False,
+    )
+    for _, log_level, log_message in caplog.record_tuples:
+        if "Now executing:" in log_message or "[normal]" in log_message:
+            assert log_level == 20
+        else:
+            assert log_level == 40
