@@ -89,6 +89,14 @@ pyfstat.tcw\_fstat\_map\_funcs module
    :undoc-members:
    :show-inheritance:
 
+pyfstat.utils package
+---------------------
+
+.. automodule:: pyfstat.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 
