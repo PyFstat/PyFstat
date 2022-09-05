@@ -18,7 +18,6 @@ dependencies:
   - lalpulsar >=5.0.0
   - matplotlib-base >=2.1
   - numpy
-  - peakutils
   - pathos
   - pip
   - ptemcee
