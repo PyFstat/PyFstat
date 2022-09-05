@@ -32,6 +32,7 @@
  - can install with `NO_LALSUITE_FROM_PYPI` environment variable,
    e.g. to avoid duplication of dependencies from conda and pip
    (now used this way in recommended `pyfstat-dev.yml`)
+ - removed `peakutils` dependency
  - optional `[dev]` set of dependencies now also includes `docs` dependencies
  - added `sphinx_autodoc_typehints` to  `docs` dependencies
    and updated pinned versions of other sphinx packages
