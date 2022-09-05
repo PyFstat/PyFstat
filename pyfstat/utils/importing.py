@@ -28,10 +28,12 @@ def safe_X_less_plt():
 
     if "DISPLAY" in os.environ:
         import matplotlib.pyplot as plt
+
+        logger.debug("$DISPLAY environment variable found," " using it for matplotlib.")
     else:
         logger.info(
-            'No $DISPLAY environment variable found, so importing \
-                     matplotlib.pyplot with non-interactive "Agg" backend.'
+            "No $DISPLAY environment variable found, so importing"
+            " matplotlib.pyplot with non-interactive 'Agg' backend."
         )
         import matplotlib
 
