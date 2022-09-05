@@ -59,15 +59,6 @@ def test_run_commandline_on_lal(caplog):
     assert return_obj.stderr == ""
     assert return_obj.returncode == 0
 
-    # "Return" values should go through stdout
-    input_time = "2020-04-07T08:00:00"
-    output_time = 1270281618
-    return_obj = run_commandline(
-        f"lalpulsar_tconvert '{input_time}'", return_output=True
-    )
-    assert return_obj.stdout[:-1] == str(output_time)  # stdout contains an extra \n
-    assert int(return_obj.stdout) == output_time
-
     # Errors should go through stderr and come out as ERROR
     with pytest.raises(CalledProcessError):
         return_obj = run_commandline("lalpulsar_Makefakedata_v5", return_output=True)
