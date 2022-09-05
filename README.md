@@ -150,16 +150,15 @@ and recent lalsuite dependencies will include ephemerides files too.
 PyFstat uses the following external python modules,
 which should all be pulled in automatically if you use `pip`:
 
-* [numpy](https://www.numpy.org/)
-* [matplotlib](https://matplotlib.org/)
-* [scipy](https://www.scipy.org/)
-* [ptemcee](https://github.com/willvousden/ptemcee)
 * [corner](https://pypi.python.org/pypi/corner/)
 * [dill](https://pypi.python.org/pypi/dill)
-* [tqdm](https://pypi.python.org/pypi/tqdm)
-* [peakutils](https://pypi.python.org/pypi/PeakUtils)
-* [pathos](https://pypi.python.org/pypi/pathos)
 * [lalsuite](https://pypi.org/project/lalsuite/)
+* [matplotlib](https://matplotlib.org/)
+* [numpy](https://www.numpy.org/)
+* [pathos](https://pypi.python.org/pypi/pathos)
+* [ptemcee](https://github.com/willvousden/ptemcee)
+* [scipy](https://www.scipy.org/)
+* [tqdm](https://pypi.python.org/pypi/tqdm)
 * [versioneer](https://pypi.org/project/versioneer/)
 
 For a general introduction to installing modules, see
