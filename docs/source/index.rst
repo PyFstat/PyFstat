@@ -11,7 +11,7 @@ The source repository and issue tracker for PyFstat can be found at
 `github.com/PyFstat/PyFstat <https://github.com/PyFstat/PyFstat>`_.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 4
    :caption: Contents:
 
    readme
@@ -24,4 +24,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
