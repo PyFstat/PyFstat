@@ -9,6 +9,8 @@ but others can also be helpful for end users.
 
 Functions in these modules can be directly acessed via ``pyfstat.utils``
 without explicitly mentioning the specific module in where they reside.
+(E.g. just call ``pyfstat.utils.some_function``,
+not ``pyfstat.utils.some_topic.some_function``.)
 
 Submodules
 ----------
