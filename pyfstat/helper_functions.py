@@ -13,6 +13,7 @@ import shutil
 import subprocess
 from datetime import datetime, timezone
 from functools import wraps
+from typing import Union
 
 import lal
 import lalpulsar
@@ -246,59 +247,59 @@ def get_comb_values(F0, frequencies, twoF, period, N=4):
     return comb_frequencies, twoF[comb_idxs], freq_err * np.ones(len(comb_idxs))
 
 
-def run_commandline(cl, raise_error=True, return_output=True):
-    """Run a string cmd as a subprocess, check for errors and return output.
+def run_commandline(
+    cl: str, raise_error: bool = True, return_output: bool = False
+) -> Union[subprocess.CompletedProcess, None]:
+    """Run a string command as a subprocess.
 
     Parameters
     ----------
-    cl: str
+    cl:
         Command to run
-    log_level: int
-        Sets the logging level for some of this function's messages.
-        See https://docs.python.org/library/logging.html#logging-levels
-        Default is '20' (INFO).
-        FIXME: Not used for all messages.
-    raise_error: bool
+    raise_error:
         If True, raise an error if the subprocess fails.
-        If False, continue and just return `0`.
-    return_output: bool
-        If True, return the captured output of the subprocess (stdout and stderr).
-        If False, return nothing on successful execution.
+        If False, just log the error, continue, and return ``None``.
+    return_output:
+        If True, return the ``subprocess.CompletedProcess`` object.
+        If False, return ``None``.
 
     Returns
     ----------
-    out: str or int, optional
-        The captured output of the subprocess (stdout and stderr)
-        if `return_output=True`.
-        0 on failed execution if `raise_error=False`.
+    out:
+        The ```subprocess.CompletedProcess`` of the subprocess
+        if ``return_output=True``. ``None`` if ``return_output=False``
+        or on  failed execution if ``raise_error=False``.
     """
 
     logger.info("Now executing: " + cl)
     if "|" in cl:
         logger.warning(
-            "Pipe ('|') found in commandline, errors may not be" " properly caught!"
+            "Pipe ('|') found in commandline, errors may not be  properly caught!"
         )
     try:
+        completed_process = subprocess.run(
+            cl,
+            check=True,
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+        if msg := completed_process.stdout:
+            [logger.info(line) for line in msg.splitlines()]
+        if msg := completed_process.stderr:
+            [logger.error(line) for line in msg.splitlines()]
         if return_output:
-            out = subprocess.check_output(
-                cl,  # what to run
-                stderr=subprocess.STDOUT,  # catch errors
-                shell=True,  # proper environment etc
-                universal_newlines=True,  # properly display linebreaks in error/output printing
-            )
-        else:
-            subprocess.check_call(cl, shell=True)
+            return completed_process
     except subprocess.CalledProcessError as e:
-        logger.error("Execution failed: {}".format(e))
-        if e.output:
-            logger.error(e.output)
+        if msg := getattr(e, "output", None):
+            [logger.info(line) for line in msg.splitlines()]
+        logger.error(f"Execution failed: {e}")
+        if msg := getattr(e, "stderr", None):
+            [logger.error(line) for line in msg.splitlines()]
         if raise_error:
             raise
-        elif return_output:
-            out = 0
-    os.system("\n")
-    if return_output:
-        return out
+
+    return None
 
 
 def convert_array_to_gsl_matrix(array):
