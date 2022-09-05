@@ -26,9 +26,9 @@
      without worrying about the level one further down
    - moved `matplotlib` setup into new `utils.safe_X_less_plt()`
    - removed deprecated/unused helper functions
-     X,
-     Y,
-     Z
+        - `get_peak_values` 
+        - `get_comb_values`
+        - `get_sft_array`
  - can install with `NO_LALSUITE_FROM_PYPI` environment variable,
    e.g. to avoid duplication of dependencies from conda and pip
    (now used this way in recommended `pyfstat-dev.yml`)
