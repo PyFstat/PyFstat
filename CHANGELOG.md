@@ -1,3 +1,43 @@
+## 1.18.0 [06/09/2022]
+
+ - refurbished logging system: 
+   - on `import.pyfstat`, stdout logging at INFO level is activated
+     unless there are already handlers attached to the root logger
+   - recommended to further call `pyfstat.set_up_logger` and define an output log file,
+     as demonstrated in our examples
+   - see https://pyfstat.readthedocs.io/en/v1.18.0/pyfstat.html#module-pyfstat.logging for details
+   - removed the last global argparse options `--quite` and `--verbose`,
+     along with the remainders of the `helper_functions.set_up_command_line_arguments()` function.
+     Please use `pyfstat.set_up_logger` instead to determine verbosity level.
+   - tests now by default print all >=WARNING messages even for passing cases
+     and full >=INFO for failing cases
+   - improved handling of LALSuite executables through `run_commandline`
+     - better stderr/stdout capture
+     - return is now either a `subprocess.CompletedProcess` object
+       or `None`
+     - default is now `return_output=False`
+     - `log_level` argument removed
+       (please use `pyfstat.set_up_logger` instead)
+   - capture and handling of output from SWIG-wrapped LALSuite functions
+     likely to be further improved in future versions
+ - refactored `helper_functions` module into `utils` subpackage
+   with multiple source files;
+   - user can access all functions directly as `utils.some_function`
+     without worrying about the level one further down
+   - moved `matplotlib` setup into new `utils.safe_X_less_plt()`
+   - removed deprecated/unused helper functions
+        - `get_peak_values` 
+        - `get_comb_values`
+        - `get_sft_array`
+ - can install with `NO_LALSUITE_FROM_PYPI` environment variable,
+   e.g. to avoid duplication of dependencies from conda and pip
+   (now used this way in recommended `pyfstat-dev.yml`)
+ - removed `peakutils` dependency
+ - optional `[dev]` set of dependencies now also includes `docs` dependencies
+ - added `sphinx_autodoc_typehints` to  `docs` dependencies
+   and updated pinned versions of other sphinx packages
+ - `DetectorStates`: fixed passing plain lists as values of a `timestamps` dict
+
 ## 1.17.0 [26/08/2022]
 
  - dropped python 3.7 support
