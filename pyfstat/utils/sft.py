@@ -54,7 +54,7 @@ def get_sft_as_arrays(
     sft_catalog = lalpulsar.SFTdataFind(sftfilepattern, constraints)
     ifo_labels = lalpulsar.ListIFOsInCatalog(sft_catalog)
 
-    logger.debug(
+    logger.info(
         f"Loading {sft_catalog.length} SFTs from {', '.join(ifo_labels.data)}..."
     )
     multi_sfts = lalpulsar.LoadMultiSFTs(sft_catalog, fMin, fMax)

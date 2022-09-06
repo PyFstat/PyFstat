@@ -9,9 +9,9 @@ def test_get_sft_as_arrays(tmp_path):
     writer_kwargs = {
         "sqrtSX": 1,
         "Tsft": 1800,
-        "timestamps": {
-            "H1": np.array([1, 2, 3, 6, 7, 10, 12]),
-            "L1": np.array([14, 25, 36, 47]),
+        "timestamps": {  # Set up SFTs with arbitrary gaps
+            "H1": 1800 * np.array([0, 2, 4, 6, 8, 10]),
+            "L1": 1800 * np.array([1, 3, 5, 7, 9, 12]),
         },
         "detectors": "H1,L1",
         "SFTWindowType": "tukey",
@@ -35,7 +35,7 @@ def test_get_sft_as_arrays(tmp_path):
 
     # Single detector
     single_detector_path = writer.sftfilepath.split(";")[0]
-    ifo = "H1" if "H1" in single_detector_path else "L1"
+    ifo = writer.detectors.split(",")[0]
     frequencies, times, amplitudes = get_sft_as_arrays(single_detector_path)
     np.testing.assert_allclose(frequencies, expected_frequencies)
     np.testing.assert_equal(times[ifo], writer_kwargs["timestamps"][ifo])
