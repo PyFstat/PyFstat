@@ -127,7 +127,6 @@ if __name__ == "__main__":
         Band=1,  # default band estimation would be too narrow for a wide grid/prior
     )
     writer.make_data()
-    logger.info("")
 
     # set up square search grid with fixed (F0,F1) mismatch
     # and (optionally) some ad-hoc sky coverage
@@ -193,7 +192,6 @@ if __name__ == "__main__":
     )
     gridcorner_fig.savefig(os.path.join(outdir, gridsearch.label + "_corner.png"))
     plt.close(gridcorner_fig)
-    logger.info("")
 
     logger.info("Performing MCMCSearch...")
     # set up priors in F0 and F1 (over)covering the grid ranges
@@ -257,7 +255,6 @@ if __name__ == "__main__":
     mcmcsearch.plot_corner(truths=inj)
     logger.info("Making MCMCSearch prior-posterior comparison plot...")
     mcmcsearch.plot_prior_posterior(injection_parameters=inj)
-    logger.info("")
 
     # NOTE: everything below here is just custom commandline output and plotting
     # for this particular example, which uses the PyFstat outputs,
@@ -343,7 +340,6 @@ if __name__ == "__main__":
             ),
         )
     )
-    logger.info()
 
     # do additional custom plotting
     logger.info("Loading grid and MCMC search results for custom comparison plots...")
