@@ -350,7 +350,7 @@ class DetectorStates:
         (
             self.multi_timestamps,
             self.multi_detector,
-        ) = self.parse_timestamps_and_detectors(timestamps, Tsft, detectors)
+        ) = self._parse_timestamps_and_detectors(timestamps, Tsft, detectors)
         return lalpulsar.GetMultiDetectorStates(
             self.multi_timestamps,
             self.multi_detector,
@@ -422,7 +422,7 @@ class DetectorStates:
             return multi_detector_states
 
     @staticmethod
-    def parse_timestamps_and_detectors(timestamps, Tsft, detectors):
+    def _parse_timestamps_and_detectors(timestamps, Tsft, detectors):
         """
         Checks consistency between timestamps and detectors.
 
