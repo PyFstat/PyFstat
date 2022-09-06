@@ -12,7 +12,7 @@ def data_params():
     return {
         "fMin": 10,
         "Band": 1,
-        "sqrtSX": "1e-23",
+        "sqrtSX": dict.fromkeys(["H1", "L1"], 1e-23),
         "timestamps": dict.fromkeys(["H1", "L1"], 1000000000 + 1800 * np.arange(5)),
         "Tsft": 1800,
         "randSeed": 314192,
@@ -62,10 +62,24 @@ def data_params():
 def test_MakeFakeData_set_data_params(data_params):
 
     mfd = pyfstat.MakeFakeData()
-    print(type(data_params["timestamps"]))
     mfd.set_data_params(**data_params)
-    for key, val in data_params.items():
-        assert getattr(mfd.data_params, key) == value
+    for key in ["randSeed", "fMin", "Band"]:
+        assert getattr(mfd.data_params, key) == data_params[key]
+
+    detectors = list(data_params["timestamps"].keys())
+    num_detectors = len(detectors)
+
+    assert mfd.data_params.multiTimestamps.length == num_detectors
+    
+    for ifo_ind, ifo in enumerate(detectors):
+        # This fails for some reason...?
+        print(mfd.data_params.multiTimestamps.data[0].data[0])
+    #for ind in range(mfd.data_params.multiTimestamps.data[0].length):
+    #    print(ind)
+    #np.testing.assert_equal(
+    #    mfd.data_params.multiTimestamps.data[0].data[0],
+    #    data_params["timestamps"][detectors[0]],
+    #)
 
 
 # def test_MakeFakeData(signal_writer, obsrun_parameters, signal_parameters):

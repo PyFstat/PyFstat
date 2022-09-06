@@ -34,27 +34,32 @@ class MakeFakeData:
         self.data_params.fMin = fMin
         self.data_params.Band = Band
 
-        (
-            self.data_params.multiTimestamps,
-            self.data_params.multiIFO,
-        ) = DetectorStates.parse_timestamps_and_detectors(
+        multi_timestamps, multi_detector = DetectorStates._parse_timestamps_and_detectors(
             timestamps,
             Tsft,
+            detectors=None,
         )
+
+        # FIXME This doesn't fail here, why does it fail at test time????
+        logger.error(f"{multi_timestamps.data[0].data[0]}")
+        self.data_params.multiTimestamps = multi_timestamps
+        logger.error(f"{self.data_params.multiTimestamps.data[0].data[0]}")
+        self.data_params.multiIFO = multi_detector
+
         self.data_params.multiNoiseFloor = lalpulsar.MultiNoiseFloor()
         lalpulsar.ParseMultiNoiseFloor(
-            self.multiNoiseFloor, sqrtSX, self.multiIFO.length
+            self.data_params.multiNoiseFloor,
+            [
+                str(sqrtSX[prefix])
+                for ifo_site in self.data_params.multiIFO.sites
+                if (prefix := ifo_site.frDetector.prefix)
+            ],
+            self.data_params.multiIFO.length,
         )
+        return self
 
     # def set_from_noise_sfts(cls, sftpattern, window_type, window_beta):
     #    pass
-
-    # def set_fMin_Band(self, new_fMin=None, new_Band=None):
-    #    self.fMin = new_fMin or self.fMin
-    #    self.Band = new_Band or self.Band
-    #    if hasattr(self, "data_parameters"):
-    #        self.data_parameters.fMin = self.fMin
-    #        self.data_parameters.Band = self.Band
 
     # def parse_signal_parameters(
     #    self,
