@@ -2218,7 +2218,6 @@ class MCMCSearch(BaseSearchClass):
                     summary_stats[k]["upper90"] - summary_stats[k]["median"],
                 )
             )
-        logger.info("\n")
 
     def _CF_twoFmax(self, theta, twoFmax, ntrials):
         Fmax = twoFmax / 2.0
