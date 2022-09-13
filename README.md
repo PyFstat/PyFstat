@@ -206,47 +206,7 @@ or installing LALSuite from source.
 
 ### Using LALSuite built from source
 
-If you prefer to make your own LALSuite installation
-[from source](https://git.ligo.org/lscsoft/lalsuite/),
-make sure it is **swig-enabled** and contains at least the `lal` and `lalpulsar` packages.
-
-Following the instructions from their README,
-at the step where it tells you to run `./configure`,
-an example minimal line would be e.g.:
-```
-./configure --prefix=${HOME}/lalsuite-install --disable-all-lal --enable-lalpulsar --enable-swig-python
-```
-
-Then after the `make && make install` step,
-you can point your environment to this installation by doing
-```
-source ${HOME}/lalsuite-install/etc/lalsuite-user-env.sh
-```
-
-You have to redo this in every new session,
-unless you tweak your venv / conda env activation script
-to do it automatically.
-
-Alternatively, Python's built-in `site` package can be used to direct the Python interpreter
-to the right LALSuite installation using `site-packages`.
-To do so, add the following minimal script to one of the available `site-packages` paths
-(which can be retrieved using `python -c 'import site; print( site.getsitepackages())'`):
-
-```
-usercustomize.py
-----------------
-import os
-import sys
-
-custom_lalsuite_lib = "${HOME}/lalsuite-install/lib/pythonX.Y/site-packages"
-custom_lalsuite_bin = "${HOME}/lalsuite-install/lib/pythonX.Y/site-packages"
-
-sys.path.insert(0, custom_lalsuite_lib)
-os.environ["PATH"] = (custom_lalsuite_bin + os.pathsep) + os.environ["PATH"]
-```
-
-where `pythonX.Y` is dependent upon the Python version with which LALSuite was installed
-and `${HOME}` may be substituted by any path of your choice.
+Instructions to use a custom local LALSuite installation can be found in [this wiki page](https://github.com/PyFstat/PyFstat/wiki/Using-LALSuite-built-from-source).
 
 ## Contributing to PyFstat
 
