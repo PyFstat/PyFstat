@@ -34,16 +34,19 @@ class MakeFakeData:
         self.data_params.fMin = fMin
         self.data_params.Band = Band
 
-        multi_timestamps, multi_detector = DetectorStates._parse_timestamps_and_detectors(
+        (
+            multi_timestamps,
+            multi_detector,
+        ) = DetectorStates._parse_timestamps_and_detectors(
             timestamps,
             Tsft,
             detectors=None,
         )
 
-        # FIXME This doesn't fail here, why does it fail at test time????
-        logger.error(f"{multi_timestamps.data[0].data[0]}")
+        # FIXME: Waiting for a SWIG fix
+        self._swig_multitimestamps = multi_timestamps
+
         self.data_params.multiTimestamps = multi_timestamps
-        logger.error(f"{self.data_params.multiTimestamps.data[0].data[0]}")
         self.data_params.multiIFO = multi_detector
 
         self.data_params.multiNoiseFloor = lalpulsar.MultiNoiseFloor()
