@@ -437,7 +437,7 @@ class ComputeFstat(BaseSearchClass):
             )
             self._finalizer = finalize(self, self._finalize_gpu_context)
         else:
-            self._finalizer = None
+            self._finalizer = finalize(self, lambda: None)
 
     def _finalize_gpu_context(self):
         """Clean up at the end of context manager style usage."""
