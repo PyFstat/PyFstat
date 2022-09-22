@@ -59,4 +59,4 @@ if __name__ == "__main__":
         transientWindowType=transientWindowType,
     )
     transient.make_data()
-    logger.info("Predicted 2F from injection Writer:", transient.predict_fstat())
+    logger.info(f"Predicted 2F from injection Writer: {transient.predict_fstat()}")

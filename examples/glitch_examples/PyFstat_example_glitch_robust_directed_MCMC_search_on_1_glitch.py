@@ -101,5 +101,5 @@ mcmc.plot_corner(
 
 mcmc.plot_cumulative_max(savefig=True)
 
-logger.info(("Prior widths =", F0_width, F1_width))
-logger.info(("Actual run time = {}".format(dT)))
+logger.info(f"Prior widths = {F0_width}, {F1_width}")
+logger.info(f"Actual run time = {dT} s")

@@ -98,6 +98,6 @@ fig, axes = pyfstat.gridcorner(
 fig.savefig("{}/{}_projection_matrix.png".format(outdir, label), bbox_inches="tight")
 
 
-logger.info(("Prior widths =", F0_width, F1_width))
-logger.info(("Actual run time = {}".format(dT)))
-logger.info(("Actual number of grid points = {}".format(search.data.shape[0])))
+logger.info(f"Prior widths = {F0_width}, {F1_width}")
+logger.info(f"Actual run time = {dT} s")
+logger.info(f"Actual number of grid points = {search.data.shape[0]}")
