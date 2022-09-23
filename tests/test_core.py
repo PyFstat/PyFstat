@@ -626,6 +626,8 @@ class TestComputeFstat(BaseForTestsWithData):
 @pytest.mark.parametrize("transientWindowType", [None, "rect"])
 @pytest.mark.parametrize("cleanup", ["no", "manual", "contextmanager"])
 def test_context_finalizer(tCWFstatMapVersion, transientWindowType, cleanup):
+    if cleanup == "manual" and not tCWFstatMapVersion == "pycuda":
+        pytest.skip("Manual cleanup won't work in non-pycuda case.")
     CFS_params = {
         "tref": default_Writer_params["tstart"],
         "minStartTime": default_Writer_params["tstart"],
@@ -659,8 +661,9 @@ def test_context_finalizer(tCWFstatMapVersion, transientWindowType, cleanup):
             tCWFstatMapVersion=tCWFstatMapVersion,
             transientWindowType=transientWindowType,
         ) as search:
-            assert search._finalizer is not None
-            assert search._finalizer.alive
+            if tCWFstatMapVersion == "pycuda":
+                assert search._finalizer is not None
+                assert search._finalizer.alive
             detstat = search.get_fullycoherent_detstat(**lambda_params)
     else:
         search = pyfstat.ComputeFstat(
@@ -668,8 +671,9 @@ def test_context_finalizer(tCWFstatMapVersion, transientWindowType, cleanup):
             tCWFstatMapVersion=tCWFstatMapVersion,
             transientWindowType=transientWindowType,
         )
-        assert search._finalizer is not None
-        assert search._finalizer.alive
+        if tCWFstatMapVersion == "pycuda":
+            assert search._finalizer is not None
+            assert search._finalizer.alive
         detstat = search.get_fullycoherent_detstat(**lambda_params)
         if cleanup == "manual":
             # calling finalizer manually should kill it

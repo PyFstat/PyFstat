@@ -436,8 +436,6 @@ class ComputeFstat(BaseSearchClass):
                 f"Setting up GPU context finalizer for {self.tCWFstatMapVersion} transient maps."
             )
             self._finalizer = finalize(self, self._finalize_gpu_context)
-        else:
-            self._finalizer = finalize(self, lambda: None)
 
     def _finalize_gpu_context(self):
         """Clean up at the end of context manager style usage."""
@@ -455,7 +453,8 @@ class ComputeFstat(BaseSearchClass):
     def __exit__(self, *args, **kwargs):
         """Clean up at the end of context manager style usage."""
         logger.debug("Leaving the ComputeFStat context...")
-        self._finalizer()
+        if "cuda" in self.tCWFstatMapVersion:
+            self._finalizer()
 
     def _get_SFTCatalog(self):
         """Load the SFTCatalog
