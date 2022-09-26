@@ -626,6 +626,8 @@ class TestComputeFstat(BaseForTestsWithData):
 @pytest.mark.parametrize("transientWindowType", [None, "rect"])
 @pytest.mark.parametrize("cleanup", ["no", "manual", "contextmanager"])
 def test_context_finalizer(tCWFstatMapVersion, transientWindowType, cleanup):
+    if cleanup == "manual" and not tCWFstatMapVersion == "pycuda":
+        pytest.skip("Manual cleanup won't work in non-pycuda case.")
     CFS_params = {
         "tref": default_Writer_params["tstart"],
         "minStartTime": default_Writer_params["tstart"],
@@ -644,31 +646,24 @@ def test_context_finalizer(tCWFstatMapVersion, transientWindowType, cleanup):
         "Delta": default_signal_params["Delta"],
     }
 
-    if "cuda" not in tCWFstatMapVersion:
-        search = pyfstat.ComputeFstat(
-            **CFS_params,
-            tCWFstatMapVersion="lal",
-        )
-        assert search._finalizer is None
-        return
-
     # if GPU available, try the real thing;
     # else this should still set up the finalizer
     # but without actually trying to run on GPU
-    have_pycuda = pyfstat.tcw_fstat_map_funcs._optional_imports_pycuda()
-    if have_pycuda:
-        if cleanup == "no":
+    if tCWFstatMapVersion == "pycuda":
+        have_pycuda = pyfstat.tcw_fstat_map_funcs._optional_imports_pycuda()
+        if not have_pycuda:
+            pytest.skip("Optional imports failed, skipping actual pycuda test.")
+        elif cleanup == "no":
             pytest.skip("This case might work but will sabotage others.")
-    else:
-        pytest.skip("Optional imports failed, skipping actual pycuda test.")
     if cleanup == "contextmanager":
         with pyfstat.ComputeFstat(
             **CFS_params,
             tCWFstatMapVersion=tCWFstatMapVersion,
             transientWindowType=transientWindowType,
         ) as search:
-            assert search._finalizer is not None
-            assert search._finalizer.alive
+            if tCWFstatMapVersion == "pycuda":
+                assert search._finalizer is not None
+                assert search._finalizer.alive
             detstat = search.get_fullycoherent_detstat(**lambda_params)
     else:
         search = pyfstat.ComputeFstat(
@@ -676,8 +671,9 @@ def test_context_finalizer(tCWFstatMapVersion, transientWindowType, cleanup):
             tCWFstatMapVersion=tCWFstatMapVersion,
             transientWindowType=transientWindowType,
         )
-        assert search._finalizer is not None
-        assert search._finalizer.alive
+        if tCWFstatMapVersion == "pycuda":
+            assert search._finalizer is not None
+            assert search._finalizer.alive
         detstat = search.get_fullycoherent_detstat(**lambda_params)
         if cleanup == "manual":
             # calling finalizer manually should kill it
