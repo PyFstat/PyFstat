@@ -1,24 +1,27 @@
+import logging
 import os
 
 import lal
 import lalpulsar
 import numpy as np
 
-import pyfstat.helper_functions as helper_functions
+import pyfstat.utils as utils
 from pyfstat.core import BaseSearchClass
 from pyfstat.snr import DetectorStates
 
+logger = logging.getLogger(__name__)
+
 
 class Synthesizer(BaseSearchClass):
-    """Efficiently generate lots of F-stats and derived statistics.
+    """Efficiently generate lots of F-statistic values and derived statistics.
 
     * Generate N samples of detection statistics drawn from their respective distributions,
-      assuming Gaussian noise, and drawing signal params from their (given) priors.
-    * Python port of lalapps_synthesizeTransientStats and its siblings.
-    * See appendix of PGM2011 for details.
+      assuming Gaussian noise, and drawing signal parameters from their (given) priors.
+    * Python port of lalpulsar_synthesizeTransientStats and its siblings.
+    * See appendix of PGM2011 [ https://arxiv.org/abs/1104.1704 ] for details.
     """
 
-    @helper_functions.initializer
+    @utils.initializer
     def __init__(
         self,
         label,
@@ -38,7 +41,7 @@ class Synthesizer(BaseSearchClass):
         transientWindowType="none",
         transientStartTime=None,
         transientTau=None,
-        randSeed=None,
+        randSeed=0,
         timestamps=None,
         signalOnly=False,
     ):
@@ -68,7 +71,7 @@ class Synthesizer(BaseSearchClass):
         earth_ephem, sun_ephem: str or None
             Paths of the two files containing positions of Earth and Sun.
             If None, will check standard sources as per
-            helper_functions.get_ephemeris_files().
+            utils.get_ephemeris_files().
         transientWindowType: str
             If `none`, a fully persistent CW signal is simulated.
             If `rect` or `exp`, a transient signal with the corresponding
@@ -77,9 +80,9 @@ class Synthesizer(BaseSearchClass):
             Start time for a transient signal.
         transientTau: int or None
             Duration (`rect` case) or decay time (`exp` case) of a transient signal.
-        randSeed: int or None
+        randSeed: int
             Optionally fix the random seed of Gaussian noise generation
-            for reproducibility.
+            for reproducibility. Default of `0` means no fixed seed.
         timestamps: str or dict
             Dictionary of timestamps (each key must refer to a detector),
             list of timestamps (`detectors` should be set),
@@ -118,13 +121,15 @@ class Synthesizer(BaseSearchClass):
         self.transientInjectRange.t0Band = self.injectWindow_t0Band
         self.transientInjectRange.tau = self.injectWindow_tau
         self.transientInjectRange.tauBand = self.injectWindow_tauBand
-        print(f"Creating output directory {self.outdir} if it does not yet exist...")
+        logger.debug(
+            f"Creating output directory {self.outdir} if it does not yet exist..."
+        )
         os.makedirs(self.outdir, exist_ok=True)
 
     def _init_amplitude_prior(self):
         ampPrior = lalpulsar.AmplitudePrior_t()
         # FIXME handle the various different cases from XLALInitAmplitudePrior()
-        print(f"self.h0={self.h0} for amp prior")
+        logger.debug(f"self.h0={self.h0} for amp prior")
         ampPrior.pdf_h0Nat = lalpulsar.CreateSingularPDF1D(self.h0)
         ampPrior.pdf_cosi = lalpulsar.CreateSingularPDF1D(self.cosi)
         ampPrior.pdf_psi = lalpulsar.CreateSingularPDF1D(self.psi)
@@ -136,11 +141,10 @@ class Synthesizer(BaseSearchClass):
         return ampPrior
 
     def synth_Fstats(self, numDraws=1):
-        print(f"Drawing {numDraws} F-stats with h0={self.h0}.")
+        logger.info(f"Drawing {numDraws} F-stats with h0={self.h0}.")
         twoF = np.zeros(numDraws)
         for n in range(numDraws):
             twoF[n] = self.synth_one_stat()
-        print(twoF)
         return twoF
 
     def synth_one_stat(self):
@@ -164,7 +168,9 @@ class Synthesizer(BaseSearchClass):
             lineX=-1,
             multiNoiseWeights=None,
         )
-        # print(f"drawn amplitude parameters: psi,phi0,aPlus,aCross = {injParamsDrawn.ampParams.psi}, {injParamsDrawn.ampParams.phi0}, {injParamsDrawn.ampParams.aPlus}, {injParamsDrawn.ampParams.aCross}")
+        logger.debug(
+            f"drawn amplitude parameters: psi,phi0,aPlus,aCross = {injParamsDrawn.ampParams.psi}, {injParamsDrawn.ampParams.phi0}, {injParamsDrawn.ampParams.aPlus}, {injParamsDrawn.ampParams.aCross}"
+        )
         windowRange = self.transientInjectRange  # FIXME
         FstatMap = lalpulsar.ComputeTransientFstatMap(
             multiAtoms, windowRange, useFReg=False
