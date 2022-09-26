@@ -1,4 +1,6 @@
 import logging
+import os
+import shutil
 
 import numpy as np
 import pytest
@@ -60,3 +62,6 @@ def test_synth_CW(timestamps, h0, detectors, numDraws=1000):
     twoF = synth.synth_Fstats(numDraws=numDraws)
     logging.info(f"mean over {numDraws} draws of 2F: {np.mean(twoF)}")
     assert pytest.approx(np.mean(twoF), rel=0.05) == twoF_from_snr2
+
+    if os.path.isdir(synth.outdir):
+        shutil.rmtree(synth.outdir)
