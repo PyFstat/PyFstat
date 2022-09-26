@@ -15,7 +15,8 @@ def timestamps():
 
 
 @pytest.mark.parametrize("h0", [0, 1])
-def test_synth_CW(timestamps, h0, detectors="H1"):
+@pytest.mark.parametrize("detectors", ["H1", "H1,L1"])
+def test_synth_CW(timestamps, h0, detectors, numDraws=1000):
 
     signal_params = {
         "h0": h0,
@@ -56,6 +57,6 @@ def test_synth_CW(timestamps, h0, detectors="H1"):
     logging.info(f"first draw of 2F: {twoF}")
     assert twoF > 0
 
-    twoF = synth.synth_Fstats(numDraws=1000)
-    logging.info(f"mean over 1000 draws of 2F: {np.mean(twoF)}")
-    assert pytest.approx(np.mean(twoF), rel=0.01) == twoF_from_snr2
+    twoF = synth.synth_Fstats(numDraws=numDraws)
+    logging.info(f"mean over {numDraws} draws of 2F: {np.mean(twoF)}")
+    assert pytest.approx(np.mean(twoF), rel=0.05) == twoF_from_snr2
