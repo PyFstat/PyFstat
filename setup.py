@@ -59,7 +59,7 @@ extras_require = {
         "flake8-isort",
         "isort",
     ],
-    "test": ["pytest", "pytest-cov", "flaky"],
+    "test": ["pytest", "pytest-cov", "flaky", "nbmake"],
     "wheel": ["wheel", "check-wheel-contents"],
 }
 for key in ["docs", "style", "test", "wheel"]:

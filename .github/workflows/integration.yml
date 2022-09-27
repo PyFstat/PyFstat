@@ -35,6 +35,9 @@ jobs:
     - name: Run test suite with pytest
       run: |
         (cd .. && pytest --durations=0 $GITHUB_WORKSPACE/tests/ --log-file=$GITHUB_WORKSPACE/tests.log)
+    - name: Make sure tutorials run
+      run: |
+        (cd .. && pytest --nbmake $GITHUB_WORKSPACE/examples/tutorials/*.ipynb)
     - name: Build package
       run: |
         python setup.py sdist bdist_wheel
