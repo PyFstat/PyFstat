@@ -107,3 +107,62 @@ def gps_to_datestr_utc(gps):
         tzinfo=timezone.utc,
     )
     return dt.strftime("%c %Z")
+
+
+def convert_h0_cosi_to_aCross_aPlus(h0, cosi):
+    """
+    Converts amplitude parameters from a pair of `(h0,cosi)` to a pair of `(aPlus,aCross)`.
+
+    Parameters
+    -------
+    h0: float
+        Nominal GW amplitude.
+    cosi: float
+        Cosine of the source inclination w.r.t. line of sight.
+
+    Returns
+    -------
+    aPlus: float
+        Plus polarization amplitude.
+    aCross: float
+        Cross polarization amplitude.
+    """
+    aPlus = 0.5 * h0 * (1 + cosi**2)
+    aCross = h0 * cosi
+    return aPlus, aCross
+
+
+def convert_aCross_aPlus_to_h0_cosi(aPlus, aCross):
+    """
+    Converts amplitude parameters from a pair of `(aPlus,aCross)` to a pair of `(h0,cosi)`.
+
+    Inverse to ``convert_h0_cosi_to_aCross_aPlus()``.
+
+    Conversion in this direction is only well-defined if `abs(aCross) > abs(aPlus)`,
+    as expected for GWs from neutron stars at twice the spin frequency,
+    but not necessarily in all other CW emission scenarios.
+
+    Parameters
+    -------
+    aPlus: float
+        Plus polarization amplitude.
+    aCross: float
+        Cross polarization amplitude.
+
+    Returns
+    -------
+    h0: float
+        Nominal GW amplitude.
+    cosi: float
+        Cosine of the source inclination w.r.t. line of sight.
+    """
+
+    if np.abs(aCross) > np.abs(aPlus):
+        raise ValueError("not valid for abs(aCross)>abs(aPlus)")
+
+    h0 = aPlus + np.sqrt(aPlus**2 - aCross**2)
+    if h0 > 0:
+        cosi = aCross / h0
+    else:
+        cosi = 0
+    return h0, cosi

@@ -8,6 +8,8 @@ but others can also be helpful for end users.
 
 from .cli import match_commandlines, run_commandline
 from .converting import (
+    convert_aCross_aPlus_to_h0_cosi,
+    convert_h0_cosi_to_aCross_aPlus,
     get_dictionary_from_lines,
     gps_to_datestr_utc,
     parse_list_of_numbers,
