@@ -39,7 +39,7 @@ will suppress logging messages below ``WARNING``:::
 import logging
 import os
 import sys
-from typing import TYPE_CHECKING, Iterable, Literal, Optional
+from typing import TYPE_CHECKING, Iterable, Optional
 
 if TYPE_CHECKING:
     import io
@@ -53,7 +53,7 @@ def _get_default_logger() -> logging.Logger:
 def set_up_logger(
     outdir: Optional[str] = None,
     label: Optional[str] = "pyfstat",
-    log_level: Literal["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"] = "INFO",
+    log_level: str = "INFO",  # FIXME: Requires Python 3.8 Literal["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"] = "INFO",
     streams: Optional[Iterable["io.TextIOWrapper"]] = (sys.stdout,),
     append: bool = True,
 ) -> logging.Logger:
