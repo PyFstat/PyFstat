@@ -46,11 +46,8 @@ if TYPE_CHECKING:
 
 
 def _get_default_logger() -> logging.Logger:
-    return (
-        root_logger
-        if (root_logger := logging.getLogger()).handlers
-        else set_up_logger()
-    )
+    root_logger = logging.getLogger()
+    return root_logger if root_logger.handlers else set_up_logger()
 
 
 def set_up_logger(
