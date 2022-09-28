@@ -22,20 +22,10 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Check whether tutorials were changed
-      id: changed
-      continue-on-error: true # Non-empty diff implies failure.
-      run: |
-        git diff HEAD~1 HEAD \
-        --no-patch \
-        --exit-code \
-        $GITHUB_WORKSPACE/examples/tutorials/*ipynb
     - name: Install package and development dependencies
-      if: steps.changed.outcome == 'failure'
       run: |
         python -m pip install --upgrade pip
         pip install -e ${GITHUB_WORKSPACE}[style,test,wheel]
     - name: Make sure tutorials run
-      if: steps.changed.outcome == 'failure'
       run: |
         (cd .. && pytest --nbmake $GITHUB_WORKSPACE/examples/tutorials/*.ipynb)
