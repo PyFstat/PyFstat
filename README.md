@@ -206,7 +206,7 @@ or installing LALSuite from source.
 
 ### Using LALSuite built from source
 
-Instructions to use a custom local LALSuite installation can be found in [this wiki page](https://github.com/PyFstat/PyFstat/wiki/Using-LALSuite-built-from-source).
+Instructions to use a custom local LALSuite installation can be found in [here on the wiki](https://github.com/PyFstat/PyFstat/wiki/Using-LALSuite-built-from-source).
 
 ## Contributing to PyFstat
 
