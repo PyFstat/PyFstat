@@ -1,3 +1,14 @@
+## 1.18.1 [03/10/2022]
+
+ - fixed finalizer setup for calling `ComputeFstat` and its children
+   in context-manager mode
+ - reverted "walrus operators" (`:=`) and use of `Literal` typing checks
+   to facilitate `python 3.7` backwards compatibility
+   (not officially supported from release, but can be easily restored on branches / local clones)
+ - lalsuite-from-source install instructions no longer included in README, now live on wiki
+ - fixed logging use in examples
+ - improved testing of tutorial notebooks
+
 ## 1.18.0 [06/09/2022]
 
  - refurbished logging system: 
