@@ -30,10 +30,10 @@ stream or a specific output file specified using the ``outdir, label`` variables
 
 Finally, logging can be disabled, or the level changed, at run-time by
 manually configuring the *pyfstat* logger. For example, the following block of code
-will suppress logging messages below ``WARNING``:::
+will suppress logging messages below ``WARNING``::
 
     import logging
-    logging.getLoger('pyfstat').setLevel(logging.WARNING)
+    logging.getLogger('pyfstat').setLevel(logging.WARNING)
 """
 
 import logging
