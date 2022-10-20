@@ -44,6 +44,10 @@ class Synthesizer(BaseSearchClass):
         randSeed=0,
         timestamps=None,
         signalOnly=False,
+        twoF=False,
+        BSGL=False,
+        maxTwoF=False,
+        BtSG=False,
     ):
         """
         Parameters
@@ -95,6 +99,8 @@ class Synthesizer(BaseSearchClass):
             and with `noiseSFTs`.
         signalOnly: bool
             Generate pure signal without noise?
+        twoF, BSGL, maxTwoF, BtSG: bool
+            Detection statistics to compute
         """
         self.rng = lal.gsl_rng("mt19937", self.randSeed)
         dets = DetectorStates()
@@ -121,6 +127,9 @@ class Synthesizer(BaseSearchClass):
         self.transientInjectRange.t0Band = self.injectWindow_t0Band
         self.transientInjectRange.tau = self.injectWindow_tau
         self.transientInjectRange.tauBand = self.injectWindow_tauBand
+        self.stats_to_compute = [
+            stat for stat in ["twoF", "BSGL", "maxTwoF", "BtSG"] if getattr(self, stat)
+        ]
         logger.debug(
             f"Creating output directory {self.outdir} if it does not yet exist..."
         )
@@ -140,14 +149,28 @@ class Synthesizer(BaseSearchClass):
         # FIXME support thi
         return ampPrior
 
-    def synth_Fstats(self, numDraws=1):
+    def synth_candidates(
+        self, numDraws=1, keep_params=False, keep_FstatMaps=False, keep_atoms=False
+    ):
+        self.detStats = {
+            stat: np.repeat(np.nan, numDraws) for stat in self.stats_to_compute
+        }
+        self.injParams = []
+        self.FstatMaps = []
+        self.atoms = []
         logger.info(f"Drawing {numDraws} F-stats with h0={self.h0}.")
-        twoF = np.zeros(numDraws)
         for n in range(numDraws):
-            twoF[n] = self.synth_one_stat()
-        return twoF
+            detStats, params, FstatMap, atoms = self.synth_one_candidate()
+            for stat in self.stats_to_compute:
+                self.detStats[stat][n] = detStats[stat]
+            if keep_params:
+                self.injParams.append(params)
+            if keep_FstatMaps:
+                self.FstatMaps.append(FstatMap)
+            if keep_atoms:
+                self.atoms.append(atoms)
 
-    def synth_one_stat(self):
+    def synth_one_candidate(self):
         injParamsDrawn = (
             lalpulsar.InjParams_t()
         )  # output struct, will be filled by lalpulsar call
@@ -168,13 +191,47 @@ class Synthesizer(BaseSearchClass):
             lineX=-1,
             multiNoiseWeights=None,
         )
-        logger.debug(
-            f"drawn amplitude parameters: psi,phi0,aPlus,aCross = {injParamsDrawn.ampParams.psi}, {injParamsDrawn.ampParams.phi0}, {injParamsDrawn.ampParams.aPlus}, {injParamsDrawn.ampParams.aCross}"
-        )
+        injParamsDict = self._InjParams_t_to_dict(injParamsDrawn)
         windowRange = self.transientInjectRange  # FIXME
+        # FIXME support pycuda version
         FstatMap = lalpulsar.ComputeTransientFstatMap(
             multiAtoms, windowRange, useFReg=False
         )
         if self.signalOnly:
             FstatMap.maxF += 2
-        return 2 * FstatMap.maxF
+        detStats = {}
+        # if "twoF" in self.stats_to_compute:
+        # FIXME: adapt from computeFtotal in lalpulsar_synthesizeTransientStats
+        # detStats["twoF"] =
+        # if "BSGL" in self.stats_to_compute:
+        # FIXME: adapt from lalpulsar_synthesizeLVStats
+        # detStats["log10BSGL"] =
+        if "maxTwoF" in self.stats_to_compute:
+            detStats["maxTwoF"] = 2 * FstatMap.maxF
+        if "BtSG" in self.stats_to_compute:
+            detStats["lnBtSG"] = lalpulsar.ComputeTransientBstat(windowRange, FstatMap)
+        return detStats, injParamsDict, FstatMap, multiAtoms
+
+    def _InjParams_t_to_dict(self, paramsStruct):
+        """
+        Convert a lalpulsar InjParams_t object into a flat dictionary
+
+        Currently not converted:
+          * ampVect
+          * multiAM
+          * transientWindow
+          * detM1o8
+        """
+        paramsDict = {
+            "Alpha": paramsStruct.skypos.longitude,
+            "Delta": paramsStruct.skypos.latitude,
+            "aPlus": paramsStruct.ampParams.aPlus,
+            "aCross": paramsStruct.ampParams.aCross,
+            "phi": paramsStruct.ampParams.phi0,
+            "psi": paramsStruct.ampParams.psi,
+            "snr": paramsStruct.SNR,
+        }
+        paramsDict["h0"], paramsDict["cosi"] = utils.convert_aCross_aPlus_to_h0_cosi(
+            aPlus=paramsDict["aPlus"], aCross=paramsDict["aCross"]
+        )
+        return paramsDict

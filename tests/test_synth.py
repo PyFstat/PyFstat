@@ -17,8 +17,8 @@ def timestamps():
 
 
 @pytest.mark.parametrize("h0", [0, 1])
-@pytest.mark.parametrize("detectors", ["H1", "H1,L1"])
-def test_synth_CW(timestamps, h0, detectors, numDraws=1000):
+# @pytest.mark.parametrize("detectors", ["H1", "H1,L1"])
+def test_synth_CW(timestamps, h0, detectors="H1", numDraws=1000):
 
     signal_params = {
         "h0": h0,
@@ -39,6 +39,7 @@ def test_synth_CW(timestamps, h0, detectors, numDraws=1000):
         transientTau=timestamps[-1] - timestamps[0],
         tstart=timestamps[0],
         randSeed=0,
+        maxTwoF=True,
     )
 
     params_pfs = signal_params.copy()
@@ -55,13 +56,20 @@ def test_synth_CW(timestamps, h0, detectors, numDraws=1000):
     twoF_from_snr2, twoF_stdev_from_snr2 = snr.compute_twoF(**signal_params)
     logging.info(f"expected twoF: {twoF_from_snr2}")
 
-    twoF = synth.synth_Fstats(numDraws=1)
+    synth.synth_candidates(numDraws=numDraws, keep_params=True)
+    twoF = synth.detStats["maxTwoF"][0]
     logging.info(f"first draw of 2F: {twoF}")
     assert twoF > 0
-
-    twoF = synth.synth_Fstats(numDraws=numDraws)
-    logging.info(f"mean over {numDraws} draws of 2F: {np.mean(twoF)}")
-    assert pytest.approx(np.mean(twoF), rel=0.05) == twoF_from_snr2
+    meanTwoF = np.mean(synth.detStats["maxTwoF"])
+    logging.info(f"mean over {numDraws} draws of 2F: {meanTwoF}")
+    assert pytest.approx(meanTwoF, rel=0.05) == twoF_from_snr2
+    assert len(np.unique([par["snr"] for par in synth.injParams])) == 1
+    assert np.allclose(
+        [synth.injParams[n]["h0"] for n in range(numDraws)],
+        h0,
+        rtol=1e-9,
+        atol=0,
+    )
 
     if os.path.isdir(synth.outdir):
         shutil.rmtree(synth.outdir)
