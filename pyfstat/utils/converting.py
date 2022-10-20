@@ -109,7 +109,7 @@ def gps_to_datestr_utc(gps):
     return dt.strftime("%c %Z")
 
 
-def convert_h0_cosi_to_aCross_aPlus(h0, cosi):
+def convert_h0_cosi_to_aPlus_aCross(h0, cosi):
     """
     Converts amplitude parameters from a pair of `(h0,cosi)` to a pair of `(aPlus,aCross)`.
 
@@ -127,25 +127,35 @@ def convert_h0_cosi_to_aCross_aPlus(h0, cosi):
     aCross: float
         Cross polarization amplitude.
     """
-    aPlus = 0.5 * h0 * (1 + cosi**2)
+
+    h0 = np.atleast_1d(h0)
+    cosi = np.atleast_1d(cosi)
+
+    aPlus = 0.5 * h0 * (1.0 + cosi**2)
     aCross = h0 * cosi
+
+    if len(aPlus) == 1:
+        aPlus = aPlus[0]
+    if len(cosi) == 1:
+        aCross = aCross[0]
     return aPlus, aCross
 
 
-def convert_aCross_aPlus_to_h0_cosi(aPlus, aCross):
+def convert_aPlus_aCross_to_h0_cosi(aPlus, aCross):
     """
     Converts amplitude parameters from a pair of `(aPlus,aCross)` to a pair of `(h0,cosi)`.
 
-    Inverse to ``convert_h0_cosi_to_aCross_aPlus()``.
+    Inverse to ``convert_h0_cosi_to_aPlus_aCross()``.
 
-    Conversion in this direction is only well-defined if `abs(aCross) > abs(aPlus)`,
+    Conversion in this direction is only well-defined if `aPlus >= abs(aCross) >= 0`,
     as expected for GWs from neutron stars at twice the spin frequency,
     but not necessarily in all other CW emission scenarios.
 
     Parameters
     -------
     aPlus: float
-        Plus polarization amplitude.
+        Plus polarization amplitude
+        (must be `>= abs(aCross)` and `>= 0`).
     aCross: float
         Cross polarization amplitude.
 
@@ -157,12 +167,28 @@ def convert_aCross_aPlus_to_h0_cosi(aPlus, aCross):
         Cosine of the source inclination w.r.t. line of sight.
     """
 
-    if np.abs(aCross) > np.abs(aPlus):
+    aPlus = np.atleast_1d(aPlus)
+    aCross = np.atleast_1d(aCross)
+
+    if np.any(np.abs(aCross) > np.abs(aPlus)):
         raise ValueError("not valid for abs(aCross)>abs(aPlus)")
+    if np.any(aPlus < 0):
+        raise ValueError("not valid for aPlus<0")
 
     h0 = aPlus + np.sqrt(aPlus**2 - aCross**2)
-    if h0 > 0:
-        cosi = aCross / h0
-    else:
-        cosi = 0
+
+    # next: vectorized version of if-else on h0>0?
+    # if h0 > 0:
+    # cosi = aCross / h0
+    # else:
+    # cosi = 0
+    mask = np.ma.array(h0, mask=(h0 == 0))
+    cosi = aCross / mask
+    cosi[cosi.mask] = 0
+    cosi = np.asarray(cosi)
+
+    if len(h0) == 1:
+        h0 = h0[0]
+    if len(cosi) == 1:
+        cosi = cosi[0]
     return h0, cosi

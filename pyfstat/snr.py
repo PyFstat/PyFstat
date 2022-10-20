@@ -6,7 +6,7 @@ import lalpulsar
 import numpy as np
 from attrs import define, field
 
-from pyfstat.utils import convert_h0_cosi_to_aCross_aPlus, get_ephemeris_files
+from pyfstat.utils import convert_h0_cosi_to_aPlus_aCross, get_ephemeris_files
 
 logger = logging.getLogger(__name__)
 
@@ -300,7 +300,7 @@ class SignalToNoiseRatio:
             raise ValueError("Need either (h0, cosi) or (aPlus, aCross), but not both")
 
         if h0_cosi:
-            aPlus, aCross = convert_h0_cosi_to_aCross_aPlus(h0, cosi)
+            aPlus, aCross = convert_h0_cosi_to_aPlus_aCross(h0, cosi)
 
         return aPlus, aCross
 
