@@ -120,3 +120,53 @@ def get_commandline_from_SFTDescriptor(descriptor):
     return next(
         (line for line in comment_lines if "lalpulsar" in line or "lalapps" in line), ""
     )
+
+
+def get_official_sft_filename(
+    IFO, numSFTs, Tsft, tstart, duration, label=None, window_type=None, window_beta=None
+):
+    """Wrapper to XLALOfficialSFTFilename.
+
+    Parameters
+    ----------
+    IFO: str
+        Two-char detector name, e.g. `H1`.
+    numSFTs: int
+        numSFTs	number of SFTs in SFT-file
+    Tsft: int
+        time-baseline in (integer) seconds
+    tstart: int
+        GPS seconds of first SFT start time
+    duration: int
+        total time-spanned by all SFTs in seconds
+    label: str or None
+        optional 'Misc' entry in the SFT 'D' field
+    window_type: str or None
+        included for SFT-spec v3 forwards compatibility
+        (see https://git.ligo.org/lscsoft/lalsuite/-/merge_requests/2027 );
+        not implemented yet
+    window_beta: float or None
+        included for SFT-spec v3 forwards compatibility
+        (see https://git.ligo.org/lscsoft/lalsuite/-/merge_requests/2027 );
+        not implemented yet
+
+    Returns
+    -------
+    filename: str
+        The canonical SFT file name for the input parameters.
+    """
+    if window_type or window_beta:
+        raise NotImplementedError(
+            "The parameters 'window_type' and 'window_beta'"
+            " are only included for SFT-spec v3 forwards compatibility"
+            " and not yet implemented."
+        )
+    return lalpulsar.OfficialSFTFilename(
+        IFO[0],
+        IFO[1],
+        numSFTs,
+        Tsft,
+        tstart,
+        duration,
+        label,
+    )
