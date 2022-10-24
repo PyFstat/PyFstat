@@ -118,9 +118,13 @@ class Writer(BaseSearchClass):
             A human-readable label to be used in naming the output files.
         tstart: int
             Starting GPS epoch of the data set.
+            If `noiseSFT` are given, this is used as a LALPulsar
+            `SFTConstraint <https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/struct_s_f_t_constraints.html>`_.
             NOTE: mutually exclusive with `timestamps`.
         duration: int
             Duration (in GPS seconds) of the total data set.
+            If `noiseSFT` are given, this is used as a LALPulsar
+            `SFTConstraint <https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/struct_s_f_t_constraints.html>`_.
             NOTE: mutually exclusive with `timestamps`.
         tref: float or None
             Reference time for simulated signals.
@@ -429,7 +433,7 @@ class Writer(BaseSearchClass):
                 )
             self._get_setup_from_timestamps()
         elif self.noiseSFTs is not None:
-            logger.warning(
+            logger.info(
                 "noiseSFTs is not None: Inferring tstart, duration, Tsft. "
                 "Input tstart and duration will be treated as SFT constraints "
                 "using lalpulsar.SFTConstraints; Tsft will be checked for "
