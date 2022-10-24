@@ -243,9 +243,8 @@ class Writer(BaseSearchClass):
         effective_duration = numSFTs * self.Tsft
 
         self.sftfilenames = [
-            lalpulsar.OfficialSFTFilename(
-                dets[0],
-                dets[1],
+            utils.get_official_sft_filename(
+                dets,
                 numSFTs,
                 self.Tsft,
                 self.tstart,
@@ -286,9 +285,8 @@ class Writer(BaseSearchClass):
             this_end_time = time_stamps.data[-1].gpsSeconds + this_Tsft
 
             self.sftfilenames.append(
-                lalpulsar.OfficialSFTFilename(
-                    ifo_name[0],
-                    ifo_name[1],
+                utils.get_official_sft_filename(
+                    ifo_name,
                     time_stamps.length,  # ifo_catalog.length fails for NB case
                     this_Tsft,
                     this_start_time,
@@ -341,9 +339,8 @@ class Writer(BaseSearchClass):
             tstart.append(this_start_time)
             tend.append(this_end_time)
             self.sftfilenames.append(
-                lalpulsar.OfficialSFTFilename(
-                    IFO[0],
-                    IFO[1],
+                utils.get_official_sft_filename(
+                    IFO,
                     len(tsX),
                     self.Tsft,
                     this_start_time,

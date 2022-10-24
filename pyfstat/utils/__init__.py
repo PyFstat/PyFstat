@@ -24,4 +24,8 @@ from .io import (
 )
 from .predict import get_predict_fstat_parameters_from_dict, predict_fstat
 from .runlalsuite import generate_loudest_file, get_covering_band, get_lal_exec
-from .sft import get_commandline_from_SFTDescriptor, get_sft_as_arrays
+from .sft import (
+    get_commandline_from_SFTDescriptor,
+    get_official_sft_filename,
+    get_sft_as_arrays,
+)
