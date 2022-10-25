@@ -15,6 +15,7 @@ def input_priors():
     return {
         "gaussian_parameter": {"stats.norm": {"loc": 0.0, "scale": 1.0}},
         # "custom_parameter": {"my_custom_prior": {"shift": 1.}},
+        "fixed_parameter": 0.0,
     }
 
 

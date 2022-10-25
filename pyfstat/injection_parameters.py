@@ -152,7 +152,13 @@ class InjectionParametersGenerator:
                 print(self.priors)
                 continue
 
-            prior_distribution = next(iter(parameter_prior))
+            try:
+                # Check if it can be treated as a dict, otherwise treat it as a number.
+                # FIXME Extreme duck typing?
+                prior_distribution = next(iter(parameter_prior))
+            except TypeError:
+                self.priors[parameter_name] = lambda val=parameter_prior: val
+                continue
 
             if "stats." in prior_distribution:
                 _, stats_function = prior_distribution.split(".")
