@@ -73,31 +73,35 @@ class InjectionParametersGenerator:
                 "use either a `seed` or an already initialized `np.random.Generator`"
             )
         if (not seed) and (not generator):
-            logging.warning(
+            logger.warning(
                 f"No `generator` was provided and `seed` was set to {seed}, "
                 "which looks uninitialized. Please, make sure you are aware of your seed choice"
             )
 
         self._rng = generator or np.random.default_rng(seed)
 
+    def _deprecated_prior_parsing(self, parameter_prior) -> dict:
+        if callable(parameter_prior):
+            return parameter_prior
+        elif isinstance(parameter_prior, dict):
+            rng_function_name = next(iter(parameter_prior))
+            rng_function = getattr(self._rng, rng_function_name)
+            rng_kwargs = parameter_prior[rng_function_name]
+            return functools.partial(rng_function, **rng_kwargs)
+        else:  # Assume it is something to be returned as is
+            return functools.partial(lambda x: x, parameter_prior)
+
     def _parse_priors(self, priors_input_format: dict):
         """Internal method to do the actual prior setup."""
         self.priors = {}
 
         for parameter_name, parameter_prior in priors_input_format.items():
-            if callable(parameter_prior):
-                self.priors[parameter_name] = parameter_prior
-            elif isinstance(parameter_prior, dict):
-                rng_function_name = next(iter(parameter_prior))
-                rng_function = getattr(self._rng, rng_function_name)
-                rng_kwargs = parameter_prior[rng_function_name]
-                self.priors[parameter_name] = functools.partial(
-                    rng_function, **rng_kwargs
-                )
-            else:  # Assume it is something to be returned as is
-                self.priors[parameter_name] = functools.partial(
-                    lambda x: x, parameter_prior
-                )
+            logging.warning(
+                f"Parsing parameter `{parameter_name}` using a deprecated API"
+            )
+            self.priors[parameter_name] = self._deprecated_prior_parsing(
+                parameter_prior
+            )
 
     def draw(self) -> dict:
         """Draw a single multi-dimensional parameter space point from the given priors.
