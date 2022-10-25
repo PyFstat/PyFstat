@@ -1,84 +1,68 @@
 import numpy as np
-
-# FIXME this should be made cleaner with fixtures
-from commons_for_tests import BaseForTestsWithOutdir
+import pytest
+from commons_for_tests import is_flaky
 
 import pyfstat
 
 
-class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
-    label = "TestInjectionParametersGenerator"
-    class_to_test = pyfstat.InjectionParametersGenerator
+@pytest.fixture(
+    params=[
+        {key: {"uniform": {"low": key, "high": key}} for key in [0.0, 1.0]},
+        {
+            key: (lambda value=key: value) for key in [0.0, 1.0]
+        },  # Lambda + Comprehension
+        {key: key for key in [0.0, 1.0]},
+    ],
+    ids=["Numpy-priors", "callable-priors", "fixed-priors"],
+)
+def empty_priors(request):
+    return request.param
 
-    def test_numpy_priors(self):
-        numpy_priors = {
-            "ParameterA": {"uniform": {"low": 0.0, "high": 0.0}},
-            "ParameterB": {"uniform": {"low": 1.0, "high": 1.0}},
-        }
-        InjectionGenerator = self.class_to_test(priors=numpy_priors)
 
-        parameters = InjectionGenerator.draw()
-        self.assertTrue(parameters["ParameterA"] == 0.0)
-        self.assertTrue(parameters["ParameterB"] == 1.0)
+@pytest.fixture(
+    params=[
+        pyfstat.InjectionParametersGenerator,
+        pyfstat.AllSkyInjectionParametersGenerator,
+    ]
+)
+def parameters_generator(request):
+    return request.param
 
-    def test_callable_priors(self):
-        callable_priors = {"ParameterA": lambda: 0.0, "ParameterB": lambda: 1.0}
-        InjectionGenerator = self.class_to_test(priors=callable_priors)
 
-        parameters = InjectionGenerator.draw()
-        self.assertTrue(parameters["ParameterA"] == 0.0)
-        self.assertTrue(parameters["ParameterB"] == 1.0)
+def test_prior_parsing(parameters_generator, empty_priors):
+    parameters = parameters_generator(priors=empty_priors).draw()
+    print(empty_priors)
+    for key in empty_priors:
+        assert parameters[key] == key
 
-    def test_constant_priors(self):
-        constant_priors = {"ParameterA": 0.0, "ParameterB": 1.0}
-        InjectionGenerator = self.class_to_test(priors=constant_priors)
 
-        parameters = InjectionGenerator.draw()
-        self.assertTrue(parameters["ParameterA"] == 0.0)
-        self.assertTrue(parameters["ParameterB"] == 1.0)
+def test_rng_seed(parameters_generator):
+    seed = 150914
 
-    def test_rng_seed(self):
-        a_seed = 420
-
-        samples = []
-        for i in range(2):
-            InjectionGenerator = self.class_to_test(
-                priors={"ParameterA": {"normal": {"loc": 0, "scale": 1}}}, seed=a_seed
-            )
-            samples.append(InjectionGenerator.draw())
-        self.assertTrue(samples[0]["ParameterA"] == samples[1]["ParameterA"])
-
-    def test_rng_generation(self):
-        InjectionGenerator = self.class_to_test(
-            priors={"ParameterA": {"normal": {"loc": 0, "scale": 0.01}}}
+    samples = []
+    for i in range(2):
+        injection_generator = parameters_generator(
+            priors={"ParameterA": {"normal": {"loc": 0, "scale": 1}}}, seed=seed
         )
-        samples = [InjectionGenerator.draw()["ParameterA"] for i in range(100)]
-        mean = np.mean(samples)
-        self.assertTrue(np.abs(mean) < 0.1)
+        samples.append(injection_generator.draw())
+
+    for key in injection_generator.priors:
+        print(key)
+        assert samples[0][key] == samples[1][key]
 
 
-class TestAllSkyInjectionParametersGenerator(TestInjectionParametersGenerator):
-    label = "TestAllSkyInjectionParametersGenerator"
+@pytest.mark.flaky(max_runs=5, min_passes=1, rerun_filter=is_flaky)
+def test_rng_generation(parameters_generator):
+    injection_generator = parameters_generator(
+        priors={"ParameterA": {"normal": {"loc": 0, "scale": 0.01}}}
+    )
 
-    class_to_test = pyfstat.AllSkyInjectionParametersGenerator
+    samples = [injection_generator.draw() for i in range(1000)]
 
-    def test_rng_seed(self):
-        a_seed = 420
+    for key, distro in injection_generator.priors.items():
+        mean = np.mean([s[key] for s in samples])
 
-        samples = []
-        for i in range(2):
-            InjectionGenerator = self.class_to_test(seed=a_seed)
-            samples.append(InjectionGenerator.draw())
-        self.assertTrue(samples[0]["Alpha"] == samples[1]["Alpha"])
-        self.assertTrue(samples[0]["Delta"] == samples[1]["Delta"])
-
-    def test_rng_generation(self):
-        InjectionGenerator = self.class_to_test()
-        ra_samples = [
-            InjectionGenerator.draw()["Alpha"] / np.pi - 1.0 for i in range(500)
-        ]
-        dec_samples = [
-            InjectionGenerator.draw()["Delta"] * 2.0 / np.pi for i in range(500)
-        ]
-        self.assertTrue(np.abs(np.mean(ra_samples)) < 0.1)
-        self.assertTrue(np.abs(np.mean(dec_samples)) < 0.1)
+        if key == "Alpha":
+            np.testing.assert_allclose(mean, np.pi, atol=1e-1)
+        else:
+            np.testing.assert_allclose(mean, 0, atol=1e-1)
