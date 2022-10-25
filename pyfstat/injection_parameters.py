@@ -116,6 +116,5 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
                     f"Found {key} key in input priors with value {priors_input_format[key]}.\n"
                     "Overwritting to produce uniform samples across the sky."
                 )
-            priors_input_format[key] = sky_priors[key]
 
-        return super()._parse_priors(priors_input_format)
+        return super()._parse_priors({**priors_input_format, **sky_priors})
