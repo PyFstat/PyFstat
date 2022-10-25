@@ -29,15 +29,33 @@ def parameters_generator(request):
     return request.param
 
 
-def test_prior_parsing(parameters_generator, empty_priors):
-    parameters = parameters_generator(priors=empty_priors).draw()
+@pytest.fixture()
+def seed():
+    return 150914
+
+
+def test_prior_parsing(parameters_generator, empty_priors, seed):
+    parameters = parameters_generator(priors=empty_priors, seed=seed).draw()
     print(empty_priors)
     for key in empty_priors:
         assert parameters[key] == key
 
 
-def test_rng_seed(parameters_generator):
-    seed = 150914
+def test_seed_and_generator_consistency(parameters_generator, seed):
+    priors = {"parameter": {"normal": {"loc": 0, "scale": 1}}}
+
+    seed_generator = parameters_generator(priors=priors, seed=seed)
+    generator_generator = parameters_generator(
+        priors=priors, generator=np.random.default_rng(seed)
+    )
+    for i in range(5):
+        assert (
+            seed_generator.draw()["parameter"]
+            == generator_generator.draw()["parameter"]
+        )
+
+
+def test_rng_seed(parameters_generator, seed):
 
     samples = []
     for i in range(2):
@@ -52,9 +70,9 @@ def test_rng_seed(parameters_generator):
 
 
 @pytest.mark.flaky(max_runs=5, min_passes=1, rerun_filter=is_flaky)
-def test_rng_generation(parameters_generator):
+def test_rng_generation(parameters_generator, seed):
     injection_generator = parameters_generator(
-        priors={"ParameterA": {"normal": {"loc": 0, "scale": 0.01}}}
+        priors={"ParameterA": {"normal": {"loc": 0, "scale": 0.01}}}, seed=seed
     )
 
     samples = [injection_generator.draw() for i in range(1000)]
