@@ -7,11 +7,14 @@ import pyfstat
 
 @pytest.fixture(
     params=[
-        {key: {"uniform": {"low": key, "high": key}} for key in [0.0, 1.0]},
         {
-            key: (lambda value=key: value) for key in [0.0, 1.0]
+            f"parameter_{key}_old": {"uniform": {"low": key, "high": key}}
+            for key in [0.0, 1.0]
+        },
+        {
+            f"parameter_{key}_old": (lambda value=key: value) for key in [0.0, 1.0]
         },  # Lambda + Comprehension
-        {key: key for key in [0.0, 1.0]},
+        {f"parameter_{key}_old": key for key in [0.0, 1.0]},
     ],
     ids=["Numpy-priors", "callable-priors", "fixed-priors"],
 )
@@ -36,19 +39,22 @@ def seed():
 
 def test_prior_parsing(parameters_generator, empty_priors, seed):
     parameters = parameters_generator(priors=empty_priors, seed=seed).draw()
-    print(empty_priors)
-    for key in empty_priors:
-        assert parameters[key] == key
+    print(parameters)
+    for key in parameters:
+        if key not in ["Alpha", "Delta"]:
+            assert parameters[key] == float(key[-3:])
 
 
 def test_seed_and_generator_consistency(parameters_generator, seed):
-    priors = {"parameter": {"normal": {"loc": 0, "scale": 1}}}
+    priors = {"parameter_old": {"normal": {"loc": 0, "scale": 1}}}
 
     seed_generator = parameters_generator(priors=priors, seed=seed)
     generator_generator = parameters_generator(
         priors=priors, generator=np.random.default_rng(seed)
     )
     for i in range(5):
+        print(seed_generator.draw())
+        print(generator_generator.draw())
         assert (
             seed_generator.draw()["parameter"]
             == generator_generator.draw()["parameter"]
@@ -60,7 +66,7 @@ def test_rng_seed(parameters_generator, seed):
     samples = []
     for i in range(2):
         injection_generator = parameters_generator(
-            priors={"ParameterA": {"normal": {"loc": 0, "scale": 1}}}, seed=seed
+            priors={"ParameterA_old": {"normal": {"loc": 0, "scale": 1}}}, seed=seed
         )
         samples.append(injection_generator.draw())
 
@@ -72,7 +78,7 @@ def test_rng_seed(parameters_generator, seed):
 @pytest.mark.flaky(max_runs=5, min_passes=1, rerun_filter=is_flaky)
 def test_rng_generation(parameters_generator, seed):
     injection_generator = parameters_generator(
-        priors={"ParameterA": {"normal": {"loc": 0, "scale": 0.01}}}, seed=seed
+        priors={"ParameterA_old": {"normal": {"loc": 0, "scale": 0.01}}}, seed=seed
     )
 
     samples = [injection_generator.draw() for i in range(1000)]
