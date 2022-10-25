@@ -4,14 +4,34 @@ import logging
 from typing import Optional
 
 import numpy as np
+from scipy import stats
 
 logger = logging.getLogger(__name__)
 
 isotropic_amplitude_priors = {
-    "cosi": {"uniform": {"low": -1.0, "high": 1.0}},
-    "psi": {"uniform": {"low": -0.25 * np.pi, "high": 0.25 * np.pi}},
-    "phi": {"uniform": {"low": 0, "high": 2 * np.pi}},
+    "cosi": {"stats.uniform": {"loc": -1.0, "scale": 2.0}},
+    "psi": {"stats.uniform": {"loc": -0.25 * np.pi, "scale": 0.5 * np.pi}},
+    "phi": {"stats.uniform": {"loc": 0, "scale": 2 * np.pi}},
 }
+
+
+def uniform_sky_declination(generator: np.random.Generator) -> float:
+    """
+    Return declination values such that, when paired with right ascension
+    values sampled uniformly along [0, 2*pi], the resulting pairs of samples
+    are uniformly distributed on the 2-sphere.
+
+    Parameters
+    ----------
+    generator:
+        As required by InjectionParametersGenerator.
+
+    Returns
+    -------
+    declination:
+        Declination value distributed
+    """
+    return np.arcsin(generator.uniform(low=-1.0, high=1.0))
 
 
 class InjectionParametersGenerator:
@@ -27,48 +47,53 @@ class InjectionParametersGenerator:
         Each parameter's prior should be given as a dictionary entry as follows:
         `{"parameter": {"<function>": {**kwargs}}}`
         where <function> refers may be (exclusively) either a `scipy.stats` function
-        (e.g. `stats.uniform`) or a user-defined function within current namespace
+        (e.g. `stats.uniform`) or a user-defined function in the global scope.
 
-        - | If a `scipy.stats` function is used, it *must* be given as `stats.*` (i.e. the `stats`
-          | namespace should be explicitly included).
+        - | If a `scipy.stats` function is used, it *must* be given as `stats.*`
+          | (i.e. the `stats` namespace should be explicitly included).
           |  For example, a uniform prior between 3 and 5 would be written as
           | `{"parameter": {"stats.uniform": {"loc": 3, "scale": 5}}}`.
 
-        - | If a user-defined function is used, such a function *must* take a `generator` kwarg
-          | as one of its arguments and use such a generator to generate any random number (if required)
-          | within the function. The `generator` kwarg is *required* regardless of whether this is a
-          | deterministic or random function. For example, a negative log-distributed random number
-          | could be constructed as
+        - | If a user-defined function is used, such a function *must* take
+          | a `generator` kwarg as one of its arguments and use such a generator
+          | to generate any required random number within the function.
+          | The `generator` kwarg is *required* regardless of whether this is a
+          | deterministic or random function.
+          | For example, a negative log-distributed random number could be constructed as
 
         ```
         def negative_log_uniform(generator):
             return -10**(generator.uniform())
         ```
 
-        Alternatively, the following three options, which were recommended on a previous release,
-        are still a valid input as long as the `_old` substring is appended to the parameter's name:
+        Alternatively, the following three options, which were recommended
+        on a previous release, are still a valid input as long as the `_old` substring
+        is appended to the parameter's name:
 
             1. Callable without required arguments:
             `{"ParameterA_old": np.random.uniform}`.
 
-            2. Dict containing numpy.random distribution as key and kwargs in a dict as value:
+            2. Dict containing numpy.random distribution as key and kwargs
+            in a dict as value:
             `{"ParameterA_old": {"uniform": {"low": 0, "high":1}}}`.
 
             3. Constant value to be returned as is:
             `{"ParameterA_old": 1.0}`.
 
         Note, however, that these options are deprecated and will be removed
-        in a future PyFstat release. These old options do not follow completely the current way of
+        in a future PyFstat release.
+        These old options do not follow completely the current way of
         specifying seeds in this class.
 
     generator:
-        Numpy random number generator (e.g. `np.random.default_rng`) which will be used to draw
-        random numbers from. Conflicts with `seed`.
+        Numpy random number generator (e.g. `np.random.default_rng`)
+        which will be used to draw random numbers from. Conflicts with `seed`.
 
     seed:
-        Random seed to create instantiate `np.random.default_rng` from scratch. Conflicts
-        with `generator`. If neither `seed` nor `generator` are given, a random number generator
-        will be instantiated using `seed=None` and a warning will be thrown.
+        Random seed to create instantiate `np.random.default_rng` from scratch.
+        Conflicts with `generator`. If neither `seed` nor `generator` are given,
+        a random number generator will be instantiated using `seed=None`
+        and a warning will be thrown.
     """
 
     def __init__(
@@ -92,7 +117,8 @@ class InjectionParametersGenerator:
         if (not seed) and (not generator):
             logger.warning(
                 f"No `generator` was provided and `seed` was set to {seed}, "
-                "which looks uninitialized. Please, make sure you are aware of your seed choice"
+                "which looks uninitialized. "
+                "Please, make sure you are aware of your seed choice"
             )
 
         self._rng = generator or np.random.default_rng(seed)
@@ -115,10 +141,9 @@ class InjectionParametersGenerator:
         for parameter_name, parameter_prior in priors_input_format.items():
 
             # FIXME to be removed once deprecation is effective
-            print(f"Parameter name {parameter_name} ends with {parameter_name[-4:]}")
             if "_old" == parameter_name[-4:]:
                 actual_name = parameter_name[:-4]
-                logging.warning(
+                logger.warning(
                     f"Parsing parameter `{actual_name}` using a deprecated API."
                 )
                 self.priors[actual_name] = self._deprecated_prior_parsing(
@@ -127,9 +152,33 @@ class InjectionParametersGenerator:
                 print(self.priors)
                 continue
 
-            # Check for scipy stats
+            prior_distribution = next(iter(parameter_prior))
 
-            # Check for function within namespace
+            if "stats." in prior_distribution:
+                _, stats_function = prior_distribution.split(".")
+                logger.debug(
+                    f"Setting {stats_function} distribution from `scipy.stats` "
+                    f"to parameter {parameter_name}"
+                )
+                rv_object = getattr(stats, stats_function)(
+                    **parameter_prior[prior_distribution]
+                )
+                rv_object.random_state = self._rng
+                self.priors[parameter_name] = rv_object.rvs
+            else:
+                logger.debug(
+                    f"Setting {prior_distribution} distribution from local namespace "
+                    f"to parameter {parameter_name}"
+                )
+                # FIXME: Any alternatives?
+                custom_function = locals().get(
+                    prior_distribution, None
+                ) or globals().get(prior_distribution, None)
+                self.priors[parameter_name] = functools.partial(
+                    custom_function,
+                    generator=self._rng,
+                    **parameter_prior[prior_distribution],
+                )
 
     def draw(self) -> dict:
         """Draw a single multi-dimensional parameter space point from the given priors.
@@ -163,17 +212,27 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
     be constructed by applying a function to a uniform number.
     """
 
-    def _parse_priors(self, priors_input_format):
+    def __init__(
+        self,
+        priors: Optional[dict] = None,
+        seed: Optional[int] = None,
+        generator: Optional[np.random.Generator] = None,
+    ):
+
+        priors = priors or {}
+
         sky_priors = {
-            "Alpha_old": lambda: self._rng.uniform(low=0.0, high=2 * np.pi),
-            "Delta_old": lambda: np.arcsin(self._rng.uniform(low=-1.0, high=1.0)),
+            "Alpha": {"stats.uniform": {"loc": 0.0, "scale": 2 * np.pi}},
+            "Delta": {"uniform_sky_declination": {}},
         }
 
         for key in sky_priors:
-            if key in priors_input_format:
+            if key in priors:
                 logger.warning(
-                    f"Found {key} key in input priors with value {priors_input_format[key]}.\n"
+                    f"Found input key {key} with value {priors[key]}.\n"
                     "Overwritting to produce uniform samples across the sky."
                 )
 
-        return super()._parse_priors({**priors_input_format, **sky_priors})
+        super().__init__(
+            priors={**priors, **sky_priors}, seed=seed, generator=generator
+        )
