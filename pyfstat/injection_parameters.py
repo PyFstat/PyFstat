@@ -1,10 +1,9 @@
 """Generate injection parameters drawn from different prior populations"""
 import functools
 import logging
-from typing import Union
+from typing import Optional
 
 import numpy as np
-from attrs import Factory, define, field
 
 logger = logging.getLogger(__name__)
 
@@ -15,69 +14,97 @@ isotropic_amplitude_priors = {
 }
 
 
-@define(kw_only=True, slots=False)
 class InjectionParametersGenerator:
     """
     Draw injection parameter samples from priors and return in dictionary format.
 
     Parameters
     ----------
-    priors: dict
+    priors:
         Each key refers to one of the signal's parameters
         (following the PyFstat convention).
-        Priors can be given as values in three formats
-        (by order of evaluation):
 
-        1. Callable without required arguments:
-        `{"ParameterA": np.random.uniform}`.
+        Priors should be given as String matching one of scipy.stats's distributions with corresponding kwargs.
 
-        2. Dict containing numpy.random distribution as key and kwargs in a dict as value:
-        `{"ParameterA": {"uniform": {"low": 0, "high":1}}}`.
+        `{"ParameterA": {"uniform": {"loc": 0, "scale": 1}}}`
 
-        3. Constant value to be returned as is:
-        `{"ParameterA": 1.0}`.
+        Alternatively, the following three options, which were recommended on a previous release,
+        are still a valid input:
 
-    seed: None, int
-        Argument to be fed to numpy.random.default_rng,
-        with all of its accepted types.
+            1. Callable without required arguments:
+            `{"ParameterA": np.random.uniform}`.
 
-    _rng: np.random.Generator
-        Alternatively, this class accepts an already-initialized np.Generator,
-        in which case the `seed` argument will be ignored.
+            2. Dict containing numpy.random distribution as key and kwargs in a dict as value:
+            `{"ParameterA": {"uniform": {"low": 0, "high":1}}}`.
+
+            3. Constant value to be returned as is:
+            `{"ParameterA": 1.0}`.
+
+        Note, however, that these options are deprecated and will be removed
+        in a future PyFstat release. These old options do not follow completely the current way of
+        specifying seeds in this class.
+
+    generator:
+        Numpy random number generator (e.g. `np.random.default_rng`) which will be used to draw
+        random numbers from. Conflicts with `seed`.
+
+    seed:
+        Random seed to create instantiate `np.random.default_rng` from scratch. Conflicts
+        with `generator`. If neither `seed` nor `generator` are given, a random number generator
+        will be instantiated using `seed=None` and a warning will be thrown.
     """
 
-    seed: Union[None, int] = field(default=None)
-    _rng: np.random.Generator = field(
-        default=Factory(lambda self: np.random.default_rng(self.seed), takes_self=True)
-    )
-    priors: dict = field(factory=dict)
+    def __init__(
+        self,
+        priors: dict,
+        seed: Optional[int] = None,
+        generator: Optional[np.random.Generator] = None,
+    ):
+        self._parse_generator(seed=seed, generator=generator)
+        self._parse_priors(priors)
 
-    def __attrs_post_init__(self):
-        self.priors = self._parse_priors(self.priors)
+    def _parse_generator(
+        self, seed: Optional[int], generator: Optional[np.random.Generator]
+    ):
 
-    def _parse_priors(self, priors_input_format):
+        if (seed is not None) and (generator is not None):
+            raise ValueError(
+                "Incompatible inputs: please, "
+                "use either a `seed` or an already initialized `np.random.Generator`"
+            )
+        if (not seed) and (not generator):
+            logging.warning(
+                f"No `generator` was provided and `seed` was set to {seed}, "
+                "which looks uninitialized. Please, make sure you are aware of your seed choice"
+            )
+
+        self._rng = generator or np.random.default_rng(seed)
+
+    def _parse_priors(self, priors_input_format: dict):
         """Internal method to do the actual prior setup."""
-        priors = {}
+        self.priors = {}
 
         for parameter_name, parameter_prior in priors_input_format.items():
             if callable(parameter_prior):
-                priors[parameter_name] = parameter_prior
+                self.priors[parameter_name] = parameter_prior
             elif isinstance(parameter_prior, dict):
                 rng_function_name = next(iter(parameter_prior))
                 rng_function = getattr(self._rng, rng_function_name)
                 rng_kwargs = parameter_prior[rng_function_name]
-                priors[parameter_name] = functools.partial(rng_function, **rng_kwargs)
+                self.priors[parameter_name] = functools.partial(
+                    rng_function, **rng_kwargs
+                )
             else:  # Assume it is something to be returned as is
-                priors[parameter_name] = functools.partial(lambda x: x, parameter_prior)
+                self.priors[parameter_name] = functools.partial(
+                    lambda x: x, parameter_prior
+                )
 
-        return priors
-
-    def draw(self):
+    def draw(self) -> dict:
         """Draw a single multi-dimensional parameter space point from the given priors.
 
         Returns
         ----------
-        injection_parameters: dict
+        injection_parameters:
             Dictionary with parameter names as keys and their numeric values.
         """
         injection_parameters = {
