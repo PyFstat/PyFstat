@@ -16,12 +16,12 @@ def custom_prior(prior_function: Callable) -> Callable:
     Intended to be used as a decorator to add custom functions to
     the list of available priors for `InjectionParametersGenerator`.
 
-    For example:
-    ```
-    @pyfstat.custom_prior
-    def negative_log_uniform(generator):
-        return -10**(generator.uniform())
-    ```
+    For example,::
+
+        @pyfstat.custom_prior
+        def negative_log_uniform(generator):
+            return -10**(generator.uniform())
+
     will add the key `negative_log_uniform` to `_pyfstat_custom_priors`
     with said function as the corresponding value.
 
@@ -35,7 +35,6 @@ def custom_prior(prior_function: Callable) -> Callable:
     -------
     prior_function:
         Same function as the input function.
-
     """
 
     function_name = "{prior_function.__name__}"
@@ -90,21 +89,22 @@ class InjectionParametersGenerator:
         Each parameter's prior should be given as a dictionary entry as follows:
         `{"parameter": {"<function>": {**kwargs}}}`
         where <function> may be (exclusively) either a user-defined function decorated
-        with `@custom_prior` or the name of a `scipy.stats` `rv_continuous`.
+        with `@custom_prior` or the name of a `scipy.stats` random variable.
 
-        - | If a user-defined function is used, such a function *must* take
+        * | If a user-defined function is used, such a function *must* take
           | a `generator` kwarg as one of its arguments and use such a generator
           | to generate any required random number within the function.
           | The `generator` kwarg is *required* regardless of whether this is a
           | deterministic or random function.
           | For example, a negative log-distributed random number could be constructed as
-        ```
-        @pyfstat.custom_prior
-        def negative_log_uniform(generator):
-            return -10**(generator.uniform())
-        ```
 
-        - | If a `scipy.stats` function is used, it *must* be given as `stats.*`
+        ::
+
+            @pyfstat.custom_prior
+            def negative_log_uniform(generator):
+                return -10**(generator.uniform())
+
+        * | If a `scipy.stats` function is used, it *must* be given as `stats.*`
           | (i.e. the `stats` namespace should be explicitly included).
           |  For example, a uniform prior between 3 and 5 would be written as
           | `{"parameter": {"stats.uniform": {"loc": 3, "scale": 5}}}`.
