@@ -113,30 +113,40 @@ def convert_h0_cosi_to_aPlus_aCross(h0, cosi):
     """
     Converts amplitude parameters from a pair of `(h0,cosi)` to a pair of `(aPlus,aCross)`.
 
+    If both inputs are single numbers,
+    both outputs will be as well.
+    If at least one input is a list or np.array,
+    both outputs will be np.arrays.
+
     Parameters
     -------
-    h0: float
+    h0: float, list or np.array
         Nominal GW amplitude.
-    cosi: float
+    cosi: float, list or np.array
         Cosine of the source inclination w.r.t. line of sight.
 
     Returns
     -------
-    aPlus: float
+    aPlus: float or np.array
         Plus polarization amplitude.
-    aCross: float
+    aCross: float or np.array
         Cross polarization amplitude.
     """
 
     h0 = np.atleast_1d(h0)
     cosi = np.atleast_1d(cosi)
 
+    if np.any(h0 < 0):
+        raise ValueError("not valid for h0<0")
+    if np.any(np.abs(cosi) > 1):
+        raise ValueError("not valid for abs(cosi)>1")
+
     aPlus = 0.5 * h0 * (1.0 + cosi**2)
     aCross = h0 * cosi
 
-    if len(aPlus) == 1:
+    if aPlus.size == 1:
         aPlus = aPlus[0]
-    if len(cosi) == 1:
+    if cosi.size == 1:
         aCross = aCross[0]
     return aPlus, aCross
 
@@ -151,44 +161,42 @@ def convert_aPlus_aCross_to_h0_cosi(aPlus, aCross):
     as expected for GWs from neutron stars at twice the spin frequency,
     but not necessarily in all other CW emission scenarios.
 
+    If both inputs are single numbers,
+    both outputs will be as well.
+    If at least one input is a list or np.array,
+    both outputs will be np.arrays.
+
     Parameters
     -------
-    aPlus: float
+    aPlus: float, list or np.array
         Plus polarization amplitude
         (must be `>= abs(aCross)` and `>= 0`).
-    aCross: float
+    aCross: float, list or np.array
         Cross polarization amplitude.
 
     Returns
     -------
-    h0: float
+    h0: float or np.array
         Nominal GW amplitude.
-    cosi: float
+    cosi: float or np.array
         Cosine of the source inclination w.r.t. line of sight.
     """
 
     aPlus = np.atleast_1d(aPlus)
     aCross = np.atleast_1d(aCross)
 
-    if np.any(np.abs(aCross) > np.abs(aPlus)):
-        raise ValueError("not valid for abs(aCross)>abs(aPlus)")
     if np.any(aPlus < 0):
         raise ValueError("not valid for aPlus<0")
+    if np.any(np.abs(aCross) > aPlus):
+        raise ValueError("not valid for abs(aCross)>aPlus")
 
     h0 = aPlus + np.sqrt(aPlus**2 - aCross**2)
 
-    # next: vectorized version of if-else on h0>0?
-    # if h0 > 0:
-    # cosi = aCross / h0
-    # else:
-    # cosi = 0
-    mask = np.ma.array(h0, mask=(h0 == 0))
-    cosi = aCross / mask
-    cosi[cosi.mask] = 0
-    cosi = np.asarray(cosi)
+    # vectorized version of if-else on h0>0
+    cosi = np.divide(aCross, h0, out=np.zeros_like(aCross), where=(h0 > 0))
 
-    if len(h0) == 1:
+    if h0.size == 1:
         h0 = h0[0]
-    if len(cosi) == 1:
+    if cosi.size == 1:
         cosi = cosi[0]
     return h0, cosi
