@@ -33,6 +33,8 @@ from .gridcorner import gridcorner
 from .injection_parameters import (
     AllSkyInjectionParametersGenerator,
     InjectionParametersGenerator,
+    custom_prior,
+    isotropic_amplitude_priors,
 )
 from .make_sfts import (
     BinaryModulatedWriter,

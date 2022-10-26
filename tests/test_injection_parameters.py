@@ -2,21 +2,38 @@ import numpy as np
 import pytest
 from commons_for_tests import is_flaky
 
-from pyfstat import AllSkyInjectionParametersGenerator, InjectionParametersGenerator
+from pyfstat import (
+    AllSkyInjectionParametersGenerator,
+    InjectionParametersGenerator,
+    custom_prior,
+)
+from pyfstat.injection_parameters import _pyfstat_custom_priors
+
+print(_pyfstat_custom_priors)
 
 
+@custom_prior
 def my_custom_prior(generator, shift):
     # Mean 0 so tests are simple
     return -2 * generator.uniform() + shift
 
 
-@pytest.fixture()
-def input_priors():
-    return {
-        "gaussian_parameter": {"stats.norm": {"loc": 0.0, "scale": 1.0}},
-        # "custom_parameter": {"my_custom_prior": {"shift": 1.}},
-        "fixed_parameter": 0.0,
-    }
+# FIXME add toml case
+@pytest.fixture(
+    params=[
+        {
+            "gaussian_parameter": {"stats.norm": {"loc": 0.0, "scale": 1.0}},
+            "fixed_parameter": 0.0,
+        },
+        {
+            "function_prior": {"my_custom_prior": {"shift": 1.0}},
+            "now_from_module": {"uniform_sky_declination": {}},
+        },
+    ],
+    ids=["dictionary", "functions"],
+)
+def input_priors(request):
+    return request.param
 
 
 @pytest.fixture()

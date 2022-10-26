@@ -8,6 +8,21 @@ from scipy import stats
 
 logger = logging.getLogger(__name__)
 
+_pyfstat_custom_priors = {}
+
+
+def custom_prior(prior_function):
+
+    function_name = "{prior_function.__name__}"
+    if function_name in _pyfstat_custom_priors:
+        raise ValueError(
+            f"Custom prior `{function_name}` already defined in `pyfstat._pyfstat_custom_priors.` "
+            f"Please, use a different function name"
+        )
+    _pyfstat_custom_priors[prior_function.__name__] = prior_function
+    return prior_function
+
+
 isotropic_amplitude_priors = {
     "cosi": {"stats.uniform": {"loc": -1.0, "scale": 2.0}},
     "psi": {"stats.uniform": {"loc": -0.25 * np.pi, "scale": 0.5 * np.pi}},
@@ -15,6 +30,7 @@ isotropic_amplitude_priors = {
 }
 
 
+@custom_prior
 def uniform_sky_declination(generator: np.random.Generator) -> float:
     """
     Return declination values such that, when paired with right ascension
@@ -46,13 +62,8 @@ class InjectionParametersGenerator:
 
         Each parameter's prior should be given as a dictionary entry as follows:
         `{"parameter": {"<function>": {**kwargs}}}`
-        where <function> refers may be (exclusively) either a `scipy.stats` function
-        (e.g. `stats.uniform`) or a user-defined function in the global scope.
-
-        - | If a `scipy.stats` function is used, it *must* be given as `stats.*`
-          | (i.e. the `stats` namespace should be explicitly included).
-          |  For example, a uniform prior between 3 and 5 would be written as
-          | `{"parameter": {"stats.uniform": {"loc": 3, "scale": 5}}}`.
+        where <function> may be (exclusively) either a user-defined function decorated
+        with `@custom_prior` or the name of a `scipy.stats` `rv_continuous`.
 
         - | If a user-defined function is used, such a function *must* take
           | a `generator` kwarg as one of its arguments and use such a generator
@@ -60,11 +71,16 @@ class InjectionParametersGenerator:
           | The `generator` kwarg is *required* regardless of whether this is a
           | deterministic or random function.
           | For example, a negative log-distributed random number could be constructed as
-
         ```
+        @pyfstat.custom_prior
         def negative_log_uniform(generator):
             return -10**(generator.uniform())
         ```
+
+        - | If a `scipy.stats` function is used, it *must* be given as `stats.*`
+          | (i.e. the `stats` namespace should be explicitly included).
+          |  For example, a uniform prior between 3 and 5 would be written as
+          | `{"parameter": {"stats.uniform": {"loc": 3, "scale": 5}}}`.
 
         Alternatively, the following three options, which were recommended
         on a previous release, are still a valid input as long as the `_old` substring
@@ -152,38 +168,44 @@ class InjectionParametersGenerator:
                 print(self.priors)
                 continue
 
-            try:
-                # Check if it can be treated as a dict, otherwise treat it as a number.
-                # FIXME Extreme duck typing?
-                prior_distribution = next(iter(parameter_prior))
+            # FIXME: too extreme duck typing?
+            try:  # Check if it can be treated as "dict", otherwise treat as number.
+                distribution = next(iter(parameter_prior))
             except TypeError:
                 self.priors[parameter_name] = lambda val=parameter_prior: val
                 continue
 
-            if "stats." in prior_distribution:
-                _, stats_function = prior_distribution.split(".")
+            if distribution in _pyfstat_custom_priors:
+                logger.debug(
+                    f"Setting {distribution} distribution form `_pyfstat_custom_priors` "
+                    f"with kwargs `{parameter_prior[distribution]}` "
+                    f"to parameter {parameter_name}"
+                )
+                custom_function = _pyfstat_custom_priors[distribution]
+                self.priors[parameter_name] = functools.partial(
+                    custom_function,
+                    generator=self._rng,
+                    **parameter_prior[distribution],
+                )
+            elif "stats." in distribution:
+                _, stats_function = distribution.split(".")
                 logger.debug(
                     f"Setting {stats_function} distribution from `scipy.stats` "
+                    f"with kwargs `{parameter_prior[distribution]}` "
                     f"to parameter {parameter_name}"
                 )
                 rv_object = getattr(stats, stats_function)(
-                    **parameter_prior[prior_distribution]
+                    **parameter_prior[distribution]
                 )
                 rv_object.random_state = self._rng
                 self.priors[parameter_name] = rv_object.rvs
             else:
-                logger.debug(
-                    f"Setting {prior_distribution} distribution from local namespace "
-                    f"to parameter {parameter_name}"
-                )
-                # FIXME: Any alternatives?
-                custom_function = locals().get(
-                    prior_distribution, None
-                ) or globals().get(prior_distribution, None)
-                self.priors[parameter_name] = functools.partial(
-                    custom_function,
-                    generator=self._rng,
-                    **parameter_prior[prior_distribution],
+                raise ValueError(
+                    f"Distribution `{distribution}` not found in "
+                    "`_pyfstat_custom_priors` or `scipy.stats` namespace. "
+                    f"Current custom distributions are `{_pyfstat_custom_priors}`. "
+                    "Please, make sure to follow the proper rules to specify "
+                    "a prior distribution."
                 )
 
     def draw(self) -> dict:
