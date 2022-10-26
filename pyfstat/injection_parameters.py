@@ -1,7 +1,7 @@
 """Generate injection parameters drawn from different prior populations"""
 import functools
 import logging
-from typing import Optional
+from typing import Callable, Optional
 
 import numpy as np
 from scipy import stats
@@ -11,7 +11,32 @@ logger = logging.getLogger(__name__)
 _pyfstat_custom_priors = {}
 
 
-def custom_prior(prior_function):
+def custom_prior(prior_function: Callable) -> Callable:
+    """
+    Intended to be used as a decorator to add custom functions to
+    the list of available priors for `InjectionParametersGenerator`.
+
+    For example:
+    ```
+    @pyfstat.custom_prior
+    def negative_log_uniform(generator):
+        return -10**(generator.uniform())
+    ```
+    will add the key `negative_log_uniform` to `_pyfstat_custom_priors`
+    with said function as the corresponding value.
+
+    Parameters
+    ----------
+    prior_function:
+        Function to be added into `_pyfstat_custom_priors` with a key
+        corresponding *exactly* to the name it was given at definition time.
+
+    Returns
+    -------
+    prior_function:
+        Same function as the input function.
+
+    """
 
     function_name = "{prior_function.__name__}"
     if function_name in _pyfstat_custom_priors:
@@ -19,7 +44,9 @@ def custom_prior(prior_function):
             f"Custom prior `{function_name}` already defined in `pyfstat._pyfstat_custom_priors.` "
             f"Please, use a different function name"
         )
+
     _pyfstat_custom_priors[prior_function.__name__] = prior_function
+
     return prior_function
 
 
