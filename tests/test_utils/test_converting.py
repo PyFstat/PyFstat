@@ -1,5 +1,3 @@
-import itertools
-
 import numpy as np
 import pytest
 
@@ -66,17 +64,14 @@ def test_convert_aPlus_aCross_to_h0_cosi():
 
 
 def test_convert_between_h0_cosi_and_aPlus_aCross():
-    h0s = np.logspace(-26, -24, 3)
-    cosis = np.linspace(-1, 1, 5)
-    h0s_in = np.zeros(len(h0s) * len(cosis))
-    cosis_in = np.zeros(len(h0s) * len(cosis))
-    h0s_out = np.zeros(len(h0s) * len(cosis))
-    cosis_out = np.zeros(len(h0s) * len(cosis))
-    for n, pair in enumerate(itertools.product(h0s, cosis)):
-        h0s_in[n], cosis_in[n] = pair
-        # h0s_out[n], cosis_out[n] = pyfstat.utils.convert_aPlus_aCross_to_h0_cosi(*pyfstat.utils.convert_h0_cosi_to_aPlus_aCross(*pair))
+    h0s_in = np.logspace(-26, -24, 3)
+    cosis_in = np.linspace(-1, 1, 5)
     h0s_out, cosis_out = pyfstat.utils.convert_aPlus_aCross_to_h0_cosi(
-        *pyfstat.utils.convert_h0_cosi_to_aPlus_aCross(h0s_in, cosis_in)
+        *pyfstat.utils.convert_h0_cosi_to_aPlus_aCross(
+            h0s_in[:, None], cosis_in[None, :]
+        )
     )
-    np.testing.assert_allclose(h0s_in, h0s_out, rtol=1e-9)
-    np.testing.assert_allclose(cosis_in, cosis_out, rtol=1e-9)
+    for h0col in h0s_out.transpose():
+        np.testing.assert_allclose(h0col, h0s_in, rtol=1e-9)
+    for cosirow in cosis_out:
+        np.testing.assert_allclose(cosirow, cosis_in, rtol=1e-9)
