@@ -113,6 +113,8 @@ def convert_h0_cosi_to_aPlus_aCross(h0, cosi):
     """
     Converts amplitude parameters from a pair of `(h0,cosi)` to a pair of `(aPlus,aCross)`.
 
+    See e.g. Eq. (30) of https://dcc.ligo.org/T0900149-v6/public .
+
     If both inputs are single numbers,
     both outputs will be as well.
     If at least one input is a list or np.array,
@@ -160,6 +162,7 @@ def convert_aPlus_aCross_to_h0_cosi(aPlus, aCross):
     Conversion in this direction is only well-defined if `aPlus >= abs(aCross) >= 0`,
     as expected for GWs from neutron stars at twice the spin frequency,
     but not necessarily in all other CW emission scenarios.
+    See e.g. Eq. (32) of https://dcc.ligo.org/T0900149-v6/public .
 
     If both inputs are single numbers,
     both outputs will be as well.
