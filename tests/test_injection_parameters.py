@@ -9,8 +9,6 @@ from pyfstat import (
 )
 from pyfstat.injection_parameters import _pyfstat_custom_priors
 
-print(_pyfstat_custom_priors)
-
 
 @custom_prior
 def my_custom_prior(generator, shift):
@@ -43,6 +41,18 @@ def seed():
 @pytest.fixture()
 def rng_object(seed):
     return np.random.default_rng(seed)
+
+
+def test_custom_prior_decorator():
+    @custom_prior
+    def dummy_prior(generator):
+        # For testing purposes
+        return
+
+    assert dummy_prior.__name__ in _pyfstat_custom_priors
+
+    with pytest.raises(ValueError):
+        custom_prior(dummy_prior)
 
 
 def test_prior_parsing(input_priors, rng_object):

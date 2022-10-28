@@ -37,14 +37,14 @@ def custom_prior(prior_function: Callable) -> Callable:
         Same function as the input function.
     """
 
-    function_name = "{prior_function.__name__}"
+    function_name = f"{prior_function.__name__}"
     if function_name in _pyfstat_custom_priors:
         raise ValueError(
             f"Custom prior `{function_name}` already defined in `pyfstat._pyfstat_custom_priors.` "
             f"Please, use a different function name"
         )
 
-    _pyfstat_custom_priors[prior_function.__name__] = prior_function
+    _pyfstat_custom_priors[function_name] = prior_function
 
     return prior_function
 
