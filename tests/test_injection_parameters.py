@@ -18,7 +18,6 @@ def my_custom_prior(generator, shift):
     return -2 * generator.uniform() + shift
 
 
-# FIXME add toml case
 @pytest.fixture(
     params=[
         {
