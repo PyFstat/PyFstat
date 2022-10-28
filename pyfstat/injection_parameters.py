@@ -1,6 +1,7 @@
 """Generate injection parameters drawn from different prior populations"""
 import functools
 import logging
+from collections.abc import Mapping
 from typing import Callable, Optional
 
 import numpy as np
@@ -110,18 +111,16 @@ class InjectionParametersGenerator:
           | `{"parameter": {"stats.uniform": {"loc": 3, "scale": 5}}}`.
 
         Alternatively, the following three options, which were recommended
-        on a previous release, are still a valid input as long as the `_old` substring
-        is appended to the parameter's name:
+        on a previous release, are still a valid input. They will be used as a fall-back
+        if none of the two previous options are matched, but their use is highly discouraged
+        for newly produced code.
 
             1. Callable without required arguments:
-            `{"ParameterA_old": np.random.uniform}`.
+            `{"ParameterA": np.random.uniform}`.
 
             2. Dict containing numpy.random distribution as key and kwargs
             in a dict as value:
-            `{"ParameterA_old": {"uniform": {"low": 0, "high":1}}}`.
-
-            3. Constant value to be returned as is:
-            `{"ParameterA_old": 1.0}`.
+            `{"ParameterA": {"uniform": {"low": 0, "high":1}}}`.
 
         Note, however, that these options are deprecated and will be removed
         in a future PyFstat release.
@@ -167,6 +166,7 @@ class InjectionParametersGenerator:
         self._rng = generator or np.random.default_rng(seed)
 
     def _deprecated_prior_parsing(self, parameter_prior) -> dict:
+        # FIXME: Will be removed in a future release
         if callable(parameter_prior):
             return parameter_prior
         elif isinstance(parameter_prior, dict):
@@ -175,7 +175,7 @@ class InjectionParametersGenerator:
             rng_kwargs = parameter_prior[rng_function_name]
             return functools.partial(rng_function, **rng_kwargs)
         else:  # Assume it is something to be returned as is
-            return functools.partial(lambda x: x, parameter_prior)
+            return functools.partial((lambda x: x), parameter_prior)
 
     def _parse_priors(self, priors_input_format: dict):
         """Internal method to do the actual prior setup."""
@@ -183,22 +183,24 @@ class InjectionParametersGenerator:
 
         for parameter_name, parameter_prior in priors_input_format.items():
 
-            # FIXME to be removed once deprecation is effective
-            if "_old" == parameter_name[-4:]:
-                actual_name = parameter_name[:-4]
+            # FIXME: Sort out if new or old parsing method.
+            # Old parsing will be triggered for:
+            # 1) callable
+            # 2) string not prepended by `stats.`
+            # 3) string not in `_pyfstat_custom_priors`
+            if callable(parameter_prior):
                 logger.warning(
-                    f"Parsing parameter `{actual_name}` using a deprecated API."
+                    f"Parsing parameter `{parameter_name}` using a deprecated API. "
+                    "This will raise an error in the future."
                 )
-                self.priors[actual_name] = self._deprecated_prior_parsing(
+                self.priors[parameter_name] = self._deprecated_prior_parsing(
                     parameter_prior
                 )
-                print(self.priors)
                 continue
 
-            # FIXME: too extreme duck typing?
-            try:  # Check if it can be treated as "dict", otherwise treat as number.
+            if isinstance(parameter_prior, Mapping):
                 distribution = next(iter(parameter_prior))
-            except TypeError:
+            else:  # If not dictionary, then return as is ---> FIXME: Should I really support this?
                 self.priors[parameter_name] = lambda val=parameter_prior: val
                 continue
 
@@ -227,13 +229,23 @@ class InjectionParametersGenerator:
                 rv_object.random_state = self._rng
                 self.priors[parameter_name] = rv_object.rvs
             else:
-                raise ValueError(
+                # FIXME Deprecated, to be removed on a future release.
+                logger.warning(
                     f"Distribution `{distribution}` not found in "
                     "`_pyfstat_custom_priors` or `scipy.stats` namespace. "
-                    f"Current custom distributions are `{_pyfstat_custom_priors}`. "
+                    "Current custom distributions are "
+                    f"`{list(_pyfstat_custom_priors.keys())}`. "
                     "Please, make sure to follow the proper rules to specify "
                     "a prior distribution."
                 )
+                logger.warning(
+                    f"Parsing parameter `{parameter_name}` using a deprecated API. "
+                    "This will raise an error in the future."
+                )
+                self.priors[parameter_name] = self._deprecated_prior_parsing(
+                    parameter_prior
+                )
+                continue
 
     def draw(self) -> dict:
         """Draw a single multi-dimensional parameter space point from the given priors.
