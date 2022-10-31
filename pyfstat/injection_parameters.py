@@ -111,6 +111,10 @@ class InjectionParametersGenerator:
           |  For example, a uniform prior between 3 and 5 would be written as
           | `{"parameter": {"stats.uniform": {"loc": 3, "scale": 5}}}`.
 
+        Delta-priors (i.e. priors for a determinisitic output) can also be specified by
+        giving the fixed value to be returned as-is. For example, specifying a fixed
+        value of 1 for the parameter `A` would be `{"A": 1}`.
+
         Alternatively, the following three options, which were recommended
         on a previous release, are still a valid input. They will be used as a fall-back
         if none of the two previous options are matched,
@@ -168,15 +172,10 @@ class InjectionParametersGenerator:
 
     def _deprecated_prior_parsing(self, parameter_prior) -> dict:
         # FIXME: Will be removed in a future release
-        if callable(parameter_prior):
-            return parameter_prior
-        elif isinstance(parameter_prior, dict):
-            rng_function_name = next(iter(parameter_prior))
-            rng_function = getattr(self._rng, rng_function_name)
-            rng_kwargs = parameter_prior[rng_function_name]
-            return functools.partial(rng_function, **rng_kwargs)
-        else:  # Assume it is something to be returned as is
-            return functools.partial((lambda x: x), parameter_prior)
+        rng_function_name = next(iter(parameter_prior))
+        rng_function = getattr(self._rng, rng_function_name)
+        rng_kwargs = parameter_prior[rng_function_name]
+        return functools.partial(rng_function, **rng_kwargs)
 
     def _parse_priors(self, priors_input_format: dict):
         """Internal method to do the actual prior setup."""
@@ -184,26 +183,24 @@ class InjectionParametersGenerator:
 
         for parameter_name, parameter_prior in priors_input_format.items():
 
-            # FIXME: Sort out if new or old parsing method.
-            # Old parsing will be triggered for:
-            # 1) callable
-            # 2) string not prepended by `stats.`
-            # 3) string not in `_pyfstat_custom_priors`
             if callable(parameter_prior):
+                # FIXME Deprecated, to be removed on a future release.
                 logger.warning(
-                    f"Parsing parameter `{parameter_name}` using a deprecated API. "
+                    f"Parameter `{parameter_name}`'s prior was specified as a callable, "
+                    "which is not covered by the current implementation of RNGs "
+                    "and hence will not make use of the specified seed. "
+                    "Please, beware of the new implementation of parameter priors. "
                     "This will raise an error in the future."
                 )
-                self.priors[parameter_name] = self._deprecated_prior_parsing(
-                    parameter_prior
-                )
+                self.priors[parameter_name] = parameter_prior
                 continue
 
-            if isinstance(parameter_prior, Mapping):
-                distribution = next(iter(parameter_prior))
-            else:  # If not dictionary, then return as is ---> FIXME: Should I really support this?
+            if not isinstance(parameter_prior, Mapping):
+                # If not dictionary, then return as is
                 self.priors[parameter_name] = lambda val=parameter_prior: val
                 continue
+
+            distribution = next(iter(parameter_prior))
 
             if distribution in _pyfstat_custom_priors:
                 logger.debug(
