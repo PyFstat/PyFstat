@@ -41,8 +41,9 @@ def custom_prior(prior_function: Callable) -> Callable:
     function_name = f"{prior_function.__name__}"
     if function_name in _pyfstat_custom_priors:
         raise ValueError(
-            f"Custom prior `{function_name}` already defined in `pyfstat._pyfstat_custom_priors.` "
-            f"Please, use a different function name"
+            f"Custom prior `{function_name}` already defined in "
+            "`pyfstat._pyfstat_custom_priors.` "
+            "Please, use a different function name"
         )
 
     _pyfstat_custom_priors[function_name] = prior_function
@@ -112,8 +113,8 @@ class InjectionParametersGenerator:
 
         Alternatively, the following three options, which were recommended
         on a previous release, are still a valid input. They will be used as a fall-back
-        if none of the two previous options are matched, but their use is highly discouraged
-        for newly produced code.
+        if none of the two previous options are matched,
+        but their use is highly discouraged for newly produced code.
 
             1. Callable without required arguments:
             `{"ParameterA": np.random.uniform}`.

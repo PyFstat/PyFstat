@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import pytest
 from commons_for_tests import is_flaky
@@ -62,7 +64,19 @@ def test_prior_parsing(input_priors, rng_object):
         assert key in ipg.priors
 
 
-def test_seed_and_generator_consistency(input_priors, seed, rng_object):
+def test_seed_and_generator_init(caplog, input_priors, seed, rng_object):
+
+    with pytest.raises(ValueError):
+        InjectionParametersGenerator(
+            priors=input_priors, seed=seed, generator=rng_object
+        )
+
+    with caplog.at_level(logging.WARNING):
+        InjectionParametersGenerator(priors=input_priors, seed=None, generator=None)
+    assert "uninitialized" in caplog.text
+
+
+def test_seed_and_generator_compatibility(input_priors, seed, rng_object):
     ipg_seed = InjectionParametersGenerator(priors=input_priors, seed=seed)
     ipg_gen = InjectionParametersGenerator(priors=input_priors, generator=rng_object)
 
