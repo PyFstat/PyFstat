@@ -1998,9 +1998,27 @@ class SemiCoherentSearch(ComputeFstat):
             singleIFOmultiFatoms.data[0].TAtom = (
                 self.FstatResults.multiFatoms[0].data[X].TAtom
             )
-            singleIFOmultiFatoms.data[0].data = (
-                self.FstatResults.multiFatoms[0].data[X].data
-            )
+            # we manually copy the atoms data,
+            # since assigning the whole array can cause a segfault
+            # from memory cleanup
+            # in looping over this function
+            # singleIFOmultiFatoms.data[0].data = (
+            #     self.FstatResults.multiFatoms[0].data[X].data
+            # )
+            for k in range(singleIFOmultiFatoms.data[0].length):
+                for key in [
+                    "timestamp",
+                    "a2_alpha",
+                    "b2_alpha",
+                    "ab_alpha",
+                    "Fa_alpha",
+                    "Fb_alpha",
+                ]:
+                    setattr(
+                        singleIFOmultiFatoms.data[0].data[k],
+                        key,
+                        getattr(self.FstatResults.multiFatoms[0].data[X].data[k], key),
+                    )
             FXstatMap = lalpulsar.ComputeTransientFstatMap(
                 multiFstatAtoms=singleIFOmultiFatoms,
                 windowRange=self.semicoherentWindowRange,
