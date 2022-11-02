@@ -37,15 +37,13 @@ def extract_singleIFOmultiFatoms_from_multiAtoms(
     # we deep-copy the entries of the atoms vector,
     # since just assigning the whole array can cause a segfault
     # from memory cleanup in looping over this function
-    singleIFOmultiFatoms.data[0] = copy_FstatAtomVector(
-        singleIFOmultiFatoms.data[0], multiAtoms.data[X]
-    )
+    copy_FstatAtomVector(singleIFOmultiFatoms.data[0], multiAtoms.data[X])
     return singleIFOmultiFatoms
 
 
 def copy_FstatAtomVector(
     dest: lalpulsar.FstatAtomVector, src: lalpulsar.FstatAtomVector
-) -> lalpulsar.FstatAtomVector:
+):
     """Deep-copy an FstatAtomVector with all its per-SFT FstatAtoms.
 
     The two vectors must have the same length,
@@ -56,12 +54,9 @@ def copy_FstatAtomVector(
     dest:
         The destination vector to copy to.
         Must already be allocated.
+        Will be modified in-place.
     src:
         The source vector to copy from.
-    Returns
-    -------
-    dest:
-        The updated destination vector.
     """
     if dest.length != src.length:
         raise ValueError(
@@ -72,4 +67,3 @@ def copy_FstatAtomVector(
         # this is now copying the actual FstatAtom object,
         # with its actual data in memory (no more pointers)
         dest.data[k] = src.data[k]
-    return dest
