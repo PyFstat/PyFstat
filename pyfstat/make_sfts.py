@@ -188,11 +188,12 @@ class Writer(BaseSearchClass):
             Dictionary of timestamps (each key must refer to a detector),
             list of timestamps (`detectors` should be set),
             or comma-separated list of per-detector timestamps files
-            (simple text files, lines with <seconds> <nanoseconds>,
-            comments should use `%`, each time stamp gives the
-            start time of one SFT).
+            (simple text files,
+            comments should use `%`,
+            the first column is interpreted as SFT start times
+            and additional columns are ignored)
             WARNING: In that last case, order must match that of `detectors`!
-            NOTE: mutually exclusive with [`tstart`,`duration`]
+            NOTE: mutually exclusive with [`tstart`, `duration`]
             and with `noiseSFTs`.
         """
 
@@ -319,6 +320,10 @@ class Writer(BaseSearchClass):
         """
         If timestamps are given, use them to obtain relevant data parameters
         (tstart, duration; but not detectors and Tsft as in the noiseSFTs case).
+
+        We ignore any extra columns (e.g. nanoseconds, end times)
+        after the first (SFT start times)
+        and implicitly assume that all SFTs are the same length.
         """
         self._parse_timestamps()
         IFOs = self.detectors.split(",")
@@ -335,8 +340,14 @@ class Writer(BaseSearchClass):
         self.sftfilenames = []  # This refers to the MFD output!
         for X, IFO in enumerate(IFOs):
             tsX = np.genfromtxt(tsfiles[X], comments="%")
-            this_start_time = int(tsX[0, 0])
-            this_end_time = int(tsX[-1, 0]) + self.Tsft
+            if len(np.shape(tsX)) > 1:
+                logger.warning(
+                    f"Timestamps file {tsfiles[X]} has more than 1 column,"
+                    " we will ignore the rest."
+                )
+                tsX = tsX[0, :]
+            this_start_time = int(tsX[0])
+            this_end_time = int(tsX[-1]) + self.Tsft
             tstart.append(this_start_time)
             tend.append(this_end_time)
             self.sftfilenames.append(
