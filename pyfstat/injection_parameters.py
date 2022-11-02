@@ -140,8 +140,9 @@ class InjectionParametersGenerator:
             1. Callable without required arguments:
             `{"ParameterA": np.random.uniform}`.
 
-            2. Dict containing numpy.random distribution as key and kwargs
-            in a dict as value:
+            2. Dictionary with a numpy.random distribution as key and its corresponding
+            kwargs in a dict as value (mind that this is formally the same dict structure
+            as when using a `"stats.*"` distribution with the new syntax):
             `{"ParameterA": {"uniform": {"low": 0, "high":1}}}`.
 
         Note, however, that these options are deprecated and will be removed
