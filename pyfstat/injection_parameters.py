@@ -26,6 +26,9 @@ def custom_prior(prior_function: Callable) -> Callable:
     will add the key `negative_log_uniform` to `_pyfstat_custom_priors`
     with said function as the corresponding value.
 
+    See docstring of :func:`~pyfstat.injection_parameters.InjectionParametersGenerator`
+    for an example on how to draw samples from a custom prior.
+
     Parameters
     ----------
     prior_function:
@@ -102,14 +105,28 @@ class InjectionParametersGenerator:
 
         ::
 
-            @pyfstat.custom_prior
+            import pyfstat
+
+            @pyfstat.injection_parameters.custom_prior
             def negative_log_uniform(generator):
                 return -10**(generator.uniform())
+
+            priors = {"my_parameter": "negative_log_uniform": {}}
+            ipg = pyfstat.InjectionParametersGenerator(priors=priors, seed=42)
+            ipg.draw()
 
         * | If a `scipy.stats` function is used, it *must* be given as `stats.*`
           | (i.e. the `stats` namespace should be explicitly included).
           |  For example, a uniform prior between 3 and 5 would be written as
           | `{"parameter": {"stats.uniform": {"loc": 3, "scale": 5}}}`.
+
+        ::
+
+            import pyfstat
+
+            priors = {"my_parameter": "stats.uniform": {"loc": 3, "scale": 5}}
+            ipg = pyfstat.InjectionParametersGenerator(priors=priors, seed=42)
+            ipg.draw()
 
         Delta-priors (i.e. priors for a determinisitic output) can also be specified by
         giving the fixed value to be returned as-is. For example, specifying a fixed
