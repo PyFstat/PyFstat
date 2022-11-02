@@ -218,6 +218,15 @@ class InjectionParametersGenerator:
                 self.priors[parameter_name] = lambda val=parameter_prior: val
                 continue
 
+            if len(parameter_prior) > 1:
+                raise ValueError(
+                    f"{parameter_prior} does not follow"
+                    " the required format to specify a prior"
+                    " as the inner dictionary contains more than one key."
+                    " Please, specify a parameter's distribution as"
+                    " `{'parameter_name': {'parameter_distro': {**distro_kwargs}}}`."
+                )
+
             distribution = next(iter(parameter_prior))
 
             if distribution in _pyfstat_custom_priors:
