@@ -4,12 +4,8 @@ import numpy as np
 import pytest
 from commons_for_tests import is_flaky
 
-from pyfstat import (
-    AllSkyInjectionParametersGenerator,
-    InjectionParametersGenerator,
-    custom_prior,
-)
-from pyfstat.injection_parameters import _pyfstat_custom_priors
+from pyfstat import AllSkyInjectionParametersGenerator, InjectionParametersGenerator
+from pyfstat.injection_parameters import _pyfstat_custom_priors, custom_prior
 
 
 @custom_prior
