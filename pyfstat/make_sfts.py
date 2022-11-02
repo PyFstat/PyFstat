@@ -345,7 +345,7 @@ class Writer(BaseSearchClass):
                     f"Timestamps file {tsfiles[X]} has more than 1 column,"
                     " we will ignore the rest."
                 )
-                tsX = tsX[0, :]
+                tsX = tsX[:, 0]
             this_start_time = int(tsX[0])
             this_end_time = int(tsX[-1]) + self.Tsft
             tstart.append(this_start_time)

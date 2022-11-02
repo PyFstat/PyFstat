@@ -326,10 +326,22 @@ class TestWriter(BaseForTestsWithData):
         )
         NB_recycling_writer.make_data(verbose=True)
 
-    def _test_writer_with_tsfiles(self, gaps=False):
-        """helper function to rerun with/without gaps"""
+    def _test_writer_with_tsfiles(self, gaps=False, nanoseconds=False):
+        """helper function for timestamps tests
+
+        Can be used to rerun timestamps tests with/without gaps,
+        and with new single-column (nanoseconds=False)
+        and old two-column (nanoseconds=True)
+        formats.
+        """
         IFOs = self.multi_detectors.split(",")
-        tsfiles = [os.path.join(self.outdir, f"timestamps_{IFO}.txt") for IFO in IFOs]
+        tsfiles = [
+            os.path.join(
+                self.outdir,
+                f"timestamps_{IFO}{'_gaps' if gaps else ''}{'_ns' if nanoseconds else ''}.txt",
+            )
+            for IFO in IFOs
+        ]
         numSFTs = []
         for X, tsfile in enumerate(tsfiles):
             with open(tsfile, "w") as fp:
@@ -338,7 +350,8 @@ class TestWriter(BaseForTestsWithData):
                     if (
                         not gaps or not k == X + 1
                     ):  # add gaps at different points for each IFO
-                        fp.write(f"{self.tstart + k*self.Tsft} 0\n")
+                        line = f"{self.tstart + k*self.Tsft}{' 0' if nanoseconds else ''}\n"
+                        fp.write(line)
                     k += 1
             if gaps:
                 numSFTs.append(k - 1)
@@ -385,8 +398,9 @@ class TestWriter(BaseForTestsWithData):
             )
 
     def test_timestamps(self):
-        self._test_writer_with_tsfiles(gaps=False)
-        self._test_writer_with_tsfiles(gaps=True)
+        for gaps in [False, True]:
+            for nanoseconds in [False, True]:
+                self._test_writer_with_tsfiles(gaps, nanoseconds)
 
     def test_timestamps_file_generation(self):
 
