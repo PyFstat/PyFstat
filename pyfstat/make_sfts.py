@@ -189,7 +189,7 @@ class Writer(BaseSearchClass):
             list of timestamps (`detectors` should be set),
             or comma-separated list of per-detector timestamps files
             (simple text files,
-            comments should use `%`,
+            comments must use `%`,
             the first column is interpreted as SFT start times
             and additional columns are ignored)
             WARNING: In that last case, order must match that of `detectors`!
@@ -340,7 +340,7 @@ class Writer(BaseSearchClass):
         self.sftfilenames = []  # This refers to the MFD output!
         for X, IFO in enumerate(IFOs):
             tsX = np.genfromtxt(tsfiles[X], comments="%")
-            if len(np.shape(tsX)) > 1:
+            if tsX.ndim > 1:
                 logger.warning(
                     f"Timestamps file {tsfiles[X]} has more than 1 column,"
                     " we will ignore the rest."
