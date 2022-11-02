@@ -412,9 +412,7 @@ class Writer(BaseSearchClass):
             output_file = os.path.join(
                 self.outdir, f"{self.label}_timestamps_{ifos[ind]}.csv"
             )
-            left_column = np.floor(ts).reshape(-1, 1)
-            right_column = np.floor(1e9 * (np.reshape(ts, (-1, 1)) - left_column))
-            np.savetxt(output_file, np.hstack((left_column, right_column)), fmt="%d")
+            np.savetxt(output_file, ts.reshape(-1, 1), fmt="%d")
             timestamp_files.append(output_file)
         self.timestamps = ",".join(timestamp_files)
 

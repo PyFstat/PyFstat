@@ -431,7 +431,6 @@ class TestWriter(BaseForTestsWithData):
             )
             self.assertTrue(os.path.isfile(timestamps_file))
             ts = np.genfromtxt(timestamps_file)
-            ts = ts[:, 0] + 1e-9 * ts[:, 1]
             np.testing.assert_almost_equal(ts, timestamps[ifo])
 
         # Test dictionary with input detector
@@ -463,7 +462,6 @@ class TestWriter(BaseForTestsWithData):
             )
             self.assertTrue(os.path.isfile(timestamps_file))
             ts = np.genfromtxt(timestamps_file)
-            ts = ts[:, 0] + 1e-9 * ts[:, 1]
             np.testing.assert_almost_equal(ts, timestamps[ifo])
 
         # Test single list
@@ -493,7 +491,6 @@ class TestWriter(BaseForTestsWithData):
             )
             self.assertTrue(os.path.isfile(timestamps_file))
             ts = np.genfromtxt(timestamps_file)
-            ts = ts[:, 0] + 1e-9 * ts[:, 1]
             np.testing.assert_almost_equal(ts, timestamps)
 
 
