@@ -34,14 +34,9 @@ def extract_singleIFOmultiFatoms_from_multiAtoms(
     singleIFOmultiFatoms.data[0] = lalpulsar.CreateFstatAtomVector(
         multiAtoms.data[X].length
     )
-    singleIFOmultiFatoms.data[0].TAtom = multiAtoms.data[X].TAtom
-    # we deep-copy the atoms data,
+    # we deep-copy the entries of the atoms vector,
     # since just assigning the whole array can cause a segfault
-    # from memory cleanup
-    # in looping over this function
-    # singleIFOmultiFatoms.data[0].data = (
-    #     multiAtoms.data[X].data
-    # )
+    # from memory cleanup in looping over this function
     singleIFOmultiFatoms.data[0] = copy_FstatAtomVector(
         singleIFOmultiFatoms.data[0], multiAtoms.data[X]
     )
@@ -72,38 +67,9 @@ def copy_FstatAtomVector(
         raise ValueError(
             f"Lengths of destination and source vectors do not match. ({dest.length} != {src.length})"
         )
+    dest.TAtom = src.TAtom
     for k in range(dest.length):
-        dest.data[k] = copy_FstatAtom(dest.data[k], src.data[k])
-    return dest
-
-
-def copy_FstatAtom(
-    dest: lalpulsar.FstatAtom, src: lalpulsar.FstatAtom
-) -> lalpulsar.FstatAtom:
-    """Deep-copy an FstatAtom with all its fields.
-
-    Parameters
-    -------
-    dest:
-        The destination atom object to copy to.
-    src:
-        The source atom object to copy from.
-    Returns
-    -------
-    dest:
-        The updated destination atom object.
-    """
-    for key in [
-        "timestamp",
-        "a2_alpha",
-        "b2_alpha",
-        "ab_alpha",
-        "Fa_alpha",
-        "Fb_alpha",
-    ]:
-        setattr(
-            dest,
-            key,
-            getattr(src, key),
-        )
+        # this is now copying the actual FstatAtom object,
+        # with its actual data in memory (no more pointers)
+        dest.data[k] = src.data[k]
     return dest
