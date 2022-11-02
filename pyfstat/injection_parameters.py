@@ -228,6 +228,10 @@ class InjectionParametersGenerator:
                 )
 
             distribution = next(iter(parameter_prior))
+            if not isinstance(distribution, str):
+                raise ValueError(
+                    "Prior distribution's key should be a string. Got {{type(distribution)}`"
+                )
 
             if distribution in _pyfstat_custom_priors:
                 logger.debug(
