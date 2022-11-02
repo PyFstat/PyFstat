@@ -168,6 +168,7 @@ class Writer(BaseSearchClass):
             single-template ComputeFstat analysis is estimated.
         detectors: str or None
             Comma-separated list of detectors to generate data for.
+            May be required depending on `timestamps`; see its documentation.
         earth_ephem, sun_ephem: str or None
             Paths of the two files containing positions of Earth and Sun.
             If None, will check standard sources as per
@@ -357,9 +358,23 @@ class Writer(BaseSearchClass):
         of timestamps. The former case ignores this function, whereas the second
         one requires us to actually construct the timestamps file.
         """
+        if self.detectors is None and not isinstance(self.timestamps, dict):
+            raise ValueError(
+                "Detector names must be given either as a key in"
+                " a `timestamps` dict or explicitly via `detectors`."
+            )
+
         if isinstance(self.timestamps, str):
+            numTS = len(self.timestamps.split(","))
+            numDets = len(self.detectors.split(","))
+            if not numTS == numDets:
+                raise ValueError(
+                    "Inconsistent length of comma-separated"
+                    f" `timestamps` and `detectors`: {numTS}!={numDets}"
+                )
             return
-        elif isinstance(self.timestamps, dict):
+
+        if isinstance(self.timestamps, dict):
             # Each key should correspond to `detectors` if given;
             # otherwise, construct detectors from the given keys.
             ifos = list(self.timestamps.keys())
@@ -375,11 +390,8 @@ class Writer(BaseSearchClass):
             else:
                 self.detectors = ",".join(ifos)
         else:
-            # Otherwise, assume it's a list and convert into a 1D numpy array
-            if self.detectors is None:
-                raise ValueError(
-                    "Detector names must be given either as a key in `timestamps` or explicitly via `detectors`."
-                )
+            # Otherwise, assume it's a single list of timestamps,
+            # and replicate it for each detector.
             ifos = self.detectors.split(",")
             input_timestamps = [self.timestamps for i in ifos]
 
