@@ -9,9 +9,9 @@ from pyfstat.injection_parameters import _pyfstat_custom_priors, custom_prior
 
 
 @custom_prior
-def my_custom_prior(generator, shift):
+def my_custom_prior(generator, size, shift):
     # Mean 0 so tests are simple
-    return -2 * generator.uniform() + shift
+    return -2 * generator.uniform(size=size) + shift
 
 
 @pytest.fixture(
@@ -43,7 +43,11 @@ def rng_object(seed):
 
 def test_custom_prior_decorator():
     @custom_prior
-    def dummy_prior(generator):
+    def dummy_prior(generator, size):
+        # For testing purposes
+        return
+
+    def dummier_prior(generator):
         # For testing purposes
         return
 
@@ -51,6 +55,9 @@ def test_custom_prior_decorator():
 
     with pytest.raises(ValueError):
         custom_prior(dummy_prior)
+
+    with pytest.raises(TypeError):
+        custom_prior(dummier_prior)
 
 
 def test_prior_parsing(input_priors, rng_object):
@@ -84,16 +91,16 @@ def test_seed_and_generator_compatibility(input_priors, seed, rng_object):
 def test_rng_sampling(input_priors, rng_object):
     ipg = InjectionParametersGenerator(priors=input_priors, generator=rng_object)
 
-    samples = [ipg.draw() for i in range(10000)]
+    samples = ipg.draw(size=10000)
     for key in ipg.priors:
-        np.testing.assert_allclose(np.mean([s[key] for s in samples]), 0, atol=5e-2)
+        np.testing.assert_allclose(samples[key].mean(), 0, atol=5e-2)
 
 
 @pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=is_flaky)
 def test_all_sky_generation(rng_object):
     all_sky = AllSkyInjectionParametersGenerator(generator=rng_object)
 
-    samples = [all_sky.draw() for i in range(10000)]
+    samples = all_sky.draw(size=10000)
 
-    np.testing.assert_allclose(np.mean([s["Alpha"] for s in samples]), np.pi, atol=5e-2)
-    np.testing.assert_allclose(np.mean([s["Delta"] for s in samples]), 0, atol=5e-2)
+    np.testing.assert_allclose(samples["Alpha"].mean(), np.pi, atol=5e-2)
+    np.testing.assert_allclose(samples["Delta"].mean(), 0, atol=5e-2)

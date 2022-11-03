@@ -2,7 +2,8 @@
 import functools
 import logging
 from collections.abc import Mapping
-from typing import Callable, Optional
+from inspect import signature
+from typing import Callable, Optional, Tuple, Union
 
 import numpy as np
 from scipy import stats
@@ -20,11 +21,14 @@ def custom_prior(prior_function: Callable) -> Callable:
     For example,::
 
         @pyfstat.custom_prior
-        def negative_log_uniform(generator):
-            return -10**(generator.uniform())
+        def negative_log_uniform(generator, size):
+            return -10**(generator.uniform(size=size))
 
     will add the key `negative_log_uniform` to `_pyfstat_custom_priors`
     with said function as the corresponding value.
+
+    A function decorated with `custom_prior` *must* take `generator` and `size` as
+    keyword arguments; otherwise, a `TypeException` will be raised.
 
     See docstring of :func:`~pyfstat.injection_parameters.InjectionParametersGenerator`
     for an example on how to draw samples from a custom prior.
@@ -49,6 +53,18 @@ def custom_prior(prior_function: Callable) -> Callable:
             "Please, use a different function name"
         )
 
+    function_signature = signature(prior_function)
+    if any(
+        required_kwarg not in function_signature.parameters
+        for required_kwarg in ["generator", "size"]
+    ):
+        raise TypeError(
+            f"Custom prior function `{function_name}` must accept"
+            " `generator` and `size` as keyword arguments."
+            " Please, make sure your custom prior follows"
+            " the signature specified in this functions docstring."
+        )
+
     _pyfstat_custom_priors[function_name] = prior_function
 
     return prior_function
@@ -62,7 +78,9 @@ isotropic_amplitude_priors = {
 
 
 @custom_prior
-def uniform_sky_declination(generator: np.random.Generator) -> float:
+def uniform_sky_declination(
+    generator: np.random.Generator, size: Union[int, Tuple[int, ...]]
+) -> np.array:
     """
     Return declination values such that, when paired with right ascension
     values sampled uniformly along [0, 2*pi], the resulting pairs of samples
@@ -72,13 +90,16 @@ def uniform_sky_declination(generator: np.random.Generator) -> float:
     ----------
     generator:
         As required by InjectionParametersGenerator.
+    size:
+        As required by InjectionParameterGenerator. Gets passed directly
+        as a kwargs to `generator`'s methods.
 
     Returns
     -------
     declination:
         Declination value distributed
     """
-    return np.arcsin(generator.uniform(low=-1.0, high=1.0))
+    return np.arcsin(generator.uniform(low=-1.0, high=1.0, size=size))
 
 
 class InjectionParametersGenerator:
