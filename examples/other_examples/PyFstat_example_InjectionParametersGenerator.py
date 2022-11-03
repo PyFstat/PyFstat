@@ -71,9 +71,9 @@ data.make_data()
 
 # Now we draw many phase parameters and check the sky distribution
 Ndraws = 10000
-phase_parameters = [phase_params_generator.draw() for n in range(Ndraws)]
-Alphas = np.array([p["Alpha"] for p in phase_parameters])
-Deltas = np.array([p["Delta"] for p in phase_parameters])
+phase_parameters = phase_params_generator.draw(size=Ndraws)
+Alphas = phase_parameters["Alpha"]
+Deltas = phase_parameters["Delta"]
 plotfile = os.path.join(outdir, label + "_allsky.png")
 logger.info(f"Plotting sky distribution of {Ndraws} points to file: {plotfile}")
 plt.subplot(111, projection="aitoff")
