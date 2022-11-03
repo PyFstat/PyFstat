@@ -12,7 +12,6 @@ import numpy as np
 from tqdm import tqdm, trange
 
 import pyfstat.utils as utils
-from pyfstat import injection_parameters
 from pyfstat.core import BaseSearchClass, SearchForSignalWithJumps
 
 logger = logging.getLogger(__name__)
@@ -1685,23 +1684,3 @@ class FrequencyAmplitudeModulatedArtifactWriter(FrequencyModulatedArtifactWriter
             Amplitude at time `t`.
         """
         return self.h0 * np.sin(2 * np.pi * t / self.Pmod + self.Pmod_phi)
-
-
-class InjectionParametersGenerator(injection_parameters.InjectionParametersGenerator):
-    def __new__(cls, *args, **kwargs):
-        logger.warning(
-            "This class was moved to a different module within this same package (`injection_parameters`) "
-            "and will be removed from this module (`make_sfts`) in a future release. "
-        )
-        super().__new__(cls, *args, **kwargs)
-
-
-class AllSkyInjectionParametersGenerator(
-    injection_parameters.AllSkyInjectionParametersGenerator
-):
-    def __new__(cls, *args, **kwargs):
-        logger.warning(
-            "This class was moved to a different module within this same package (`injection_parameters`) "
-            "and will be removed from this module (`make_sfts`) in a future release. "
-        )
-        super().__new__(cls, *args, **kwargs)
