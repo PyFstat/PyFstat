@@ -229,16 +229,16 @@ class InjectionParametersGenerator:
                     "Please, beware of the new implementation of parameter priors. "
                     "This will raise an error in the future."
                 )
-                self.priors[parameter_name] = parameter_prior
+                self.priors[parameter_name] = lambda size, p=parameter_prior: np.array(
+                    [p() for s in range(size)]
+                )
                 continue
 
             if not isinstance(parameter_prior, Mapping):
                 # If not dictionary, then return as is
                 self.priors[
                     parameter_name
-                ] = lambda size, val=parameter_prior: np.array(
-                    [val for i in range(size)]
-                )
+                ] = lambda size, val=parameter_prior: np.repeat(val, repeats=size)
                 continue
 
             if len(parameter_prior) > 1:
@@ -253,7 +253,8 @@ class InjectionParametersGenerator:
             distribution = next(iter(parameter_prior))
             if not isinstance(distribution, str):
                 raise ValueError(
-                    "Prior distribution's key should be a string. Got {{type(distribution)}`"
+                    "Prior distribution's key should be a string."
+                    f" Got {type(distribution)}`"
                 )
 
             if distribution in _pyfstat_custom_priors:
@@ -299,8 +300,22 @@ class InjectionParametersGenerator:
                 )
                 continue
 
-    def draw(self, size: int = 1) -> dict:
+    def draw(self) -> dict:
         """Draw a single multi-dimensional parameter space point from the given priors.
+
+        Returns
+        -------
+        injection_parameters:
+            Dictionary of arrays. Each key corresponds to that found in `self.priors`.
+        """
+
+        return {
+            parameter_name: parameter_prior(size=1)[0]
+            for parameter_name, parameter_prior in self.priors.items()
+        }
+
+    def draw_many(self, size) -> dict:
+        """Draw a `size` multi-dimensional parameter space point from the given priors.
 
         Parameters
         ----------
@@ -311,9 +326,8 @@ class InjectionParametersGenerator:
         -------
         injection_parameters:
             Dictionary of arrays. Each key corresponds to that found in `self.priors`.
-            Return values are as given by the corresponding method.
+            Values are numpy arrays as returned by their corresponding method.
         """
-
         return {
             parameter_name: parameter_prior(size=size)
             for parameter_name, parameter_prior in self.priors.items()

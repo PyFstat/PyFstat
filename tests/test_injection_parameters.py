@@ -83,14 +83,17 @@ def test_seed_and_generator_compatibility(input_priors, seed, rng_object):
     ipg_seed = InjectionParametersGenerator(priors=input_priors, seed=seed)
     ipg_gen = InjectionParametersGenerator(priors=input_priors, generator=rng_object)
 
-    assert np.all(ipg_gen.draw(size=5) == ipg_seed.draw(size=5))
+    gen_draw = ipg_gen.draw_many(size=5)
+    seed_draw = ipg_seed.draw_many(size=5)
+    for key in input_priors:
+        assert np.all(gen_draw[key] == seed_draw[key])
 
 
 @pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=is_flaky)
 def test_rng_sampling(input_priors, rng_object):
     ipg = InjectionParametersGenerator(priors=input_priors, generator=rng_object)
 
-    samples = ipg.draw(size=10000)
+    samples = ipg.draw_many(size=10000)
     for key in ipg.priors:
         np.testing.assert_allclose(samples[key].mean(), 0, atol=5e-2)
 
@@ -99,7 +102,7 @@ def test_rng_sampling(input_priors, rng_object):
 def test_all_sky_generation(rng_object):
     all_sky = AllSkyInjectionParametersGenerator(generator=rng_object)
 
-    samples = all_sky.draw(size=10000)
+    samples = all_sky.draw_many(size=10000)
 
     np.testing.assert_allclose(samples["Alpha"].mean(), np.pi, atol=5e-2)
     np.testing.assert_allclose(samples["Delta"].mean(), 0, atol=5e-2)
