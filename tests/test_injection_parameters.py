@@ -66,6 +66,14 @@ def test_prior_parsing(input_priors, rng_object):
     for key in input_priors:
         assert key in ipg.priors
 
+    faulty_prior = {"faulty_parameter": {"distro_one": {}, "distro_two": {}}}
+    with pytest.raises(ValueError):
+        InjectionParametersGenerator(priors=faulty_prior, generator=rng_object)
+
+    faulty_prior = {"faulty_parameter": {0: {}}}
+    with pytest.raises(ValueError):
+        InjectionParametersGenerator(priors=faulty_prior, generator=rng_object)
+
 
 def test_seed_and_generator_init(caplog, input_priors, seed, rng_object):
 
