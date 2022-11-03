@@ -26,7 +26,7 @@ def extract_singleIFOmultiFatoms_from_multiAtoms(
     singleIFOmultiFatoms:
         Length-1 MultiFstatAtomVector with only the data for detector `X`.
     """
-    if X > multiAtoms.length:
+    if X >= multiAtoms.length:
         raise ValueError(
             f"Detector index {X} is out of range for multiAtoms of length {multiAtoms.length}."
         )
