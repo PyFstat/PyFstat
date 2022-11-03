@@ -19,6 +19,66 @@ from commons_for_tests import (
 import pyfstat
 
 
+def test_timestamp_files(tmp_path, caplog):
+
+    single_column = 10000000 + 1800 * np.arange(10)
+    np.savetxt(tmp_path / "single_column.txt", single_column[:, None])
+    np.savetxt(tmp_path / "dual_column.txt", np.hstack(2 * [single_column[:, None]]))
+
+    writer = pyfstat.Writer(
+        outdir=str(tmp_path / "timestamp_file_testing"),
+        label="timestamp_file_testing",
+        F0=10,
+        Band=0.1,
+        detectors="H1",
+        sqrtSX=1e-23,
+        Tsft=1800,
+        timestamps=str(tmp_path / "single_column.txt"),
+    )
+
+    assert single_column[0] == writer.tstart
+    assert single_column[-1] - single_column[0] == writer.duration - 1800
+
+    with caplog.at_level("WARNING"):
+        writer = pyfstat.Writer(
+            outdir=str(tmp_path / "timestamp_file_testing"),
+            label="timestamp_file_testing",
+            F0=10,
+            Band=0.1,
+            detectors="H1",
+            sqrtSX=1e-23,
+            Tsft=1800,
+            timestamps=str(tmp_path / "dual_column.txt"),
+        )
+
+        _, _, log_message = caplog.record_tuples[-1]
+        assert "has more than 1 column" in log_message
+        assert "will ignore" in log_message
+
+    with pytest.raises(ValueError):
+
+        writer = pyfstat.Writer(
+            outdir=str(tmp_path / "timestamp_file_testing"),
+            label="timestamp_file_testing",
+            F0=10,
+            Band=0.1,
+            detectors="H1,L1",
+            sqrtSX=1e-23,
+            timestamps=str(tmp_path / "single_column.txt"),
+        )
+
+    with pytest.raises(ValueError):
+
+        writer = pyfstat.Writer(
+            outdir=str(tmp_path / "timestamp_file_testing"),
+            label="timestamp_file_testing",
+            F0=10,
+            Band=0.1,
+            sqrtSX=1e-23,
+            timestamps=str(tmp_path / "single_column.txt"),
+        )
+
+
 class TestWriter(BaseForTestsWithData):
     label = "TestWriter"
     writer_class_to_test = pyfstat.Writer
