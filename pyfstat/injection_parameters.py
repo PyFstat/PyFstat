@@ -310,21 +310,14 @@ class InjectionParametersGenerator:
         Returns
         -------
         injection_parameters:
-            Structured array with parameter names as keys and their numeric values.
+            Dictionary of arrays. Each key corresponds to that found in `self.priors`.
+            Return values are as given by the corresponding method.
         """
 
-        injection_parameters = {
+        return {
             parameter_name: parameter_prior(size=size)
             for parameter_name, parameter_prior in self.priors.items()
         }
-
-        dtype = [(key, val.dtype) for key, val in injection_parameters.items()]
-
-        out = np.empty(size, dtype=dtype)
-        for key in injection_parameters:
-            out[key] = injection_parameters[key]
-
-        return out
 
 
 class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
