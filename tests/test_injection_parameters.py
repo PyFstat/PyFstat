@@ -83,8 +83,7 @@ def test_seed_and_generator_compatibility(input_priors, seed, rng_object):
     ipg_seed = InjectionParametersGenerator(priors=input_priors, seed=seed)
     ipg_gen = InjectionParametersGenerator(priors=input_priors, generator=rng_object)
 
-    for i in range(5):
-        assert ipg_gen.draw() == ipg_seed.draw()
+    assert np.all(ipg_gen.draw(size=5) == ipg_seed.draw(size=5))
 
 
 @pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=is_flaky)

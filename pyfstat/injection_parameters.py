@@ -3,7 +3,7 @@ import functools
 import logging
 from collections.abc import Mapping
 from inspect import signature
-from typing import Callable, Optional, Tuple, Union
+from typing import Callable, Optional
 
 import numpy as np
 from scipy import stats
@@ -78,9 +78,7 @@ isotropic_amplitude_priors = {
 
 
 @custom_prior
-def uniform_sky_declination(
-    generator: np.random.Generator, size: Union[int, Tuple[int, ...]]
-) -> np.array:
+def uniform_sky_declination(generator: np.random.Generator, size: int) -> np.array:
     """
     Return declination values such that, when paired with right ascension
     values sampled uniformly along [0, 2*pi], the resulting pairs of samples
@@ -236,7 +234,11 @@ class InjectionParametersGenerator:
 
             if not isinstance(parameter_prior, Mapping):
                 # If not dictionary, then return as is
-                self.priors[parameter_name] = lambda val=parameter_prior: val
+                self.priors[
+                    parameter_name
+                ] = lambda size, val=parameter_prior: np.array(
+                    [val for i in range(size)]
+                )
                 continue
 
             if len(parameter_prior) > 1:
@@ -297,19 +299,32 @@ class InjectionParametersGenerator:
                 )
                 continue
 
-    def draw(self) -> dict:
+    def draw(self, size: int = 1) -> dict:
         """Draw a single multi-dimensional parameter space point from the given priors.
 
-        Returns
+        Parameters
         ----------
+        size:
+            Number of samples to return.
+
+        Returns
+        -------
         injection_parameters:
-            Dictionary with parameter names as keys and their numeric values.
+            Structured array with parameter names as keys and their numeric values.
         """
+
         injection_parameters = {
-            parameter_name: parameter_prior()
+            parameter_name: parameter_prior(size=size)
             for parameter_name, parameter_prior in self.priors.items()
         }
-        return injection_parameters
+
+        dtype = [(key, val.dtype) for key, val in injection_parameters.items()]
+
+        out = np.empty(size, dtype=dtype)
+        for key in injection_parameters:
+            out[key] = injection_parameters[key]
+
+        return out
 
 
 class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
@@ -318,7 +333,7 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
     This class works in exactly the same way as `InjectionParametersGenerator`,
     but including by default two extra keys, `Alpha` and `Delta` (sky position's
     right ascension and declination in radians), which are sample isotropically
-    across the celesetial sphere.
+    across the celestial sphere.
 
     `Alpha`'s distribution is Uniform(0, 2 pi), and
     `sin(Delta)`'s distribution is Uniform(-1, 1).
