@@ -23,7 +23,6 @@ def test_timestamp_files(tmp_path, caplog):
 
     single_column = 10000000 + 1800 * np.arange(10)
     np.savetxt(tmp_path / "single_column.txt", single_column[:, None])
-    np.savetxt(tmp_path / "dual_column.txt", np.hstack(2 * [single_column[:, None]]))
 
     writer = pyfstat.Writer(
         outdir=str(tmp_path / "timestamp_file_testing"),
@@ -39,6 +38,7 @@ def test_timestamp_files(tmp_path, caplog):
     assert single_column[0] == writer.tstart
     assert single_column[-1] - single_column[0] == writer.duration - 1800
 
+    np.savetxt(tmp_path / "dual_column.txt", np.hstack(2 * [single_column[:, None]]))
     with caplog.at_level("WARNING"):
         writer = pyfstat.Writer(
             outdir=str(tmp_path / "timestamp_file_testing"),
@@ -54,6 +54,23 @@ def test_timestamp_files(tmp_path, caplog):
         _, _, log_message = caplog.record_tuples[-1]
         assert "has more than 1 column" in log_message
         assert "will ignore" in log_message
+
+    np.savetxt(tmp_path / "float_column.txt", 0.01 + single_column[:, None])
+    with caplog.at_level("WARNING"):
+        writer = pyfstat.Writer(
+            outdir=str(tmp_path / "timestamp_file_testing"),
+            label="timestamp_file_testing",
+            F0=10,
+            Band=0.1,
+            detectors="H1",
+            sqrtSX=1e-23,
+            Tsft=1800,
+            timestamps=str(tmp_path / "float_column.txt"),
+        )
+
+        _, _, log_message = caplog.record_tuples[-1]
+        assert "non-integer timestamps" in log_message
+        assert "floor" in log_message
 
     with pytest.raises(ValueError):
 

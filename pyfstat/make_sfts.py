@@ -346,6 +346,13 @@ class Writer(BaseSearchClass):
                     " we will ignore the rest."
                 )
                 tsX = tsX[:, 0]
+            if not np.issubdtype(tsX.dtype, np.integer):
+                logger.warning(
+                    "Detected non-integer timestamps in timestamp file."
+                    " Will floor into ints."
+                )
+                tsX = tsX.astype(int)
+
             this_start_time = int(tsX[0])
             this_end_time = int(tsX[-1]) + self.Tsft
             tstart.append(this_start_time)
