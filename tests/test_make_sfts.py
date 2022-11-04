@@ -19,6 +19,86 @@ from commons_for_tests import (
 import pyfstat
 
 
+def test_timestamp_files(tmp_path, caplog):
+
+    Tsft = 1800
+    single_column = 10000000 + Tsft * np.arange(10)
+    np.savetxt(tmp_path / "single_column.txt", single_column[:, None])
+
+    writer = pyfstat.Writer(
+        outdir=str(tmp_path / "timestamp_file_testing"),
+        label="timestamp_file_testing",
+        F0=10,
+        Band=0.1,
+        detectors="H1",
+        sqrtSX=1e-23,
+        Tsft=Tsft,
+        timestamps=str(tmp_path / "single_column.txt"),
+    )
+
+    assert single_column[0] == writer.tstart
+    assert single_column[-1] - single_column[0] == writer.duration - Tsft
+
+    np.savetxt(tmp_path / "dual_column.txt", np.hstack(2 * [single_column[:, None]]))
+    with caplog.at_level("WARNING"):
+        writer = pyfstat.Writer(
+            outdir=str(tmp_path / "timestamp_file_testing"),
+            label="timestamp_file_testing",
+            F0=10,
+            Band=0.1,
+            detectors="H1",
+            sqrtSX=1e-23,
+            Tsft=Tsft,
+            timestamps=str(tmp_path / "dual_column.txt"),
+        )
+
+        _, _, log_message = caplog.record_tuples[-1]
+        assert "has more than 1 column" in log_message
+        assert "will ignore" in log_message
+
+    np.savetxt(tmp_path / "float_column.txt", 0.01 + single_column[:, None])
+    with caplog.at_level("WARNING"):
+        writer = pyfstat.Writer(
+            outdir=str(tmp_path / "timestamp_file_testing"),
+            label="timestamp_file_testing",
+            F0=10,
+            Band=0.1,
+            detectors="H1",
+            sqrtSX=1e-23,
+            Tsft=Tsft,
+            timestamps=str(tmp_path / "float_column.txt"),
+        )
+
+        _, _, log_message = caplog.record_tuples[-1]
+        assert "non-integer timestamps" in log_message
+        assert "floor" in log_message
+
+    # Test wrong number of detectors
+    with pytest.raises(ValueError):
+
+        writer = pyfstat.Writer(
+            outdir=str(tmp_path / "timestamp_file_testing"),
+            label="timestamp_file_testing",
+            F0=10,
+            Band=0.1,
+            detectors="H1,L1",
+            sqrtSX=1e-23,
+            timestamps=str(tmp_path / "single_column.txt"),
+        )
+
+    # Test unspecified detectors
+    with pytest.raises(ValueError):
+
+        writer = pyfstat.Writer(
+            outdir=str(tmp_path / "timestamp_file_testing"),
+            label="timestamp_file_testing",
+            F0=10,
+            Band=0.1,
+            sqrtSX=1e-23,
+            timestamps=str(tmp_path / "single_column.txt"),
+        )
+
+
 class TestWriter(BaseForTestsWithData):
     label = "TestWriter"
     writer_class_to_test = pyfstat.Writer
@@ -326,10 +406,22 @@ class TestWriter(BaseForTestsWithData):
         )
         NB_recycling_writer.make_data(verbose=True)
 
-    def _test_writer_with_tsfiles(self, gaps=False):
-        """helper function to rerun with/without gaps"""
+    def _test_writer_with_tsfiles(self, gaps=False, nanoseconds=False):
+        """helper function for timestamps tests
+
+        Can be used to rerun timestamps tests with/without gaps,
+        and with new single-column (nanoseconds=False)
+        and old two-column (nanoseconds=True)
+        formats.
+        """
         IFOs = self.multi_detectors.split(",")
-        tsfiles = [os.path.join(self.outdir, f"timestamps_{IFO}.txt") for IFO in IFOs]
+        tsfiles = [
+            os.path.join(
+                self.outdir,
+                f"timestamps_{IFO}{'_gaps' if gaps else ''}{'_ns' if nanoseconds else ''}.txt",
+            )
+            for IFO in IFOs
+        ]
         numSFTs = []
         for X, tsfile in enumerate(tsfiles):
             with open(tsfile, "w") as fp:
@@ -338,7 +430,8 @@ class TestWriter(BaseForTestsWithData):
                     if (
                         not gaps or not k == X + 1
                     ):  # add gaps at different points for each IFO
-                        fp.write(f"{self.tstart + k*self.Tsft} 0\n")
+                        line = f"{self.tstart + k*self.Tsft}{' 0' if nanoseconds else ''}\n"
+                        fp.write(line)
                     k += 1
             if gaps:
                 numSFTs.append(k - 1)
@@ -385,8 +478,9 @@ class TestWriter(BaseForTestsWithData):
             )
 
     def test_timestamps(self):
-        self._test_writer_with_tsfiles(gaps=False)
-        self._test_writer_with_tsfiles(gaps=True)
+        for gaps in [False, True]:
+            for nanoseconds in [False, True]:
+                self._test_writer_with_tsfiles(gaps, nanoseconds)
 
     def test_timestamps_file_generation(self):
 
@@ -417,7 +511,6 @@ class TestWriter(BaseForTestsWithData):
             )
             self.assertTrue(os.path.isfile(timestamps_file))
             ts = np.genfromtxt(timestamps_file)
-            ts = ts[:, 0] + 1e-9 * ts[:, 1]
             np.testing.assert_almost_equal(ts, timestamps[ifo])
 
         # Test dictionary with input detector
@@ -449,7 +542,6 @@ class TestWriter(BaseForTestsWithData):
             )
             self.assertTrue(os.path.isfile(timestamps_file))
             ts = np.genfromtxt(timestamps_file)
-            ts = ts[:, 0] + 1e-9 * ts[:, 1]
             np.testing.assert_almost_equal(ts, timestamps[ifo])
 
         # Test single list
@@ -479,7 +571,6 @@ class TestWriter(BaseForTestsWithData):
             )
             self.assertTrue(os.path.isfile(timestamps_file))
             ts = np.genfromtxt(timestamps_file)
-            ts = ts[:, 0] + 1e-9 * ts[:, 1]
             np.testing.assert_almost_equal(ts, timestamps)
 
 

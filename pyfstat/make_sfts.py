@@ -168,6 +168,7 @@ class Writer(BaseSearchClass):
             single-template ComputeFstat analysis is estimated.
         detectors: str or None
             Comma-separated list of detectors to generate data for.
+            May be required depending on `timestamps`; see its documentation.
         earth_ephem, sun_ephem: str or None
             Paths of the two files containing positions of Earth and Sun.
             If None, will check standard sources as per
@@ -187,11 +188,12 @@ class Writer(BaseSearchClass):
             Dictionary of timestamps (each key must refer to a detector),
             list of timestamps (`detectors` should be set),
             or comma-separated list of per-detector timestamps files
-            (simple text files, lines with <seconds> <nanoseconds>,
-            comments should use `%`, each time stamp gives the
-            start time of one SFT).
+            (simple text files,
+            comments must use `%`,
+            the first column is interpreted as SFT start times
+            and additional columns are ignored)
             WARNING: In that last case, order must match that of `detectors`!
-            NOTE: mutually exclusive with [`tstart`,`duration`]
+            NOTE: mutually exclusive with [`tstart`, `duration`]
             and with `noiseSFTs`.
         """
 
@@ -318,6 +320,10 @@ class Writer(BaseSearchClass):
         """
         If timestamps are given, use them to obtain relevant data parameters
         (tstart, duration; but not detectors and Tsft as in the noiseSFTs case).
+
+        We ignore any extra columns (e.g. nanoseconds, end times)
+        after the first (SFT start times)
+        and implicitly assume that all SFTs are the same length.
         """
         self._parse_timestamps()
         IFOs = self.detectors.split(",")
@@ -334,8 +340,22 @@ class Writer(BaseSearchClass):
         self.sftfilenames = []  # This refers to the MFD output!
         for X, IFO in enumerate(IFOs):
             tsX = np.genfromtxt(tsfiles[X], comments="%")
-            this_start_time = int(tsX[0, 0])
-            this_end_time = int(tsX[-1, 0]) + self.Tsft
+            if tsX.ndim > 1:
+                logger.warning(
+                    f"Timestamps file {tsfiles[X]} has more than 1 column,"
+                    " we will ignore the rest."
+                )
+                tsX = tsX[:, 0]
+            if not tsX[0].is_integer() or not tsX[-1].is_integer():
+                logger.warning(
+                    "Detected non-integer timestamps in timestamp file."
+                    " We will floor start and end times to the nearest integer"
+                    " for the SFT name,"
+                    " and let lalpulsar_Makefakedata_v5 handle the rest."
+                )
+
+            this_start_time = int(tsX[0])
+            this_end_time = int(tsX[-1]) + self.Tsft
             tstart.append(this_start_time)
             tend.append(this_end_time)
             self.sftfilenames.append(
@@ -357,9 +377,23 @@ class Writer(BaseSearchClass):
         of timestamps. The former case ignores this function, whereas the second
         one requires us to actually construct the timestamps file.
         """
+        if self.detectors is None and not isinstance(self.timestamps, dict):
+            raise ValueError(
+                "Detector names must be given either as a key in"
+                " a `timestamps` dict or explicitly via `detectors`."
+            )
+
         if isinstance(self.timestamps, str):
+            numTS = len(self.timestamps.split(","))
+            numDets = len(self.detectors.split(","))
+            if not numTS == numDets:
+                raise ValueError(
+                    "Inconsistent length of comma-separated"
+                    f" `timestamps` and `detectors`: {numTS}!={numDets}"
+                )
             return
-        elif isinstance(self.timestamps, dict):
+
+        if isinstance(self.timestamps, dict):
             # Each key should correspond to `detectors` if given;
             # otherwise, construct detectors from the given keys.
             ifos = list(self.timestamps.keys())
@@ -375,11 +409,8 @@ class Writer(BaseSearchClass):
             else:
                 self.detectors = ",".join(ifos)
         else:
-            # Otherwise, assume it's a list and convert into a 1D numpy array
-            if self.detectors is None:
-                raise ValueError(
-                    "Detector names must be given either as a key in `timestamps` or explicitly via `detectors`."
-                )
+            # Otherwise, assume it's a single list of timestamps,
+            # and replicate it for each detector.
             ifos = self.detectors.split(",")
             input_timestamps = [self.timestamps for i in ifos]
 
@@ -389,9 +420,7 @@ class Writer(BaseSearchClass):
             output_file = os.path.join(
                 self.outdir, f"{self.label}_timestamps_{ifos[ind]}.csv"
             )
-            left_column = np.floor(ts).reshape(-1, 1)
-            right_column = np.floor(1e9 * (np.reshape(ts, (-1, 1)) - left_column))
-            np.savetxt(output_file, np.hstack((left_column, right_column)), fmt="%d")
+            np.savetxt(output_file, ts.reshape(-1, 1), fmt="%d")
             timestamp_files.append(output_file)
         self.timestamps = ",".join(timestamp_files)
 
