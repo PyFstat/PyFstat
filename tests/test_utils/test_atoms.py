@@ -10,10 +10,11 @@ from pyfstat.utils import (
 @pytest.fixture
 def arbitrary_singleAtoms():
     single_atoms = lalpulsar.CreateFstatAtomVector(5)
+
+    single_atoms.TAtom = 1800
+
     for i in range(single_atoms.length):
 
-        for attr in ["TAtom"]:
-            setattr(single_atoms, attr, i)
         for attr in [
             "timestamp",
             "a2_alpha",
