@@ -21,7 +21,8 @@ import pyfstat
 
 def test_timestamp_files(tmp_path, caplog):
 
-    single_column = 10000000 + 1800 * np.arange(10)
+    Tsft = 1800
+    single_column = 10000000 + Tsft * np.arange(10)
     np.savetxt(tmp_path / "single_column.txt", single_column[:, None])
 
     writer = pyfstat.Writer(
@@ -31,12 +32,12 @@ def test_timestamp_files(tmp_path, caplog):
         Band=0.1,
         detectors="H1",
         sqrtSX=1e-23,
-        Tsft=1800,
+        Tsft=Tsft,
         timestamps=str(tmp_path / "single_column.txt"),
     )
 
     assert single_column[0] == writer.tstart
-    assert single_column[-1] - single_column[0] == writer.duration - 1800
+    assert single_column[-1] - single_column[0] == writer.duration - Tsft
 
     np.savetxt(tmp_path / "dual_column.txt", np.hstack(2 * [single_column[:, None]]))
     with caplog.at_level("WARNING"):
@@ -47,7 +48,7 @@ def test_timestamp_files(tmp_path, caplog):
             Band=0.1,
             detectors="H1",
             sqrtSX=1e-23,
-            Tsft=1800,
+            Tsft=Tsft,
             timestamps=str(tmp_path / "dual_column.txt"),
         )
 
@@ -64,7 +65,7 @@ def test_timestamp_files(tmp_path, caplog):
             Band=0.1,
             detectors="H1",
             sqrtSX=1e-23,
-            Tsft=1800,
+            Tsft=Tsft,
             timestamps=str(tmp_path / "float_column.txt"),
         )
 
@@ -72,6 +73,7 @@ def test_timestamp_files(tmp_path, caplog):
         assert "non-integer timestamps" in log_message
         assert "floor" in log_message
 
+    # Test wrong number of detectors
     with pytest.raises(ValueError):
 
         writer = pyfstat.Writer(
@@ -84,6 +86,7 @@ def test_timestamp_files(tmp_path, caplog):
             timestamps=str(tmp_path / "single_column.txt"),
         )
 
+    # Test unspecified detectors
     with pytest.raises(ValueError):
 
         writer = pyfstat.Writer(
