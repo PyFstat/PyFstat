@@ -1317,19 +1317,10 @@ class ComputeFstat(BaseSearchClass):
         # and return the maximum of that?
         idx_maxTwoF = self.FstatMap.get_maxF_idx()
         for X in range(self.FstatResults.numDetectors):
-            # For each detector, we need to build a MultiFstatAtomVector
-            # because that's what the Fstat map function expects.
-            singleIFOmultiFatoms = lalpulsar.CreateMultiFstatAtomVector(1)
-            # The first [0] index on the multiFatoms here is over frequency bins;
+            # The [0] index on the multiFatoms here is over frequency bins;
             # we always operate on a single bin.
-            singleIFOmultiFatoms.data[0] = lalpulsar.CreateFstatAtomVector(
-                self.FstatResults.multiFatoms[0].data[X].length
-            )
-            singleIFOmultiFatoms.data[0].TAtom = (
-                self.FstatResults.multiFatoms[0].data[X].TAtom
-            )
-            singleIFOmultiFatoms.data[0].data = (
-                self.FstatResults.multiFatoms[0].data[X].data
+            singleIFOmultiFatoms = utils.extract_singleIFOmultiFatoms_from_multiAtoms(
+                self.FstatResults.multiFatoms[0], X
             )
             FXstatMap, timingFXstatMap = tcw.call_compute_transient_fstat_map(
                 self.tCWFstatMapVersion,
@@ -1987,19 +1978,10 @@ class SemiCoherentSearch(ComputeFstat):
                 "This function is available only if singleFstats or BSGL options were set."
             )
         for X in range(self.FstatResults.numDetectors):
-            # For each detector, we need to build a MultiFstatAtomVector
-            # because that's what the Fstat map function expects.
-            singleIFOmultiFatoms = lalpulsar.CreateMultiFstatAtomVector(1)
-            # The first [0] index on the multiFatoms here is over frequency bins;
+            # The [0] index on the multiFatoms here is over frequency bins;
             # we always operate on a single bin.
-            singleIFOmultiFatoms.data[0] = lalpulsar.CreateFstatAtomVector(
-                self.FstatResults.multiFatoms[0].data[X].length
-            )
-            singleIFOmultiFatoms.data[0].TAtom = (
-                self.FstatResults.multiFatoms[0].data[X].TAtom
-            )
-            singleIFOmultiFatoms.data[0].data = (
-                self.FstatResults.multiFatoms[0].data[X].data
+            singleIFOmultiFatoms = utils.extract_singleIFOmultiFatoms_from_multiAtoms(
+                self.FstatResults.multiFatoms[0], X
             )
             FXstatMap = lalpulsar.ComputeTransientFstatMap(
                 multiFstatAtoms=singleIFOmultiFatoms,
