@@ -342,13 +342,8 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
     right ascension and declination in radians), which are sample isotropically
     across the celestial sphere.
 
-    ``Alpha``'s distribution is Uniform(0, 2 pi), and
-    ``sin(Delta)``'s distribution is Uniform(-1, 1).
-
-    The only reason this class exists is because, using the notation we specified
-    in the base class, there is no way to generate arcsine distributed numbers using
-    a specific seed, as numpy does not have such a number generator and hence has to
-    be constructed by applying a function to a uniform number.
+    `Alpha`'s distribution is Uniform(0, 2 pi), and
+    `sin(Delta)`'s distribution is Uniform(-1, 1).
     """
 
     def __init__(
