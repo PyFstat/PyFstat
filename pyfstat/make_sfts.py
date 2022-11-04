@@ -194,7 +194,8 @@ class Writer(BaseSearchClass):
             and additional columns are ignored;
             `detectors` must be set,
             and the length and order must match).
-            Timestamps must be integers.
+            Timestamps must be integers;
+            otherwise, will be implicitly cast by this method and MFDv5.
             NOTE: mutually exclusive with [`tstart`, `duration`]
             and with `noiseSFTs`.
         """
