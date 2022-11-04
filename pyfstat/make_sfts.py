@@ -349,8 +349,9 @@ class Writer(BaseSearchClass):
             if not tsX[0].is_integer() or not tsX[-1].is_integer():
                 logger.warning(
                     "Detected non-integer timestamps in timestamp file."
-                    " We will floor to the nearest integer for the SFT name"
-                    " and let MFDv5 to properly deal with it."
+                    " We will floor start and end times to the nearest integer"
+                    " for the SFT name,"
+                    " and let lalpulsar_Makefakedata_v5 handle the rest."
                 )
 
             this_start_time = int(tsX[0])
