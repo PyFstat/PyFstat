@@ -346,12 +346,12 @@ class Writer(BaseSearchClass):
                     " we will ignore the rest."
                 )
                 tsX = tsX[:, 0]
-            if not np.issubdtype(tsX.dtype, np.integer):
+            if not tsX[0].is_integer() or not tsX[-1].is_integer():
                 logger.warning(
                     "Detected non-integer timestamps in timestamp file."
-                    " Will floor into ints."
+                    " We will floor to the nearest integer for the SFT name"
+                    " and let MFDv5 to properly deal with it."
                 )
-                tsX = tsX.astype(int)
 
             this_start_time = int(tsX[0])
             this_end_time = int(tsX[-1]) + self.Tsft
