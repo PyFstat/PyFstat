@@ -206,10 +206,9 @@ class InjectionParametersGenerator:
                 "use either a `seed` or an already initialized `np.random.Generator`"
             )
         if (not seed) and (not generator):
-            logger.warning(
-                f"No `generator` was provided and `seed` was set to {seed}, "
-                "which looks uninitialized. "
-                "Please, make sure you are aware of your seed choice"
+            logger.info(
+                "No `generator` or `seed` was provided."
+                f" Will use default `np.random.default_rng({seed})`"
             )
 
         self._rng = generator or np.random.default_rng(seed)
