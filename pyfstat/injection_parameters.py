@@ -16,7 +16,7 @@ _pyfstat_custom_priors = {}
 def custom_prior(prior_function: Callable) -> Callable:
     """
     Intended to be used as a decorator to add custom functions to
-    the list of available priors for `InjectionParametersGenerator`.
+    the list of available priors for ``InjectionParametersGenerator``.
 
     For example,::
 
@@ -24,19 +24,19 @@ def custom_prior(prior_function: Callable) -> Callable:
         def negative_log_uniform(generator, size):
             return -10**(generator.uniform(size=size))
 
-    will add the key `negative_log_uniform` to `_pyfstat_custom_priors`
+    will add the key ``negative_log_uniform`` to ``_pyfstat_custom_priors``
     with said function as the corresponding value.
 
-    A function decorated with `custom_prior` *must* take `generator` and `size` as
-    keyword arguments; otherwise, a `TypeException` will be raised.
+    A function decorated with ``custom_prior`` *must* take ``generator`` and ``size`` as
+    keyword arguments; otherwise, a ``TypeException`` will be raised.
 
-    See docstring of :func:`~pyfstat.injection_parameters.InjectionParametersGenerator`
+    See docstring of :func:``~pyfstat.injection_parameters.InjectionParametersGenerator``
     for an example on how to draw samples from a custom prior.
 
     Parameters
     ----------
     prior_function:
-        Function to be added into `_pyfstat_custom_priors` with a key
+        Function to be added into ``_pyfstat_custom_priors`` with a key
         corresponding *exactly* to the name it was given at definition time.
 
     Returns
@@ -90,7 +90,7 @@ def uniform_sky_declination(generator: np.random.Generator, size: int) -> np.arr
         As required by InjectionParametersGenerator.
     size:
         As required by InjectionParameterGenerator. Gets passed directly
-        as a kwargs to `generator`'s methods.
+        as a kwargs to ``generator``'s methods.
 
     Returns
     -------
@@ -111,14 +111,14 @@ class InjectionParametersGenerator:
         (following the PyFstat convention).
 
         Each parameter's prior should be given as a dictionary entry as follows:
-        `{"parameter": {"<function>": {**kwargs}}}`
+        ``{"parameter": {"<function>": {**kwargs}}}``
         where <function> may be (exclusively) either a user-defined function decorated
-        with `@custom_prior` or the name of a `scipy.stats` random variable.
+        with ``@custom_prior`` or the name of a ``scipy.stats`` random variable.
 
         * | If a user-defined function is used, such a function *must* take
-          | a `generator` kwarg as one of its arguments and use such a generator
+          | a ``generator`` kwarg as one of its arguments and use such a generator
           | to generate any required random number within the function.
-          | The `generator` kwarg is *required* regardless of whether this is a
+          | The ``generator`` kwarg is *required* regardless of whether this is a
           | deterministic or random function.
           | For example, a negative log-distributed random number could be constructed as
 
@@ -134,10 +134,10 @@ class InjectionParametersGenerator:
             ipg = pyfstat.InjectionParametersGenerator(priors=priors, seed=42)
             ipg.draw()
 
-        * | If a `scipy.stats` function is used, it *must* be given as `stats.*`
-          | (i.e. the `stats` namespace should be explicitly included).
+        * | If a ``scipy.stats`` function is used, it *must* be given as ``stats.*``
+          | (i.e. the ``stats`` namespace should be explicitly included).
           |  For example, a uniform prior between 3 and 5 would be written as
-          | `{"parameter": {"stats.uniform": {"loc": 3, "scale": 5}}}`.
+          | ``{"parameter": {"stats.uniform": {"loc": 3, "scale": 5}}}``.
 
         ::
 
@@ -149,7 +149,7 @@ class InjectionParametersGenerator:
 
         Delta-priors (i.e. priors for a determinisitic output) can also be specified by
         giving the fixed value to be returned as-is. For example, specifying a fixed
-        value of 1 for the parameter `A` would be `{"A": 1}`.
+        value of 1 for the parameter ``A`` would be ``{"A": 1}``.
 
         Alternatively, the following three options, which were recommended
         on a previous release, are still a valid input. They will be used as a fall-back
@@ -157,12 +157,12 @@ class InjectionParametersGenerator:
         but their use is highly discouraged for newly produced code.
 
             1. Callable without required arguments:
-            `{"ParameterA": np.random.uniform}`.
+            ``{"ParameterA": np.random.uniform}``.
 
             2. Dictionary with a numpy.random distribution as key and its corresponding
             kwargs in a dict as value (mind that this is formally the same dict structure
-            as when using a `"stats.*"` distribution with the new syntax):
-            `{"ParameterA": {"uniform": {"low": 0, "high":1}}}`.
+            as when using a ``"stats.*"`` distribution with the new syntax):
+            ``{"ParameterA": {"uniform": {"low": 0, "high":1}}}``.
 
         Note, however, that these options are deprecated and will be removed
         in a future PyFstat release.
@@ -170,13 +170,13 @@ class InjectionParametersGenerator:
         specifying seeds in this class.
 
     generator:
-        Numpy random number generator (e.g. `np.random.default_rng`)
-        which will be used to draw random numbers from. Conflicts with `seed`.
+        Numpy random number generator (e.g. ``np.random.default_rng``)
+        which will be used to draw random numbers from. Conflicts with ``seed``.
 
     seed:
-        Random seed to create instantiate `np.random.default_rng` from scratch.
-        Conflicts with `generator`. If neither `seed` nor `generator` are given,
-        a random number generator will be instantiated using `seed=None`
+        Random seed to create instantiate ``np.random.default_rng`` from scratch.
+        Conflicts with ``generator``. If neither ``seed`` nor ``generator`` are given,
+        a random number generator will be instantiated using ``seed=None``
         and a warning will be thrown.
     """
 
@@ -306,7 +306,7 @@ class InjectionParametersGenerator:
         Returns
         -------
         injection_parameters:
-            Dictionary of arrays. Each key corresponds to that found in `self.priors`.
+            Dictionary of arrays. Each key corresponds to that found in ``self.priors``.
         """
 
         return {
@@ -315,7 +315,7 @@ class InjectionParametersGenerator:
         }
 
     def draw_many(self, size) -> dict:
-        """Draw a `size` multi-dimensional parameter space point from the given priors.
+        """Draw a ``size`` multi-dimensional parameter space point from the given priors.
 
         Parameters
         ----------
@@ -325,7 +325,7 @@ class InjectionParametersGenerator:
         Returns
         -------
         injection_parameters:
-            Dictionary of arrays. Each key corresponds to that found in `self.priors`.
+            Dictionary of arrays. Each key corresponds to that found in ``self.priors``.
             Values are numpy arrays as returned by their corresponding method.
         """
         return {
@@ -337,13 +337,13 @@ class InjectionParametersGenerator:
 class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
     """
     Draw injection parameter samples from priors and return in dictionary format.
-    This class works in exactly the same way as `InjectionParametersGenerator`,
-    but including by default two extra keys, `Alpha` and `Delta` (sky position's
+    This class works in exactly the same way as ``InjectionParametersGenerator``,
+    but including by default two extra keys, ``Alpha`` and ``Delta`` (sky position's
     right ascension and declination in radians), which are sample isotropically
     across the celestial sphere.
 
-    `Alpha`'s distribution is Uniform(0, 2 pi), and
-    `sin(Delta)`'s distribution is Uniform(-1, 1).
+    ``Alpha``'s distribution is Uniform(0, 2 pi), and
+    ``sin(Delta)``'s distribution is Uniform(-1, 1).
 
     The only reason this class exists is because, using the notation we specified
     in the base class, there is no way to generate arcsine distributed numbers using
@@ -368,7 +368,7 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
         for key in sky_priors:
             if key in priors:
                 logger.warning(
-                    f"Found input key {key} with value {priors[key]}.\n"
+                    f"Found input key `{key}` with value {priors[key]}.\n"
                     "Overwritting to produce uniform samples across the sky."
                 )
 
