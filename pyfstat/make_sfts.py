@@ -185,13 +185,16 @@ class Writer(BaseSearchClass):
             for reproducibility.
         timestamps: str or dict
             Dictionary of timestamps (each key must refer to a detector),
-            list of timestamps (`detectors` should be set),
+            a single list of timestamps
+            (will be replicated for all detectors; `detectors` must be set),
             or comma-separated list of per-detector timestamps files
             (simple text files,
             comments must use `%`,
             the first column is interpreted as SFT start times
-            and additional columns are ignored)
-            WARNING: In that last case, order must match that of `detectors`!
+            and additional columns are ignored;
+            `detectors` must be set,
+            and the length and order must match).
+            Timestamps must be integers.
             NOTE: mutually exclusive with [`tstart`, `duration`]
             and with `noiseSFTs`.
         """
