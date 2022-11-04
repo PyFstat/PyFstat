@@ -82,9 +82,9 @@ def test_seed_and_generator_init(caplog, input_priors, seed, rng_object):
             priors=input_priors, seed=seed, generator=rng_object
         )
 
-    with caplog.at_level(logging.WARNING):
+    with caplog.at_level(logging.INFO):
         InjectionParametersGenerator(priors=input_priors, seed=None, generator=None)
-    assert "uninitialized" in caplog.text
+    assert "use default" in caplog.text
 
 
 def test_seed_and_generator_compatibility(input_priors, seed, rng_object):
