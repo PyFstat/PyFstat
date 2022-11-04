@@ -71,7 +71,7 @@ data.make_data()
 
 # Now we draw many phase parameters and check the sky distribution
 Ndraws = 10000
-phase_parameters = phase_params_generator.draw(size=Ndraws)
+phase_parameters = phase_params_generator.draw_many(size=Ndraws)
 Alphas = phase_parameters["Alpha"]
 Deltas = phase_parameters["Delta"]
 plotfile = os.path.join(outdir, label + "_allsky.png")

@@ -18,7 +18,7 @@ def custom_prior(prior_function: Callable) -> Callable:
     Intended to be used as a decorator to add custom functions to
     the list of available priors for ``InjectionParametersGenerator``.
 
-    For example,::
+    For example::
 
         @pyfstat.custom_prior
         def negative_log_uniform(generator, size):
@@ -28,9 +28,10 @@ def custom_prior(prior_function: Callable) -> Callable:
     with said function as the corresponding value.
 
     A function decorated with ``custom_prior`` *must* take ``generator`` and ``size`` as
-    keyword arguments; otherwise, a ``TypeException`` will be raised.
+    keyword arguments; otherwise, a ``TypeError`` will be raised.
+    Additional arguments can be provided as needed.
 
-    See docstring of :func:``~pyfstat.injection_parameters.InjectionParametersGenerator``
+    See docstring of :func:`~pyfstat.injection_parameters.InjectionParametersGenerator`
     for an example on how to draw samples from a custom prior.
 
     Parameters
@@ -70,6 +71,11 @@ def custom_prior(prior_function: Callable) -> Callable:
     return prior_function
 
 
+"""
+standard choices for angle ranges
+
+We are following here R. Prix: https://dcc.ligo.org/T0900149-v6/public
+"""
 isotropic_amplitude_priors = {
     "cosi": {"stats.uniform": {"loc": -1.0, "scale": 2.0}},
     "psi": {"stats.uniform": {"loc": -0.25 * np.pi, "scale": 0.5 * np.pi}},
@@ -117,6 +123,7 @@ class InjectionParametersGenerator:
 
         * | If a user-defined function is used, such a function *must* take
           | a ``generator`` kwarg as one of its arguments and use such a generator
+          | (``np.random.Generator`` type)
           | to generate any required random number within the function.
           | The ``generator`` kwarg is *required* regardless of whether this is a
           | deterministic or random function.
@@ -127,10 +134,10 @@ class InjectionParametersGenerator:
             import pyfstat
 
             @pyfstat.injection_parameters.custom_prior
-            def negative_log_uniform(generator):
-                return -10**(generator.uniform())
+            def negative_log_uniform(generator, size):
+                return -10**(generator.uniform(size=size))
 
-            priors = {"my_parameter": "negative_log_uniform": {}}
+            priors = {"my_parameter": {"negative_log_uniform": {}}}
             ipg = pyfstat.InjectionParametersGenerator(priors=priors, seed=42)
             ipg.draw()
 
@@ -259,7 +266,7 @@ class InjectionParametersGenerator:
 
             if distribution in _pyfstat_custom_priors:
                 logger.debug(
-                    f"Setting {distribution} distribution form `_pyfstat_custom_priors` "
+                    f"Setting {distribution} distribution from `_pyfstat_custom_priors` "
                     f"with kwargs `{parameter_prior[distribution]}` "
                     f"to parameter {parameter_name}"
                 )
@@ -306,7 +313,8 @@ class InjectionParametersGenerator:
         Returns
         -------
         injection_parameters:
-            Dictionary of arrays. Each key corresponds to that found in ``self.priors``.
+            Dictionary of parameter values (one value each).
+            Each key corresponds to that found in ``self.priors``.
         """
 
         return {
@@ -326,7 +334,7 @@ class InjectionParametersGenerator:
         -------
         injection_parameters:
             Dictionary of arrays. Each key corresponds to that found in ``self.priors``.
-            Values are numpy arrays as returned by their corresponding method.
+            Values are numpy arrays of shape ``size`` as returned by their corresponding method.
         """
         return {
             parameter_name: parameter_prior(size=size)
@@ -364,7 +372,7 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
             if key in priors:
                 logger.warning(
                     f"Found input key `{key}` with value {priors[key]}.\n"
-                    "Overwritting to produce uniform samples across the sky."
+                    "Overwriting to produce uniform samples across the sky."
                 )
 
         super().__init__(
