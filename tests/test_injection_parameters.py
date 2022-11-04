@@ -1,84 +1,116 @@
+import logging
+
 import numpy as np
+import pytest
+from commons_for_tests import is_flaky
 
-# FIXME this should be made cleaner with fixtures
-from commons_for_tests import BaseForTestsWithOutdir
-
-import pyfstat
+from pyfstat import AllSkyInjectionParametersGenerator, InjectionParametersGenerator
+from pyfstat.injection_parameters import _pyfstat_custom_priors, custom_prior
 
 
-class TestInjectionParametersGenerator(BaseForTestsWithOutdir):
-    label = "TestInjectionParametersGenerator"
-    class_to_test = pyfstat.InjectionParametersGenerator
+@custom_prior
+def my_custom_prior(generator, size, shift):
+    # Mean 0 so tests are simple
+    return -2 * generator.uniform(size=size) + shift
 
-    def test_numpy_priors(self):
-        numpy_priors = {
-            "ParameterA": {"uniform": {"low": 0.0, "high": 0.0}},
-            "ParameterB": {"uniform": {"low": 1.0, "high": 1.0}},
-        }
-        InjectionGenerator = self.class_to_test(priors=numpy_priors)
 
-        parameters = InjectionGenerator.draw()
-        self.assertTrue(parameters["ParameterA"] == 0.0)
-        self.assertTrue(parameters["ParameterB"] == 1.0)
+@pytest.fixture(
+    params=[
+        {
+            "gaussian_parameter": {"stats.norm": {"loc": 0.0, "scale": 1.0}},
+            "fixed_parameter": 0.0,
+        },
+        {
+            "function_prior": {"my_custom_prior": {"shift": 1.0}},
+            "now_from_module": {"uniform_sky_declination": {}},
+        },
+    ],
+    ids=["dictionary", "functions"],
+)
+def input_priors(request):
+    return request.param
 
-    def test_callable_priors(self):
-        callable_priors = {"ParameterA": lambda: 0.0, "ParameterB": lambda: 1.0}
-        InjectionGenerator = self.class_to_test(priors=callable_priors)
 
-        parameters = InjectionGenerator.draw()
-        self.assertTrue(parameters["ParameterA"] == 0.0)
-        self.assertTrue(parameters["ParameterB"] == 1.0)
+@pytest.fixture()
+def seed():
+    return 150914
 
-    def test_constant_priors(self):
-        constant_priors = {"ParameterA": 0.0, "ParameterB": 1.0}
-        InjectionGenerator = self.class_to_test(priors=constant_priors)
 
-        parameters = InjectionGenerator.draw()
-        self.assertTrue(parameters["ParameterA"] == 0.0)
-        self.assertTrue(parameters["ParameterB"] == 1.0)
+@pytest.fixture()
+def rng_object(seed):
+    return np.random.default_rng(seed)
 
-    def test_rng_seed(self):
-        a_seed = 420
 
-        samples = []
-        for i in range(2):
-            InjectionGenerator = self.class_to_test(
-                priors={"ParameterA": {"normal": {"loc": 0, "scale": 1}}}, seed=a_seed
-            )
-            samples.append(InjectionGenerator.draw())
-        self.assertTrue(samples[0]["ParameterA"] == samples[1]["ParameterA"])
+def test_custom_prior_decorator():
+    @custom_prior
+    def dummy_prior(generator, size):
+        # For testing purposes
+        return
 
-    def test_rng_generation(self):
-        InjectionGenerator = self.class_to_test(
-            priors={"ParameterA": {"normal": {"loc": 0, "scale": 0.01}}}
+    def dummier_prior(generator):
+        # For testing purposes
+        return
+
+    assert dummy_prior.__name__ in _pyfstat_custom_priors
+
+    with pytest.raises(ValueError):
+        custom_prior(dummy_prior)
+
+    with pytest.raises(TypeError):
+        custom_prior(dummier_prior)
+
+
+def test_prior_parsing(input_priors, rng_object):
+    ipg = InjectionParametersGenerator(priors=input_priors, generator=rng_object)
+
+    for key in input_priors:
+        assert key in ipg.priors
+
+    faulty_prior = {"faulty_parameter": {"distro_one": {}, "distro_two": {}}}
+    with pytest.raises(ValueError):
+        InjectionParametersGenerator(priors=faulty_prior, generator=rng_object)
+
+    faulty_prior = {"faulty_parameter": {0: {}}}
+    with pytest.raises(ValueError):
+        InjectionParametersGenerator(priors=faulty_prior, generator=rng_object)
+
+
+def test_seed_and_generator_init(caplog, input_priors, seed, rng_object):
+
+    with pytest.raises(ValueError):
+        InjectionParametersGenerator(
+            priors=input_priors, seed=seed, generator=rng_object
         )
-        samples = [InjectionGenerator.draw()["ParameterA"] for i in range(100)]
-        mean = np.mean(samples)
-        self.assertTrue(np.abs(mean) < 0.1)
+
+    with caplog.at_level(logging.INFO):
+        InjectionParametersGenerator(priors=input_priors, seed=None, generator=None)
+    assert "use default" in caplog.text
 
 
-class TestAllSkyInjectionParametersGenerator(TestInjectionParametersGenerator):
-    label = "TestAllSkyInjectionParametersGenerator"
+def test_seed_and_generator_compatibility(input_priors, seed, rng_object):
+    ipg_seed = InjectionParametersGenerator(priors=input_priors, seed=seed)
+    ipg_gen = InjectionParametersGenerator(priors=input_priors, generator=rng_object)
 
-    class_to_test = pyfstat.AllSkyInjectionParametersGenerator
+    gen_draw = ipg_gen.draw_many(size=5)
+    seed_draw = ipg_seed.draw_many(size=5)
+    for key in input_priors:
+        assert np.all(gen_draw[key] == seed_draw[key])
 
-    def test_rng_seed(self):
-        a_seed = 420
 
-        samples = []
-        for i in range(2):
-            InjectionGenerator = self.class_to_test(seed=a_seed)
-            samples.append(InjectionGenerator.draw())
-        self.assertTrue(samples[0]["Alpha"] == samples[1]["Alpha"])
-        self.assertTrue(samples[0]["Delta"] == samples[1]["Delta"])
+@pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=is_flaky)
+def test_rng_sampling(input_priors, rng_object):
+    ipg = InjectionParametersGenerator(priors=input_priors, generator=rng_object)
 
-    def test_rng_generation(self):
-        InjectionGenerator = self.class_to_test()
-        ra_samples = [
-            InjectionGenerator.draw()["Alpha"] / np.pi - 1.0 for i in range(500)
-        ]
-        dec_samples = [
-            InjectionGenerator.draw()["Delta"] * 2.0 / np.pi for i in range(500)
-        ]
-        self.assertTrue(np.abs(np.mean(ra_samples)) < 0.1)
-        self.assertTrue(np.abs(np.mean(dec_samples)) < 0.1)
+    samples = ipg.draw_many(size=10000)
+    for key in ipg.priors:
+        np.testing.assert_allclose(samples[key].mean(), 0, atol=5e-2)
+
+
+@pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=is_flaky)
+def test_all_sky_generation(rng_object):
+    all_sky = AllSkyInjectionParametersGenerator(generator=rng_object)
+
+    samples = all_sky.draw_many(size=10000)
+
+    np.testing.assert_allclose(samples["Alpha"].mean(), np.pi, atol=5e-2)
+    np.testing.assert_allclose(samples["Delta"].mean(), 0, atol=5e-2)

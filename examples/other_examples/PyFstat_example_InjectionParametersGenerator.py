@@ -14,6 +14,7 @@ from pyfstat import (
     AllSkyInjectionParametersGenerator,
     InjectionParametersGenerator,
     Writer,
+    isotropic_amplitude_priors,
     set_up_logger,
 )
 
@@ -38,7 +39,7 @@ logger.info("Drawing random signal parameters...")
 # The rest can be a mix of nontrivial prior distributions and fixed values.
 phase_params_generator = AllSkyInjectionParametersGenerator(
     priors={
-        "F0": {"uniform": {"low": 29.0, "high": 31.0}},
+        "F0": {"stats.uniform": {"loc": 29.0, "scale": 2.0}},
         "F1": -1e-10,
         "F2": 0,
     },
@@ -51,10 +52,8 @@ phase_parameters["tref"] = gw_data["tstart"]
 # Here we use the plain InjectionParametersGenerator class.
 amplitude_params_generator = InjectionParametersGenerator(
     priors={
-        "h0": {"normal": {"loc": 1e-24, "scale": 1e-24}},
-        "cosi": {"uniform": {"low": 0.0, "high": 1.0}},
-        "phi": {"uniform": {"low": 0.0, "high": 2 * np.pi}},
-        "psi": {"uniform": {"low": 0.0, "high": np.pi}},
+        "h0": {"stats.norm": {"loc": 1e-24, "scale": 1e-26}},
+        **isotropic_amplitude_priors,
     },
     seed=42,
 )
@@ -72,9 +71,9 @@ data.make_data()
 
 # Now we draw many phase parameters and check the sky distribution
 Ndraws = 10000
-phase_parameters = [phase_params_generator.draw() for n in range(Ndraws)]
-Alphas = np.array([p["Alpha"] for p in phase_parameters])
-Deltas = np.array([p["Delta"] for p in phase_parameters])
+phase_parameters = phase_params_generator.draw_many(size=Ndraws)
+Alphas = phase_parameters["Alpha"]
+Deltas = phase_parameters["Delta"]
 plotfile = os.path.join(outdir, label + "_allsky.png")
 logger.info(f"Plotting sky distribution of {Ndraws} points to file: {plotfile}")
 plt.subplot(111, projection="aitoff")
