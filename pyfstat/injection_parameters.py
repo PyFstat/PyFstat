@@ -323,7 +323,7 @@ class InjectionParametersGenerator:
         }
 
     def draw_many(self, size) -> dict:
-        """Draw a ``size`` multi-dimensional parameter space point from the given priors.
+        """Draw ``size`` multi-dimensional parameter space points from the given priors.
 
         Parameters
         ----------
