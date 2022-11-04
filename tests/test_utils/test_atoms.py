@@ -1,7 +1,7 @@
 import lalpulsar
 import pytest
 
-from pyfstat.utils.atoms import (
+from pyfstat.utils import (
     copy_FstatAtomVector,
     extract_singleIFOmultiFatoms_from_multiAtoms,
 )
