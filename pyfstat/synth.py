@@ -152,23 +152,27 @@ class Synthesizer(BaseSearchClass):
     def synth_candidates(
         self, numDraws=1, keep_params=False, keep_FstatMaps=False, keep_atoms=False
     ):
-        self.detStats = {
+        candidates = {
             stat: np.repeat(np.nan, numDraws) for stat in self.stats_to_compute
         }
-        self.injParams = []
-        self.FstatMaps = []
-        self.atoms = []
+        candidates["FstatMaps"] = []
+        candidates["atoms"] = []
         logger.info(f"Drawing {numDraws} F-stats with h0={self.h0}.")
         for n in range(numDraws):
             detStats, params, FstatMap, atoms = self.synth_one_candidate()
             for stat in self.stats_to_compute:
-                self.detStats[stat][n] = detStats[stat]
+                candidates[stat][n] = detStats[stat]
             if keep_params:
-                self.injParams.append(params)
+                if n == 0:
+                    for key in params.keys():
+                        candidates[key] = np.repeat(np.nan, numDraws)
+                for key, val in params.items():
+                    candidates[key][n] = val
             if keep_FstatMaps:
-                self.FstatMaps.append(FstatMap)
+                candidates["FstatMaps"].append(FstatMap)
             if keep_atoms:
-                self.atoms.append(atoms)
+                candidates["atoms"].append(atoms)
+        return candidates
 
     def synth_one_candidate(self):
         injParamsDrawn = (

@@ -56,16 +56,16 @@ def test_synth_CW(timestamps, h0, detectors="H1", numDraws=1000):
     twoF_from_snr2, twoF_stdev_from_snr2 = snr.compute_twoF(**signal_params)
     logging.info(f"expected twoF: {twoF_from_snr2}")
 
-    synth.synth_candidates(numDraws=numDraws, keep_params=True)
-    twoF = synth.detStats["maxTwoF"][0]
+    cands = synth.synth_candidates(numDraws=numDraws, keep_params=True)
+    twoF = cands["maxTwoF"][0]
     logging.info(f"first draw of 2F: {twoF}")
     assert twoF > 0
-    meanTwoF = np.mean(synth.detStats["maxTwoF"])
+    meanTwoF = np.mean(cands["maxTwoF"])
     logging.info(f"mean over {numDraws} draws of 2F: {meanTwoF}")
     assert pytest.approx(meanTwoF, rel=0.05) == twoF_from_snr2
-    assert len(np.unique([par["snr"] for par in synth.injParams])) == 1
+    assert len(np.unique(cands["snr"])) == 1
     assert np.allclose(
-        [synth.injParams[n]["h0"] for n in range(numDraws)],
+        [cands["h0"][n] for n in range(numDraws)],
         h0,
         rtol=1e-9,
         atol=0,
