@@ -44,10 +44,7 @@ class Synthesizer(BaseSearchClass):
         randSeed=0,
         timestamps=None,
         signalOnly=False,
-        twoF=False,
-        BSGL=False,
-        maxTwoF=False,
-        BtSG=False,
+        detstats=[],
     ):
         """
         Parameters
@@ -99,8 +96,12 @@ class Synthesizer(BaseSearchClass):
             and with `noiseSFTs`.
         signalOnly: bool
             Generate pure signal without noise?
-        twoF, BSGL, maxTwoF, BtSG: bool
-            Detection statistics to compute
+        detstats: list
+            Detection statistics to compute.
+            See :fuc:`~pyfstat.utils.parse_detstats`
+            for the supported format.
+            For details of supported `BSGL` parameters,
+            see :func:`~pyfstat.utils.get_BSGL_setup`.
         """
         self.rng = lal.gsl_rng("mt19937", self.randSeed)
         dets = DetectorStates()
@@ -109,6 +110,7 @@ class Synthesizer(BaseSearchClass):
             self.Tsft,
             self.detectors,
         )
+        self.numDetectors = self.multiDetStates.length
         # FIXME: should this really be done at init time, or at synth time?
         self.ampPrior = self._init_amplitude_prior()
         # FIXME: handle these separately
@@ -127,9 +129,14 @@ class Synthesizer(BaseSearchClass):
         self.transientInjectRange.t0Band = self.injectWindow_t0Band
         self.transientInjectRange.tau = self.injectWindow_tau
         self.transientInjectRange.tauBand = self.injectWindow_tauBand
-        self.stats_to_compute = [
-            stat for stat in ["twoF", "BSGL", "maxTwoF", "BtSG"] if getattr(self, stat)
-        ]
+        self.detstats, detstat_params = utils.parse_detstats(self.detstats)
+        BSGL = utils.translate_detstats("BSGL")
+        if BSGL in self.detstats:
+            self.BSGLSetup = utils.get_BSGL_setup(
+                numDetectors=self.numDetectors,
+                numSegments=1,
+                **detstat_params[BSGL],
+            )
         logger.debug(
             f"Creating output directory {self.outdir} if it does not yet exist..."
         )
@@ -153,15 +160,23 @@ class Synthesizer(BaseSearchClass):
         self, numDraws=1, keep_params=False, keep_FstatMaps=False, keep_atoms=False
     ):
         candidates = {
-            stat: np.repeat(np.nan, numDraws) for stat in self.stats_to_compute
+            stat: np.tile(np.nan, (numDraws, self.numDetectors))
+            if stat == "twoFX"
+            else np.repeat(np.nan, numDraws)
+            for stat in self.detstats
         }
-        candidates["FstatMaps"] = []
-        candidates["atoms"] = []
+        if keep_FstatMaps:
+            candidates["FstatMaps"] = []
+        if keep_atoms:
+            candidates["atoms"] = []
         logger.info(f"Drawing {numDraws} F-stats with h0={self.h0}.")
         for n in range(numDraws):
             detStats, params, FstatMap, atoms = self.synth_one_candidate()
-            for stat in self.stats_to_compute:
-                candidates[stat][n] = detStats[stat]
+            for key, val in detStats.items():
+                if key == "twoFX":
+                    candidates[key][n, :] = val[: self.numDetectors]
+                else:
+                    candidates[key][n] = val
             if keep_params:
                 if n == 0:
                     for key in params.keys():
@@ -196,24 +211,39 @@ class Synthesizer(BaseSearchClass):
             multiNoiseWeights=None,
         )
         injParamsDict = self._InjParams_t_to_dict(injParamsDrawn)
-        windowRange = self.transientInjectRange  # FIXME
-        # FIXME support pycuda version
-        FstatMap = lalpulsar.ComputeTransientFstatMap(
-            multiAtoms, windowRange, useFReg=False
-        )
-        if self.signalOnly:
-            FstatMap.maxF += 2
+        # FIXME support pycuda version of ComputeTransientFstatMap
         detStats = {}
-        # if "twoF" in self.stats_to_compute:
-        # FIXME: adapt from computeFtotal in lalpulsar_synthesizeTransientStats
-        # detStats["twoF"] =
-        # if "BSGL" in self.stats_to_compute:
-        # FIXME: adapt from lalpulsar_synthesizeLVStats
-        # detStats["log10BSGL"] =
-        if "maxTwoF" in self.stats_to_compute:
+        BSGL = utils.translate_detstats("BSGL")
+        BtSG = utils.translate_detstats("BtSG")
+        if "twoF" in self.detstats or BSGL in self.detstats:
+            detStats["twoF"] = lalpulsar.ComputeFstatFromAtoms(multiAtoms, -1)
+        if BSGL in self.detstats:
+            detStats["twoFX"] = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
+            detStats["twoFX"][: self.numDetectors] = [
+                lalpulsar.ComputeFstatFromAtoms(multiAtoms, X)
+                for X in range(self.numDetectors)
+            ]
+            detStats[BSGL] = lalpulsar.ComputeBSGL(
+                detStats["twoF"], detStats["twoFX"], self.BSGLSetup
+            )
+        if "maxTwoF" in self.detstats or BtSG in self.detstats:
+            transientWindowRange = self.transientInjectRange  # FIXME
+            FstatMap = lalpulsar.ComputeTransientFstatMap(
+                multiAtoms, transientWindowRange, useFReg=False
+            )
+            if self.signalOnly:
+                FstatMap.maxF += 2
+        if "maxTwoF" in self.detstats:
             detStats["maxTwoF"] = 2 * FstatMap.maxF
-        if "BtSG" in self.stats_to_compute:
-            detStats["lnBtSG"] = lalpulsar.ComputeTransientBstat(windowRange, FstatMap)
+        if BtSG in self.detstats:
+            detStats[BtSG] = lalpulsar.ComputeTransientBstat(
+                transientWindowRange, FstatMap
+            )
+            if self.signalOnly:
+                detStats[BtSG] += 2
+        for stat in self.detstats:
+            if stat not in detStats.keys():
+                raise RuntimeError(f"Sorry, we somehow forgot to compute `{stat}`!")
         return detStats, injParamsDict, FstatMap, multiAtoms
 
     def _InjParams_t_to_dict(self, paramsStruct):

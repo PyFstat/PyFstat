@@ -1,4 +1,5 @@
 import logging
+from typing import Tuple
 
 import lalpulsar
 import numpy as np
@@ -6,6 +7,89 @@ from numpy.typing import ArrayLike
 from scipy.special import gammaincc
 
 logger = logging.getLogger(__name__)
+
+
+def parse_detstats(detstats: list) -> Tuple[list, dict]:
+    """Parse detection statistics and, if required, their parameters.
+
+    Entries in the list input can be either a single string
+    (currently supported:
+    twoF, twoFX, maxTwoF, BtSG)
+    or a single-item dictionary where the key is the statistic name
+    (currently supported: BSGL)
+    and the value is a dictionary of keyword arguments
+    further defining the statistic.
+    Example:
+    ``detstats=["twoF", {"BSGL": {"Fstar0sc": 15}]}``
+
+    Parameters
+    ----------
+    detstats:
+        The list of statistics,
+        optionally including parameters.
+
+    Returns
+    -------
+    detstats_parsed:
+        A list of detection statistics names only/
+    params:
+        A dictionary of statistics with parameters,
+        with each key matching a `detstats_parsed` entry
+        and each value a dictionary of parameters.
+    """
+    detstaterr = "Entries of `detstats` list must be keys or single-item dicts."
+    detstats_parsed = []
+    params = {}
+    for stat in detstats:
+        if isinstance(stat, str):
+            if stat in ["BSGL", "log10BSGL"]:
+                raise ValueError(
+                    "For BSGL statistic, please pass extra parameters,"
+                    " at least `'BSGL': {'Fstar0sc': 15}`."
+                    " See pyfstat.utils.get_BSGL_setup."
+                )
+            detstats_parsed.append(translate_detstats(stat))
+        elif isinstance(stat, dict):
+            if len(stat) > 1:
+                raise ValueError(detstaterr)
+            statname = list(stat.keys())[0]
+            detstats_parsed.append(translate_detstats(statname))
+            if detstats_parsed[-1] == translate_detstats("BSGL"):
+                params[detstats_parsed[-1]] = list(stat.values())[0]
+        else:
+            raise ValueError(detstaterr)
+    if translate_detstats("BSGL") in detstats_parsed:
+        if "twoFX" not in detstats_parsed:
+            detstats_parsed.append("twoFX")
+        if "Fstar0sc" not in params[translate_detstats("BSGL")].keys():
+            raise ValueError("BSGL requires the `Fstar0sc` parameter.")
+    return detstats_parsed, params
+
+
+def translate_detstats(key: str) -> str:
+    """Convert detection statistic input keys into more explicit output keys.
+
+    For example, we specify which base the logarithm of a Bayes factor takes.
+
+    Parameters
+    ----------
+    key:
+        The detection statistic name to translate.
+
+    Returns
+    -------
+    translated_key:
+        The translated key, if found in translation dictionary,
+        or else the unmodified key.
+    """
+    translation = {
+        "BtSG": "lnBtSG",
+        "BSGL": "log10BSGL",
+    }
+    if key in translation:
+        return translation[key]
+    else:
+        return key
 
 
 def get_BSGL_setup(

@@ -17,8 +17,8 @@ def timestamps():
 
 
 @pytest.mark.parametrize("h0", [0, 1])
-# @pytest.mark.parametrize("detectors", ["H1", "H1,L1"])
-def test_synth_CW(timestamps, h0, detectors="H1", numDraws=1000):
+@pytest.mark.parametrize("detectors", ["H1", "H1,L1"])
+def test_synth_CW(timestamps, h0, detectors, numDraws=1000):
 
     signal_params = {
         "h0": h0,
@@ -28,6 +28,14 @@ def test_synth_CW(timestamps, h0, detectors="H1", numDraws=1000):
         "Alpha": 0,
         "Delta": 0,
     }
+
+    detstats = [
+        "twoF",
+        "maxTwoF",
+        "BtSG",
+    ]
+    if len(detectors.split(",")) >= 2:
+        detstats.append({"BSGL": {"Fstar0sc": 15}})
 
     synth = pyfstat.Synthesizer(
         label="Test",
@@ -39,7 +47,7 @@ def test_synth_CW(timestamps, h0, detectors="H1", numDraws=1000):
         transientTau=timestamps[-1] - timestamps[0],
         tstart=timestamps[0],
         randSeed=0,
-        maxTwoF=True,
+        detstats=detstats,
     )
 
     params_pfs = signal_params.copy()
@@ -70,6 +78,7 @@ def test_synth_CW(timestamps, h0, detectors="H1", numDraws=1000):
         rtol=1e-9,
         atol=0,
     )
+    # FIXME: add more tests of other parameters and detstats
 
     if os.path.isdir(synth.outdir):
         shutil.rmtree(synth.outdir)
