@@ -231,7 +231,7 @@ class Synthesizer(BaseSearchClass):
             "psi": paramsStruct.ampParams.psi,
             "snr": paramsStruct.SNR,
         }
-        paramsDict["h0"], paramsDict["cosi"] = utils.convert_aCross_aPlus_to_h0_cosi(
+        paramsDict["h0"], paramsDict["cosi"] = utils.convert_aPlus_aCross_to_h0_cosi(
             aPlus=paramsDict["aPlus"], aCross=paramsDict["aCross"]
         )
         return paramsDict
