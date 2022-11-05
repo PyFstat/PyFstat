@@ -13,8 +13,6 @@ from weakref import finalize
 import lal
 import lalpulsar
 import numpy as np
-import scipy.optimize
-import scipy.special
 
 import pyfstat.tcw_fstat_map_funcs as tcw
 import pyfstat.utils as utils
@@ -711,29 +709,21 @@ class ComputeFstat(BaseSearchClass):
         if self.BSGL:
             logger.info("Initialising BSGL")
             self.log10BSGL = np.nan
-            # Tuning parameters - to be reviewed
-            # We use a fixed Fstar0 for coherent searches,
-            # and recompute it from a fixed p-value for the semicoherent case.
+            # FIXME: we should allow user input of these tuning parameters.
+            # Currently we use a fixed Fstar0 for coherent searches,
+            # and recompute it from a fixed p-value for the semicoherent case;
+            # default agnostic oLGX, and always with log correction term.
             nsegs_eff = max([getattr(self, "nsegs", 1), getattr(self, "nglitch", 1)])
             if nsegs_eff > 1:
-                p_val_threshold = 1e-6
-                Fstar0s = np.linspace(0, 1000, 10000)
-                p_vals = scipy.special.gammaincc(2 * nsegs_eff, Fstar0s)
-                self.Fstar0 = Fstar0s[np.argmin(np.abs(p_vals - p_val_threshold))]
-                if self.Fstar0 == Fstar0s[-1]:
-                    raise ValueError("Max Fstar0 exceeded")
+                Fstar0sc = utils.compute_Fstar0sc_from_p_val_threshold(
+                    p_val_threshold=1e-6, numSegments=nsegs_eff
+                )
             else:
-                self.Fstar0 = 15.0
-            logger.info("Using Fstar0 of {:1.2f}".format(self.Fstar0))
-            # assume uniform per-detector prior line-vs-Gaussian odds
-            self.oLGX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
-            self.oLGX[: self.numDetectors] = 1.0 / self.numDetectors
-            self.BSGLSetup = lalpulsar.CreateBSGLSetup(
+                Fstar0sc = 15
+            self.BSGLSetup = utils.get_BSGL_setup(
                 numDetectors=self.numDetectors,
-                Fstar0sc=self.Fstar0,
-                oLGX=self.oLGX,
-                useLogCorrection=True,
-                numSegments=getattr(self, "nsegs", 1),
+                Fstar0sc=Fstar0sc,
+                numSegments=nsegs_eff,
             )
 
         if self.transientWindowType:

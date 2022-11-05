@@ -15,6 +15,7 @@ from .converting import (
     gps_to_datestr_utc,
     parse_list_of_numbers,
 )
+from .detstats import compute_Fstar0sc_from_p_val_threshold, get_BSGL_setup
 from .ephemeris import get_ephemeris_files
 from .formatting import get_doppler_params_output_format, round_to_n, texify_float
 from .gsl import convert_array_to_gsl_matrix
