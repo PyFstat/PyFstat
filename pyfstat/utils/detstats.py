@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple
+from typing import Sequence, Tuple, Union
 
 import lalpulsar
 import numpy as np
@@ -9,24 +9,23 @@ from scipy.special import gammaincc
 logger = logging.getLogger(__name__)
 
 
-def parse_detstats(detstats: list) -> Tuple[list, dict]:
-    """Parse detection statistics and, if required, their parameters.
-
-    Entries in the list input can be either a single string
-    (currently supported:
-    twoF, twoFX, maxTwoF, BtSG)
-    or a single-item dictionary where the key is the statistic name
-    (currently supported: BSGL)
-    and the value is a dictionary of keyword arguments
-    further defining the statistic.
-    Example:
-    ``detstats=["twoF", {"BSGL": {"Fstar0sc": 15}}]``
+def parse_detstats(detstats: Sequence[Union[str, dict]]) -> Tuple[list, dict]:
+    """Parse a requested list of detection statistics and, if required, their parameters.
 
     Parameters
     ----------
     detstats:
         The list of statistics,
         optionally including parameters.
+        Each entry in the input can be either a single string
+        (currently supported:
+        twoF, twoFX, maxTwoF, BtSG)
+        or a single-item dictionary where the key is the statistic name
+        (currently supported: BSGL)
+        and the value is a dictionary of keyword arguments
+        further defining the statistic.
+        Example:
+        ``detstats=["twoF", {"BSGL": {"Fstar0sc": 15}}]``
 
     Returns
     -------

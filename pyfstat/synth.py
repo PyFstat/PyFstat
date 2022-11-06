@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Sequence, Union
 
 import lal
 import lalpulsar
@@ -19,7 +20,9 @@ class Synthesizer(BaseSearchClass):
       drawn from their respective distributions,
       assuming Gaussian noise, and drawing signal parameters from their (given) priors.
     * Can also return signal parameters, `F`-stat atoms and transient `F`-stat maps.
-    * Python port of ``lalpulsar_synthesizeTransientStats`` and its siblings.
+    * Python port of
+      `lalpulsar_synthesizeTransientStats <https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/synthesize_transient_stats_8c.html>`_
+      and its siblings.
     * See appendix of PGM2011 [ https://arxiv.org/abs/1104.1704 ] for
       the underlying algorithm.
     """
@@ -27,67 +30,67 @@ class Synthesizer(BaseSearchClass):
     @utils.initializer
     def __init__(
         self,
-        label,
-        outdir,
-        tstart=None,
-        duration=None,
-        Alpha=None,
-        Delta=None,
-        h0=None,
-        cosi=None,
-        psi=0.0,
-        phi=0.0,
-        Tsft=1800,
-        detectors=None,
-        earth_ephem=None,
-        sun_ephem=None,
-        transientWindowType="none",
-        transientStartTime=None,
-        transientTau=None,
-        randSeed=0,
-        timestamps=None,
-        signalOnly=False,
-        detstats=[],
+        label: str,
+        outdir: str,
+        tstart: int = None,
+        duration: int = None,
+        Alpha: float = None,
+        Delta: float = None,
+        h0: float = None,
+        cosi: float = None,
+        psi: float = 0.0,
+        phi: float = 0.0,
+        Tsft: int = 1800,
+        detectors: str = None,
+        earth_ephem: str = None,
+        sun_ephem: str = None,
+        transientWindowType: str = "none",
+        transientStartTime: int = None,
+        transientTau: int = None,
+        randSeed: int = 0,
+        timestamps: Union[str, dict] = None,
+        signalOnly: bool = False,
+        detstats: Sequence[Union[str, dict]] = [],
     ):
         """
         Parameters
         ----------
-        label: string
+        label:
             A human-readable label to be used in naming the output files.
-        outdir: str
+        outdir:
             The directory where files are written to.
             Default: current working directory.
-        tstart: int
+        tstart:
             Starting GPS epoch of the data set.
             NOTE: mutually exclusive with `timestamps`.
-        duration: int
+        duration:
             Duration (in GPS seconds) of the total data set.
             NOTE: mutually exclusive with `timestamps`.
-        Alpha, Delta, h0, cosi, psi, phi: float or None
+        Alpha, Delta, h0, cosi, psi, phi:
             Additional frequency evolution and amplitude parameters for a signal.
             If `h0=None` or `h0=0`, these are all ignored.
             If `h0>0`, then at least `[Alpha,Delta,cosi]` need to be set explicitly.
-        Tsft: int
+        Tsft:
             The SFT duration in seconds.
             Will be ignored if `noiseSFTs` are given.
-        detectors: str or None
+        detectors:
             Comma-separated list of detectors to generate data for.
-        earth_ephem, sun_ephem: str or None
+        earth_ephem, sun_ephem:
             Paths of the two files containing positions of Earth and Sun.
             If None, will check standard sources as per
             utils.get_ephemeris_files().
-        transientWindowType: str
+        transientWindowType:
             If `none`, a fully persistent CW signal is simulated.
             If `rect` or `exp`, a transient signal with the corresponding
             amplitude evolution is simulated.
-        transientStartTime: int or None
+        transientStartTime:
             Start time for a transient signal.
-        transientTau: int or None
+        transientTau:
             Duration (`rect` case) or decay time (`exp` case) of a transient signal.
-        randSeed: int
+        randSeed:
             Optionally fix the random seed of Gaussian noise generation
             for reproducibility. Default of `0` means no fixed seed.
-        timestamps: str or dict
+        timestamps:
             Dictionary of timestamps (each key must refer to a detector),
             list of timestamps (`detectors` should be set),
             or comma-separated list of per-detector timestamps files
@@ -97,14 +100,14 @@ class Synthesizer(BaseSearchClass):
             WARNING: In that last case, order must match that of `detectors`!
             NOTE: mutually exclusive with [`tstart`,`duration`]
             and with `noiseSFTs`.
-        signalOnly: bool
+        signalOnly:
             Generate pure signal without noise?
-        detstats: list
+        detstats:
             Detection statistics to compute.
-            See :func:`~pyfstat.utils.parse_detstats`
+            See :func:`pyfstat.utils.detstats.parse_detstats`
             for the supported format.
             For details of supported `BSGL` parameters,
-            see :func:`~pyfstat.utils.get_BSGL_setup`.
+            see :func:`pyfstat.utils.detstats.get_BSGL_setup`.
         """
         self.rng = lal.gsl_rng("mt19937", self.randSeed)
         dets = DetectorStates()
