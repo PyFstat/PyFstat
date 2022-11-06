@@ -90,6 +90,14 @@ pyfstat.snr module
    :undoc-members:
    :show-inheritance:
 
+pyfstat.synth module
+--------------------
+
+.. automodule:: pyfstat.synth
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pyfstat.tcw\_fstat\_map\_funcs module
 -------------------------------------
 

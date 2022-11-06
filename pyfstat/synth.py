@@ -13,12 +13,15 @@ logger = logging.getLogger(__name__)
 
 
 class Synthesizer(BaseSearchClass):
-    """Efficiently generate lots of F-statistic values and derived statistics.
+    """Efficiently generate lots of detection statistics samples under Gaussian noise.
 
-    * Generate N samples of detection statistics drawn from their respective distributions,
+    * Generate samples of detection statistics, e.g. the `F`-statistic,
+      drawn from their respective distributions,
       assuming Gaussian noise, and drawing signal parameters from their (given) priors.
-    * Python port of lalpulsar_synthesizeTransientStats and its siblings.
-    * See appendix of PGM2011 [ https://arxiv.org/abs/1104.1704 ] for details.
+    * Can also return signal parameters, `F`-stat atoms and transient `F`-stat maps.
+    * Python port of ``lalpulsar_synthesizeTransientStats`` and its siblings.
+    * See appendix of PGM2011 [ https://arxiv.org/abs/1104.1704 ] for
+      the underlying algorithm.
     """
 
     @utils.initializer
@@ -33,7 +36,7 @@ class Synthesizer(BaseSearchClass):
         h0=None,
         cosi=None,
         psi=0.0,
-        phi=0,
+        phi=0.0,
         Tsft=1800,
         detectors=None,
         earth_ephem=None,
@@ -98,7 +101,7 @@ class Synthesizer(BaseSearchClass):
             Generate pure signal without noise?
         detstats: list
             Detection statistics to compute.
-            See :fuc:`~pyfstat.utils.parse_detstats`
+            See :func:`~pyfstat.utils.parse_detstats`
             for the supported format.
             For details of supported `BSGL` parameters,
             see :func:`~pyfstat.utils.get_BSGL_setup`.
