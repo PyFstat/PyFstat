@@ -18,8 +18,8 @@ from .converting import (
 from .detstats import (
     compute_Fstar0sc_from_p_val_threshold,
     get_BSGL_setup,
+    get_canonical_detstat_name,
     parse_detstats,
-    translate_detstats,
 )
 from .ephemeris import get_ephemeris_files
 from .formatting import get_doppler_params_output_format, round_to_n, texify_float

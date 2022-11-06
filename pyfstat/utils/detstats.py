@@ -8,6 +8,20 @@ from scipy.special import gammaincc
 
 logger = logging.getLogger(__name__)
 
+"""Supported detection statistics and synonyms for them
+The key is the canonical name to be used internally and in outputs;
+the listed synonyms are allowed inputs
+(e.g. to be parsed by :func:`~pyfstat.utils.detstats.parse_detstats`).
+Lookup can be performed with :func:`~pyfstat.utils.detstats.get_canonical_detstat_name`.
+"""
+detstat_synonyms = {
+    "twoF": ["2F"],
+    "twoFX": ["2FX"],
+    "maxTwoF": ["max2F"],
+    "lnBtSG": ["BtSG", "logBtSG", "logBstat"],
+    "log10BSGL": ["BSGL", "logBSGL"],
+}
+
 
 def parse_detstats(detstats: Sequence[Union[str, dict]]) -> Tuple[list, dict]:
     """Parse a requested list of detection statistics and, if required, their parameters.
@@ -41,54 +55,56 @@ def parse_detstats(detstats: Sequence[Union[str, dict]]) -> Tuple[list, dict]:
     params = {}
     for stat in detstats:
         if isinstance(stat, str):
-            if stat in ["BSGL", "log10BSGL"]:
+            if stat in ["BSGL", get_canonical_detstat_name("BSGL")]:
                 raise ValueError(
                     "For BSGL statistic, please pass extra parameters,"
                     " at least `'BSGL': {'Fstar0sc': 15}`."
                     " See pyfstat.utils.get_BSGL_setup."
                 )
-            detstats_parsed.append(translate_detstats(stat))
+            detstats_parsed.append(get_canonical_detstat_name(stat))
         elif isinstance(stat, dict):
             if len(stat) > 1:
                 raise ValueError(detstaterr)
             statname = list(stat.keys())[0]
-            detstats_parsed.append(translate_detstats(statname))
-            if detstats_parsed[-1] == translate_detstats("BSGL"):
+            detstats_parsed.append(get_canonical_detstat_name(statname))
+            if detstats_parsed[-1] == get_canonical_detstat_name("BSGL"):
                 params[detstats_parsed[-1]] = list(stat.values())[0]
         else:
             raise ValueError(detstaterr)
-    if translate_detstats("BSGL") in detstats_parsed:
+    if get_canonical_detstat_name("BSGL") in detstats_parsed:
         if "twoFX" not in detstats_parsed:
             detstats_parsed.append("twoFX")
-        if "Fstar0sc" not in params[translate_detstats("BSGL")].keys():
+        if "Fstar0sc" not in params[get_canonical_detstat_name("BSGL")].keys():
             raise ValueError("BSGL requires the `Fstar0sc` parameter.")
     return detstats_parsed, params
 
 
-def translate_detstats(key: str) -> str:
-    """Convert detection statistic input keys into more explicit output keys.
+def get_canonical_detstat_name(statname: str) -> str:
+    """
+    Normalize detection statistic names to our canonical choices.
 
+    Used to convert abbreviated detection statistic input keys into more explicit
+    keys as used internally and for output.
     For example, we specify which base the logarithm of a Bayes factor takes.
 
     Parameters
     ----------
-    key:
-        The detection statistic name to translate.
+    statname:
+        The detection statistic name to make canonical.
 
     Returns
     -------
-    translated_key: str
-        The translated key, if found in translation dictionary,
-        or else the unmodified key.
+    canonical_name: str
+        The canonical name,
+        if input `statname` can be matched.
     """
-    translation = {
-        "BtSG": "lnBtSG",
-        "BSGL": "log10BSGL",
-    }
-    if key in translation:
-        return translation[key]
+    if statname in detstat_synonyms.keys():
+        return statname
     else:
-        return key
+        for key, val in detstat_synonyms.items():
+            if statname in val:
+                return key
+        raise ValueError(f"Unsupported detection statistic: {statname}")
 
 
 def get_BSGL_setup(

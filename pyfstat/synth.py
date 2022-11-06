@@ -136,7 +136,7 @@ class Synthesizer(BaseSearchClass):
         self.transientInjectRange.tau = self.injectWindow_tau
         self.transientInjectRange.tauBand = self.injectWindow_tauBand
         self.detstats, detstat_params = utils.parse_detstats(self.detstats)
-        BSGL = utils.translate_detstats("BSGL")
+        BSGL = utils.get_canonical_detstat_name("BSGL")
         if BSGL in self.detstats:
             self.BSGLSetup = utils.get_BSGL_setup(
                 numDetectors=self.numDetectors,
@@ -219,8 +219,8 @@ class Synthesizer(BaseSearchClass):
         injParamsDict = self._InjParams_t_to_dict(injParamsDrawn)
         # FIXME support pycuda version of ComputeTransientFstatMap
         detStats = {}
-        BSGL = utils.translate_detstats("BSGL")
-        BtSG = utils.translate_detstats("BtSG")
+        BSGL = utils.get_canonical_detstat_name("BSGL")
+        BtSG = utils.get_canonical_detstat_name("BtSG")
         if "twoF" in self.detstats or BSGL in self.detstats:
             detStats["twoF"] = lalpulsar.ComputeFstatFromAtoms(multiAtoms, -1)
         if BSGL in self.detstats:
