@@ -39,6 +39,14 @@ pyfstat.utils.converting module
    :undoc-members:
    :show-inheritance:
 
+pyfstat.utils.detstats module
+-----------------------------
+
+.. automodule:: pyfstat.utils.detstats
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pyfstat.utils.ephemeris module
 ------------------------------
 

@@ -20,7 +20,7 @@ def parse_detstats(detstats: list) -> Tuple[list, dict]:
     and the value is a dictionary of keyword arguments
     further defining the statistic.
     Example:
-    ``detstats=["twoF", {"BSGL": {"Fstar0sc": 15}]}``
+    ``detstats=["twoF", {"BSGL": {"Fstar0sc": 15}}]``
 
     Parameters
     ----------
@@ -31,7 +31,7 @@ def parse_detstats(detstats: list) -> Tuple[list, dict]:
     Returns
     -------
     detstats_parsed:
-        A list of detection statistics names only/
+        A list of detection statistics names only.
     params:
         A dictionary of statistics with parameters,
         with each key matching a `detstats_parsed` entry
@@ -78,7 +78,7 @@ def translate_detstats(key: str) -> str:
 
     Returns
     -------
-    translated_key:
+    translated_key: str
         The translated key, if found in translation dictionary,
         or else the unmodified key.
     """
@@ -106,7 +106,7 @@ def get_BSGL_setup(
     ready to use in ``lalpulsar.ComputeBSGL()``.
 
     Parameters
-    -------
+    ----------
     numDetectors:
         Number of detectors.
     Fstar0sc:
@@ -123,7 +123,7 @@ def get_BSGL_setup(
         Include log-term correction (slower) or not (faster, less accurate)?
     Returns
     -------
-    BSGLSetup:
+    BSGLSetup: lalpulsar.BSGLSetup
         The initialised setup struct.
     """
     if numDetectors < 2:
@@ -179,7 +179,7 @@ def compute_Fstar0sc_from_p_val_threshold(
     returning the Fstar0sc value closest to reproducing the requested p-value.
 
     Parameters
-    -------
+    ----------
     p_val_threshold:
         Threshold on p-value.
     numSegments:
@@ -190,7 +190,7 @@ def compute_Fstar0sc_from_p_val_threshold(
         Number of steps to try in the numerical inversion.
     Returns
     -------
-    Fstar0sc:
+    Fstar0sc: float
         The (semi-coherent) prior transition-scale parameter.
     """
 
