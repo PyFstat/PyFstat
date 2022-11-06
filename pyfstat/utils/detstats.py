@@ -26,6 +26,9 @@ detstat_synonyms = {
 def parse_detstats(detstats: Sequence[Union[str, dict]]) -> Tuple[list, dict]:
     """Parse a requested list of detection statistics and, if required, their parameters.
 
+    NOTE: additional statistics required by one of the requested ones may get added,
+    e.g. BSGL automatically adds twoF and twoFX.
+
     Parameters
     ----------
     detstats:
@@ -40,6 +43,8 @@ def parse_detstats(detstats: Sequence[Union[str, dict]]) -> Tuple[list, dict]:
         further defining the statistic.
         Example:
         ``detstats=["twoF", {"BSGL": {"Fstar0sc": 15}}]``
+        If only parameter-free statistics are included,
+        a comma-separated string is also allowed.
 
     Returns
     -------
@@ -50,12 +55,19 @@ def parse_detstats(detstats: Sequence[Union[str, dict]]) -> Tuple[list, dict]:
         with each key matching a `detstats_parsed` entry
         and each value a dictionary of parameters.
     """
+    if not isinstance(detstats, Sequence):
+        raise ValueError("`detstats` must be a list or other Sequence type.")
+    if isinstance(detstats, str):
+        detstats = detstats.split(",")
     detstaterr = "Entries of `detstats` list must be keys or single-item dicts."
     detstats_parsed = []
     params = {}
+    # FIXME: if we ever get more than 1 stat with parameters,
+    # we should implement lookups for their names,
+    # required stats and required parameters.
     for stat in detstats:
         if isinstance(stat, str):
-            if stat in ["BSGL", get_canonical_detstat_name("BSGL")]:
+            if get_canonical_detstat_name(stat) == get_canonical_detstat_name("BSGL"):
                 raise ValueError(
                     "For BSGL statistic, please pass extra parameters,"
                     " at least `'BSGL': {'Fstar0sc': 15}`."
@@ -66,14 +78,21 @@ def parse_detstats(detstats: Sequence[Union[str, dict]]) -> Tuple[list, dict]:
             if len(stat) > 1:
                 raise ValueError(detstaterr)
             statname = list(stat.keys())[0]
+            if not get_canonical_detstat_name(statname) == get_canonical_detstat_name(
+                "BSGL"
+            ):
+                raise ValueError(
+                    f"{statname} does not require parameters, please do not pass a dict for it."
+                )
             detstats_parsed.append(get_canonical_detstat_name(statname))
             if detstats_parsed[-1] == get_canonical_detstat_name("BSGL"):
                 params[detstats_parsed[-1]] = list(stat.values())[0]
         else:
             raise ValueError(detstaterr)
     if get_canonical_detstat_name("BSGL") in detstats_parsed:
-        if "twoFX" not in detstats_parsed:
-            detstats_parsed.append("twoFX")
+        for required_stat in ["twoF", "twoFX"]:
+            if required_stat not in detstats_parsed:
+                detstats_parsed.append(required_stat)
         if "Fstar0sc" not in params[get_canonical_detstat_name("BSGL")].keys():
             raise ValueError("BSGL requires the `Fstar0sc` parameter.")
     return detstats_parsed, params
@@ -208,11 +227,14 @@ def compute_Fstar0sc_from_p_val_threshold(
     Fstar0sc: float
         The (semi-coherent) prior transition-scale parameter.
     """
-
+    if p_val_threshold < 0 or p_val_threshold > 1:
+        raise ValueError("p_val_threshold must be in [0,1]")
+    if maxFstar0 < 0:
+        raise ValueError("maxFstar0 must be >=0")
     Fstar0s = np.linspace(0, maxFstar0, numSteps)
     p_vals = gammaincc(2 * numSegments, Fstar0s)
     Fstar0sc = Fstar0s[np.argmin(np.abs(p_vals - p_val_threshold))]
     if Fstar0sc == Fstar0s[-1]:
-        raise ValueError("Max Fstar0 exceeded")
+        raise RuntimeError("Max Fstar0 exceeded")
     logger.info(f"Using Fstar0sc={Fstar0sc} for BSGL statistic.")
     return Fstar0sc
