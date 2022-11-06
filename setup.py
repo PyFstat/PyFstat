@@ -42,13 +42,14 @@ extras_require = {
         "pre-commit",
     ],
     "docs": [
-        "sphinx==5.1.1",
-        "sphinx_autodoc_typehints==1.19.2",
-        "sphinx_rtd_theme==0.5.1",
+        "sphinx==5.3.0",
+        "sphinx_autodoc_defaultargs==0.1.2",
+        "sphinx_autodoc_typehints==1.19.5",
         "sphinx_gallery==0.11.1",
+        "sphinx_rtd_theme==0.5.1",
         "m2r2==0.3.3",
         "mistune==0.8.4",
-        "Pillow==9.2.0",
+        "Pillow==9.3.0",
     ],
     "pycuda": ["pycuda"],
     "style": [

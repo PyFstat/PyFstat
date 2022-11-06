@@ -38,6 +38,7 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",  # https://github.com/tox-dev/sphinx-autodoc-typehints/issues/15
+    "sphinx_autodoc_defaultargs",  # should be loaded after napoleon
     "sphinx_autodoc_typehints",  # Must import napoleon before typehints
     "sphinx.ext.viewcode",
     "sphinx_gallery.gen_gallery",
@@ -87,3 +88,12 @@ sphinx_gallery_conf = {
     "plot_gallery": "False",  # our examples are slow, so we can't generate plots every time the docs are built
     "line_numbers": True,
 }
+
+# defaultargs options
+rst_prolog = (
+    """
+.. |default| raw:: html
+
+    <div class="default-value-section">"""
+    + ' <span class="default-value-label">Default:</span>'
+)
