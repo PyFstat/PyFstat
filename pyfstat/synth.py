@@ -50,7 +50,7 @@ class Synthesizer(BaseSearchClass):
         randSeed: int = 0,
         timestamps: Union[str, dict] = None,
         signalOnly: bool = False,
-        detstats: Sequence[Union[str, dict]] = [],
+        detstats: Sequence[Union[str, dict]] = None,
     ):
         """
         Parameters
