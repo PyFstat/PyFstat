@@ -42,7 +42,7 @@ def custom_prior(prior_function: Callable) -> Callable:
 
     Returns
     -------
-    out: Callable
+    prior_function: Callable
         Same function as the input function.
     """
 
@@ -100,7 +100,7 @@ def uniform_sky_declination(generator: np.random.Generator, size: int) -> np.nda
 
     Returns
     -------
-    out: np.ndarray
+    declination: np.ndarray
         Declination value distributed
     """
     return np.arcsin(generator.uniform(low=-1.0, high=1.0, size=size))
@@ -311,7 +311,7 @@ class InjectionParametersGenerator:
 
         Returns
         -------
-        out: Dict
+        parameters: Dict
             Dictionary of parameter values (one value each).
             Each key corresponds to that found in ``self.priors``.
         """
@@ -331,7 +331,7 @@ class InjectionParametersGenerator:
 
         Returns
         -------
-        out: Dict
+        parameters: Dict
             Dictionary of arrays. Each key corresponds to that found in ``self.priors``.
             Values are numpy arrays of shape ``size`` as returned by their corresponding method.
         """

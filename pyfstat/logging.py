@@ -86,7 +86,7 @@ def set_up_logger(
 
     Returns
     -------
-    out: logging.Logger
+    logger: logging.Logger
         Configured instance of the ``logging.Logger`` class.
 
     """
