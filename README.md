@@ -228,7 +228,7 @@ Here's what you need to know:
 
   This sets up everything for automated code quality tests (see below)
   to be checked for you at every commit.
-* The github automated tests currently run on `python` [3.8,3.9,3.10]
+* The github automated tests currently run on `python` [3.8,3.9,3.10,3.11]
   and new PRs need to pass all these.
 * You can also run the full test suite locally via `pytest tests/`,
   or run individual tests as explained
