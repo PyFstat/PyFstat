@@ -119,6 +119,8 @@ class Synthesizer(BaseSearchClass):
         self.numDetectors = self.multiDetStates.length
         # FIXME: should this really be done at init time, or at synth time?
         self.ampPrior = self._init_amplitude_prior()
+        # in case of fixed sky position, use buffering for efficiency
+        self.multiAMBuffer = lalpulsar.multiAMBuffer_t()
         # FIXME: handle these separately
         self.injectWindow_type = self.transientWindowType
         self.searchWindow_type = self.transientWindowType
@@ -203,7 +205,6 @@ class Synthesizer(BaseSearchClass):
         skypos.longitude = self.Alpha
         skypos.latitude = self.Delta
         skypos.system = lal.COORDINATESYSTEM_EQUATORIAL
-        multiAMBuffer = lalpulsar.multiAMBuffer_t()
         multiAtoms = lalpulsar.SynthesizeTransientAtoms(
             injParamsOut=injParamsDrawn,
             skypos=skypos,
@@ -211,7 +212,7 @@ class Synthesizer(BaseSearchClass):
             transientInjectRange=self.transientInjectRange,
             multiDetStates=self.multiDetStates,
             SignalOnly=self.signalOnly,
-            multiAMBuffer=multiAMBuffer,
+            multiAMBuffer=self.multiAMBuffer,
             rng=self.rng,
             lineX=-1,
             multiNoiseWeights=None,
