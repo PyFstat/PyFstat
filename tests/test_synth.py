@@ -19,8 +19,9 @@ def timestamps():
 @pytest.mark.parametrize("h0", [0, 1])
 @pytest.mark.parametrize("detectors", ["H1", "H1,L1"])
 def test_synth_CW(timestamps, h0, detectors, numDraws=1000):
+    # def test_synth_CW(timestamps, h0, detectors="H1", numDraws=10):
 
-    signal_params = {
+    priors = {
         "h0": h0,
         "cosi": 0,
         "psi": 0,
@@ -40,7 +41,7 @@ def test_synth_CW(timestamps, h0, detectors, numDraws=1000):
     synth = pyfstat.Synthesizer(
         label="Test",
         outdir="TestData/",
-        **signal_params,
+        priors=priors,
         detectors=detectors,
         timestamps=timestamps,
         transientStartTime=0,
@@ -50,7 +51,7 @@ def test_synth_CW(timestamps, h0, detectors, numDraws=1000):
         detstats=detstats,
     )
 
-    params_pfs = signal_params.copy()
+    params_pfs = priors.copy()
     params_pfs.pop("phi")
     detstates = pyfstat.snr.DetectorStates()
     snr = pyfstat.SignalToNoiseRatio(
@@ -61,7 +62,7 @@ def test_synth_CW(timestamps, h0, detectors, numDraws=1000):
         ),
         assumeSqrtSX=1,
     )
-    twoF_from_snr2, twoF_stdev_from_snr2 = snr.compute_twoF(**signal_params)
+    twoF_from_snr2, twoF_stdev_from_snr2 = snr.compute_twoF(**priors)
     logging.info(f"expected twoF: {twoF_from_snr2}")
 
     cands = synth.synth_candidates(numDraws=numDraws, keep_params=True)

@@ -7,8 +7,7 @@ import lalpulsar
 import numpy as np
 
 import pyfstat.utils as utils
-from pyfstat.core import BaseSearchClass
-from pyfstat.snr import DetectorStates
+from pyfstat import BaseSearchClass, DetectorStates, InjectionParametersGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +24,12 @@ class Synthesizer(BaseSearchClass):
       and its siblings.
     * See appendix of PGM2011 [ https://arxiv.org/abs/1104.1704 ] for
       the underlying algorithm.
+    * ``lalpulsar.SynthesizeTransientAtoms`` has its own internal random draws
+      capabilities for sky positions and amplitude parameters,
+      but instead we use our own ``InjectionParametersGenerator` class
+      and then loop the lalpulsar function over single sets of parameters.
+      This allows for more flexible distributions
+      (basically anything supported by scipy).
     """
 
     @utils.initializer
@@ -32,14 +37,9 @@ class Synthesizer(BaseSearchClass):
         self,
         label: str,
         outdir: str,
+        priors: dict,
         tstart: int = None,
         duration: int = None,
-        Alpha: float = None,
-        Delta: float = None,
-        h0: float = None,
-        cosi: float = None,
-        psi: float = 0.0,
-        phi: float = 0.0,
         Tsft: int = 1800,
         detectors: str = None,
         earth_ephem: str = None,
@@ -66,10 +66,15 @@ class Synthesizer(BaseSearchClass):
         duration:
             Duration (in GPS seconds) of the total data set.
             NOTE: mutually exclusive with `timestamps`.
-        Alpha, Delta, h0, cosi, psi, phi:
-            Additional frequency evolution and amplitude parameters for a signal.
-            If `h0=None` or `h0=0`, these are all ignored.
-            If `h0>0`, then at least `[Alpha,Delta,cosi]` need to be set explicitly.
+        priors:
+            List of priors for parameters [Alpha,Delta,h0,cosi,psi,phi0],
+            to be parsed by
+            :func:`~pyfstat.injection_parameters.InjectionParametersGenerator`.
+            In the simplest case, for fixed values, a minimal example would be
+            ::
+
+            priors = {"Alpha": 0, "Delta": 0, "h0": 0, "cosi": 0, "psi": 0, "phi": 0}
+
         Tsft:
             The SFT duration in seconds.
             Will be ignored if `noiseSFTs` are given.
@@ -90,6 +95,8 @@ class Synthesizer(BaseSearchClass):
         randSeed:
             Optionally fix the random seed of Gaussian noise generation
             for reproducibility. Default of `0` means no fixed seed.
+            The same seed will be passed both to the ``InjectionParametersGenerator``
+            and to lalpulsar for the F-stat atoms generation.
         timestamps:
             Dictionary of timestamps (each key must refer to a detector),
             list of timestamps (`detectors` should be set),
@@ -117,10 +124,16 @@ class Synthesizer(BaseSearchClass):
             self.detectors,
         )
         self.numDetectors = self.multiDetStates.length
-        # FIXME: should this really be done at init time, or at synth time?
-        self.ampPrior = self._init_amplitude_prior()
         # in case of fixed sky position, use buffering for efficiency
         self.multiAMBuffer = lalpulsar.multiAMBuffer_t()
+        self.skypos = lal.SkyPosition()
+        self.skypos.system = lal.COORDINATESYSTEM_EQUATORIAL
+        if isinstance(priors["Alpha"], float) and isinstance(priors["Delta"]):
+            self.skypos.longitude = priors["Alpha"]
+            self.skypos.latitude = priors["Delta"]
+        self.paramsGen = InjectionParametersGenerator(
+            priors=self.priors, seed=self.randSeed
+        )
         # FIXME: handle these separately
         self.injectWindow_type = self.transientWindowType
         self.searchWindow_type = self.transientWindowType
@@ -150,18 +163,18 @@ class Synthesizer(BaseSearchClass):
         )
         os.makedirs(self.outdir, exist_ok=True)
 
-    def _init_amplitude_prior(self):
+    def _set_amplitude_prior(self, injParams):
+        for key, val in injParams.items():
+            logging.info(f"{key}={val}")
         ampPrior = lalpulsar.AmplitudePrior_t()
-        # FIXME handle the various different cases from XLALInitAmplitudePrior()
-        logger.debug(f"self.h0={self.h0} for amp prior")
-        ampPrior.pdf_h0Nat = lalpulsar.CreateSingularPDF1D(self.h0)
-        ampPrior.pdf_cosi = lalpulsar.CreateSingularPDF1D(self.cosi)
-        ampPrior.pdf_psi = lalpulsar.CreateSingularPDF1D(self.psi)
-        ampPrior.pdf_phi0 = lalpulsar.CreateSingularPDF1D(self.phi)
+        ampPrior.pdf_h0Nat = lalpulsar.CreateSingularPDF1D(injParams["h0"])
+        ampPrior.pdf_cosi = lalpulsar.CreateSingularPDF1D(injParams["cosi"])
+        ampPrior.pdf_psi = lalpulsar.CreateSingularPDF1D(injParams["psi"])
+        ampPrior.pdf_phi0 = lalpulsar.CreateSingularPDF1D(injParams["phi"])
         ampPrior.fixedSNR = -1
         # FIXME support this (-1 means don't use, >=0 legal)
         ampPrior.fixRhohMax = False
-        # FIXME support thi
+        # FIXME support this
         return ampPrior
 
     def synth_candidates(
@@ -177,7 +190,7 @@ class Synthesizer(BaseSearchClass):
             candidates["FstatMaps"] = []
         if keep_atoms:
             candidates["atoms"] = []
-        logger.info(f"Drawing {numDraws} F-stats with h0={self.h0}.")
+        logger.info(f"Drawing {numDraws} results.")
         for n in range(numDraws):
             detStats, params, FstatMap, atoms = self.synth_one_candidate()
             for key, val in detStats.items():
@@ -198,17 +211,19 @@ class Synthesizer(BaseSearchClass):
         return candidates
 
     def synth_one_candidate(self):
-        injParamsDrawn = (
+        injParams = self.paramsGen.draw()
+        ampPrior = self._set_amplitude_prior(injParams)
+        injParamsLalpulsar = (
             lalpulsar.InjParams_t()
         )  # output struct, will be filled by lalpulsar call
-        skypos = lal.SkyPosition()
-        skypos.longitude = self.Alpha
-        skypos.latitude = self.Delta
-        skypos.system = lal.COORDINATESYSTEM_EQUATORIAL
+        if injParams["Alpha"] != self.skypos.longitude:
+            self.skypos.longitude = injParams["Alpha"]
+        if injParams["Delta"] != self.skypos.latitude:
+            self.skypos.latitude = injParams["Delta"]
         multiAtoms = lalpulsar.SynthesizeTransientAtoms(
-            injParamsOut=injParamsDrawn,
-            skypos=skypos,
-            AmpPrior=self.ampPrior,
+            injParamsOut=injParamsLalpulsar,
+            skypos=self.skypos,
+            AmpPrior=ampPrior,
             transientInjectRange=self.transientInjectRange,
             multiDetStates=self.multiDetStates,
             SignalOnly=self.signalOnly,
@@ -217,7 +232,7 @@ class Synthesizer(BaseSearchClass):
             lineX=-1,
             multiNoiseWeights=None,
         )
-        injParamsDict = self._InjParams_t_to_dict(injParamsDrawn)
+        injParamsDict = self._InjParams_t_to_dict(injParamsLalpulsar)
         # FIXME support pycuda version of ComputeTransientFstatMap
         detStats = {}
         BSGL = utils.get_canonical_detstat_name("BSGL")
