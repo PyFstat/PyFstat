@@ -3,7 +3,7 @@ import functools
 import logging
 from collections.abc import Mapping
 from inspect import signature
-from typing import Callable, Optional
+from typing import Callable, Dict, Optional
 
 import numpy as np
 from scipy import stats
@@ -42,7 +42,7 @@ def custom_prior(prior_function: Callable) -> Callable:
 
     Returns
     -------
-    prior_function:
+    out: Callable
         Same function as the input function.
     """
 
@@ -84,7 +84,7 @@ isotropic_amplitude_priors = {
 
 
 @custom_prior
-def uniform_sky_declination(generator: np.random.Generator, size: int) -> np.array:
+def uniform_sky_declination(generator: np.random.Generator, size: int) -> np.ndarray:
     """
     Return declination values such that, when paired with right ascension
     values sampled uniformly along [0, 2*pi], the resulting pairs of samples
@@ -100,7 +100,7 @@ def uniform_sky_declination(generator: np.random.Generator, size: int) -> np.arr
 
     Returns
     -------
-    declination:
+    out: np.ndarray
         Declination value distributed
     """
     return np.arcsin(generator.uniform(low=-1.0, high=1.0, size=size))
@@ -213,7 +213,7 @@ class InjectionParametersGenerator:
 
         self._rng = generator or np.random.default_rng(seed)
 
-    def _deprecated_prior_parsing(self, parameter_prior) -> dict:
+    def _deprecated_prior_parsing(self, parameter_prior) -> Dict:
         # FIXME: Will be removed in a future release
         rng_function_name = next(iter(parameter_prior))
         rng_function = getattr(self._rng, rng_function_name)
@@ -306,12 +306,12 @@ class InjectionParametersGenerator:
                 )
                 continue
 
-    def draw(self) -> dict:
+    def draw(self) -> Dict:
         """Draw a single multi-dimensional parameter space point from the given priors.
 
         Returns
         -------
-        injection_parameters:
+        out: Dict
             Dictionary of parameter values (one value each).
             Each key corresponds to that found in ``self.priors``.
         """
@@ -321,7 +321,7 @@ class InjectionParametersGenerator:
             for parameter_name, parameter_prior in self.priors.items()
         }
 
-    def draw_many(self, size) -> dict:
+    def draw_many(self, size) -> Dict:
         """Draw ``size`` multi-dimensional parameter space points from the given priors.
 
         Parameters
@@ -331,7 +331,7 @@ class InjectionParametersGenerator:
 
         Returns
         -------
-        injection_parameters:
+        out: Dict
             Dictionary of arrays. Each key corresponds to that found in ``self.priors``.
             Values are numpy arrays of shape ``size`` as returned by their corresponding method.
         """

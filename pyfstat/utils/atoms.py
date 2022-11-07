@@ -23,7 +23,7 @@ def extract_singleIFOmultiFatoms_from_multiAtoms(
         The detector index for which to extract atoms.
     Returns
     -------
-    singleIFOmultiFatoms:
+    out: lalpulsar.MultiFstatAtomVector
         Length-1 MultiFstatAtomVector with only the data for detector `X`.
     """
     if X >= multiAtoms.length:
