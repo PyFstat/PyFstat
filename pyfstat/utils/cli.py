@@ -1,7 +1,7 @@
 import logging
 import os
 import subprocess
-from typing import Union
+from typing import Optional
 
 import numpy as np
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def run_commandline(
     cl: str, raise_error: bool = True, return_output: bool = False
-) -> Union[subprocess.CompletedProcess, None]:
+) -> Optional[subprocess.CompletedProcess]:
     """Run a string command as a subprocess.
 
     Parameters
@@ -26,7 +26,7 @@ def run_commandline(
 
     Returns
     ----------
-    out:
+    out: subprocess.CompletedProcess or None
         The ```subprocess.CompletedProcess`` of the subprocess
         if ``return_output=True``. ``None`` if ``return_output=False``
         or on  failed execution if ``raise_error=False``.

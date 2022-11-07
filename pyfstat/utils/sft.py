@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import lalpulsar
 import numpy as np
@@ -12,7 +12,7 @@ def get_sft_as_arrays(
     fMin: Optional[float] = None,
     fMax: Optional[float] = None,
     constraints: Optional[lalpulsar.SFTConstraints] = None,
-) -> Tuple[np.ndarray, dict, dict]:
+) -> Tuple[np.ndarray, Dict, Dict]:
 
     """
     Read binary SFT files into NumPy arrays.
@@ -31,14 +31,14 @@ def get_sft_as_arrays(
 
     Returns
     ----------
-    freqs:
+    freqs: np.ndarray
         The frequency bins in each SFT. These will be the same for each SFT,
         so only a single 1D array is returned.
-    times:
+    times: Dict
         The SFT start times as a dictionary of 1D arrays, one for each detector.
         Keys correspond to the official detector names as returned by
         lalpulsar.ListIFOsInCatalog.
-    data:
+    data: Dict
         A dictionary of 2D arrays of the complex Fourier amplitudes of the SFT data
         for each detector in each frequency bin at each timestamp.
         Keys correspond to the official detector names as returned by
