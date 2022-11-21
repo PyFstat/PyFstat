@@ -48,13 +48,12 @@ def test_run_commandline_expected_error_noraise(caplog):
 def test_run_commandline_lal_noerror(caplog):
     # Basic print should come out as INFO
     return_obj = run_commandline("lalpulsar_version", return_output=True)
-    assert return_obj.stderr == ""
     assert return_obj.returncode == 0
     for return_line, (_, log_level, log_message) in zip(
         return_obj.stdout.split("\n"), caplog.record_tuples[1:]
     ):
-        assert log_level == 20
-        assert return_line == log_message
+        if log_level == 20:
+            assert return_line == log_message
 
 
 def test_run_commandline_lal_expected_error(caplog):
