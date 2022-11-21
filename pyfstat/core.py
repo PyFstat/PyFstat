@@ -1649,7 +1649,7 @@ class ComputeFstat(BaseSearchClass):
             plt.close()
         return ax
 
-    def write_atoms_to_file(self, fnamebase=""):
+    def write_atoms_to_file(self, fnamebase="", comments="%%"):
         """Save F-statistic atoms (time-dependent quantities) for a given parameter-space point.
 
         Parameters
@@ -1659,6 +1659,13 @@ class ComputeFstat(BaseSearchClass):
             `{fnamebase}_Fstatatoms_{dopplerName}.dat`
             where `dopplerName` is a canonical lalpulsar formatting of the
             'Doppler' parameter space point (frequency-evolution parameters).
+        comments: str
+            Comments marker character(s) to be prepended to header lines.
+            Note that the column headers line
+            (last line of the header before the atoms data)
+            is printed by lalpulsar, with `%%` as comments marker,
+            so (different from most other PyFstat functions)
+            the default here is `%%` too.
         """
         multiFatoms = getattr(self.FstatResults, "multiFatoms", None)
         if multiFatoms and multiFatoms[0]:
@@ -1667,7 +1674,7 @@ class ComputeFstat(BaseSearchClass):
             fnameAtoms = f"{fnamebase}_Fstatatoms_{dopplerName}.dat"
             fo = lal.FileOpen(fnameAtoms, "w")
             for hline in self.output_file_header:
-                lal.FilePuts(f"# {hline}\n", fo)
+                lal.FilePuts(f"{comments} {hline}\n", fo)
             lalpulsar.write_MultiFstatAtoms_to_fp(fo, multiFatoms[0])
             del fo  # instead of lal.FileClose() which is not SWIG-exported
         else:
