@@ -1004,17 +1004,19 @@ class TransientGridSearch(GridSearch):
         self.output_keys.append("twoF")
         if self.search.singleFstats:
             self.output_keys += [f"twoF{IFO}" for IFO in self.search.detector_names]
-        self.output_keys.append("maxTwoF")
+        if self.transientWindowType:
+            self.output_keys.append("maxTwoF")
         if hasattr(self.search, "twoFXatMaxTwoF"):
             self.output_keys += [
                 f"twoF{IFO}atMaxTwoF" for IFO in self.search.detector_names
             ]
         if self.detstat != "maxTwoF":
             self.output_keys.append(self.detstat)
-        # for consistency below, t0/tau must come after detstat
-        # they are not included in self.search_keys because the main Fstat
-        # code does not loop over them
-        self.output_keys += ["t0", "tau"]
+        if self.transientWindowType:
+            # for consistency below, t0/tau must come after detstat
+            # they are not included in self.search_keys because the main Fstat
+            # code does not loop over them
+            self.output_keys += ["t0", "tau"]
 
     def _initiate_search_object(self):
         logger.info("Setting up search object")
@@ -1101,7 +1103,8 @@ class TransientGridSearch(GridSearch):
             thisCand.append(self.search.twoF)
             if self.search.singleFstats:
                 thisCand += list(self.search.twoFX[: self.search.numDetectors])
-            thisCand.append(self.search.maxTwoF)
+            if hasattr(self.search, "maxTwoF"):
+                thisCand.append(self.search.maxTwoF)
             if hasattr(self.search, "twoFXatMaxTwoF"):
                 thisCand += list(self.search.twoFXatMaxTwoF[: self.search.numDetectors])
             if self.detstat != "maxTwoF":
