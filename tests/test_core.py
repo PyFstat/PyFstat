@@ -624,6 +624,7 @@ class TestComputeFstat(BaseForTestsWithData):
 
 @pytest.fixture
 def CFS_default_params():
+    # FIXME: `default_Writer_params` should be yet another fixture
     return {
         "tref": default_Writer_params["tstart"],
         "minStartTime": default_Writer_params["tstart"],
@@ -702,12 +703,10 @@ def test_atoms_io(tmp_path, CFS_default_params, lambda_params):
         search.FstatResults.multiFatoms[0].data[0]
     )
     atomsdir = tmp_path
-    search.write_atoms_to_file(os.path.join(atomsdir, "CFS"))
-    atomsfiles = [
-        os.path.join(atomsdir, f) for f in os.listdir(atomsdir) if "Fstatatoms" in f
-    ]
+    search.write_atoms_to_file(atomsdir / "CFS")
+    atomsfiles = [(atomsdir / f) for f in os.listdir(atomsdir) if "Fstatatoms" in f]
     assert len(atomsfiles) == 1
-    atoms_read = pyfstat.utils.read_txt_file_with_header(atomsfiles[0], comments="%")
+    atoms_read = pyfstat.utils.read_txt_file_with_header(atomsfiles[0], comments="%%")
     assert len(atoms_read.dtype.names) == 8
     assert len(atoms_read) == len(atoms_orig["timestamp"])
     for key_read in atoms_read.dtype.names:
