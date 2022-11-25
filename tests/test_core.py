@@ -622,13 +622,10 @@ class TestComputeFstat(BaseForTestsWithData):
         self.assertTrue(reldiffend < 0.25)
 
 
-@pytest.mark.parametrize("tCWFstatMapVersion", ["lal", "pycuda"])
-@pytest.mark.parametrize("transientWindowType", [None, "rect"])
-@pytest.mark.parametrize("cleanup", ["no", "manual", "contextmanager"])
-def test_context_finalizer(tCWFstatMapVersion, transientWindowType, cleanup):
-    if cleanup == "manual" and not tCWFstatMapVersion == "pycuda":
-        pytest.skip("Manual cleanup won't work in non-pycuda case.")
-    CFS_params = {
+@pytest.fixture
+def CFS_default_params():
+    # FIXME: `default_Writer_params` should be yet another fixture
+    return {
         "tref": default_Writer_params["tstart"],
         "minStartTime": default_Writer_params["tstart"],
         "maxStartTime": default_Writer_params["tstart"]
@@ -638,13 +635,27 @@ def test_context_finalizer(tCWFstatMapVersion, transientWindowType, cleanup):
         "minCoverFreq": default_signal_params["F0"] - 0.1,
         "maxCoverFreq": default_signal_params["F0"] + 0.1,
     }
-    lambda_params = {
+
+
+@pytest.fixture
+def lambda_params():
+    return {
         "F0": default_signal_params["F0"],
         "F1": default_signal_params["F1"],
         "F2": default_signal_params["F2"],
         "Alpha": default_signal_params["Alpha"],
         "Delta": default_signal_params["Delta"],
     }
+
+
+@pytest.mark.parametrize("tCWFstatMapVersion", ["lal", "pycuda"])
+@pytest.mark.parametrize("transientWindowType", [None, "rect"])
+@pytest.mark.parametrize("cleanup", ["no", "manual", "contextmanager"])
+def test_context_finalizer(
+    CFS_default_params, lambda_params, tCWFstatMapVersion, transientWindowType, cleanup
+):
+    if cleanup == "manual" and not tCWFstatMapVersion == "pycuda":
+        pytest.skip("Manual cleanup won't work in non-pycuda case.")
 
     # if GPU available, try the real thing;
     # else this should still set up the finalizer
@@ -657,7 +668,7 @@ def test_context_finalizer(tCWFstatMapVersion, transientWindowType, cleanup):
             pytest.skip("This case might work but will sabotage others.")
     if cleanup == "contextmanager":
         with pyfstat.ComputeFstat(
-            **CFS_params,
+            **CFS_default_params,
             tCWFstatMapVersion=tCWFstatMapVersion,
             transientWindowType=transientWindowType,
         ) as search:
@@ -667,7 +678,7 @@ def test_context_finalizer(tCWFstatMapVersion, transientWindowType, cleanup):
             detstat = search.get_fullycoherent_detstat(**lambda_params)
     else:
         search = pyfstat.ComputeFstat(
-            **CFS_params,
+            **CFS_default_params,
             tCWFstatMapVersion=tCWFstatMapVersion,
             transientWindowType=transientWindowType,
         )
@@ -680,6 +691,34 @@ def test_context_finalizer(tCWFstatMapVersion, transientWindowType, cleanup):
             search._finalizer()
             assert not search._finalizer.alive
     assert detstat > 0
+
+
+def test_atoms_io(tmp_path, CFS_default_params, lambda_params):
+    search = pyfstat.ComputeFstat(
+        **CFS_default_params,
+        computeAtoms=True,
+    )
+    search.get_fullycoherent_detstat(**lambda_params)
+    atoms_orig = pyfstat.tcw_fstat_map_funcs.reshape_FstatAtomsVector(
+        search.FstatResults.multiFatoms[0].data[0]
+    )
+    atomsdir = tmp_path
+    search.write_atoms_to_file(atomsdir / "CFS")
+    atomsfiles = [(atomsdir / f) for f in os.listdir(atomsdir) if "Fstatatoms" in f]
+    assert len(atomsfiles) == 1
+    atoms_read = pyfstat.utils.read_txt_file_with_header(atomsfiles[0], comments="%%")
+    assert len(atoms_read.dtype.names) == 8
+    assert len(atoms_read) == len(atoms_orig["timestamp"])
+    for key_read in atoms_read.dtype.names:
+        if key_read == "tGPS":
+            key_orig = "timestamp"
+        elif "_" in key_read:
+            key_orig = key_read.replace("_", "_alpha_")
+        else:
+            key_orig = key_read + "_alpha"
+        assert np.allclose(
+            atoms_read[key_read], atoms_orig[key_orig], rtol=1e-6, atol=1e-6
+        )
 
 
 class TestComputeFstatNoNoise(BaseForTestsWithData):
