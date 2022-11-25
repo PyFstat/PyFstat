@@ -35,7 +35,7 @@ requires = [
     "tqdm",
     "versioneer",
 ]
-lalsuite = "lalsuite>=7.7"
+lalsuite = "lalsuite>=7.7,<=7.11"
 extras_require = {
     "chainconsumer": ["chainconsumer"],
     "dev": [
