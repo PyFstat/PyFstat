@@ -1,3 +1,30 @@
+## 1.19.0 [25/11/2022]
+
+ - This is the first PyFstat release to officially support python 3.11.
+ - LALSuite is introducing an SFT specification and filename update
+   - see https://dcc.ligo.org/T040164-v2/public)
+   - This version of PyFstat is pinned to `lalsuite<=7.11` (or `lalpulsar<6.0`) 
+     so that it is ensured to keep working with the old convention.
+   - Next PyFstat release will adapt to the LALSuite changes.
+   - Added `get_official_sft_filename()` utility function to ease migration.
+ - Improvements to `injection_parameters` module with new priors logic
+   (see documentation);
+   old input style still supported for now but deprecated.
+ - `Writer`: improved timestamps handling:
+   support 1-column format (without nanoseconds),
+   which has been the LALPulsar default for a while.
+ - Changed `ComputeFstat.write_atoms_to_file()` method
+   to use consistent `%%` comment markers.
+ - Fixed segfault in `get_semicoherent_single_IFO_twoFs()` with recent LALSuite
+   (need to properly copy FstatAtomVector struct).
+ - Fixed `TransientGridSearch` when not setting any actual transient parameters.
+ - Added (h0,cosi)<->(aplus,across) functions to `utils.converting`.
+ - Added `utils.atom` submodule with tools related to F-stat atoms.
+ - `utils.get_sft_as_arrays()` now user-accessible
+ - `Writer`: warning about inferring parameters (in `noiseSFTs is not None` case)
+   downgraded to info message
+ - improvements to documentation and test suite
+
 ## 1.18.1 [03/10/2022]
 
  - fixed finalizer setup for calling `ComputeFstat` and its children
