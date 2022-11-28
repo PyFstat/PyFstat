@@ -14,9 +14,9 @@ from pyfstat import (
     AllSkyInjectionParametersGenerator,
     InjectionParametersGenerator,
     Writer,
-    isotropic_amplitude_priors,
     set_up_logger,
 )
+from pyfstat.injection_parameters import isotropic_amplitude_priors
 
 label = "PyFstat_example_InjectionParametersGenerator"
 outdir = os.path.join("PyFstat_example_data", label)
