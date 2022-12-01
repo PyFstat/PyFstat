@@ -1,4 +1,4 @@
-## 1.19.0 [25/11/2022]
+## 1.19.0 [01/12/2022]
 
  - This is the first PyFstat release to officially support python 3.11.
  - LALSuite is introducing an SFT specification and filename update
