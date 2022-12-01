@@ -14,7 +14,7 @@ from pyfstat import (
     AllSkyInjectionParametersGenerator,
     InjectionParametersGenerator,
     Writer,
-    isotropic_amplitude_priors,
+    isotropic_amplitude_distribution,
     set_up_logger,
 )
 
@@ -53,7 +53,7 @@ phase_parameters["tref"] = gw_data["tstart"]
 amplitude_params_generator = InjectionParametersGenerator(
     priors={
         "h0": {"stats.norm": {"loc": 1e-24, "scale": 1e-26}},
-        **isotropic_amplitude_priors,
+        **isotropic_amplitude_distribution,
     },
     seed=42,
 )

@@ -76,7 +76,7 @@ standard choices for angle ranges
 
 We are following here R. Prix: https://dcc.ligo.org/T0900149-v6/public
 """
-isotropic_amplitude_priors = {
+isotropic_amplitude_distribution = {
     "cosi": {"stats.uniform": {"loc": -1.0, "scale": 2.0}},
     "psi": {"stats.uniform": {"loc": -0.25 * np.pi, "scale": 0.5 * np.pi}},
     "phi": {"stats.uniform": {"loc": 0, "scale": 2 * np.pi}},
@@ -377,3 +377,26 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
         super().__init__(
             priors={**priors, **sky_priors}, seed=seed, generator=generator
         )
+
+
+deprecated_vars = {
+    "isotropic_amplitude_priors": "isotropic_amplitude_distribution",
+}
+
+
+def __getattr__(var_name):
+
+    current_module = __import__(__name__)
+
+    if var_name not in deprecated_vars:
+        return getattr(current_module, var_name)
+
+    current_name = deprecated_vars[var_name]
+
+    logger.warning(
+        f"Variable `{var_name}` is deprecated"
+        " and will be removed in a future release."
+        f" Please use `{current_name}` for any new code."
+    )
+
+    return getattr(current_module, current_name)
