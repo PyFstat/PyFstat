@@ -954,7 +954,7 @@ class LineWriter(Writer):
 
     A (transient) line is defined as a constant amplitude and constant excess power artifact in the data.
 
-    In practice, it corresponds to a CW without Doppler or antenna-patern-induced amplitude modulation.
+    In practice, it corresponds to a CW without Doppler or antenna-pattern-induced amplitude modulation.
 
     NOTE: This functionality is implemented via `Makefakedata_v4`'s `lineFeature` option.
     This version of MFD only supports one interferometer at a time.
