@@ -1,3 +1,7 @@
+## 1.19.1 [19/12/2022]
+
+ - Pinned to `numpy<1.24.0` to avoid incompatibility with `ptemcee`.
+
 ## 1.19.0 [01/12/2022]
 
  - This is the first PyFstat release to officially support python 3.11.
