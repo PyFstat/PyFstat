@@ -28,7 +28,7 @@ requires = [
     "corner",
     "dill",
     "matplotlib>=2.1",
-    "numpy",
+    "numpy<1.24.0",
     "pathos",
     "ptemcee",
     "scipy",
