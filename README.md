@@ -164,6 +164,10 @@ which should all be pulled in automatically if you use `pip`:
 For a general introduction to installing modules, see
 [here](https://docs.python.org/3/installing/index.html).
 
+NOTE: currently we have pinned to
+`numpy<1.24.0` (due to an incompatibility with ptemcee)
+and `lalsuite<=7.11` (our SFT filename handling needs to be updated).
+
 ### Optional dependencies
 
 PyFstat manages optional dependencies through setuptool's `extras_require`.
