@@ -14,7 +14,7 @@ def test_get_sft_as_arrays(tmp_path):
         },
         "detectors": "H1,L1",
         "SFTWindowType": "tukey",
-        "SFTWindowBeta": 0.001,
+        "SFTWindowParam": 0.001,
         "randSeed": 42,
         "F0": 10.0,
         "Band": 0.1,

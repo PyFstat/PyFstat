@@ -99,7 +99,8 @@ class Writer(BaseSearchClass):
         sqrtSX=None,
         noiseSFTs=None,
         SFTWindowType=None,
-        SFTWindowBeta=0.0,
+        SFTWindowParam=0.0,
+        SFTWindowBeta=None,
         Band=None,
         detectors=None,
         earth_ephem=None,
@@ -168,8 +169,10 @@ class Writer(BaseSearchClass):
             NOTE: mutually exclusive with `timestamps`.
         SFTWindowType: str or None
             LAL name of the windowing function to apply to the data.
-        SFTWindowBeta: float
+        SFTWindowParam: float
             Optional parameter for some windowing functions.
+        SFTWindowBeta: float
+            Deprecated alias to `SFTWindowParam`.
         Band: float or None
             If float, and `F0` is also not `None`, then output SFTs cover
             `[F0-Band/2,F0+Band/2]`.
@@ -522,6 +525,17 @@ class Writer(BaseSearchClass):
         if self.tref is None:
             self.tref = self.tstart
 
+        if getattr(self, "SFTWindowBeta", None):
+            if self.SFTWindowParam:
+                raise ValueError(
+                    "Cannot use both 'SFTWindowBeta' and 'SFTWindowParam'."
+                )
+            else:
+                logger.warning(
+                    "Option 'SFTWindowBeta' is deprecated, please use 'SFTWindowParam'."
+                )
+                self.SFTWindowParam = self.SFTWindowBeta
+
     @property
     def tend(self):
         """`
@@ -837,7 +851,7 @@ class Writer(BaseSearchClass):
 
         if self.SFTWindowType is not None:
             cl_mfd.append('--SFTWindowType="{}"'.format(self.SFTWindowType))
-            cl_mfd.append("--SFTWindowBeta={}".format(self.SFTWindowBeta))
+            cl_mfd.append("--SFTWindowParam={}".format(self.SFTWindowParam))
         if getattr(self, "timestamps", None) is not None:
             cl_mfd.append("--timestampsFiles={}".format(self.timestamps))
         else:
@@ -928,7 +942,8 @@ class BinaryModulatedWriter(Writer):
         sqrtSX=None,
         noiseSFTs=None,
         SFTWindowType=None,
-        SFTWindowBeta=0.0,
+        SFTWindowParam=0.0,
+        SFTWindowBeta=None,
         Band=None,
         detectors=None,
         earth_ephem=None,
@@ -975,6 +990,7 @@ class BinaryModulatedWriter(Writer):
             outdir=outdir,
             sqrtSX=sqrtSX,
             SFTWindowType=SFTWindowType,
+            SFTWindowParam=SFTWindowParam,
             SFTWindowBeta=SFTWindowBeta,
             noiseSFTs=noiseSFTs,
             Band=Band,
@@ -1107,7 +1123,7 @@ class LineWriter(Writer):
 
         if self.SFTWindowType is not None:
             cl_mfd.append('--window="{}"'.format(self.SFTWindowType))
-            cl_mfd.append("--tukeyBeta={}".format(self.SFTWindowBeta))
+            cl_mfd.append("--tukeyBeta={}".format(self.SFTWindowParam))
         cl_mfd.append("--startTime={}".format(self.tstart))
         cl_mfd.append("--duration={}".format(self.duration))
         if getattr(self, "fmin", None):
@@ -1165,7 +1181,8 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
         sqrtSX=None,
         noiseSFTs=None,
         SFTWindowType=None,
-        SFTWindowBeta=0.0,
+        SFTWindowParam=0.0,
+        SFTWindowBeta=None,
         Band=None,
         detectors=None,
         earth_ephem=None,

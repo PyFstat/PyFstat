@@ -168,7 +168,7 @@ class TestWriter(BaseForTestsWithData):
             detectors=self.multi_detectors,
             randSeed=randSeed,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             sqrtSX=self.sqrtSX,
             Band=0.5,
             **self.signal_parameters,
@@ -185,7 +185,7 @@ class TestWriter(BaseForTestsWithData):
             detectors=self.multi_detectors,
             randSeed=randSeed,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             sqrtSX=self.sqrtSX,
             Band=0.5,
             F0=self.signal_parameters["F0"],
@@ -197,7 +197,7 @@ class TestWriter(BaseForTestsWithData):
             label="test_noiseSFTs_add_signal",
             outdir=self.outdir,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             noiseSFTs=noise_writer.sftfilepath,
             **self.signal_parameters,
         )
@@ -211,7 +211,7 @@ class TestWriter(BaseForTestsWithData):
             Tsft=self.Tsft,
             tstart=self.tstart,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             sqrtSX=0,
             noiseSFTs=noise_writer.sftfilepath,
             **self.signal_parameters,
@@ -302,7 +302,7 @@ class TestWriter(BaseForTestsWithData):
         duration = 10 * self.Tsft
         gap_time = 4 * self.Tsft
         window = "tukey"
-        window_beta = 0.01
+        window_param = 0.01
         Band = 0.01
 
         first_chunk_of_data = self.writer_class_to_test(
@@ -313,7 +313,7 @@ class TestWriter(BaseForTestsWithData):
             tstart=self.tstart,
             detectors=self.detectors,
             SFTWindowType=window,
-            SFTWindowBeta=window_beta,
+            SFTWindowParam=window_param,
             F0=self.F0,
             Band=Band,
         )
@@ -328,7 +328,7 @@ class TestWriter(BaseForTestsWithData):
             tref=self.tstart,
             detectors=self.detectors,
             SFTWindowType=window,
-            SFTWindowBeta=window_beta,
+            SFTWindowParam=window_param,
             F0=self.F0,
             Band=Band,
         )
@@ -341,7 +341,7 @@ class TestWriter(BaseForTestsWithData):
             + ";"
             + second_chunk_of_data.sftfilepath,
             SFTWindowType=window,
-            SFTWindowBeta=window_beta,
+            SFTWindowParam=window_param,
             F0=self.F0,
             Band=Band,
         )
@@ -374,7 +374,7 @@ class TestWriter(BaseForTestsWithData):
             tstart=self.tstart,
             detectors="H1",
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             sqrtSX=self.sqrtSX,
             Band=3,
             F0=self.signal_parameters["F0"],
@@ -393,7 +393,7 @@ class TestWriter(BaseForTestsWithData):
             label="test_noiseSFTs_recycle",
             outdir=self.outdir,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             noiseSFTs=os.path.join(self.outdir, "*NB*"),
             F0=self.signal_parameters["F0"]
             if self.writer_class_to_test.mfd.endswith("v4")
@@ -443,7 +443,7 @@ class TestWriter(BaseForTestsWithData):
             Band=self.Band,
             detectors=self.multi_detectors,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
             timestamps=",".join(tsfiles),
             **self.signal_parameters,
@@ -494,7 +494,7 @@ class TestWriter(BaseForTestsWithData):
             sqrtSX=self.sqrtSX,
             Band=self.Band,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
             timestamps=timestamps,
             **self.signal_parameters,
@@ -525,7 +525,7 @@ class TestWriter(BaseForTestsWithData):
             Band=self.Band,
             detectors=detectors,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
             timestamps=timestamps,
             **self.signal_parameters,
@@ -553,7 +553,7 @@ class TestWriter(BaseForTestsWithData):
             sqrtSX=self.sqrtSX,
             Band=self.Band,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
             detectors=detectors,
             timestamps=timestamps,
@@ -651,7 +651,7 @@ class TestLineWriter(TestWriter):
             **default_signal_params,
             **default_transient_params,
             SFTWindowType="tukey",
-            SFTWindowBeta=0.001,
+            SFTWindowParam=0.001,
             noiseSFTs=self.Writer.sftfilepath,
         )
         writer.make_data(verbose=True)

@@ -224,7 +224,7 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
             sqrtSX=0,  # don't add yet another set of Gaussian noise
             noiseSFTs=SFTs_H1,
             SFTWindowType=self.Writer.SFTWindowType,
-            SFTWindowBeta=self.Writer.SFTWindowBeta,
+            SFTWindowParam=self.Writer.SFTWindowParam,
         )
         extra_writer.make_data()
         data_with_line = ";".join([SFTs_L1, extra_writer.sftfilepath])
@@ -418,7 +418,7 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
             Band=self.Band,
             detectors=self.detectors,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
             transientWindowType=self.transientWindowType,
             transientStartTime=self.transientStartTime,

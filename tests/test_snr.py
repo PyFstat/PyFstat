@@ -16,7 +16,7 @@ def data_parameters():
         "duration": 4 * 1800,
         "detectors": "H1,L1",
         "SFTWindowType": "tukey",
-        "SFTWindowBeta": 0.001,
+        "SFTWindowParam": 0.001,
         "randSeed": 42,
     }
 

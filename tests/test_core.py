@@ -996,7 +996,7 @@ class TestSemiCoherentGlitchSearch(BaseForTestsWithData):
             sqrtSX=self.sqrtSX,
             **default_signal_params,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
             Band=self.Band,
         )
