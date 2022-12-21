@@ -121,9 +121,23 @@ def get_commandline_from_SFTDescriptor(descriptor):
 
 
 def get_official_sft_filename(
-    IFO, numSFTs, Tsft, tstart, duration, label=None, window_type=None, window_beta=None
+    IFO,
+    numSFTs,
+    Tsft,
+    tstart,
+    duration,
+    label=None,
+    window_type=None,
+    window_param=None,
+    legacy=False,
 ):
-    """Wrapper to XLALOfficialSFTFilename.
+    """Wrapper to predict the canonical lalpulsar names for some SFT files.
+
+    Since lalpulsar 5.0.0, this is given by `XLALSFTFilenameSpec()`.
+
+    Before lalpulsar 5.0.0, this was set by `XLALOfficialSFTFilename()`.
+    which can still be called by setting `legacy=True`
+    (deprecated and will be removed in a future PyFstat release).
 
     Parameters
     ----------
@@ -140,31 +154,51 @@ def get_official_sft_filename(
     label: str or None
         optional 'Misc' entry in the SFT 'D' field
     window_type: str or None
-        included for SFT-spec v3 forwards compatibility
-        (see https://git.ligo.org/lscsoft/lalsuite/-/merge_requests/2027 );
-        not implemented yet
-    window_beta: float or None
-        included for SFT-spec v3 forwards compatibility
-        (see https://git.ligo.org/lscsoft/lalsuite/-/merge_requests/2027 );
-        not implemented yet
+        window function applied to SFTs
+    window_param: float or None
+        additional parameter for some window functions
+    legacy: boolean
+        deprecated: use old pre-lalpulsar5 convention
 
     Returns
     -------
     filename: str
         The canonical SFT file name for the input parameters.
     """
-    if window_type or window_beta:
-        raise NotImplementedError(
-            "The parameters 'window_type' and 'window_beta'"
-            " are only included for SFT-spec v3 forwards compatibility"
-            " and not yet implemented."
+    if legacy:
+        if window_type or window_param:
+            raise NotImplementedError(
+                "The parameters 'window_type' and 'window_param'"
+                " are not implemented in legacy mode."
+            )
+        return lalpulsar.OfficialSFTFilename(
+            IFO[0],
+            IFO[1],
+            numSFTs,
+            Tsft,
+            tstart,
+            duration,
+            label,
         )
-    return lalpulsar.OfficialSFTFilename(
-        IFO[0],
-        IFO[1],
-        numSFTs,
-        Tsft,
-        tstart,
-        duration,
-        label,
+
+    spec = lalpulsar.SFTFilenameSpec()
+    lalpulsar.FillSFTFilenameSpecStrings(
+        spec=spec,
+        path=None,
+        extn=None,
+        detector=IFO,
+        window_type=window_type,
+        privMisc=label,
+        pubObsKind=None,
+        pubChannel=None,
     )
+    spec.window_param = window_param or 0
+    spec.numSFTs = numSFTs
+    # spec.detector[0]     = sftStart.name[0]
+    # spec.detector[1]     = sftStart.name[1]
+    # spec.detector[2]     = 0
+    spec.SFTtimebase = Tsft
+    spec.gpsStart = tstart
+    # possible gotcha: duration may be different if nanoseconds of sft-epochs are non-zero
+    spec.SFTspan = duration
+    return lalpulsar.BuildSFTFilenameFromSpec(spec)

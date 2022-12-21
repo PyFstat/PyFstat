@@ -115,6 +115,18 @@ class Writer(BaseSearchClass):
         ----------
         label: string
             A human-readable label to be used in naming the output files.
+            NOTE: to agree with the v3 SFT naming specification
+            ( https://dcc.ligo.org/T040164-v2/public )
+            actual SFT filenames can only contain ASCII alphanumeric characters
+            in their "description" field,
+            and hence we will do some normalization
+            to ensure "traditional PyFstat labels" still work
+            (strip underscores and use CamelCase instead).
+            Still, it is the user's responsibility to choose a "legal" label,
+            and we recommend to just stick to ASCII alphanumerics to begin with.
+            That way, you can also be sure that all of your files follow
+            a consistent naming pattern,
+            which is NOT the case if you let us do the "normalization".
         tstart: int
             Starting GPS epoch of the data set.
             If `noiseSFT` are given, this is used as a LALPulsar
@@ -254,7 +266,7 @@ class Writer(BaseSearchClass):
                 self.Tsft,
                 self.tstart,
                 effective_duration,
-                self.label,
+                self.sftmisc,
             )
             for ind, dets in enumerate(IFOs)
         ]
@@ -296,7 +308,7 @@ class Writer(BaseSearchClass):
                     this_Tsft,
                     this_start_time,
                     this_end_time - this_start_time,
-                    self.label,
+                    self.sftmisc,
                 )
             )
 
@@ -368,7 +380,7 @@ class Writer(BaseSearchClass):
                     self.Tsft,
                     this_start_time,
                     this_end_time - this_start_time,
-                    self.label,
+                    self.sftmisc,
                 )
             )
         self.tstart = min(tstart)
@@ -429,6 +441,32 @@ class Writer(BaseSearchClass):
 
     def _basic_setup(self):
         """Basic parameters handling, path setup etc."""
+
+        self.sftmisc = self.label
+        if "_" in self.sftmisc:
+            # Try to "normalize" labels to SFT v3 standard,
+            # so they can be used as "misc" description fields.
+            # This won't catch all illegal labels
+            # (SFT v3 only allows for ASCII alphanumeric characters)
+            # but mainly is here because PyFstat always used to use underscores
+            # in its examples.
+            # If underscores are the only illegal characters,
+            # this will suffice:
+            # we just strip them and capitalize the next character,
+            # i.e. we "CamelCase".
+            self.sftmisc = "".join([s.capitalize() for s in self.sftmisc.split("_")])
+            logger.warning(
+                f"Underscore(s) detected in label '{self.label}'."
+                f" For SFT files, will instead use '{self.sftmisc}'."
+                " Note that this means that"
+                " not all of your files will have the same prefix."
+            )
+        if not self.sftmisc.isalnum():
+            logger.warning(
+                f"SFT misc field '{self.sftmisc}' (derived from label)"
+                " is not alphanumeric."
+                f" This will likely lead to a {self.mfd} error."
+            )
 
         os.makedirs(self.outdir, exist_ok=True)
         self.config_file_name = os.path.join(self.outdir, self.label + ".cff")
@@ -768,7 +806,7 @@ class Writer(BaseSearchClass):
         cl_mfd = [self.mfd]
         cl_mfd.append("--outSingleSFT=TRUE")
         cl_mfd.append('--outSFTdir="{}"'.format(self.outdir))
-        cl_mfd.append('--outLabel="{}"'.format(self.label))
+        cl_mfd.append('--outLabel="{}"'.format(self.sftmisc))
 
         if self.noiseSFTs is not None and self.SFTWindowType is None:
             raise ValueError(
