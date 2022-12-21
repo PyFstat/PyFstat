@@ -307,7 +307,7 @@ def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
     if feature == "pycuda":
         if not features["pycuda"]:
             raise RuntimeError("pycuda use was requested, but imports failed.")
-        logger.debug("CUDA version: " + ".".join(map(str, drv.get_version())))
+        logger.info("CUDA version: " + ".".join(map(str, drv.get_version())))
 
         drv.init()
         logger.debug(
@@ -329,7 +329,7 @@ def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
                 raise pycuda._driver.LogicError(e.message)
 
         num_gpus = drv.Device.count()
-        logger.debug("Found {} CUDA device(s).".format(num_gpus))
+        logger.info("Found {} CUDA device(s).".format(num_gpus))
 
         devices = []
         devnames = np.empty(num_gpus, dtype="S32")
@@ -337,7 +337,7 @@ def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
             devn = drv.Device(n)
             devices.append(devn)
             devnames[n] = devn.name().replace(" ", "-").replace("_", "-")
-            logger.debug(
+            logger.info(
                 "device {}: model: {}, RAM: {}MB".format(
                     n, devnames[n], devn.total_memory() / (2.0**20)
                 )
