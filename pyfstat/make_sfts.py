@@ -1123,7 +1123,7 @@ class LineWriter(Writer):
 
         if self.SFTWindowType is not None:
             cl_mfd.append('--window="{}"'.format(self.SFTWindowType))
-            cl_mfd.append("--tukeyBeta={}".format(self.SFTWindowParam))
+            cl_mfd.append("--windowParam={}".format(self.SFTWindowParam))
         cl_mfd.append("--startTime={}".format(self.tstart))
         cl_mfd.append("--duration={}".format(self.duration))
         if getattr(self, "fmin", None):
