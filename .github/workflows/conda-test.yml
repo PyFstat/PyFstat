@@ -14,7 +14,6 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: "3.10"
-          mamba-version: "*"
           channels: conda-forge
           channel-priority: true
           activate-environment: pyfstat-dev
