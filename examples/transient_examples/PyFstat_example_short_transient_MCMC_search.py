@@ -14,7 +14,6 @@ import pyfstat
 from pyfstat.utils import get_predict_fstat_parameters_from_dict
 
 if __name__ == "__main__":
-
     logger = pyfstat.set_up_logger(
         label="short_transient_mcmc_search", outdir=data.outdir
     )

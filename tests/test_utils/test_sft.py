@@ -5,7 +5,6 @@ from pyfstat.utils import get_sft_as_arrays
 
 
 def test_get_sft_as_arrays(tmp_path):
-
     writer_kwargs = {
         "sqrtSX": 1,
         "Tsft": 1800,

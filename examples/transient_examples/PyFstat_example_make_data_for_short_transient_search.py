@@ -43,7 +43,6 @@ detectors = "H1,L1"
 Tsft = 1800
 
 if __name__ == "__main__":
-
     transient = pyfstat.Writer(
         label="simulated_transient_signal",
         outdir=outdir,

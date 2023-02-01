@@ -17,7 +17,6 @@ def _check_StreamHandler(handler, stream):
 
 
 def test__get_default_logger():
-
     # No handlers in root: Should get pyfstat logger
     root_logger = logging.getLogger()
     while root_logger.hasHandlers():
@@ -30,7 +29,6 @@ def test__get_default_logger():
 
 
 def test_set_up_logger(tmp_path):
-
     file_args = {"outdir": tmp_path, "label": "test_log"}
     kwargs = {
         "StreamHandler": {"stream": sys.stdout},

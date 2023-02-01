@@ -113,7 +113,6 @@ def plot_2F_scatter(res, label, xkey, ykey):
 
 
 if __name__ == "__main__":
-
     logger.info("Generating SFTs with injected signal...")
     writer = pyfstat.Writer(
         label="simulated_signal",

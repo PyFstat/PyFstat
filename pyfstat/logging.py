@@ -129,7 +129,6 @@ def set_up_logger(
         log_file = os.path.join(outdir, f"{label}.log")
 
         if log_file not in file_names:
-
             file_handler = logging.FileHandler(log_file)
             file_handler.setFormatter(common_formatter)
             file_handler.setLevel(log_level)

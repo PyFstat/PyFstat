@@ -20,7 +20,6 @@ import pyfstat
 
 
 def test_timestamp_files(tmp_path, caplog):
-
     Tsft = 1800
     single_column = 10000000 + Tsft * np.arange(10)
     np.savetxt(tmp_path / "single_column.txt", single_column[:, None])
@@ -75,7 +74,6 @@ def test_timestamp_files(tmp_path, caplog):
 
     # Test wrong number of detectors
     with pytest.raises(ValueError):
-
         writer = pyfstat.Writer(
             outdir=str(tmp_path / "timestamp_file_testing"),
             label="timestamp_file_testing",
@@ -88,7 +86,6 @@ def test_timestamp_files(tmp_path, caplog):
 
     # Test unspecified detectors
     with pytest.raises(ValueError):
-
         writer = pyfstat.Writer(
             outdir=str(tmp_path / "timestamp_file_testing"),
             label="timestamp_file_testing",
@@ -368,7 +365,6 @@ class TestWriter(BaseForTestsWithData):
         self.assertTrue(os.path.isfile(expected_SFT_filepath))
 
     def test_noise_sfts_narrowbanded(self):
-
         # create some broad SFTs
         writer = self.writer_class_to_test(
             label="test_noiseSFTs_broad",
@@ -483,7 +479,6 @@ class TestWriter(BaseForTestsWithData):
                 self._test_writer_with_tsfiles(gaps, nanoseconds)
 
     def test_timestamps_file_generation(self):
-
         # Test dictionary
         timestamps = {"H1": np.arange(self.tref, self.tref + 4 * self.Tsft, self.Tsft)}
         if "v4" not in self.writer_class_to_test.mfd:
@@ -596,7 +591,6 @@ class TestLineWriter(TestWriter):
             )
 
     def test_makefakedata_usecached(self):
-
         # Make everything from scratch
         writer = self.writer_class_to_test(
             outdir=self.outdir,
@@ -639,7 +633,6 @@ class TestLineWriter(TestWriter):
             )
 
     def test_transient_line_injection(self):
-
         # Create data with a line
         writer = self.writer_class_to_test(
             outdir=self.outdir,

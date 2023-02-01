@@ -908,7 +908,6 @@ class MCMCSearch(BaseSearchClass):
 
         labels = []
         for key in self.theta_keys:
-
             values = self.transform_dictionary.get(key, {})
             s, label, u = [
                 values.get(slu_key, None) for slu_key in ["symbol", "label", "unit"]
@@ -985,7 +984,6 @@ class MCMCSearch(BaseSearchClass):
         """
 
         if "truths" in kwargs:
-
             if not isinstance(kwargs["truths"], dict):
                 raise ValueError("'truths' must be a dictionary.")
 
@@ -2985,7 +2983,6 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
         allowedMismatchFromSFTLength=None,
         clean=False,
     ):
-
         self._set_init_params_dict(locals())
         self.theta_prior = theta_prior
         self.tref = tref

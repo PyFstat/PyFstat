@@ -103,7 +103,6 @@ def compare_multi_detector_states_series(mdss_0, mdss_1):
 
 
 def test_DetectorStates(data_parameters, writer):
-
     # Test that both input formats of timestamps work consistently
     common_ts = writer.tstart + writer.Tsft * np.arange(writer.duration / writer.Tsft)
     timestamp_options = [
@@ -138,7 +137,6 @@ def test_DetectorStates(data_parameters, writer):
 
 
 def test_SignalToNoiseRatio(writer, multi_detector_states):
-
     params = {
         "h0": 1e-23,
         "cosi": 0,
@@ -185,7 +183,6 @@ def test_SignalToNoiseRatio(writer, multi_detector_states):
 
 
 def test_compute_h0_from_snr2(snr_object):
-
     params = {
         "h0": 1e-23,
         "cosi": 0,

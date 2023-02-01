@@ -120,7 +120,10 @@ class TestPredictFstat(BaseForTestsWithOutdir):
         params["transient_tstart"] = default_Writer_params["tstart"]
         params["transient_duration"] = 0.5 * duration
         params = pyfstat.utils.get_predict_fstat_parameters_from_dict(params)
-        (twoF_expected_transient, twoF_sigma_transient,) = pyfstat.utils.predict_fstat(
+        (
+            twoF_expected_transient,
+            twoF_sigma_transient,
+        ) = pyfstat.utils.predict_fstat(
             **params,
             minStartTime=default_Writer_params["tstart"],
             duration=duration,
@@ -163,7 +166,6 @@ class TestComputeFstat(BaseForTestsWithData):
         self.assertTrue(FS > 0.0)
 
     def test_run_computefstatistic_single_point_with_SFTs(self):
-
         twoF_predicted = self.Writer.predict_fstat()
 
         search = pyfstat.ComputeFstat(
@@ -219,7 +221,6 @@ class TestComputeFstat(BaseForTestsWithData):
         self.assertTrue(diff < 0.001)
 
     def test_run_computefstatistic_allowedMismatchFromSFTLength(self):
-
         long_Tsft_params = default_Writer_params.copy()
         long_Tsft_params["Tsft"] = 3600
         long_Tsft_params["duration"] = 4 * long_Tsft_params["Tsft"]
@@ -249,7 +250,6 @@ class TestComputeFstat(BaseForTestsWithData):
         search.get_fullycoherent_twoF(F0=1500, F1=0, F2=0, Alpha=0, Delta=0)
 
     def test_run_computefstatistic_single_point_injectSources(self):
-
         predicted_FS = self.Writer.predict_fstat()
 
         injectSources = self.Writer.config_file_name
@@ -728,7 +728,6 @@ class TestComputeFstatNoNoise(BaseForTestsWithData):
     sqrtSX = 0
 
     def test_run_computefstatistic_single_point_no_noise(self):
-
         predicted_FS = self.Writer.predict_fstat(assumeSqrtSX=1)
         search = pyfstat.ComputeFstat(
             tref=self.Writer.tref,
@@ -746,7 +745,6 @@ class TestComputeFstatNoNoise(BaseForTestsWithData):
         self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
 
     def test_run_computefstatistic_single_point_no_noise_manual_ephem(self):
-
         predicted_FS = self.Writer.predict_fstat(assumeSqrtSX=1)
 
         # let's get the default ephemeris files (to be sure their paths exist)
@@ -828,7 +826,6 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
     nsegs = 2
 
     def test_get_semicoherent_twoF(self):
-
         search = pyfstat.SemiCoherentSearch(
             label=self.label,
             outdir=self.outdir,
@@ -947,7 +944,6 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
         self._test_get_semicoherent_BSGL(**dataopts)
 
     def test_get_semicoherent_twoF_allowedMismatchFromSFTLength(self):
-
         long_Tsft_params = default_Writer_params.copy()
         long_Tsft_params["Tsft"] = 3600
         long_Tsft_params["duration"] = 4 * long_Tsft_params["Tsft"]
@@ -989,7 +985,6 @@ class TestSemiCoherentGlitchSearch(BaseForTestsWithData):
     Band = 1
 
     def _run_test(self, delta_F0):
-
         Writer = pyfstat.GlitchWriter(
             self.label,
             outdir=self.outdir,

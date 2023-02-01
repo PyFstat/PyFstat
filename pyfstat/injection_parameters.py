@@ -199,7 +199,6 @@ class InjectionParametersGenerator:
     def _parse_generator(
         self, seed: Optional[int], generator: Optional[np.random.Generator]
     ):
-
         if (seed is not None) and (generator is not None):
             raise ValueError(
                 "Incompatible inputs: please, "
@@ -225,7 +224,6 @@ class InjectionParametersGenerator:
         self.priors = {}
 
         for parameter_name, parameter_prior in priors_input_format.items():
-
             if callable(parameter_prior):
                 # FIXME Deprecated, to be removed on a future release.
                 logger.warning(
@@ -359,7 +357,6 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
         seed: Optional[int] = None,
         generator: Optional[np.random.Generator] = None,
     ):
-
         priors = priors or {}
 
         sky_priors = {
@@ -385,7 +382,6 @@ deprecated_vars = {
 
 
 def __getattr__(var_name):
-
     current_module = __import__(__name__)
 
     if var_name not in deprecated_vars:

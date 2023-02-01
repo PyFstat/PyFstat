@@ -14,7 +14,6 @@ def arbitrary_singleAtoms():
     single_atoms.TAtom = 1800
 
     for i in range(single_atoms.length):
-
         for attr in [
             "timestamp",
             "a2_alpha",
@@ -36,12 +35,10 @@ def arbitrary_multiAtoms(arbitrary_singleAtoms):
 
 
 def compare_FstatAtomVector(vectorA, vectorB):
-
     for attr in ["TAtom", "length"]:
         assert getattr(vectorA, attr) == getattr(vectorB, attr)
 
     for i in range(vectorA.length):
-
         for attr in [
             "timestamp",
             "a2_alpha",
@@ -56,7 +53,6 @@ def compare_FstatAtomVector(vectorA, vectorB):
 def test_extract_singleIFOmultiFatoms_from_multiAtoms(
     arbitrary_singleAtoms, arbitrary_multiAtoms
 ):
-
     single_atoms = extract_singleIFOmultiFatoms_from_multiAtoms(arbitrary_multiAtoms, 0)
     compare_FstatAtomVector(single_atoms.data[0], arbitrary_multiAtoms.data[0])
 
@@ -65,7 +61,6 @@ def test_extract_singleIFOmultiFatoms_from_multiAtoms(
 
 
 def test_copy_FstatAtomVector(arbitrary_singleAtoms):
-
     single_atoms = lalpulsar.CreateFstatAtomVector(arbitrary_singleAtoms.length)
     copy_FstatAtomVector(single_atoms, arbitrary_singleAtoms)
     compare_FstatAtomVector(single_atoms, arbitrary_singleAtoms)
