@@ -362,7 +362,10 @@ class TestWriter(BaseForTestsWithData):
                 total_duration,
             ),
         )
-        self.assertTrue(os.path.isfile(expected_SFT_filepath))
+        self.assertTrue(
+            os.path.isfile(expected_SFT_filepath),
+            f"Could not find expected SFT file '{expected_SFT_filepath}'!",
+        )
 
     def test_noise_sfts_narrowbanded(self):
         # create some broad SFTs
