@@ -1598,7 +1598,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         """Merges the individual SFT files via splitSFTs executable."""
 
         SFTFilename = (
-            f"{self.detectors[0]}-{self.nsfts}_{self.detectors}_{self.Tsft}SFT"
+            f"{self.detectors[0]}-{self.nsfts}_{self.detectors}_{self.Tsft}SFT_mfdv4"
         )
         # We don't try to reproduce the NB filename convention exactly,
         # as there could be always rounding offsets with the number of bins,
