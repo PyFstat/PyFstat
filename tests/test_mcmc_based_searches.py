@@ -211,7 +211,7 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         SFTs_H1 = self.Writer.sftfilepath.split(";")[0]
         SFTs_L1 = self.Writer.sftfilepath.split(";")[1]
         extra_writer = pyfstat.Writer(
-            label=self.label + "_with_line",
+            label=self.label + "WithLine",
             outdir=self.outdir,
             tref=self.tref,
             F0=self.Writer.F0 + 0.5e-2,
@@ -242,7 +242,7 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         }
         # now run a standard F-stat search over this data
         self.search = pyfstat.MCMCSearch(
-            label=self.label + "-F",
+            label=self.label + "F",
             outdir=self.outdir,
             theta_prior=thetas,
             tref=self.tref,
@@ -266,7 +266,7 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         self._test_plots()
         # also run a BSGL search over the same data
         self.search = pyfstat.MCMCSearch(
-            label=self.label + "-BSGL",
+            label=self.label + "BSGL",
             outdir=self.outdir,
             theta_prior=thetas,
             tref=self.tref,

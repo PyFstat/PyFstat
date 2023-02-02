@@ -224,7 +224,7 @@ class TestComputeFstat(BaseForTestsWithData):
         long_Tsft_params = default_Writer_params.copy()
         long_Tsft_params["Tsft"] = 3600
         long_Tsft_params["duration"] = 4 * long_Tsft_params["Tsft"]
-        long_Tsft_params["label"] = "long_Tsft"
+        long_Tsft_params["label"] = "longTsft"
         long_Tsft_params["F0"] = 1500
         long_Tsft_params["Band"] = 2.0
         long_Tsft_Writer = pyfstat.Writer(**long_Tsft_params)
@@ -947,7 +947,7 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
         long_Tsft_params = default_Writer_params.copy()
         long_Tsft_params["Tsft"] = 3600
         long_Tsft_params["duration"] = 4 * long_Tsft_params["Tsft"]
-        long_Tsft_params["label"] = "long_Tsft"
+        long_Tsft_params["label"] = "longTsft"
         long_Tsft_params["F0"] = 1500
         long_Tsft_params["Band"] = 2.0
         long_Tsft_Writer = pyfstat.Writer(**long_Tsft_params)

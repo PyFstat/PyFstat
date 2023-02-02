@@ -202,7 +202,7 @@ class TestGridSearchBSGL(TestGridSearch):
         SFTs_H1 = self.Writer.sftfilepath.split(";")[0]
         SFTs_L1 = self.Writer.sftfilepath.split(";")[1]
         extra_writer = pyfstat.Writer(
-            label=self.label + "_with_line",
+            label=self.label + "WithLine",
             outdir=self.outdir,
             tref=self.tref,
             F0=self.Writer.F0 + 0.0005,
@@ -221,7 +221,7 @@ class TestGridSearchBSGL(TestGridSearch):
         data_with_line = ";".join([SFTs_L1, extra_writer.sftfilepath])
         # now run a standard F-stat search over this data
         searchF = pyfstat.GridSearch(
-            label="grid_search",
+            label="GridSearch",
             outdir=self.outdir,
             sftfilepattern=data_with_line,
             F0s=self.F0s,
@@ -238,7 +238,7 @@ class TestGridSearchBSGL(TestGridSearch):
         self.assertTrue(np.all(max2F_point_searchF["twoF"] >= searchF.data["twoF"]))
         # also run a BSGL search over the same data
         searchBSGL = pyfstat.GridSearch(
-            label="grid_search",
+            label="GridSearch",
             outdir=self.outdir,
             sftfilepattern=data_with_line,
             F0s=self.F0s,

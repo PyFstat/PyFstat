@@ -18,7 +18,7 @@ def test_get_sft_as_arrays(tmp_path):
         "randSeed": 42,
         "F0": 10.0,
         "Band": 0.1,
-        "label": "testing_sft_to_array",
+        "label": "TestingSftToArray",
         "outdir": tmp_path,
     }
     writer = Writer(**writer_kwargs)
