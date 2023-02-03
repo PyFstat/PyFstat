@@ -167,6 +167,11 @@ For a general introduction to installing modules, see
 NOTE: currently we have pinned to
 `numpy<1.24.0` (due to an incompatibility with ptemcee).
 
+NOTE: We require a recent LALSuite/lalpulsar including the
+[SFTv3 specification](https://dcc.ligo.org/T040164-v2/public).
+If you need to work with older versions,
+the last PyFstat release supporting those was `1.19.1`.
+
 ### Optional dependencies
 
 PyFstat manages optional dependencies through setuptool's `extras_require`.
