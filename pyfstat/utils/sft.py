@@ -174,3 +174,39 @@ def get_official_sft_filename(
     # possible gotcha: duration may be different if nanoseconds of sft-epochs are non-zero
     spec.SFTspan = duration
     return lalpulsar.BuildSFTFilenameFromSpec(spec)
+
+
+def normalize_SFT_misc_strings(label):
+    """Try to "normalize" a string to the SFT v3 "misc" field standard.
+
+    This tries to edit a string so it can be used as "misc" description field
+    according to the SFT v3 specification
+    ( https://dcc.ligo.org/T040164-v2/public ).
+
+    This won't catch all illegal labels
+    (SFT v3 only allows for ASCII alphanumeric characters)
+    but mainly is here because PyFstat always used to use underscores
+    in its examples.
+
+    If underscores are the only illegal characters,
+    this will suffice:
+    we just strip them and capitalize the next character,
+    i.e. we "CamelCase".
+
+    Parameters
+    ----------
+    label: str
+        Input label.
+    Returns
+    -------
+    norm_label: str
+        Normalized label.
+    """
+    norm_label = "".join([s.capitalize() for s in label.split("_")])
+    logger.warning(
+        f"Underscore(s) detected in label '{label}'."
+        f" For SFT files, will instead use '{norm_label}'."
+        " Note that this means that"
+        " not all of your files will have the same prefix."
+    )
+    return norm_label

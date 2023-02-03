@@ -447,23 +447,8 @@ class Writer(BaseSearchClass):
 
         self.sftmisc = self.label
         if "_" in self.sftmisc:
-            # Try to "normalize" labels to SFT v3 standard,
-            # so they can be used as "misc" description fields.
-            # This won't catch all illegal labels
-            # (SFT v3 only allows for ASCII alphanumeric characters)
-            # but mainly is here because PyFstat always used to use underscores
-            # in its examples.
-            # If underscores are the only illegal characters,
-            # this will suffice:
-            # we just strip them and capitalize the next character,
-            # i.e. we "CamelCase".
-            self.sftmisc = "".join([s.capitalize() for s in self.sftmisc.split("_")])
-            logger.warning(
-                f"Underscore(s) detected in label '{self.label}'."
-                f" For SFT files, will instead use '{self.sftmisc}'."
-                " Note that this means that"
-                " not all of your files will have the same prefix."
-            )
+            # SFTv3 compatibility trick for old-style labels (with underscores)
+            self.sftmisc = utils.normalize_SFT_misc_strings(self.sftmisc)
         if not self.sftmisc.isalnum():
             logger.warning(
                 f"SFT misc field '{self.sftmisc}' (derived from label)"
