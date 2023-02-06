@@ -101,7 +101,6 @@ class TestMCMCSearch(BaseForMCMCSearchTests):
     BSGL = False
 
     def test_fully_coherent_MCMC(self):
-
         # use a single test case with loop over multiple prior choices
         # this could be much more elegantly done with @pytest.mark.parametrize
         # but that cannot be mixed with unittest classes
@@ -301,7 +300,6 @@ class TestMCMCSemiCoherentSearch(BaseForMCMCSearchTests):
     label = "TestMCMCSemiCoherentSearch"
 
     def test_semi_coherent_MCMC(self):
-
         theta = {
             "F0": {
                 "type": "unif",
@@ -362,7 +360,6 @@ class TestMCMCFollowUpSearch(BaseForMCMCSearchTests):
     h0 = 0.1
 
     def test_MCMC_followup_search(self):
-
         theta = {
             "F0": {
                 "type": "unif",
@@ -443,7 +440,6 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
         }
 
     def test_transient_MCMC_t0only(self):
-
         theta = {
             **self.basic_theta,
             "transient_tstart": {
@@ -469,7 +465,6 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
         self._test_plots()
 
     def test_transient_MCMC_tauonly(self):
-
         theta = {
             **self.basic_theta,
             "transient_tstart": self.transientStartTime,
@@ -495,7 +490,6 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
         self._test_plots()
 
     def test_transient_MCMC_t0_tau(self, BtSG=False):
-
         theta = {
             **self.basic_theta,
             "transient_tstart": {

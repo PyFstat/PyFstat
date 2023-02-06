@@ -61,7 +61,6 @@ def test_seed_and_generator_consistency(parameters_generator, seed):
 
 
 def test_rng_seed(parameters_generator, seed):
-
     samples = []
     for i in range(2):
         injection_generator = parameters_generator(

@@ -13,7 +13,6 @@ def get_sft_as_arrays(
     fMax: Optional[float] = None,
     constraints: Optional[lalpulsar.SFTConstraints] = None,
 ) -> Tuple[np.ndarray, Dict, Dict]:
-
     """
     Read binary SFT files into NumPy arrays.
 
@@ -65,7 +64,6 @@ def get_sft_as_arrays(
 
     old_frequencies = None
     for ind, ifo in enumerate(ifo_labels.data):
-
         sfts = multi_sfts.data[ind]
 
         times[ifo] = np.array([sft.epoch.gpsSeconds for sft in sfts.data])

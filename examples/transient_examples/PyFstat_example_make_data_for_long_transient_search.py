@@ -38,7 +38,6 @@ sqrtSX = 1e-22
 detectors = "H1,L1"
 
 if __name__ == "__main__":
-
     transient = pyfstat.Writer(
         label="simulated_transient_signal",
         outdir=outdir,

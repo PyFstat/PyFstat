@@ -9,7 +9,6 @@ from pyfstat.utils import safe_X_less_plt
     "DISPLAY" not in os.environ, reason="Running test on X-less machine"
 )
 def test_safe_X_less_plt_with_X(caplog):
-
     # No default backend is defined for matplotlib
     import matplotlib
     import matplotlib.pyplot as plt
@@ -23,7 +22,6 @@ def test_safe_X_less_plt_with_X(caplog):
 
 
 def test_safe_X_less_plt_without_X(caplog):
-
     # Remove DISPLAY if it's there
     if "DISPLAY" in os.environ:
         del os.environ["DISPLAY"]

@@ -25,7 +25,6 @@ def initializer(func):
 
 
 def safe_X_less_plt():
-
     if "DISPLAY" in os.environ:
         import matplotlib.pyplot as plt
 

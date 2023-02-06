@@ -76,7 +76,6 @@ def test_prior_parsing(input_priors, rng_object):
 
 
 def test_seed_and_generator_init(caplog, input_priors, seed, rng_object):
-
     with pytest.raises(ValueError):
         InjectionParametersGenerator(
             priors=input_priors, seed=seed, generator=rng_object

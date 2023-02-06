@@ -981,7 +981,6 @@ class LineWriter(Writer):
     """Other signal parameters will be removed before passing to Makefakedata_v4."""
 
     def __init__(self, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
 
         if self.detectors is None:

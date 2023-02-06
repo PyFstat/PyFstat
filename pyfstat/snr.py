@@ -57,7 +57,6 @@ class SignalToNoiseRatio:
     assumeSqrtSX: float = field(default=None)
 
     def __attrs_post_init__(self):
-
         have_noise_weights = self.noise_weights is not None
         have_sqrtSX = self.assumeSqrtSX is not None
 
@@ -427,7 +426,6 @@ class DetectorStates:
         """
 
         if isinstance(timestamps, dict):
-
             if detectors is not None:
                 raise ValueError("`timestamps`' keys are redundant with `detectors`.")
             for ifo in timestamps:

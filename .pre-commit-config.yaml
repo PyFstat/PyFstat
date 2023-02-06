@@ -19,7 +19,7 @@ repos:
         args: ["--profile", "black", "--filter-files"]
         name: isort (python)
   - repo: https://github.com/ambv/black
-    rev: 22.6.0
+    rev: 23.1.0
     hooks:
       - id: black
       - id: black-jupyter

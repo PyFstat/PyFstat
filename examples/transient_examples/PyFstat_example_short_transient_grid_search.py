@@ -24,7 +24,6 @@ import pyfstat
 tCWFstatMapVersion = "lal"
 
 if __name__ == "__main__":
-
     logger = pyfstat.set_up_logger(
         label="short_transient_grid_search", outdir=data.outdir
     )
