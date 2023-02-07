@@ -269,7 +269,7 @@ class Writer(BaseSearchClass):
                 self.Tsft,
                 self.tstart,
                 effective_duration,
-                self.sftmisc,
+                self.label,
             )
             for ind, dets in enumerate(IFOs)
         ]
@@ -311,7 +311,7 @@ class Writer(BaseSearchClass):
                     this_Tsft,
                     this_start_time,
                     this_end_time - this_start_time,
-                    self.sftmisc,
+                    self.label,
                 )
             )
 
@@ -383,7 +383,7 @@ class Writer(BaseSearchClass):
                     self.Tsft,
                     this_start_time,
                     this_end_time - this_start_time,
-                    self.sftmisc,
+                    self.label,
                 )
             )
         self.tstart = min(tstart)
@@ -445,15 +445,12 @@ class Writer(BaseSearchClass):
     def _basic_setup(self):
         """Basic parameters handling, path setup etc."""
 
-        self.sftmisc = self.label
-        if "_" in self.sftmisc:
-            # SFTv3 compatibility trick for old-style labels (with underscores)
-            self.sftmisc = utils.normalize_SFT_misc_strings(self.sftmisc)
-        if not self.sftmisc.isalnum():
+        if not self.label.isalnum():
             logger.warning(
-                f"SFT misc field '{self.sftmisc}' (derived from label)"
-                " is not alphanumeric."
-                f" This will likely lead to a {self.mfd} error."
+                f"Label '{self.label}' is not alphanumeric."
+                f" This will likely lead to a {self.mfd} error,"
+                " as we use it for the SFT naming 'misc' field."
+                " To avoid this issue, please avoid underscores, hyphens etc."
             )
 
         os.makedirs(self.outdir, exist_ok=True)
@@ -805,7 +802,7 @@ class Writer(BaseSearchClass):
         cl_mfd = [self.mfd]
         cl_mfd.append("--outSingleSFT=TRUE")
         cl_mfd.append('--outSFTdir="{}"'.format(self.outdir))
-        cl_mfd.append('--outLabel="{}"'.format(self.sftmisc))
+        cl_mfd.append('--outLabel="{}"'.format(self.label))
 
         if self.noiseSFTs is not None and self.SFTWindowType is None:
             raise ValueError(
