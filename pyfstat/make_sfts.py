@@ -804,13 +804,7 @@ class Writer(BaseSearchClass):
         cl_mfd.append('--outSFTdir="{}"'.format(self.outdir))
         cl_mfd.append('--outLabel="{}"'.format(self.label))
 
-        if self.noiseSFTs is not None and self.SFTWindowType is None:
-            raise ValueError(
-                "SFTWindowType is required when using noiseSFTs. "
-                "Please, make sure you understand the window function used "
-                "to produce noiseSFTs."
-            )
-        elif self.noiseSFTs is not None:
+        if self.noiseSFTs is not None:
             if self.sqrtSX and np.any(
                 [s > 0 for s in utils.parse_list_of_numbers(self.sqrtSX)]
             ):
