@@ -172,7 +172,7 @@ class Writer(BaseSearchClass):
         SFTWindowParam: float
             Optional parameter for some windowing functions.
         SFTWindowBeta: float
-            Deprecated alias to `SFTWindowParam`.
+            Defunct alias to `SFTWindowParam`.
         Band: float or None
             If float, and `F0` is also not `None`, then output SFTs cover
             `[F0-Band/2,F0+Band/2]`.
@@ -508,15 +508,9 @@ class Writer(BaseSearchClass):
             self.tref = self.tstart
 
         if getattr(self, "SFTWindowBeta", None):
-            if self.SFTWindowParam:
-                raise ValueError(
-                    "Cannot use both 'SFTWindowBeta' and 'SFTWindowParam'."
-                )
-            else:
-                logger.warning(
-                    "Option 'SFTWindowBeta' is deprecated, please use 'SFTWindowParam'."
-                )
-                self.SFTWindowParam = self.SFTWindowBeta
+            logger.warning(
+                "Option 'SFTWindowBeta' is defunct, please use 'SFTWindowParam'."
+            )
 
     @property
     def tend(self):
