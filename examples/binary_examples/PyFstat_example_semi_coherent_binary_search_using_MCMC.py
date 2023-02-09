@@ -17,7 +17,7 @@ directed_search = True
 # If False, ecc and argp priors are used
 known_eccentricity = True
 
-label = "PyFstat_example_semi_coherent_binary_search_using_MCMC"
+label = "PyFstatExampleSemiCoherentBinarySearchUsingMCMC"
 outdir = os.path.join("PyFstat_example_data", label)
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
@@ -123,7 +123,7 @@ mcmc = pyfstat.MCMCSemiCoherentSearch(
     label=label,
     outdir=outdir,
     nsegs=10,
-    sftfilepattern=os.path.join(outdir, "*{}*sft".format(label)),
+    sftfilepattern=data.sftfilepath,
     theta_prior=theta_prior,
     tref=signal_parameters["tref"],
     minStartTime=data_parameters["tstart"],

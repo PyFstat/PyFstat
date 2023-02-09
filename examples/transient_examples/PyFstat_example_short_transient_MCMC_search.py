@@ -14,9 +14,8 @@ import pyfstat
 from pyfstat.utils import get_predict_fstat_parameters_from_dict
 
 if __name__ == "__main__":
-    logger = pyfstat.set_up_logger(
-        label="short_transient_mcmc_search", outdir=data.outdir
-    )
+    label = "PyFstatExampleShortTransientMCMCSearch"
+    logger = pyfstat.set_up_logger(label=label, outdir=data.outdir)
 
     if not os.path.isdir(data.outdir) or not np.any(
         [f.endswith(".sft") for f in os.listdir(data.outdir)]
@@ -74,9 +73,9 @@ BSGL = False
 transientWindowType = "rect"
 
 mcmc = pyfstat.MCMCTransientSearch(
-    label="transient_search" + ("_BSGL" if BSGL else ""),
+    label=label + ("BSGL" if BSGL else ""),
     outdir=data.outdir,
-    sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
+    sftfilepattern=os.path.join(data.outdir, f"*{data.label}*sft"),
     theta_prior=theta_prior,
     tref=inj["tref"],
     nsteps=nsteps,

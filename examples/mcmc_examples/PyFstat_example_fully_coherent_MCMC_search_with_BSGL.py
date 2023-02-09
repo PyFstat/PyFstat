@@ -12,7 +12,7 @@ import numpy as np
 
 import pyfstat
 
-label = os.path.splitext(os.path.basename(__file__))[0]
+label = "PyFstatExampleFullyCoherentMCMCSearchBSGL"
 outdir = os.path.join("PyFstat_example_data", label)
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
@@ -24,7 +24,7 @@ data_parameters = {
     "duration": 100 * 86400,
     "detectors": "H1,L1",
     "SFTWindowType": "tukey",
-    "SFTWindowBeta": 0.001,
+    "SFTWindowParam": 0.001,
 }
 tend = data_parameters["tstart"] + data_parameters["duration"]
 mid_time = 0.5 * (data_parameters["tstart"] + tend)
@@ -47,6 +47,10 @@ data = pyfstat.Writer(
 )
 data.make_data()
 
+# The predicted twoF, given by lalapps_predictFstat can be accessed by
+twoF = data.predict_fstat()
+logger.info("Predicted twoF value: {}\n".format(twoF))
+
 # Now we add an additional single-detector artifact to H1 only.
 # For simplicity, this is modelled here as a fully modulated CW-like signal,
 # just restricted to the single detector.
@@ -66,9 +70,8 @@ extra_writer = pyfstat.Writer(
 )
 extra_writer.make_data()
 
-# The predicted twoF, given by lalapps_predictFstat can be accessed by
-twoF = data.predict_fstat()
-logger.info("Predicted twoF value: {}\n".format(twoF))
+# use the combined data from both Writers
+sftfilepattern = os.path.join(outdir, "*" + label + "*sft")
 
 # MCMC prior ranges
 DeltaF0 = 1e-5
@@ -108,7 +111,7 @@ transform_dict = dict(
 mcmc_F = pyfstat.MCMCSearch(
     label=label + "_twoF",
     outdir=outdir,
-    sftfilepattern=os.path.join(outdir, "*{}*sft".format(label)),
+    sftfilepattern=sftfilepattern,
     theta_prior=theta_prior,
     tref=mid_time,
     minStartTime=data_parameters["tstart"],
@@ -131,7 +134,7 @@ mcmc_F.plot_prior_posterior(injection_parameters=signal_parameters)
 mcmc_F = pyfstat.MCMCSearch(
     label=label + "_BSGL",
     outdir=outdir,
-    sftfilepattern=os.path.join(outdir, "*{}*sft".format(label)),
+    sftfilepattern=sftfilepattern,
     theta_prior=theta_prior,
     tref=mid_time,
     minStartTime=data_parameters["tstart"],

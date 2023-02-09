@@ -27,7 +27,7 @@ from PyFstat_example_make_data_for_search_on_1_glitch import (
 
 import pyfstat
 
-label = "PyFstat_example_glitch_robust_directed_grid_search_on_1_glitch"
+label = "PyFstatExampleGlitchRobustDirectedGridSearchOn1Glitch"
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 Nstar = 1000
@@ -50,7 +50,7 @@ t1 = time.time()
 search = pyfstat.GridGlitchSearch(
     label,
     outdir,
-    os.path.join(outdir, "*1_glitch*sft"),
+    os.path.join(outdir, "*1glitch*sft"),
     F0s=F0s,
     F1s=F1s,
     F2s=F2s,

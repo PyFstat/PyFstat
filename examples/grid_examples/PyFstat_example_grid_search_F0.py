@@ -12,7 +12,7 @@ import numpy as np
 
 import pyfstat
 
-label = "PyFstat_example_grid_search_F0"
+label = "PyFstatExampleGridSearchF0"
 outdir = os.path.join("PyFstat_example_data", label)
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
@@ -61,7 +61,7 @@ Deltas = [inj["Delta"]]
 search = pyfstat.GridSearch(
     label=label,
     outdir=outdir,
-    sftfilepattern=os.path.join(outdir, "*" + label + "*sft"),
+    sftfilepattern=data.sftfilepath,
     F0s=F0s,
     F1s=F1s,
     F2s=F2s,

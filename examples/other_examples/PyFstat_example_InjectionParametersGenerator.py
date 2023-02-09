@@ -18,7 +18,7 @@ from pyfstat import (
     set_up_logger,
 )
 
-label = "PyFstat_example_InjectionParametersGenerator"
+label = "PyFstatExampleInjectionParametersGenerator"
 outdir = os.path.join("PyFstat_example_data", label)
 logger = set_up_logger(label=label, outdir=outdir)
 

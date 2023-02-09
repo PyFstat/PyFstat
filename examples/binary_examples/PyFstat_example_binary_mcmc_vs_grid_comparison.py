@@ -17,8 +17,8 @@ import pyfstat
 # Set to false to include eccentricity
 circular_orbit = False
 
-label = "PyFstat_example_binary_mcmc_vs_grid_comparison" + (
-    "_circular_orbit" if circular_orbit else ""
+label = "PyFstatExampleBinaryMCMCvsGridComparison" + (
+    "CircularOrbit" if circular_orbit else ""
 )
 outdir = os.path.join("PyFstat_example_data", label)
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
@@ -56,7 +56,7 @@ signal_parameters = {
 
 logger.info("Generating SFTs with injected signal...")
 writer = pyfstat.BinaryModulatedWriter(
-    label="simulated_signal",
+    label=label + "SimulatedSignal",
     outdir=outdir,
     **data_parameters,
     **signal_parameters,
@@ -96,7 +96,7 @@ grid_points = np.hstack(
 )
 
 compute_f_stat = pyfstat.ComputeFstat(
-    sftfilepattern=os.path.join(outdir, "*simulated_signal*sft"),
+    sftfilepattern=writer.sftfilepath,
     tref=signal_parameters["tref"],
     binary=True,
     minCoverFreq=-0.5,
@@ -165,9 +165,9 @@ nwalkers = 100
 nsteps = [100, 100]  # [burnin,production]
 
 mcmcsearch = pyfstat.MCMCSearch(
-    label="mcmc_search",
+    label=label + "MCMCSearch",
     outdir=outdir,
-    sftfilepattern=os.path.join(outdir, "*simulated_signal*sft"),
+    sftfilepattern=writer.sftfilepath,
     theta_prior=theta_prior,
     tref=signal_parameters["tref"],
     nsteps=nsteps,

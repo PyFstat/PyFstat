@@ -11,7 +11,8 @@ import numpy as np
 
 from pyfstat import GlitchWriter, Writer
 
-outdir = os.path.join("PyFstat_example_data", "PyFstat_example_glitch_robust_search")
+label = "PyFstatExampleGlitchRobustSearch"
+outdir = os.path.join("PyFstat_example_data", label)
 
 # First, we generate data with a reasonably strong smooth signal
 
@@ -35,7 +36,7 @@ tref = tstart + 0.5 * duration
 IFO = "H1"
 
 data = Writer(
-    label="0_glitch",
+    label=label + "0glitch",
     outdir=outdir,
     tref=tref,
     tstart=tstart,
@@ -58,7 +59,7 @@ delta_F0 = 5e-6
 delta_F1 = 0
 
 glitch_data = GlitchWriter(
-    label="1_glitch",
+    label=label + "1glitch",
     outdir=outdir,
     tref=tref,
     tstart=tstart,
@@ -87,7 +88,7 @@ delta_F1_2 = [0, 0]
 delta_F2_2 = [0, 0]
 
 two_glitch_data = GlitchWriter(
-    label="2_glitch",
+    label=label + "2glitch",
     outdir=outdir,
     tref=tref,
     tstart=tstart,

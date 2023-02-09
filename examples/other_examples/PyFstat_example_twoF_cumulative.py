@@ -13,7 +13,7 @@ import numpy as np
 import pyfstat
 from pyfstat.utils import get_predict_fstat_parameters_from_dict
 
-label = "PyFstat_example_twoF_cumulative"
+label = "PyFstatExampleTwoFCumulative"
 outdir = os.path.join("PyFstat_example_data", label)
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
