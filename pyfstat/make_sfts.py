@@ -118,16 +118,13 @@ class Writer(BaseSearchClass):
             A human-readable label to be used in naming the output files.
             NOTE: to agree with the v3 SFT naming specification
             ( https://dcc.ligo.org/T040164-v2/public )
-            actual SFT filenames can only contain ASCII alphanumeric characters
+            label can only contain ASCII alphanumeric characters
             in their "description" field,
-            and hence we will do some normalization
-            to ensure "traditional PyFstat labels" still work
-            (strip underscores and use CamelCase instead).
-            Still, it is the user's responsibility to choose a "legal" label,
-            and we recommend to just stick to ASCII alphanumerics to begin with.
-            That way, you can also be sure that all of your files follow
-            a consistent naming pattern,
-            which is NOT the case if you let us do the "normalization".
+            i.e. no underscores, hyphens etc.
+            Also, internally
+            a "channel"/"frame" name is constructed as `IFO:label`,
+            which may not exceed 64 characters,
+            so a label may only be 60 characters long.
         tstart: int
             Starting GPS epoch of the data set.
             If `noiseSFT` are given, this is used as a LALPulsar
@@ -446,11 +443,16 @@ class Writer(BaseSearchClass):
         """Basic parameters handling, path setup etc."""
 
         if not self.label.isalnum():
-            logger.warning(
-                f"Label '{self.label}' is not alphanumeric."
-                f" This will likely lead to a {self.mfd} error,"
-                " as we use it for the SFT naming 'misc' field."
-                " To avoid this issue, please avoid underscores, hyphens etc."
+            raise ValueError(
+                f"Label '{self.label}' is not alphanumeric,"
+                " which is incompatible with the SFTv3 naming specification"
+                " ( https://dcc.ligo.org/T040164-v2/public )."
+                " Please avoid underscores, hyphens etc."
+            )
+        if len(self.label) > 60:
+            raise ValueError(
+                f"Label {self.label} is too long to comply with SFT naming rules"
+                f" ({len(self.label)}>60)."
             )
 
         os.makedirs(self.outdir, exist_ok=True)
