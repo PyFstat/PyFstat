@@ -45,7 +45,7 @@ Tsft = 1800
 
 if __name__ == "__main__":
     transient = pyfstat.Writer(
-        label=label + "SimulatedShortTransientSignal",
+        label=label,
         outdir=outdir,
         tref=tref,
         tstart=tstart,

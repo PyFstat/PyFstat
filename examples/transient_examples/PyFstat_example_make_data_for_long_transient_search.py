@@ -40,7 +40,7 @@ detectors = "H1,L1"
 
 if __name__ == "__main__":
     transient = pyfstat.Writer(
-        label=label + "SimulatedLongTransientSignal",
+        label=label,
         outdir=outdir,
         tref=tref,
         tstart=tstart,
