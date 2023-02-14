@@ -520,6 +520,8 @@ class ComputeFstat(BaseSearchClass):
             " with constraints {}.".format(self.sftfilepattern, ", ".join(constr_str))
         )
         self.SFTCatalog = lalpulsar.SFTdataFind(self.sftfilepattern, constraints)
+        if self.SFTCatalog.length == 0:
+            raise IOError("No SFTs found.")
         Tsft_from_catalog = int(1.0 / self.SFTCatalog.data[0].header.deltaF)
         if Tsft_from_catalog != self.Tsft:
             logger.info(
