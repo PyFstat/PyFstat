@@ -735,7 +735,9 @@ class ComputeFstat(BaseSearchClass):
             )
 
         if self.transientWindowType:
-            logger.info("Initialising transient parameters")
+            logger.info(
+                f"Initialising transient parameters for window type '{self.transientWindowType}'"
+            )
             self.maxTwoF = 0
             if getattr(self, "BtSG", False):
                 self.lnBtSG = np.nan
