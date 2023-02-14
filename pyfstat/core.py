@@ -92,7 +92,7 @@ class BaseSearchClass:
         pretty_init_parameters = (
             ["{"]
             + [pretty_init_parameters[0].replace("{", " ")]
-            + pretty_init_parameters[1:-2]
+            + pretty_init_parameters[1:-1]
             + [pretty_init_parameters[-1].rstrip("}")]
             + ["}"]
         )
