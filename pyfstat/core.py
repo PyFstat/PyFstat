@@ -92,7 +92,7 @@ class BaseSearchClass:
         pretty_init_parameters = (
             ["{"]
             + [pretty_init_parameters[0].replace("{", " ")]
-            + pretty_init_parameters[1:-2]
+            + pretty_init_parameters[1:-1]
             + [pretty_init_parameters[-1].rstrip("}")]
             + ["}"]
         )
@@ -735,7 +735,9 @@ class ComputeFstat(BaseSearchClass):
             )
 
         if self.transientWindowType:
-            logger.info("Initialising transient parameters")
+            logger.info(
+                f"Initialising transient parameters for window type '{self.transientWindowType}'"
+            )
             self.maxTwoF = 0
             if getattr(self, "BtSG", False):
                 self.lnBtSG = np.nan
