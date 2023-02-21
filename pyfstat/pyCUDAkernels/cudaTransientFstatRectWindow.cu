@@ -105,11 +105,17 @@ __global__ void cudaTransientFstatRectWindow ( float *input,
         DdInv = 1.0 / ( Ad * Bd - Cd * Cd );
       }
 
-      /* from XLALComputeFstatFromFaFb */
-      float F  = DdInv * (  Bd * ( Fa_re*Fa_re + Fa_im*Fa_im )
-                          + Ad * ( Fb_re*Fb_re + Fb_im*Fb_im )
-                          - 2.0 * Cd * ( Fa_re * Fb_re + Fa_im * Fb_im )
-                         );
+      /* matching compute_fstat_from_fa_fb
+       * including default fallback = 0.5*E[2F] in noise
+       * when DdInv == 0 due to ill-conditionness of M_munu
+       */
+      float F = 2;
+      if ( DdInv > 0 ) {
+        F  = DdInv * (   Bd * ( Fa_re*Fa_re + Fa_im*Fa_im )
+                       + Ad * ( Fb_re*Fb_re + Fb_im*Fb_im )
+                       - 2.0 * Cd * ( Fa_re * Fb_re + Fa_im * Fb_im )
+                     );
+      }
 
       /* store result in Fstat-matrix
        * at unraveled index of element {m,n}
