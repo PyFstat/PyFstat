@@ -101,14 +101,19 @@ __global__ void cudaTransientFstatExpWindow ( float *input,
 
     }
 
-    /* get determinant */
-    float Dd = ( Ad * Bd - Cd * Cd );
-    float DdInv = 0.0f;
-    /* safety catch as in XLALWeightMultiAMCoeffs():
-     * make it so that in the end F=0 instead of -nan
+    /* get inverse antenna pattern determinant,
+     * following safety checks from
+     * XLALComputeAntennaPatternSqrtDeterminant()
+     * and estimateAntennaPatternConditionNumber()
      */
-    if ( Dd > 0.0 ) {
-      DdInv  = 1.0 / Dd;
+    float sumAB  = Ad + Bd;
+    float diffAB = Ad - Bd;
+    float disc   = sqrt ( diffAB*diffAB + 4.0 * Cd*Cd );
+    float denom = sumAB - disc;
+    float cond = (denom > 0) ? ((sumAB + disc) / denom) : INFINITY;
+    float DdInv = 0.0f;
+    if ( cond < 1e4 ) {
+      DdInv = 1.0 / ( Ad * Bd - Cd * Cd );
     }
 
     /* from XLALComputeFstatFromFaFb */
