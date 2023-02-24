@@ -266,6 +266,16 @@ def _optional_imports_pycuda():
     )
 
 
+def _get_transient_fstat_map_features():
+    """Helper function to check available features."""
+    features = {}
+    have_lal = _optional_import("lal")
+    have_lalpulsar = _optional_import("lalpulsar")
+    features["lal"] = have_lal and have_lalpulsar
+    features["pycuda"] = _optional_imports_pycuda()
+    return features
+
+
 def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
     """Initialization of available modules (or 'features') for computing transient F-stat maps.
 
@@ -296,11 +306,7 @@ def init_transient_fstat_map_features(feature="lal", cudaDeviceName=None):
         A CUDA device context object, if assigned.
     """
 
-    features = {}
-    have_lal = _optional_import("lal")
-    have_lalpulsar = _optional_import("lalpulsar")
-    features["lal"] = have_lal and have_lalpulsar
-    features["pycuda"] = _optional_imports_pycuda()
+    features = _get_transient_fstat_map_features()
     logger.debug("Got the following features for transient F-stat maps:")
     logger.debug(features)
 
