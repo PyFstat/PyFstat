@@ -130,6 +130,8 @@ class pyTransientFstatMap:
             self.t0_ML = float(0.0)
             self.tau_ML = float(0.0)
         self.lnBtSG = np.nan
+        self.t0_MP = np.nan
+        self.tau_MP = np.nan
 
     def _init_from_lalpulsar_type(self, transientFstatMap_t):
         """This essentially just strips out a redundant member level from the lalpulsar structure.
@@ -203,6 +205,73 @@ class pyTransientFstatMap:
         # NOTE: correct this for different rhohMax by adding "- 4 * log(rhohMax)" to lnBtSG
         self.lnBtSG = np.log(normBh) + logBhat  # - 4.0 * log ( rhohMax )
         return self.lnBtSG
+
+    def get_t0_max_posterior(self, windowRange):
+        """Compute transient-CW max-posterior estimate on start-time t0.
+
+        This is based on `XLALComputeTransientPosterior_t0()`,
+        dropping the special cases and normalization step,
+        and only returning the maximum point, not a full posterior.
+
+        The posterior is sampled with N_t0Range points given by the size
+        of the input matrix  FstatMap (namely N_t0Range = t0Band / dt0).
+
+        Consistent with `XLALFindModeOfPDF1D()`,
+        we return the center-value of the discrete 'bin'
+        containing the maximum of the distribution.
+
+        Parameters
+        ----------
+        windowRange: lalpulsar.transientWindowRange_t
+            A lalpulsar structure containing the transient parameters.
+
+        Returns
+        -------
+        t0_MP: float
+            The max-posterior estimate of start time t0 [in s].
+        """
+        # Subtract maxF from F_mn and sum up e^{F_mn - maxF}.
+        # It is numerically more robust to marginalize over e^(F_mn - Fmax),
+        # which at worst can underflow, while e^F_mn can overflow.
+        # The constant offset e^Fmax is irrelevant for posteriors (normalization constant).
+        sum_eF = np.sum(np.exp(-(self.maxF - self.F_mn)), axis=1)
+        logger.warning(f"windowRange.dt0 = {windowRange.dt0}")
+        dx = windowRange.t0Band / np.shape(self.F_mn)[0]
+        logger.warning(f"dx = ( xMax - xMin ) / numBins = {dx}")
+        self.t0_MP = windowRange.t0 + (np.argmax(sum_eF) + 0.5) * dx  # windowRange.dt0
+        return self.t0_MP
+
+    def get_tau_max_posterior(self, windowRange):
+        """Compute transient-CW max-posterior estimate on timescale tau.
+
+        This is based on `XLALComputeTransientPosterior_tau(),`
+        dropping the special cases and normalization step,
+        and only returning the maximum point, not a full posterior.
+
+        The posterior is sampled with N_tauRange points given by the size
+        of the input matrix  FstatMap (namely N_tauRange = tauBand / dtau).
+
+        Consistent with `XLALFindModeOfPDF1D()`,
+        we return the center-value of the discrete 'bin'
+        containing the maximum of the distribution.
+
+        Parameters
+        ----------
+        windowRange: lalpulsar.transientWindowRange_t
+            A lalpulsar structure containing the transient parameters.
+
+        Returns
+        -------
+        tau_MP: float
+            The max-posterior estimate of timescale tau [in s].
+        """
+        # Subtract maxF from F_mn and sum up e^{F_mn - maxF}.
+        # It is numerically more robust to marginalize over e^(F_mn - Fmax),
+        # which at worst can underflow, while e^F_mn can overflow.
+        # The constant offset e^Fmax is irrelevant for posteriors (normalization constant).
+        sum_eF = np.sum(np.exp(-(self.maxF - self.F_mn)), axis=0)
+        self.tau_MP = windowRange.tau + (np.argmax(sum_eF) + 0.5) * windowRange.dtau
+        return self.tau_MP
 
     def write_F_mn_to_file(self, tCWfile, windowRange, header=[]):
         """Format a 2D transient-F-stat matrix over `(t0,tau)` and write as a text file.
@@ -477,7 +546,9 @@ def lalpulsar_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=Fal
     BtSG: boolean
         If true, also compute the lnBtSG transient Bayes factor statistic,
         using the corresponding lalpulsar function,
-        and store it in `FstatMap.lnBtSG`.
+        and store it in `FstatMap.lnBtSG`;
+        and the max-posterior estimates
+        `FstatMap.t0_MP` and `FstatMap.tau_MP`.
 
     Returns
     -------
@@ -493,6 +564,28 @@ def lalpulsar_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=Fal
     if BtSG:
         FstatMap.lnBtSG = lalpulsar.ComputeTransientBstat(
             windowRange, FstatMap_lalpulsar
+        )
+        pdf_t0 = lalpulsar.ComputeTransientPosterior_t0(windowRange, FstatMap_lalpulsar)
+        logger.warning(pdf_t0.xTics.data)
+        logger.warning(pdf_t0.xTics.length)
+        logger.warning(
+            f"{windowRange.t0,windowRange.t0Band,windowRange.tau,windowRange.tauBand}"
+        )
+        pdf_tau = lalpulsar.ComputeTransientPosterior_tau(
+            windowRange, FstatMap_lalpulsar
+        )
+        FstatMap.t0_MP = lalpulsar.FindModeOfPDF1D(pdf_t0)
+        FstatMap.tau_MP = lalpulsar.FindModeOfPDF1D(pdf_tau)
+        logger.warning(
+            f"lalcomputed: lnBtSG={FstatMap.lnBtSG:.4f},"
+            f" t0_MP={FstatMap.t0_MP}, tau_MP={FstatMap.tau_MP}"
+        )
+        FstatMap.get_lnBtSG()
+        FstatMap.get_t0_max_posterior(windowRange)
+        FstatMap.get_tau_max_posterior(windowRange)
+        logger.warning(
+            f"recomputed:  lnBtSG={FstatMap.lnBtSG:.4f},"
+            f" t0_MP={FstatMap.t0_MP}, tau_MP={FstatMap.tau_MP}"
         )
     return FstatMap
 
@@ -588,7 +681,9 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=False)
     BtSG: boolean
         If true, also compute the lnBtSG transient Bayes factor statistic,
         using a CPU python port of the corresponding lalpulsar function,
-        and store it in `FstatMap.lnBtSG`.
+        and store it in `FstatMap.lnBtSG`;
+        and the max-posterior estimates
+        `FstatMap.t0_MP` and `FstatMap.tau_MP`.
 
     Returns
     -------
@@ -731,8 +826,13 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=False)
 
     if BtSG:
         # so far seems there is no need to move this onto the GPU
-        FstatMap.lnBtSG = FstatMap.get_lnBtSG()
-        logger.debug(f"Also computed: lnBtSG={FstatMap.lnBtSG:.4f}")
+        FstatMap.get_lnBtSG()
+        FstatMap.get_t0_max_posterior(windowRange)
+        FstatMap.get_tau_max_posterior(windowRange)
+        logger.debug(
+            f"Also computed: lnBtSG={FstatMap.lnBtSG:.4f},"
+            f" t0_MP={FstatMap.t0_MP}, tau_MP={FstatMap.tau_MP}"
+        )
 
     return FstatMap
 

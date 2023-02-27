@@ -97,6 +97,7 @@ def test_compute_transient_fstat_map(tCWFstatMapVersion, window, snr):
     reltol = 0.15 if window == "exp" else 0.01
     assert pytest.approx(2 * FstatMap.maxF, rel=reltol) == stats["maxTwoF"]
     assert pytest.approx(FstatMap.lnBtSG, rel=reltol) == stats["logBstat"]
+    logging.warning(f"{FstatMap.t0_ML,FstatMap.tau_ML,FstatMap.t0_MP,FstatMap.tau_MP}")
     if snr > 0:
         assert (
             pytest.approx(FstatMap.t0_ML, abs=4 * Tsft)
