@@ -35,7 +35,7 @@ requires = [
     "tqdm",
     "versioneer",
 ]
-lalsuite = "lalsuite>=7.11.1"  # to catch current dev versions, should update to next officia release
+lalsuite = "lalsuite>=7.13"
 extras_require = {
     "chainconsumer": ["chainconsumer"],
     "dev": [
