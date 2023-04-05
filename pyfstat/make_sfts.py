@@ -170,6 +170,7 @@ class Writer(BaseSearchClass):
             Optional parameter for some windowing functions.
         SFTWindowBeta: float
             Defunct alias to `SFTWindowParam`.
+            Will be removed in a future release.
         Band: float or None
             If float, and `F0` is also not `None`, then output SFTs cover
             `[F0-Band/2,F0+Band/2]`.
@@ -510,7 +511,7 @@ class Writer(BaseSearchClass):
             self.tref = self.tstart
 
         if getattr(self, "SFTWindowBeta", None):
-            logger.warning(
+            raise ValueError(
                 "Option 'SFTWindowBeta' is defunct, please use 'SFTWindowParam'."
             )
 
