@@ -523,7 +523,7 @@ class Writer(BaseSearchClass):
                 raise ValueError(
                     "XLAL error on checking SFT window options."
                     f" Likely either SFTWindowType={self.SFTWindowType} is not a recognised window name,"
-                    " or it requires also setting a SFTWindowParam."
+                    " or it requires also setting an SFTWindowParam."
                 )
 
     @property
