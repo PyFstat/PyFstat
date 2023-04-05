@@ -386,7 +386,7 @@ class TestWriter(BaseForTestsWithData):
         )
         writer.make_data(verbose=True)
         # split them by frequency
-        cl_split = pyfstat.utils.get_lal_exec("splitSFTs")
+        cl_split = "lalpulsar_splitSFTs"
         cl_split += " --frequency-bandwidth 1"
         cl_split += f" --start-frequency {writer.fmin}"
         cl_split += f" --end-frequency {writer.fmin+writer.Band}"

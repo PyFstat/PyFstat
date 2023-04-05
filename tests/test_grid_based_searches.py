@@ -102,7 +102,7 @@ class TestGridSearch(BaseForTestsWithData):
         CFSv2_out_file = os.path.join(self.outdir, "CFSv2_Fstat_out.txt")
         CFSv2_loudest_file = os.path.join(self.outdir, "CFSv2_Fstat_loudest.txt")
         cl_CFSv2 = []
-        cl_CFSv2.append(pyfstat.utils.get_lal_exec("ComputeFstatistic_v2"))
+        cl_CFSv2.append("lalpulsar_ComputeFstatistic_v2")
         cl_CFSv2.append("--Alpha {} --AlphaBand 0".format(self.Alpha))
         cl_CFSv2.append("--Delta {} --DeltaBand 0".format(self.Delta))
         cl_CFSv2.append("--Freq {}".format(self.F0s[0]))
