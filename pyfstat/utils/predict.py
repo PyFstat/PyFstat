@@ -7,7 +7,6 @@ from .cli import run_commandline
 from .converting import parse_list_of_numbers
 from .ephemeris import get_ephemeris_files
 from .io import read_par
-from .runlalsuite import get_lal_exec
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +84,7 @@ def predict_fstat(
     """
 
     cl_pfs = []
-    cl_pfs.append(get_lal_exec("PredictFstat"))
+    cl_pfs.append("lalpulsar_PredictFstat")
 
     pars = {"h0": h0, "cosi": cosi, "psi": psi, "Alpha": Alpha, "Delta": Delta}
     cl_pfs.extend([f"--{key}={val}" for key, val in pars.items() if val is not None])
