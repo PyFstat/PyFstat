@@ -121,9 +121,16 @@ def get_commandline_from_SFTDescriptor(descriptor):
 
 
 def get_official_sft_filename(
-    IFO, numSFTs, Tsft, tstart, duration, label=None, window_type=None, window_beta=None
+    IFO,
+    numSFTs,
+    Tsft,
+    tstart,
+    duration,
+    label=None,
+    window_type=None,
+    window_param=None,
 ):
-    """Wrapper to XLALOfficialSFTFilename.
+    """Wrapper to predict the canonical lalpulsar names for SFT files.
 
     Parameters
     ----------
@@ -140,31 +147,31 @@ def get_official_sft_filename(
     label: str or None
         optional 'Misc' entry in the SFT 'D' field
     window_type: str or None
-        included for SFT-spec v3 forwards compatibility
-        (see https://git.ligo.org/lscsoft/lalsuite/-/merge_requests/2027 );
-        not implemented yet
-    window_beta: float or None
-        included for SFT-spec v3 forwards compatibility
-        (see https://git.ligo.org/lscsoft/lalsuite/-/merge_requests/2027 );
-        not implemented yet
+        window function applied to SFTs
+    window_param: float or None
+        additional parameter for some window functions
 
     Returns
     -------
     filename: str
         The canonical SFT file name for the input parameters.
     """
-    if window_type or window_beta:
-        raise NotImplementedError(
-            "The parameters 'window_type' and 'window_beta'"
-            " are only included for SFT-spec v3 forwards compatibility"
-            " and not yet implemented."
-        )
-    return lalpulsar.OfficialSFTFilename(
-        IFO[0],
-        IFO[1],
-        numSFTs,
-        Tsft,
-        tstart,
-        duration,
-        label,
+    spec = lalpulsar.SFTFilenameSpec()
+    lalpulsar.FillSFTFilenameSpecStrings(
+        spec=spec,
+        path=None,
+        extn=None,
+        detector=IFO,
+        window_type=window_type,
+        privMisc=label,
+        pubObsKind=None,
+        pubChannel=None,
     )
+    spec.window_param = window_param or 0
+    spec.numSFTs = numSFTs
+    spec.SFTtimebase = Tsft
+    spec.gpsStart = tstart
+    # possible gotcha: duration may be different if nanoseconds of sft-epochs are non-zero
+    # (see SFTfileIO.c in lalpulsar)
+    spec.SFTspan = duration
+    return lalpulsar.BuildSFTFilenameFromSpec(spec)

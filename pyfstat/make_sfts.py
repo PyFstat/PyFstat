@@ -99,7 +99,8 @@ class Writer(BaseSearchClass):
         sqrtSX=None,
         noiseSFTs=None,
         SFTWindowType=None,
-        SFTWindowBeta=0.0,
+        SFTWindowParam=None,
+        SFTWindowBeta=None,
         Band=None,
         detectors=None,
         earth_ephem=None,
@@ -115,6 +116,15 @@ class Writer(BaseSearchClass):
         ----------
         label: string
             A human-readable label to be used in naming the output files.
+            NOTE: to agree with the v3 SFT naming specification
+            ( https://dcc.ligo.org/T040164-v2/public )
+            label can only contain ASCII alphanumeric characters
+            in their "description" field,
+            i.e. no underscores, hyphens etc.
+            Also, internally
+            a "channel"/"frame" name is constructed as `IFO:label`,
+            which may not exceed 64 characters,
+            so a label may only be 60 characters long.
         tstart: int
             Starting GPS epoch of the data set.
             If `noiseSFT` are given, this is used as a LALPulsar
@@ -156,8 +166,11 @@ class Writer(BaseSearchClass):
             NOTE: mutually exclusive with `timestamps`.
         SFTWindowType: str or None
             LAL name of the windowing function to apply to the data.
-        SFTWindowBeta: float
+        SFTWindowParam: float
             Optional parameter for some windowing functions.
+        SFTWindowBeta: float
+            Defunct alias to `SFTWindowParam`.
+            Will be removed in a future release.
         Band: float or None
             If float, and `F0` is also not `None`, then output SFTs cover
             `[F0-Band/2,F0+Band/2]`.
@@ -430,6 +443,19 @@ class Writer(BaseSearchClass):
     def _basic_setup(self):
         """Basic parameters handling, path setup etc."""
 
+        if not self.label.isalnum():
+            raise ValueError(
+                f"Label '{self.label}' is not alphanumeric,"
+                " which is incompatible with the SFTv3 naming specification"
+                " ( https://dcc.ligo.org/T040164-v2/public )."
+                " Please avoid underscores, hyphens etc."
+            )
+        if len(self.label) > 60:
+            raise ValueError(
+                f"Label {self.label} is too long to comply with SFT naming rules"
+                f" ({len(self.label)}>60)."
+            )
+
         os.makedirs(self.outdir, exist_ok=True)
         self.config_file_name = os.path.join(self.outdir, self.label + ".cff")
         self.theta = np.array([self.phi, self.F0, self.F1, self.F2])
@@ -483,6 +509,22 @@ class Writer(BaseSearchClass):
 
         if self.tref is None:
             self.tref = self.tstart
+
+        if getattr(self, "SFTWindowBeta", None):
+            raise ValueError(
+                "Option 'SFTWindowBeta' is defunct, please use 'SFTWindowParam'."
+            )
+        if getattr(self, "SFTWindowType", None):
+            try:
+                lal.CheckNamedWindow(
+                    self.SFTWindowType, self.SFTWindowParam is not None
+                )
+            except RuntimeError:
+                raise ValueError(
+                    "XLAL error on checking SFT window options."
+                    f" Likely either SFTWindowType={self.SFTWindowType} is not a recognised window name,"
+                    " or it requires also setting an SFTWindowParam."
+                )
 
     @property
     def tend(self):
@@ -770,13 +812,7 @@ class Writer(BaseSearchClass):
         cl_mfd.append('--outSFTdir="{}"'.format(self.outdir))
         cl_mfd.append('--outLabel="{}"'.format(self.label))
 
-        if self.noiseSFTs is not None and self.SFTWindowType is None:
-            raise ValueError(
-                "SFTWindowType is required when using noiseSFTs. "
-                "Please, make sure you understand the window function used "
-                "to produce noiseSFTs."
-            )
-        elif self.noiseSFTs is not None:
+        if self.noiseSFTs is not None:
             if self.sqrtSX and np.any(
                 [s > 0 for s in utils.parse_list_of_numbers(self.sqrtSX)]
             ):
@@ -799,7 +835,7 @@ class Writer(BaseSearchClass):
 
         if self.SFTWindowType is not None:
             cl_mfd.append('--SFTWindowType="{}"'.format(self.SFTWindowType))
-            cl_mfd.append("--SFTWindowBeta={}".format(self.SFTWindowBeta))
+            cl_mfd.append("--SFTWindowParam={}".format(self.SFTWindowParam))
         if getattr(self, "timestamps", None) is not None:
             cl_mfd.append("--timestampsFiles={}".format(self.timestamps))
         else:
@@ -890,7 +926,8 @@ class BinaryModulatedWriter(Writer):
         sqrtSX=None,
         noiseSFTs=None,
         SFTWindowType=None,
-        SFTWindowBeta=0.0,
+        SFTWindowParam=None,
+        SFTWindowBeta=None,
         Band=None,
         detectors=None,
         earth_ephem=None,
@@ -937,6 +974,7 @@ class BinaryModulatedWriter(Writer):
             outdir=outdir,
             sqrtSX=sqrtSX,
             SFTWindowType=SFTWindowType,
+            SFTWindowParam=SFTWindowParam,
             SFTWindowBeta=SFTWindowBeta,
             noiseSFTs=noiseSFTs,
             Band=Band,
@@ -1069,7 +1107,7 @@ class LineWriter(Writer):
 
         if self.SFTWindowType is not None:
             cl_mfd.append('--window="{}"'.format(self.SFTWindowType))
-            cl_mfd.append("--tukeyBeta={}".format(self.SFTWindowBeta))
+            cl_mfd.append("--windowParam={}".format(self.SFTWindowParam))
         cl_mfd.append("--startTime={}".format(self.tstart))
         cl_mfd.append("--duration={}".format(self.duration))
         if getattr(self, "fmin", None):
@@ -1127,7 +1165,8 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
         sqrtSX=None,
         noiseSFTs=None,
         SFTWindowType=None,
-        SFTWindowBeta=0.0,
+        SFTWindowParam=None,
+        SFTWindowBeta=None,
         Band=None,
         detectors=None,
         earth_ephem=None,
@@ -1543,7 +1582,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         """Merges the individual SFT files via splitSFTs executable."""
 
         SFTFilename = (
-            f"{self.detectors[0]}-{self.nsfts}_{self.detectors}_{self.Tsft}SFT"
+            f"{self.detectors[0]}-{self.nsfts}_{self.detectors}_{self.Tsft}SFT_mfdv4"
         )
         # We don't try to reproduce the NB filename convention exactly,
         # as there could be always rounding offsets with the number of bins,

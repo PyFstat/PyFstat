@@ -11,7 +11,7 @@ import numpy as np
 
 import pyfstat
 
-label = "PyFstat_example_grid_search_F0F1F2"
+label = "PyFstatExampleGridSearchF0F1F2"
 outdir = os.path.join("PyFstat_example_data", label)
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 

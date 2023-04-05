@@ -12,7 +12,7 @@ import numpy as np
 
 import pyfstat
 
-label = "PyFstat_example_MCMC_search_using_initialisation"
+label = "PyFstatExampleMCMCSearchUsingInitialisation"
 outdir = os.path.join("PyFstat_example_data", label)
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
@@ -77,7 +77,7 @@ nsteps = [100, 100]
 mcmc = pyfstat.MCMCSearch(
     label=label,
     outdir=outdir,
-    sftfilepattern=os.path.join(outdir, "*{}*sft".format(label)),
+    sftfilepattern=data.sftfilepath,
     theta_prior=theta_prior,
     tref=mid_time,
     minStartTime=data_parameters["tstart"],

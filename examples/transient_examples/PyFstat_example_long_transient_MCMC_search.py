@@ -25,7 +25,8 @@ if not os.path.isdir(data.outdir) or not np.any(
         "Please first run PyFstat_example_make_data_for_long_transient_search.py !"
     )
 
-logger = pyfstat.set_up_logger(label="long_transient_mcmc_search", outdir=data.outdir)
+label = "PyFstatExampleLongTransientMCMCSearch"
+logger = pyfstat.set_up_logger(label=label, outdir=data.outdir)
 
 tstart = data.tstart
 duration = data.duration
@@ -78,9 +79,9 @@ BSGL = False
 BtSG = False
 
 mcmc = pyfstat.MCMCTransientSearch(
-    label="transient_search" + ("_BSGL" if BSGL else "") + ("_BtSG" if BtSG else ""),
+    label=label + ("BSGL" if BSGL else "") + ("BtSG" if BtSG else ""),
     outdir=data.outdir,
-    sftfilepattern=os.path.join(data.outdir, "*simulated_transient_signal*sft"),
+    sftfilepattern=os.path.join(data.outdir, f"*{data.label}*sft"),
     theta_prior=theta_prior,
     tref=inj["tref"],
     nsteps=nsteps,

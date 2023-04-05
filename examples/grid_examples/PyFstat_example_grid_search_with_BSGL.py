@@ -14,7 +14,7 @@ import numpy as np
 
 import pyfstat
 
-label = "PyFstat_example_grid_search_BSGL"
+label = "PyFstatExampleGridSearchBSGL"
 outdir = os.path.join("PyFstat_example_data", label)
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
@@ -53,7 +53,7 @@ data = pyfstat.Writer(
     sqrtSX=sqrtSX,
     detectors=IFOs,
     SFTWindowType="tukey",
-    SFTWindowBeta=0.001,
+    SFTWindowParam=0.001,
     Band=1,
 )
 data.make_data()
@@ -75,10 +75,11 @@ extra_writer = pyfstat.Writer(
     cosi=cosi,
     sqrtSX=0,  # don't add yet another set of Gaussian noise
     noiseSFTs=SFTs_H1,
-    SFTWindowType="tukey",
-    SFTWindowBeta=0.001,
 )
 extra_writer.make_data()
+
+# use the combined data from both Writers
+sftfilepattern = os.path.join(outdir, "*" + label + "*sft")
 
 # set up search parameter ranges
 dF0 = 0.0001
@@ -93,17 +94,17 @@ Deltas = [Delta]
 # This should show a weak peak from the coherent signal
 # and a larger one from the "line artifact" at higher frequency.
 searchF = pyfstat.GridSearch(
-    label + "_twoF",
-    outdir,
-    os.path.join(outdir, "*" + label + "*sft"),
-    F0s,
-    F1s,
-    F2s,
-    Alphas,
-    Deltas,
-    tref,
-    tstart,
-    tend,
+    label=label + "_twoF",
+    outdir=outdir,
+    sftfilepattern=sftfilepattern,
+    F0s=F0s,
+    F1s=F1s,
+    F2s=F2s,
+    Alphas=Alphas,
+    Deltas=Deltas,
+    tref=tref,
+    minStartTime=tstart,
+    maxStartTime=tend,
 )
 searchF.run()
 
@@ -112,17 +113,17 @@ searchF.plot_1D(xkey="F0")
 
 # second search: line-robust statistic BSGL activated
 searchBSGL = pyfstat.GridSearch(
-    label + "_BSGL",
-    outdir,
-    os.path.join(outdir, "*" + label + "*sft"),
-    F0s,
-    F1s,
-    F2s,
-    Alphas,
-    Deltas,
-    tref,
-    tstart,
-    tend,
+    label=label + "_BSGL",
+    outdir=outdir,
+    sftfilepattern=sftfilepattern,
+    F0s=F0s,
+    F1s=F1s,
+    F2s=F2s,
+    Alphas=Alphas,
+    Deltas=Deltas,
+    tref=tref,
+    minStartTime=tstart,
+    maxStartTime=tend,
     BSGL=True,
 )
 searchBSGL.run()

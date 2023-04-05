@@ -46,7 +46,7 @@ default_Writer_params = {
     "duration": 4 * 1800,
     "detectors": "H1",
     "SFTWindowType": "tukey",
-    "SFTWindowBeta": 0.001,
+    "SFTWindowParam": 0.001,
     "randSeed": 42,
     "Band": None,
 }
@@ -126,7 +126,7 @@ class BaseForTestsWithData(BaseForTestsWithOutdir):
             Band=self.Band,
             detectors=self.detectors,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
         )
         self.Writer.make_data(verbose=True)

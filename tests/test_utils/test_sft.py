@@ -9,16 +9,16 @@ def test_get_sft_as_arrays(tmp_path):
         "sqrtSX": 1,
         "Tsft": 1800,
         "timestamps": {  # Set up SFTs with arbitrary gaps
-            "H1": 1800 * np.array([0, 2, 4, 6, 8, 10]),
+            "H1": 1800 * np.array([1, 2, 4, 6, 8, 10]),
             "L1": 1800 * np.array([1, 3, 5, 7, 9, 12]),
         },
         "detectors": "H1,L1",
         "SFTWindowType": "tukey",
-        "SFTWindowBeta": 0.001,
+        "SFTWindowParam": 0.001,
         "randSeed": 42,
         "F0": 10.0,
         "Band": 0.1,
-        "label": "testing_sft_to_array",
+        "label": "TestingSftToArray",
         "outdir": tmp_path,
     }
     writer = Writer(**writer_kwargs)

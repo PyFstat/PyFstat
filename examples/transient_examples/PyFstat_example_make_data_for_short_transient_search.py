@@ -15,8 +15,9 @@ import os
 
 import pyfstat
 
-outdir = os.path.join("PyFstat_example_data", "PyFstat_example_short_transient_search")
-logger = pyfstat.set_up_logger(outdir=outdir, label="short_transient_search")
+label = "PyFstatExampleShortTransientSearch"
+outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(outdir=outdir, label=label)
 
 
 F0 = 30.0
@@ -44,7 +45,7 @@ Tsft = 1800
 
 if __name__ == "__main__":
     transient = pyfstat.Writer(
-        label="simulated_transient_signal",
+        label=label,
         outdir=outdir,
         tref=tref,
         tstart=tstart,

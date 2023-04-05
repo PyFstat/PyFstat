@@ -13,8 +13,9 @@ import os
 
 import pyfstat
 
-outdir = os.path.join("PyFstat_example_data", "PyFstat_example_long_transient_search")
-logger = pyfstat.set_up_logger(outdir=outdir, label="short_transient_search")
+label = "PyFstatExampleLongTransientSearch"
+outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(outdir=outdir, label=label)
 
 F0 = 30.0
 F1 = -1e-10
@@ -39,7 +40,7 @@ detectors = "H1,L1"
 
 if __name__ == "__main__":
     transient = pyfstat.Writer(
-        label="simulated_transient_signal",
+        label=label,
         outdir=outdir,
         tref=tref,
         tstart=tstart,

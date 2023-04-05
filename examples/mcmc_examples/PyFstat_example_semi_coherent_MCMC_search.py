@@ -11,7 +11,7 @@ import numpy as np
 
 import pyfstat
 
-label = "PyFstat_example_semi_coherent_MCMC_search"
+label = "PyFstatExampleSemiCoherentMCMCSearch"
 outdir = os.path.join("PyFstat_example_data", label)
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
@@ -77,7 +77,7 @@ mcmc = pyfstat.MCMCSemiCoherentSearch(
     label=label,
     outdir=outdir,
     nsegs=10,
-    sftfilepattern=os.path.join(outdir, "*{}*sft".format(label)),
+    sftfilepattern=data.sftfilepath,
     theta_prior=theta_prior,
     tref=mid_time,
     minStartTime=data_parameters["tstart"],

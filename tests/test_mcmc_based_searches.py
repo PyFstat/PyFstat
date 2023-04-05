@@ -211,7 +211,7 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         SFTs_H1 = self.Writer.sftfilepath.split(";")[0]
         SFTs_L1 = self.Writer.sftfilepath.split(";")[1]
         extra_writer = pyfstat.Writer(
-            label=self.label + "_with_line",
+            label=self.label + "WithLine",
             outdir=self.outdir,
             tref=self.tref,
             F0=self.Writer.F0 + 0.5e-2,
@@ -224,7 +224,7 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
             sqrtSX=0,  # don't add yet another set of Gaussian noise
             noiseSFTs=SFTs_H1,
             SFTWindowType=self.Writer.SFTWindowType,
-            SFTWindowBeta=self.Writer.SFTWindowBeta,
+            SFTWindowParam=self.Writer.SFTWindowParam,
         )
         extra_writer.make_data()
         data_with_line = ";".join([SFTs_L1, extra_writer.sftfilepath])
@@ -242,7 +242,7 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         }
         # now run a standard F-stat search over this data
         self.search = pyfstat.MCMCSearch(
-            label=self.label + "-F",
+            label=self.label + "F",
             outdir=self.outdir,
             theta_prior=thetas,
             tref=self.tref,
@@ -266,7 +266,7 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         self._test_plots()
         # also run a BSGL search over the same data
         self.search = pyfstat.MCMCSearch(
-            label=self.label + "-BSGL",
+            label=self.label + "BSGL",
             outdir=self.outdir,
             theta_prior=thetas,
             tref=self.tref,
@@ -418,7 +418,7 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
             Band=self.Band,
             detectors=self.detectors,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
             transientWindowType=self.transientWindowType,
             transientStartTime=self.transientStartTime,

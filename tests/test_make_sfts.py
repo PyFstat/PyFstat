@@ -23,10 +23,12 @@ def test_timestamp_files(tmp_path, caplog):
     Tsft = 1800
     single_column = 10000000 + Tsft * np.arange(10)
     np.savetxt(tmp_path / "single_column.txt", single_column[:, None])
+    label = "TimestampsFileTesting"
+    outdir = tmp_path / label
 
     writer = pyfstat.Writer(
-        outdir=str(tmp_path / "timestamp_file_testing"),
-        label="timestamp_file_testing",
+        outdir=outdir,
+        label=label,
         F0=10,
         Band=0.1,
         detectors="H1",
@@ -41,8 +43,8 @@ def test_timestamp_files(tmp_path, caplog):
     np.savetxt(tmp_path / "dual_column.txt", np.hstack(2 * [single_column[:, None]]))
     with caplog.at_level("WARNING"):
         writer = pyfstat.Writer(
-            outdir=str(tmp_path / "timestamp_file_testing"),
-            label="timestamp_file_testing",
+            outdir=outdir,
+            label=label,
             F0=10,
             Band=0.1,
             detectors="H1",
@@ -58,8 +60,8 @@ def test_timestamp_files(tmp_path, caplog):
     np.savetxt(tmp_path / "float_column.txt", 0.01 + single_column[:, None])
     with caplog.at_level("WARNING"):
         writer = pyfstat.Writer(
-            outdir=str(tmp_path / "timestamp_file_testing"),
-            label="timestamp_file_testing",
+            outdir=outdir,
+            label=label,
             F0=10,
             Band=0.1,
             detectors="H1",
@@ -75,8 +77,8 @@ def test_timestamp_files(tmp_path, caplog):
     # Test wrong number of detectors
     with pytest.raises(ValueError):
         writer = pyfstat.Writer(
-            outdir=str(tmp_path / "timestamp_file_testing"),
-            label="timestamp_file_testing",
+            outdir=outdir,
+            label=label,
             F0=10,
             Band=0.1,
             detectors="H1,L1",
@@ -87,8 +89,8 @@ def test_timestamp_files(tmp_path, caplog):
     # Test unspecified detectors
     with pytest.raises(ValueError):
         writer = pyfstat.Writer(
-            outdir=str(tmp_path / "timestamp_file_testing"),
-            label="timestamp_file_testing",
+            outdir=outdir,
+            label=label,
             F0=10,
             Band=0.1,
             sqrtSX=1e-23,
@@ -160,7 +162,7 @@ class TestWriter(BaseForTestsWithData):
 
         # create SFTs with both noise and a signal in them
         noise_and_signal_writer = self.writer_class_to_test(
-            label="test_noiseSFTs_noise_and_signal",
+            label="TestNoiseSFTsNoiseAndSignal",
             outdir=self.outdir,
             duration=self.duration,
             Tsft=self.Tsft,
@@ -168,7 +170,7 @@ class TestWriter(BaseForTestsWithData):
             detectors=self.multi_detectors,
             randSeed=randSeed,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             sqrtSX=self.sqrtSX,
             Band=0.5,
             **self.signal_parameters,
@@ -177,7 +179,7 @@ class TestWriter(BaseForTestsWithData):
 
         # create noise-only SFTs
         noise_writer = self.writer_class_to_test(
-            label="test_noiseSFTs_only_noise",
+            label="TestNoiseSFTsOnlyNoise",
             outdir=self.outdir,
             duration=self.duration,
             Tsft=self.Tsft,
@@ -185,7 +187,7 @@ class TestWriter(BaseForTestsWithData):
             detectors=self.multi_detectors,
             randSeed=randSeed,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             sqrtSX=self.sqrtSX,
             Band=0.5,
             F0=self.signal_parameters["F0"],
@@ -194,10 +196,10 @@ class TestWriter(BaseForTestsWithData):
 
         # inject into noise-only SFTs without additional SFT loading constraints
         add_signal_writer = self.writer_class_to_test(
-            label="test_noiseSFTs_add_signal",
+            label="TestNoiseSFTsAddSignal",
             outdir=self.outdir,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             noiseSFTs=noise_writer.sftfilepath,
             **self.signal_parameters,
         )
@@ -205,13 +207,13 @@ class TestWriter(BaseForTestsWithData):
 
         # same again but with explicit (tstart,duration) to build constraints
         add_signal_writer_constr = self.writer_class_to_test(
-            label="test_noiseSFTs_add_signal_with_constraints",
+            label="TestNoiseSFTsAddSignalWithConstraints",
             outdir=self.outdir,
             duration=self.duration / 2,
             Tsft=self.Tsft,
             tstart=self.tstart,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             sqrtSX=0,
             noiseSFTs=noise_writer.sftfilepath,
             **self.signal_parameters,
@@ -302,25 +304,25 @@ class TestWriter(BaseForTestsWithData):
         duration = 10 * self.Tsft
         gap_time = 4 * self.Tsft
         window = "tukey"
-        window_beta = 0.01
+        window_param = 0.01
         Band = 0.01
 
         first_chunk_of_data = self.writer_class_to_test(
-            label="first_chunk_of_data",
+            label="FirstChunk",
             outdir=self.outdir,
             duration=duration,
             Tsft=self.Tsft,
             tstart=self.tstart,
             detectors=self.detectors,
             SFTWindowType=window,
-            SFTWindowBeta=window_beta,
+            SFTWindowParam=window_param,
             F0=self.F0,
             Band=Band,
         )
         first_chunk_of_data.make_data(verbose=True)
 
         second_chunk_of_data = self.writer_class_to_test(
-            label="second_chunk_of_data",
+            label="SecondChunk",
             outdir=self.outdir,
             duration=duration,
             Tsft=self.Tsft,
@@ -328,20 +330,20 @@ class TestWriter(BaseForTestsWithData):
             tref=self.tstart,
             detectors=self.detectors,
             SFTWindowType=window,
-            SFTWindowBeta=window_beta,
+            SFTWindowParam=window_param,
             F0=self.F0,
             Band=Band,
         )
         second_chunk_of_data.make_data(verbose=True)
 
         both_chunks_of_data = self.writer_class_to_test(
-            label="both_chunks_of_data",
+            label="BothChunks",
             outdir=self.outdir,
             noiseSFTs=first_chunk_of_data.sftfilepath
             + ";"
             + second_chunk_of_data.sftfilepath,
             SFTWindowType=window,
-            SFTWindowBeta=window_beta,
+            SFTWindowParam=window_param,
             F0=self.F0,
             Band=Band,
         )
@@ -362,19 +364,22 @@ class TestWriter(BaseForTestsWithData):
                 total_duration,
             ),
         )
-        self.assertTrue(os.path.isfile(expected_SFT_filepath))
+        self.assertTrue(
+            os.path.isfile(expected_SFT_filepath),
+            f"Could not find expected SFT file '{expected_SFT_filepath}'!",
+        )
 
     def test_noise_sfts_narrowbanded(self):
         # create some broad SFTs
         writer = self.writer_class_to_test(
-            label="test_noiseSFTs_broad",
+            label="TestNoiseSFTsBroad",
             outdir=self.outdir,
             duration=self.duration,
             Tsft=self.Tsft,
             tstart=self.tstart,
             detectors="H1",
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             sqrtSX=self.sqrtSX,
             Band=3,
             F0=self.signal_parameters["F0"],
@@ -390,10 +395,10 @@ class TestWriter(BaseForTestsWithData):
         pyfstat.utils.run_commandline(cl_split)
         # reuse the split SFTs as noiseSFTs
         NB_recycling_writer = self.writer_class_to_test(
-            label="test_noiseSFTs_recycle",
+            label="TestNoiseSFTsRecycle",
             outdir=self.outdir,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             noiseSFTs=os.path.join(self.outdir, "*NB*"),
             F0=self.signal_parameters["F0"]
             if self.writer_class_to_test.mfd.endswith("v4")
@@ -443,7 +448,7 @@ class TestWriter(BaseForTestsWithData):
             Band=self.Band,
             detectors=self.multi_detectors,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
             timestamps=",".join(tsfiles),
             **self.signal_parameters,
@@ -487,14 +492,14 @@ class TestWriter(BaseForTestsWithData):
             )
 
         tsWriter = self.writer_class_to_test(
-            label="ts_using_dict",
+            label="TimestampsUsingDict",
             tref=self.tref,
             Tsft=self.Tsft,
             outdir=self.outdir,
             sqrtSX=self.sqrtSX,
             Band=self.Band,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
             timestamps=timestamps,
             **self.signal_parameters,
@@ -517,7 +522,7 @@ class TestWriter(BaseForTestsWithData):
         detectors = ",".join(list(timestamps.keys()))
 
         tsWriter = self.writer_class_to_test(
-            label="ts_using_dict",
+            label="TimestampsUsingDict",
             tref=self.tref,
             Tsft=self.Tsft,
             outdir=self.outdir,
@@ -525,7 +530,7 @@ class TestWriter(BaseForTestsWithData):
             Band=self.Band,
             detectors=detectors,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
             timestamps=timestamps,
             **self.signal_parameters,
@@ -546,14 +551,14 @@ class TestWriter(BaseForTestsWithData):
             detectors += ",L1"
 
         tsWriter = self.writer_class_to_test(
-            label="ts_using_list",
+            label="TimestampsUsingList",
             tref=self.tref,
             Tsft=self.Tsft,
             outdir=self.outdir,
             sqrtSX=self.sqrtSX,
             Band=self.Band,
             SFTWindowType=self.SFTWindowType,
-            SFTWindowBeta=self.SFTWindowBeta,
+            SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
             detectors=detectors,
             timestamps=timestamps,
@@ -579,7 +584,7 @@ class TestLineWriter(TestWriter):
         detectors = "H1,L1"
         with pytest.raises(NotImplementedError):
             self.writer_class_to_test(
-                label="test_noiseSFTs_noise_and_signal",
+                label="TestNoiseSFTsNoiseAndSignal",
                 outdir=self.outdir,
                 duration=self.duration,
                 Tsft=self.Tsft,
@@ -651,7 +656,7 @@ class TestLineWriter(TestWriter):
             **default_signal_params,
             **default_transient_params,
             SFTWindowType="tukey",
-            SFTWindowBeta=0.001,
+            SFTWindowParam=0.001,
             noiseSFTs=self.Writer.sftfilepath,
         )
         writer.make_data(verbose=True)
@@ -703,7 +708,7 @@ class TestBinaryModulatedWriter(TestWriter):
         print(theta_prior)
         mcmc = pyfstat.MCMCSearch(
             binary=True,
-            label="tp_parsing",
+            label="TpParsing",
             outdir=self.outdir,
             sftfilepattern=this_writer.sftfilepath,
             theta_prior=theta_prior,
@@ -728,7 +733,7 @@ class TestGlitchWriter(TestWriter):
     def test_glitch_injection(self):
         Band = 1
         vanillaWriter = pyfstat.Writer(
-            label=self.label + "_vanilla",
+            label=self.label + "Vanilla",
             outdir=self.outdir,
             duration=self.duration,
             tstart=self.tstart,
@@ -739,7 +744,7 @@ class TestGlitchWriter(TestWriter):
         vanillaWriter.make_cff(verbose=True)
         vanillaWriter.run_makefakedata()
         noGlitchWriter = self.writer_class_to_test(
-            label=self.label + "_noglitch",
+            label=self.label + "Noglitch",
             outdir=self.outdir,
             duration=self.duration,
             tstart=self.tstart,
@@ -750,7 +755,7 @@ class TestGlitchWriter(TestWriter):
         noGlitchWriter.make_cff(verbose=True)
         noGlitchWriter.run_makefakedata()
         glitchWriter = self.writer_class_to_test(
-            label=self.label + "_glitch",
+            label=self.label + "Glitch",
             outdir=self.outdir,
             duration=self.duration,
             tstart=self.tstart,

@@ -21,7 +21,7 @@ import pyfstat
 # see https://github.com/matplotlib/matplotlib/issues/21723
 plt.rcParams["axes.grid"] = False
 
-label = "PyFstat_example_spectrogram"
+label = "PyFstatExampleSpectrogram"
 outdir = os.path.join("PyFstat_example_data", label)
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 

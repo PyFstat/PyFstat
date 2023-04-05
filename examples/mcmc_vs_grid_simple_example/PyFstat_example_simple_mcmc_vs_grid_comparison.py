@@ -17,10 +17,9 @@ import pyfstat
 # (still only a few minutes on current laptops)
 sky = False
 
-outdir = os.path.join(
-    "PyFstat_example_data", "PyFstat_example_simple_mcmc_vs_grid_comparison"
-)
-logger = pyfstat.set_up_logger(label="mcmc_vs_grid", outdir=outdir)
+label = "PyFstatExampleSimpleMCMCvsGridComparison"
+outdir = os.path.join("PyFstat_example_data", label)
+logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 if sky:
     outdir += "AlphaDelta"
 
@@ -115,7 +114,7 @@ def plot_2F_scatter(res, label, xkey, ykey):
 if __name__ == "__main__":
     logger.info("Generating SFTs with injected signal...")
     writer = pyfstat.Writer(
-        label="simulated_signal",
+        label=label + "SimulatedSignal",
         outdir=outdir,
         tstart=tstart,
         duration=duration,
@@ -155,9 +154,9 @@ if __name__ == "__main__":
 
     logger.info("Performing GridSearch...")
     gridsearch = pyfstat.GridSearch(
-        label="grid_search_" + search_keys_label,
+        label="GridSearch" + search_keys_label,
         outdir=outdir,
-        sftfilepattern=os.path.join(outdir, "*simulated_signal*sft"),
+        sftfilepattern=writer.sftfilepath,
         F0s=F0s,
         F1s=F1s,
         F2s=F2s,
@@ -232,9 +231,9 @@ if __name__ == "__main__":
     nsteps = [200, 200]  # [burnin,production]
 
     mcmcsearch = pyfstat.MCMCSearch(
-        label="mcmc_search_" + search_keys_label,
+        label="MCMCSearch" + search_keys_label,
         outdir=outdir,
-        sftfilepattern=os.path.join(outdir, "*simulated_signal*sft"),
+        sftfilepattern=writer.sftfilepath,
         theta_prior=theta_prior,
         tref=inj["tref"],
         nsteps=nsteps,

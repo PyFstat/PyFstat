@@ -13,7 +13,7 @@ import numpy as np
 import pyfstat
 from pyfstat.utils import get_predict_fstat_parameters_from_dict
 
-label = "PyFstat_example_fully_coherent_MCMC_search"
+label = "PyFstatExampleFullyCoherentMCMCSearch"
 outdir = os.path.join("PyFstat_example_data", label)
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
@@ -78,7 +78,7 @@ nsteps = [300, 300]
 mcmc = pyfstat.MCMCSearch(
     label=label,
     outdir=outdir,
-    sftfilepattern=os.path.join(outdir, "*{}*sft".format(label)),
+    sftfilepattern=data.sftfilepath,
     theta_prior=theta_prior,
     tref=mid_time,
     minStartTime=data_parameters["tstart"],

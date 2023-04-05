@@ -27,7 +27,7 @@ from PyFstat_example_make_data_for_search_on_1_glitch import (
 
 import pyfstat
 
-label = "PyFstat_example_glitch_robust_directed_MCMC_search_on_1_glitch"
+label = "PyFstatExampleGlitchRobustDirectedMCMCSearchOn1Glitch"
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 Nstar = 1000
@@ -57,7 +57,7 @@ nsteps = [250, 250]
 mcmc = pyfstat.MCMCGlitchSearch(
     label=label,
     outdir=outdir,
-    sftfilepattern=os.path.join(outdir, "*1_glitch*sft"),
+    sftfilepattern=os.path.join(outdir, "*1glitch*sft"),
     theta_prior=theta_prior,
     tref=tref,
     minStartTime=tstart,

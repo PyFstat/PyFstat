@@ -165,8 +165,12 @@ For a general introduction to installing modules, see
 [here](https://docs.python.org/3/installing/index.html).
 
 NOTE: currently we have pinned to
-`numpy<1.24.0` (due to an incompatibility with ptemcee)
-and `lalsuite<=7.11` (our SFT filename handling needs to be updated).
+`numpy<1.24.0` (due to an incompatibility with ptemcee).
+
+NOTE: We require a recent LALSuite (>=7.13) / lalpulsar (>=6.0) including the
+[SFTv3 specification](https://dcc.ligo.org/T040164-v2/public).
+If you need to work with older versions,
+the last PyFstat release supporting those was `1.19.1`.
 
 ### Optional dependencies
 
