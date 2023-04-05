@@ -514,12 +514,17 @@ class Writer(BaseSearchClass):
             raise ValueError(
                 "Option 'SFTWindowBeta' is defunct, please use 'SFTWindowParam'."
             )
-        try:
-            lal.CheckNamedWindow(self.SFTWindowType, self.SFTWindowParam is not None)
-        except RuntimeError:
-            raise ValueError(
-                f"SFTWindowType={self.SFTWindowType} requires also setting a SFTWindowParam."
-            )
+        if getattr(self, "SFTWindowType", None):
+            try:
+                lal.CheckNamedWindow(
+                    self.SFTWindowType, self.SFTWindowParam is not None
+                )
+            except RuntimeError:
+                raise ValueError(
+                    "XLAL error on checking SFT window options."
+                    f" Likely either SFTWindowType={self.SFTWindowType} is not a recognised window name,"
+                    " or it requires also setting a SFTWindowParam."
+                )
 
     @property
     def tend(self):
