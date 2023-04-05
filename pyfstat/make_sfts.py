@@ -99,7 +99,7 @@ class Writer(BaseSearchClass):
         sqrtSX=None,
         noiseSFTs=None,
         SFTWindowType=None,
-        SFTWindowParam=0.0,
+        SFTWindowParam=None,
         SFTWindowBeta=None,
         Band=None,
         detectors=None,
@@ -514,6 +514,12 @@ class Writer(BaseSearchClass):
             raise ValueError(
                 "Option 'SFTWindowBeta' is defunct, please use 'SFTWindowParam'."
             )
+        try:
+            lal.CheckNamedWindow(self.SFTWindowType, self.SFTWindowParam is not None)
+        except RuntimeError:
+            raise ValueError(
+                f"SFTWindowType={self.SFTWindowType} requires also setting a SFTWindowParam."
+            )
 
     @property
     def tend(self):
@@ -915,7 +921,7 @@ class BinaryModulatedWriter(Writer):
         sqrtSX=None,
         noiseSFTs=None,
         SFTWindowType=None,
-        SFTWindowParam=0.0,
+        SFTWindowParam=None,
         SFTWindowBeta=None,
         Band=None,
         detectors=None,
@@ -1154,7 +1160,7 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
         sqrtSX=None,
         noiseSFTs=None,
         SFTWindowType=None,
-        SFTWindowParam=0.0,
+        SFTWindowParam=None,
         SFTWindowBeta=None,
         Band=None,
         detectors=None,
