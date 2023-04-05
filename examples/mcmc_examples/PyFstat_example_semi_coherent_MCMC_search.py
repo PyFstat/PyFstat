@@ -43,7 +43,7 @@ data = pyfstat.Writer(
 )
 data.make_data()
 
-# The predicted twoF, given by lalapps_predictFstat can be accessed by
+# The predicted twoF (expectation over noise realizations) can be accessed by
 twoF = data.predict_fstat()
 logger.info("Predicted twoF value: {}\n".format(twoF))
 
