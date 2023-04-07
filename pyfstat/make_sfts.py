@@ -34,7 +34,7 @@ class Writer(BaseSearchClass):
     for more detailed help with some of the parameters.
     """
 
-    mfd = utils.get_lal_exec("Makefakedata_v5")
+    mfd = "lalpulsar_Makefakedata_v5"
     """The executable; can be overridden by child classes."""
 
     signal_parameter_labels = [
@@ -1000,7 +1000,7 @@ class LineWriter(Writer):
     NOTE: All signal parameters except for `h0`, `Freq`, `phi0` and transient parameters will be ignored.
     """
 
-    mfd = utils.get_lal_exec("Makefakedata_v4")
+    mfd = "lalpulsar_Makefakedata_v4"
     """The executable (older version that supports the `--lineFeature` option)."""
 
     required_signal_parameters = [
@@ -1599,7 +1599,7 @@ class FrequencyModulatedArtifactWriter(Writer):
             os.remove(SFTFile_fullpath)
 
         inpattern = os.path.join(self.tmp_outdir, "*sft")
-        cl_splitSFTS = utils.get_lal_exec("splitSFTs")
+        cl_splitSFTS = "lalpulsar_splitSFTs"
         cl_splitSFTS += " -fs {} -fb {} -fe {} -n {} -- {}".format(
             self.fmin, self.Band, self.fmin + self.Band, self.outdir, inpattern
         )
@@ -1708,7 +1708,7 @@ class FrequencyModulatedArtifactWriter(Writer):
     def run_makefakedata_v4(self, mid_time, lineFreq, linePhi, h0, tmp_outdir):
         """Generate SFT data using the MFDv4 code with the --lineFeature option."""
         cl_mfd = []
-        cl_mfd.append(utils.get_lal_exec("Makefakedata_v4"))
+        cl_mfd.append("lalpulsar_Makefakedata_v4")
         cl_mfd.append("--outSingleSFT=FALSE")
         cl_mfd.append('--outSFTbname="{}"'.format(tmp_outdir))
         cl_mfd.append("--IFO={}".format(self.detectors))

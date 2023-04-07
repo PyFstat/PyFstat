@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 
 import lal
 import lalpulsar
@@ -9,33 +8,6 @@ import numpy as np
 from .cli import run_commandline
 
 logger = logging.getLogger(__name__)
-
-
-def get_lal_exec(cmd):
-    """Get a lalpulsar/lalapps executable name with the right prefix.
-
-    This is purely to allow for backwards compatibility
-    if, for whatever reason,
-    someone needs to run with old releases
-    (lalapps<9.0.0 and lalpulsar<5.0.0)
-    from before the executables were moved.
-
-    Parameters
-    -------
-    cmd: str
-        Base executable name without lalapps/lalpulsar prefix.
-
-    Returns
-    -------
-    full_cmd: str
-        Full executable name with the right prefix.
-    """
-    full_cmd = shutil.which("lalpulsar_" + cmd) or shutil.which("lalapps_" + cmd)
-    if full_cmd is None:
-        raise RuntimeError(
-            f"Could not find either lalpulsar or lalapps version of command {cmd}."
-        )
-    return os.path.basename(full_cmd)
 
 
 def get_covering_band(
@@ -169,7 +141,7 @@ def generate_loudest_file(
         )
 
     loudest_file = os.path.join(outdir, label + ".loudest")
-    cmd = get_lal_exec("ComputeFstatistic_v2")
+    cmd = "lalpulsar_ComputeFstatistic_v2"
     CFSv2_params = {
         "DataFiles": f'"{sftfilepattern}"',
         "outputLoudest": loudest_file,
