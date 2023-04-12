@@ -94,7 +94,7 @@ logger.info("Making corner plot...")
 mcmc.plot_corner(
     label_offset=0.25,
     truths={"F0": F0, "F1": F1, "delta_F0": delta_F0, "tglitch": tstart + dtglitch},
-    quantiles=(0.16, 0.84),
+    quantiles=(0.16, 0.5, 0.84),
     hist_kwargs=dict(lw=1.5, zorder=-1),
     truth_color="C3",
 )
