@@ -326,25 +326,3 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
         super().__init__(
             priors={**priors, **sky_priors}, seed=seed, generator=generator
         )
-
-
-deprecated_vars = {
-    "isotropic_amplitude_priors": "isotropic_amplitude_distribution",
-}
-
-
-def __getattr__(var_name):
-    current_module = __import__(__name__)
-
-    if var_name not in deprecated_vars:
-        return getattr(current_module, var_name)
-
-    current_name = deprecated_vars[var_name]
-
-    logger.warning(
-        f"Variable `{var_name}` is deprecated"
-        " and will be removed in a future release."
-        f" Please use `{current_name}` for any new code."
-    )
-
-    return getattr(current_module, current_name)
