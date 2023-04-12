@@ -1065,7 +1065,7 @@ class MCMCSearch(BaseSearchClass):
                 hist_kwargs=hist_kwargs,
                 show_titles=True,
                 fill_contours=True,
-                quantiles=[0.05, 0.95]
+                quantiles=[0.05, 0.5, 0.95]  # [lower, central, upper]
                 if "quantiles" not in kwargs
                 else kwargs.pop("quantiles"),
                 verbose=True if "verbose" not in kwargs else kwargs.pop("verbose"),
