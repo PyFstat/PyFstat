@@ -75,6 +75,16 @@ def test_prior_parsing(input_priors, rng_object):
         InjectionParametersGenerator(priors=faulty_prior, generator=rng_object)
 
 
+def test_old_api_raise(rng_object):
+    faulty_prior = {"a_callable": lambda: 42}
+    with pytest.raises(ValueError):
+        InjectionParametersGenerator(priors=faulty_prior, generator=rng_object)
+
+    faulty_prior = {"a_numpy_function": {"uniform": {"low": 0, "high": 1}}}
+    with pytest.raises(ValueError):
+        InjectionParametersGenerator(priors=faulty_prior, generator=rng_object)
+
+
 def test_seed_and_generator_init(caplog, input_priors, seed, rng_object):
     with pytest.raises(ValueError):
         InjectionParametersGenerator(
