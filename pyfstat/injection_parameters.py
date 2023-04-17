@@ -122,12 +122,11 @@ class InjectionParametersGenerator:
         with ``@custom_prior`` or the name of a ``scipy.stats`` random variable.
 
         * | If a user-defined function is used, such a function *must* take
-          | a ``generator`` kwarg as one of its arguments and use such a generator
-          | (``np.random.Generator`` type)
-          | to generate any required random number within the function.
-          | The ``generator`` kwarg is *required* regardless of whether this is a
-          | deterministic or random function.
-          | For example, a negative log-distributed random number could be constructed as
+           | a ``generator`` kwarg as one of its arguments and use such a generator
+           | (``np.random.Generator`` type)
+           | to generate any required random number within the function.
+           | (A deterministic function could then simply ignore this kwarg.)
+           | For example, a negative log-distributed random number could be constructed as
 
         ::
 
@@ -142,39 +141,21 @@ class InjectionParametersGenerator:
             ipg.draw()
 
         * | If a ``scipy.stats`` function is used, it *must* be given as ``stats.*``
-          | (i.e. the ``stats`` namespace should be explicitly included).
-          |  For example, a uniform prior between 3 and 5 would be written as
-          | ``{"parameter": {"stats.uniform": {"loc": 3, "scale": 5}}}``.
+           | (i.e. the ``stats`` namespace should be explicitly included).
+           |  For example, a uniform prior between 3 and 5 would be written as
+           | ``{"parameter": {"stats.uniform": {"loc": 3, "scale": 2}}}``.
 
         ::
 
             import pyfstat
 
-            priors = {"my_parameter": "stats.uniform": {"loc": 3, "scale": 5}}
+            priors = {"my_parameter": "stats.uniform": {"loc": 3, "scale": 2}}
             ipg = pyfstat.InjectionParametersGenerator(priors=priors, seed=42)
             ipg.draw()
 
-        Delta-priors (i.e. priors for a determinisitic output) can also be specified by
+        Delta-priors (i.e. priors for a deterministic output) can also be specified by
         giving the fixed value to be returned as-is. For example, specifying a fixed
         value of 1 for the parameter ``A`` would be ``{"A": 1}``.
-
-        Alternatively, the following three options, which were recommended
-        on a previous release, are still a valid input. They will be used as a fall-back
-        if none of the two previous options are matched,
-        but their use is highly discouraged for newly produced code.
-
-            1. Callable without required arguments:
-            ``{"ParameterA": np.random.uniform}``.
-
-            2. Dictionary with a numpy.random distribution as key and its corresponding
-            kwargs in a dict as value (mind that this is formally the same dict structure
-            as when using a ``"stats.*"`` distribution with the new syntax):
-            ``{"ParameterA": {"uniform": {"low": 0, "high":1}}}``.
-
-        Note, however, that these options are deprecated and will be removed
-        in a future PyFstat release.
-        These old options do not follow completely the current way of
-        specifying seeds in this class.
 
     generator:
         Numpy random number generator (e.g. ``np.random.default_rng``)
@@ -212,34 +193,29 @@ class InjectionParametersGenerator:
 
         self._rng = generator or np.random.default_rng(seed)
 
-    def _deprecated_prior_parsing(self, parameter_prior) -> Dict:
-        # FIXME: Will be removed in a future release
-        rng_function_name = next(iter(parameter_prior))
-        rng_function = getattr(self._rng, rng_function_name)
-        rng_kwargs = parameter_prior[rng_function_name]
-        return functools.partial(rng_function, **rng_kwargs)
-
     def _parse_priors(self, priors_input_format: dict):
-        """Internal method to do the actual prior setup."""
+        """
+        Internal method to do the actual prior setup.
+
+        Order of checks:
+            0. If the old API is used (no `stats` in the name or
+               a callable as a value, raise ValueError exception.
+            1. If prior is not a dictionary, consider it a delta prior.
+            2. Otherwise, raise ValueError if format is not consistent.
+        """
         self.priors = {}
 
         for parameter_name, parameter_prior in priors_input_format.items():
             if callable(parameter_prior):
-                # FIXME Deprecated, to be removed on a future release.
-                logger.warning(
-                    f"Parameter `{parameter_name}`'s prior was specified as a callable, "
-                    "which is not covered by the current implementation of RNGs "
-                    "and hence will not make use of the specified seed. "
-                    "Please, beware of the new implementation of parameter priors. "
-                    "This will raise an error in the future."
+                raise ValueError(
+                    f"Attempted to use bare callable prior for `{parameter_name}`"
+                    " Please, make sure your priors are either"
+                    " a `stats` distribution or the *name* of a"
+                    " function decorated with `@custom_prior`."
                 )
-                self.priors[parameter_name] = lambda size, p=parameter_prior: np.array(
-                    [p() for s in range(size)]
-                )
-                continue
 
             if not isinstance(parameter_prior, Mapping):
-                # If not dictionary, then return as is
+                # If not dictionary, then return as is (delta prior)
                 self.priors[
                     parameter_name
                 ] = lambda size, val=parameter_prior: np.repeat(val, repeats=size)
@@ -286,8 +262,7 @@ class InjectionParametersGenerator:
                 rv_object.random_state = self._rng
                 self.priors[parameter_name] = rv_object.rvs
             else:
-                # FIXME Deprecated, to be removed on a future release.
-                logger.warning(
+                raise ValueError(
                     f"Distribution `{distribution}` not found in "
                     "`_pyfstat_custom_priors` or `scipy.stats` namespace. "
                     "Current custom distributions are "
@@ -295,14 +270,6 @@ class InjectionParametersGenerator:
                     "Please, make sure to follow the proper rules to specify "
                     "a prior distribution."
                 )
-                logger.warning(
-                    f"Parsing parameter `{parameter_name}` using a deprecated API. "
-                    "This will raise an error in the future."
-                )
-                self.priors[parameter_name] = self._deprecated_prior_parsing(
-                    parameter_prior
-                )
-                continue
 
     def draw(self) -> Dict:
         """Draw a single multi-dimensional parameter space point from the given priors.
@@ -374,25 +341,3 @@ class AllSkyInjectionParametersGenerator(InjectionParametersGenerator):
         super().__init__(
             priors={**priors, **sky_priors}, seed=seed, generator=generator
         )
-
-
-deprecated_vars = {
-    "isotropic_amplitude_priors": "isotropic_amplitude_distribution",
-}
-
-
-def __getattr__(var_name):
-    current_module = __import__(__name__)
-
-    if var_name not in deprecated_vars:
-        return getattr(current_module, var_name)
-
-    current_name = deprecated_vars[var_name]
-
-    logger.warning(
-        f"Variable `{var_name}` is deprecated"
-        " and will be removed in a future release."
-        f" Please use `{current_name}` for any new code."
-    )
-
-    return getattr(current_module, current_name)
