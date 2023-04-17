@@ -125,8 +125,7 @@ class InjectionParametersGenerator:
            | a ``generator`` kwarg as one of its arguments and use such a generator
            | (``np.random.Generator`` type)
            | to generate any required random number within the function.
-           | The ``generator`` kwarg is *required* regardless of whether this is a
-           | deterministic or random function.
+           | (A deterministic function could then simply ignore this kwarg.)
            | For example, a negative log-distributed random number could be constructed as
 
         ::
