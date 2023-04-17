@@ -195,10 +195,26 @@ class InjectionParametersGenerator:
         self._rng = generator or np.random.default_rng(seed)
 
     def _parse_priors(self, priors_input_format: dict):
-        """Internal method to do the actual prior setup."""
+        """
+        Internal method to do the actual prior setup.
+
+        Order of checks:
+            0. If the old API is used (no `stats` in the name or
+               a callable as a value, raise ValueError exception.
+            1. If prior is not a dictionary, consider it a delta prior.
+            2. Otherwise, raise ValueError if format is not consistent.
+        """
         self.priors = {}
 
         for parameter_name, parameter_prior in priors_input_format.items():
+            if callable(parameter_prior):
+                raise ValueError(
+                    f"Attempted to use bare callable prior for `{parameter_name}`"
+                    " Please, make sure your priors are either"
+                    " a `stats` distribution or the *name* of a"
+                    " function decorated with `@custom_prior`."
+                )
+
             if not isinstance(parameter_prior, Mapping):
                 # If not dictionary, then return as is (delta prior)
                 self.priors[
