@@ -1,3 +1,41 @@
+## 2.0.0 [18/04/2023]
+
+ - This is a major release of PyFstat in the sense that
+   users will likely have to make some changes to the way they call it,
+   but mostly just regarding class instance labels / file naming.
+ - Mainly, we follow the recent `lalpulsar` upgrade to v3 of the SFT file format specification
+   (see https://dcc.ligo.org/T040164-v2/public
+    and note the v2 in the URL is not a typo,
+    this file version describes both the v2 and v3 specifications).
+   - We now require `lalsuite>=7.13`.
+   - The file format update itself is fully backwards compatible:
+     the only change is including window information in the header,
+     which however reuses existing padding bytes, and hence does not affect compatibility.
+   - The file naming convention however has become more restrictive:
+     SFT files, and hence `label` arguments for `Writer` and derived classes,
+     now may only contain ASCII alphanumerical characters,
+     which specifically makes the old PyFstat habit of using underscores illegal.
+     We suggest CamelCase instead.
+   - Instead of `SFTWindowBeta`, one must now use `SFTWindowParam`.
+   - `noiseSFTs` no longer requires `SFTWindow[Beta/Param]`,
+     only if a window specification cannot be read from the headers of input SFTs.
+ - Fixed an error that prevented one parameter to be printed in search output file header comments.
+ - Fixed compatibility with `corner=2.2.2`.
+ - Removed `utils.get_lal_exec()`, now always expect executables to be named `lalpulsar_`.
+   (Old LALSuite versions with `lalapps_` CW executables are quite outdated by now.)
+ - Removed deprecated prior formats in `InjectionParametersGenerator` class.
+ - Transient F-stat GPU implementation:
+   - Introduced F-stat condition number check,
+     with threshold equivalent to defaults of
+     `XLALComputeAntennaPatternSqrtDeterminant()`
+     and `estimateAntennaPatternConditionNumber()`.
+   - Now falls back to F=2 (2F=4) if Ddinv=0,
+     also equivalent to `lalpulsar`.
+   - Added unit tests.
+   - Improved CUDA device info logging.
+ - For developers: updated coding style to `black` 23.1.0 rules
+   (mostly newlines policy).
+
 ## 1.19.1 [19/12/2022]
 
  - Pinned to `numpy<1.24.0` to avoid incompatibility with `ptemcee`.

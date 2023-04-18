@@ -17,6 +17,9 @@ You can run them locally, or online as jupyter notebooks with
 * The [project wiki](https://github.com/PyFstat/PyFstat/wiki) is mainly used for developer information.
 * A [changelog](https://github.com/PyFstat/PyFstat/blob/master/CHANGELOG.md)
 is also available.
+* PyFstat >=2.0.0 requires a recent LALSuite (>=7.13) / lalpulsar (>=6.0)
+including the [SFTv3 specification](https://dcc.ligo.org/T040164-v2/public).
+If you need to work with older versions, the last PyFstat release supporting those was `1.19.1`.
 
 [![PyPI version](https://badge.fury.io/py/PyFstat.svg)](https://badge.fury.io/py/PyFstat)
 [![Conda version](https://anaconda.org/conda-forge/pyfstat/badges/version.svg)](https://anaconda.org/conda-forge/pyfstat)
@@ -167,8 +170,7 @@ For a general introduction to installing modules, see
 NOTE: currently we have pinned to
 `numpy<1.24.0` (due to an incompatibility with ptemcee).
 
-NOTE: We require a recent LALSuite (>=7.13) / lalpulsar (>=6.0) including the
-[SFTv3 specification](https://dcc.ligo.org/T040164-v2/public).
+NOTE: We require a recent LALSuite (>=7.13) / lalpulsar (>=6.0).
 If you need to work with older versions,
 the last PyFstat release supporting those was `1.19.1`.
 
