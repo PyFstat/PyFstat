@@ -16,8 +16,8 @@ class Synthesizer(BaseSearchClass):
     """Efficiently generate lots of detection statistics samples under Gaussian noise.
 
     * Generate samples of detection statistics, e.g. the `F`-statistic,
-      drawn from their respective distributions,
-      assuming Gaussian noise, and drawing signal parameters from their (given) priors.
+      from random draws of the underlying distributions, assuming Gaussian noise,
+      and with signal parameters drawn from their (given) priors.
     * Can also return signal parameters, `F`-stat atoms and transient `F`-stat maps.
     * Python port of
       `lalpulsar_synthesizeTransientStats <https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/synthesize_transient_stats_8c.html>`_
@@ -77,9 +77,9 @@ class Synthesizer(BaseSearchClass):
 
         Tsft:
             The SFT duration in seconds.
-            Will be ignored if `noiseSFTs` are given.
         detectors:
             Comma-separated list of detectors to generate data for.
+            Can be omitted if `timestamps` is a dictionary.
         earth_ephem, sun_ephem:
             Paths of the two files containing positions of Earth and Sun.
             If None, will check standard sources as per
@@ -102,11 +102,10 @@ class Synthesizer(BaseSearchClass):
             list of timestamps (`detectors` should be set),
             or comma-separated list of per-detector timestamps files
             (simple text files, lines with <seconds> <nanoseconds>,
-            comments should use `%`, each time stamp gives the
-            start time of one SFT).
-            WARNING: In that last case, order must match that of `detectors`!
-            NOTE: mutually exclusive with [`tstart`,`duration`]
-            and with `noiseSFTs`.
+            comments should use `%`;
+            order of files must match that of `detectors`)
+            Each time stamp gives the start time of one SFT.
+            NOTE: mutually exclusive with [`tstart`,`duration`].
         signalOnly:
             Generate pure signal without noise?
         detstats:
