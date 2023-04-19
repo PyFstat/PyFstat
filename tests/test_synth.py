@@ -17,9 +17,9 @@ def timestamps():
     return np.arange(tstart, tstart + duration, Tsft)
 
 
-@pytest.mark.parametrize("amp_priors", ["fixedamp", "PK2009"])
+@pytest.mark.parametrize("amp_priors", ["fixedamp", "PK2009", "fixedsnr", "logunisnr"])
 @pytest.mark.parametrize("sky_priors", ["targeted", "allsky"])
-@pytest.mark.parametrize("h0", [0, 1])
+@pytest.mark.parametrize("h0", [0, 1])  # also used for snr
 @pytest.mark.parametrize("detectors", ["H1", "H1,L1"])
 def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=1000):
     if amp_priors == "fixedamp":
@@ -29,13 +29,22 @@ def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=10
             "psi": 0,
             "phi": 0,
         }
-    elif amp_priors == "PK2009":
+    else:
         priors = {
-            "h0": {"stats.uniform": {"loc": 0.0, "scale": h0}},
             "cosi": {"stats.uniform": {"loc": -1.0, "scale": 2.0}},
             "psi": {"stats.uniform": {"loc": -0.25 * np.pi, "scale": 0.5 * np.pi}},
             "phi": {"stats.uniform": {"loc": 0.0, "scale": 2.0 * np.pi}},
         }
+        if amp_priors == "fixedsnr":
+            priors["snr"] = h0
+        if amp_priors == "logunisnr":
+            if h0 == 0:
+                pytest.skip()
+            priors["snr"] = {"stats.loguniform": {"a": 1, "b": 10}}
+        elif amp_priors == "PK2009":
+            if h0 == 0:
+                pytest.skip()
+            priors["h0"] = {"stats.uniform": {"loc": 0.0, "scale": h0}}
     if sky_priors == "targeted":
         priors["Alpha"] = 0
         priors["Delta"] = 0
@@ -78,6 +87,9 @@ def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=10
     twoF_from_snr2 = np.zeros(numDraws)
     for n in range(numDraws):
         injParams = paramsGen.draw()
+        if "snr" in priors.keys():
+            injSNR = injParams.pop("snr")
+            injParams["h0"] = snr.compute_h0_from_snr2(**injParams, snr2=injSNR**2)
         twoF_from_snr2[n], _ = snr.compute_twoF(**injParams)
     meanTwoF_from_snr2 = np.mean(twoF_from_snr2)
     logging.info(f"expected average twoF: {meanTwoF_from_snr2}")
@@ -94,14 +106,17 @@ def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=10
             "All parameters fixed, we should get a unique SNR for all draws..."
         )
         assert len(np.unique(cands["snr"])) == 1
-    if isinstance(priors["h0"], Number):
-        logging.info(f"Fixed h0={h0}, we should get the same back for all draws...")
-        assert np.allclose(
-            [cands["h0"][n] for n in range(numDraws)],
-            h0,
-            rtol=1e-9,
-            atol=0,
-        )
+    for param in ["h0", "snr"]:
+        if param in priors and isinstance(priors[param], Number):
+            logging.info(
+                f"Fixed {param}={priors[param]}, we should get the same back for all draws..."
+            )
+            assert np.allclose(
+                [cands[param][n] for n in range(numDraws)],
+                priors[param],
+                rtol=1e-9,
+                atol=0,
+            )
     # FIXME: add more tests of other parameters and detstats
 
     if os.path.isdir(synth.outdir):

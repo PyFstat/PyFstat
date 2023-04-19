@@ -166,17 +166,19 @@ class Synthesizer(BaseSearchClass):
         os.makedirs(self.outdir, exist_ok=True)
 
     def _set_amplitude_prior(self, injParams):
-        for key, val in injParams.items():
-            logging.info(f"{key}={val}")
         ampPrior = lalpulsar.AmplitudePrior_t()
-        ampPrior.pdf_h0Nat = lalpulsar.CreateSingularPDF1D(injParams["h0"])
+        if "snr" in injParams.keys():
+            ampPrior.fixedSNR = injParams["snr"]
+            ampPrior.pdf_h0Nat = lalpulsar.CreateSingularPDF1D(1.0)
+        elif "h0" in injParams.keys():
+            ampPrior.fixedSNR = -1
+            ampPrior.pdf_h0Nat = lalpulsar.CreateSingularPDF1D(injParams["h0"])
+        else:
+            raise ValueError("Need either 'snr' or 'h0' in injParams!")
         ampPrior.pdf_cosi = lalpulsar.CreateSingularPDF1D(injParams["cosi"])
         ampPrior.pdf_psi = lalpulsar.CreateSingularPDF1D(injParams["psi"])
         ampPrior.pdf_phi0 = lalpulsar.CreateSingularPDF1D(injParams["phi"])
-        ampPrior.fixedSNR = -1
-        # FIXME support this (-1 means don't use, >=0 legal)
-        ampPrior.fixRhohMax = False
-        # FIXME support this
+        ampPrior.fixRhohMax = False  # we don't support this
         return ampPrior
 
     def synth_candidates(
