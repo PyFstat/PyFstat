@@ -266,7 +266,7 @@ class Synthesizer(BaseSearchClass):
             h5py.File(h5file, "w", locking=False)
             if len(hdf5_outputs) > 0
             else contextlib.nullcontext()
-        ) as h5:
+        ) as h5f:
             for n in range(numDraws):
                 (
                     detStats,
@@ -298,35 +298,15 @@ class Synthesizer(BaseSearchClass):
                         atoms=multiFatoms,
                         header=self.output_file_header,
                     )
-                if "params" in hdf5_outputs:
-                    if n == 0:
-                        h5_group_params = h5.create_group("parameters")
-                        for par in paramsDrawn.keys():
-                            h5_group_params.create_dataset(
-                                par,
-                                shape=(numDraws),
-                            )
-                    for par in paramsDrawn.keys():
-                        h5_group_params[par][n] = paramsDrawn[par]
-                # if "FstatMaps" in hdf5_outputs:
-                # if n == 0:
-                # h5_dset_FstatMaps = h5.create_dataset(
-                # "FstatMaps",
-                # shape=(numDraws),
-                # )
-                # FIXME: need to convert to a plain array
-                # h5_dset_FstatMaps[n] = FstatMap
-                if "atoms" in hdf5_outputs:
-                    if n == 0:
-                        h5_dset_atoms = h5.create_dataset(
-                            "atoms",
-                            shape=(numDraws, multiFatoms.data[0].length, 8),
-                        )
-                    mergedAtoms = lalpulsar.mergeMultiFstatAtomsBinned(
-                        multiFatoms, self.Tsft
-                    )
-                    h5_dset_atoms[n] = self._reshape_FstatAtomVector_to_array(
-                        mergedAtoms
+                if len(hdf5_outputs) > 0:
+                    self._write_to_hdf5(
+                        h5f,
+                        hdf5_outputs,
+                        n,
+                        numDraws,
+                        paramsDrawn,
+                        FstatMap,
+                        multiFatoms,
                     )
         return candidates
 
@@ -389,6 +369,36 @@ class Synthesizer(BaseSearchClass):
             if stat not in detStats.keys():
                 raise RuntimeError(f"Sorry, we somehow forgot to compute `{stat}`!")
         return detStats, injParamsDict, FstatMap, multiAtoms
+
+    def _write_to_hdf5(
+        self, h5f, hdf5_outputs, n, numDraws, paramsDrawn, FstatMaps, multiFatoms
+    ):
+        if "parameters" in hdf5_outputs:
+            if n == 0:
+                h5_group_params = h5f.create_group("parameters")
+                for par in paramsDrawn.keys():
+                    h5_group_params.create_dataset(
+                        par,
+                        shape=(numDraws),
+                    )
+            for par in paramsDrawn.keys():
+                h5f["parameters"][par][n] = paramsDrawn[par]
+        # if "FstatMaps" in hdf5_outputs:
+        # if n == 0:
+        # h5_dset_FstatMaps = h5f.create_dataset(
+        # "FstatMaps",
+        # shape=(numDraws),
+        # )
+        # FIXME: need to convert to a plain array
+        # h5_dset_FstatMaps[n] = FstatMap
+        if "atoms" in hdf5_outputs:
+            if n == 0:
+                h5f.create_dataset(
+                    "atoms",
+                    shape=(numDraws, multiFatoms.data[0].length, 8),
+                )
+            mergedAtoms = lalpulsar.mergeMultiFstatAtomsBinned(multiFatoms, self.Tsft)
+            h5f["atoms"][n] = self._reshape_FstatAtomVector_to_array(mergedAtoms)
 
     def _InjParams_t_to_dict(self, paramsStruct):
         """
