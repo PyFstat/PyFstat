@@ -1,5 +1,6 @@
 import logging
 import os
+from numbers import Number
 from typing import Sequence, Union
 
 import lal
@@ -67,7 +68,7 @@ class Synthesizer(BaseSearchClass):
             Duration (in GPS seconds) of the total data set.
             NOTE: mutually exclusive with `timestamps`.
         priors:
-            List of priors for parameters [Alpha,Delta,h0,cosi,psi,phi0],
+            Dictionary of priors for parameters [Alpha,Delta,h0,cosi,psi,phi0],
             to be parsed by
             :func:`~pyfstat.injection_parameters.InjectionParametersGenerator`.
             In the simplest case, for fixed values, a minimal example would be
@@ -127,7 +128,9 @@ class Synthesizer(BaseSearchClass):
         self.multiAMBuffer = lalpulsar.multiAMBuffer_t()
         self.skypos = lal.SkyPosition()
         self.skypos.system = lal.COORDINATESYSTEM_EQUATORIAL
-        if isinstance(priors["Alpha"], float) and isinstance(priors["Delta"]):
+        if not isinstance(priors, dict):
+            raise ValueError("priors argument must be a dictionary.")
+        if isinstance(priors["Alpha"], Number) and isinstance(priors["Delta"], Number):
             self.skypos.longitude = priors["Alpha"]
             self.skypos.latitude = priors["Delta"]
         self.paramsGen = InjectionParametersGenerator(
