@@ -47,7 +47,7 @@ class Synthesizer(BaseSearchClass):
         detectors: str = None,
         earth_ephem: str = None,
         sun_ephem: str = None,
-        transientWindowType: str = "none",
+        transientWindowType: str = None,
         transientStartTime: int = None,
         transientTau: int = None,
         randSeed: int = 0,
@@ -65,10 +65,12 @@ class Synthesizer(BaseSearchClass):
             Default: current working directory.
         tstart:
             Starting GPS epoch of the data set.
-            NOTE: mutually exclusive with `timestamps`.
+            Not yet implemented! Please use `timestamps` instead.
+            NOTE: will be mutually exclusive with `timestamps`.
         duration:
             Duration (in GPS seconds) of the total data set.
-            NOTE: mutually exclusive with `timestamps`.
+            Not yet implemented! Please use `timestamps` instead.
+            NOTE: will be mutually exclusive with `timestamps`.
         priors:
             Dictionary of priors for parameters [Alpha,Delta,h0,cosi,psi,phi0],
             to be parsed by
@@ -88,8 +90,8 @@ class Synthesizer(BaseSearchClass):
             If None, will check standard sources as per
             utils.get_ephemeris_files().
         transientWindowType:
-            If `none`, a fully persistent CW signal is simulated.
-            If `rect` or `exp`, a transient signal with the corresponding
+            If `None`, a fully persistent CW signal is simulated.
+            If `"rect"` or `"exp"`, a transient signal with the corresponding
             amplitude evolution is simulated.
         transientStartTime:
             Start time for a transient signal.
@@ -118,6 +120,11 @@ class Synthesizer(BaseSearchClass):
             For details of supported `BSGL` parameters,
             see :func:`pyfstat.utils.detstats.get_BSGL_setup`.
         """
+        if self.duration is not None or self.tstart is not None:
+            raise NotImplementedError(
+                "Options 'duration' and 'tstart' are not implemented yet."
+                " Please use timestamps instead."
+            )
         self.rng = lal.gsl_rng("mt19937", self.randSeed)
         dets = DetectorStates()
         self.multiDetStates = dets.get_multi_detector_states(
@@ -138,22 +145,26 @@ class Synthesizer(BaseSearchClass):
         self.paramsGen = InjectionParametersGenerator(
             priors=self.priors, seed=self.randSeed
         )
-        # FIXME: handle these separately
-        self.injectWindow_type = self.transientWindowType
-        self.searchWindow_type = self.transientWindowType
-        self.injectWindow_t0 = self.transientStartTime
-        self.injectWindow_tau = self.transientTau
-        self.injectWindow_t0Band = 0
-        self.injectWindow_tauBand = 0
         self.transientInjectRange = lalpulsar.transientWindowRange_t()
-        self.transientInjectRange.type = lalpulsar.ParseTransientWindowName(
-            self.injectWindow_type
-        )
-        self.transientInjectRange.t0 = self.tstart + self.injectWindow_t0
-        # tauMax = self.injectWindow_tau + self.injectWindow_tau
-        self.transientInjectRange.t0Band = self.injectWindow_t0Band
-        self.transientInjectRange.tau = self.injectWindow_tau
-        self.transientInjectRange.tauBand = self.injectWindow_tauBand
+        if transientWindowType is None:
+            self.transientInjectRange.type = lalpulsar.ParseTransientWindowName("none")
+        else:
+            raise NotImplementedError("Transients are not yet implemented.")
+            # FIXME: handle transient injection and search ranges separately
+            self.injectWindow_type = self.transientWindowType
+            self.searchWindow_type = self.transientWindowType
+            self.injectWindow_t0 = self.transientStartTime
+            self.injectWindow_tau = self.transientTau
+            self.injectWindow_t0Band = 0
+            self.injectWindow_tauBand = 0
+            self.transientInjectRange.type = lalpulsar.ParseTransientWindowName(
+                self.injectWindow_type
+            )
+            self.transientInjectRange.t0 = self.tstart + self.injectWindow_t0
+            # tauMax = self.injectWindow_tau + self.injectWindow_tau
+            self.transientInjectRange.t0Band = self.injectWindow_t0Band
+            self.transientInjectRange.tau = self.injectWindow_tau
+            self.transientInjectRange.tauBand = self.injectWindow_tauBand
         self.detstats, detstat_params = utils.parse_detstats(self.detstats)
         BSGL = utils.get_canonical_detstat_name("BSGL")
         if BSGL in self.detstats:
@@ -320,6 +331,8 @@ class Synthesizer(BaseSearchClass):
             )
             if self.signalOnly:
                 FstatMap.maxF += 2
+        else:
+            FstatMap = None
         if "maxTwoF" in self.detstats:
             detStats["maxTwoF"] = 2 * FstatMap.maxF
         if BtSG in self.detstats:

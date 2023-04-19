@@ -52,24 +52,17 @@ def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=10
         priors["Alpha"] = {"stats.uniform": {"loc": 0.0, "scale": 2 * np.pi}}
         priors["Delta"] = {"uniform_sky_declination": {}}
 
-    detstats = [
-        "twoF",
-        "maxTwoF",
-        "BtSG",
-    ]
+    detstats = ["twoF"]
     if len(detectors.split(",")) >= 2:
         detstats.append({"BSGL": {"Fstar0sc": 15}})
     randSeed = 1
 
     synth = pyfstat.Synthesizer(
-        label="Test",
+        label="TestSynthCWs",
         outdir="TestData/synth",
         priors=priors,
         detectors=detectors,
         timestamps=timestamps,
-        transientStartTime=0,
-        transientTau=timestamps[-1] - timestamps[0],
-        tstart=timestamps[0],
         randSeed=randSeed,
         detstats=detstats,
     )
@@ -99,10 +92,10 @@ def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=10
         params="return",
         atoms=os.path.join(synth.outdir, "testAtoms.h5"),
     )
-    twoF = cands["maxTwoF"][0]
+    twoF = cands["twoF"][0]
     logging.info(f"first draw of 2F: {twoF}")
     assert twoF > 0
-    meanTwoF = np.mean(cands["maxTwoF"])
+    meanTwoF = np.mean(cands["twoF"])
     logging.info(f"mean over {numDraws} draws of 2F: {meanTwoF}")
     assert pytest.approx(meanTwoF, rel=0.05) == meanTwoF_from_snr2
     if np.all([isinstance(prior, Number) for prior in priors.values()]):
@@ -125,3 +118,32 @@ def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=10
 
     if os.path.isdir(synth.outdir):
         shutil.rmtree(synth.outdir)
+
+
+def test_synth_tCW(timestamps):
+    detstats = [
+        "twoF",
+        "maxTwoF",
+        "BtSG",
+    ]
+    priors = {
+        "h0": 0,
+        "cosi": 0,
+        "psi": 0,
+        "phi": 0,
+        "Alpha": 0,
+        "Delta": 0,
+    }
+    logging.warning("Transients are not yet implemented!")
+    with pytest.raises(NotImplementedError):
+        pyfstat.Synthesizer(
+            label="TestSynthTransients",
+            outdir="TestData/synth",
+            priors=priors,
+            detectors="H1",
+            timestamps=timestamps,
+            transientWindowType="rect",
+            transientStartTime=0,
+            transientTau=timestamps[-1] - timestamps[0],
+            detstats=detstats,
+        )
