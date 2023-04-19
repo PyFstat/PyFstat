@@ -304,6 +304,7 @@ class Synthesizer(BaseSearchClass):
                         hdf5_outputs,
                         n,
                         numDraws,
+                        detStats,
                         paramsDrawn,
                         FstatMap,
                         multiFatoms,
@@ -371,18 +372,41 @@ class Synthesizer(BaseSearchClass):
         return detStats, injParamsDict, FstatMap, multiAtoms
 
     def _write_to_hdf5(
-        self, h5f, hdf5_outputs, n, numDraws, paramsDrawn, FstatMaps, multiFatoms
+        self,
+        h5f,
+        hdf5_outputs,
+        n,
+        numDraws,
+        detStats,
+        paramsDrawn,
+        FstatMaps,
+        multiFatoms,
     ):
+        if "detstats" in hdf5_outputs:
+            if n == 0:
+                h5_group_detstats = h5f.create_group("detstats")
+                for key in detStats.keys():
+                    h5_group_detstats.create_dataset(
+                        key,
+                        shape=(numDraws, self.numDetectors)
+                        if key == "twoFX"
+                        else (numDraws),
+                    )
+            for key, val in detStats.items():
+                if key == "twoFX":
+                    h5f["detstats"][key][n, :] = val[: self.numDetectors]
+                else:
+                    h5f["detstats"][key][n] = val
         if "parameters" in hdf5_outputs:
             if n == 0:
                 h5_group_params = h5f.create_group("parameters")
-                for par in paramsDrawn.keys():
+                for key in paramsDrawn.keys():
                     h5_group_params.create_dataset(
-                        par,
+                        key,
                         shape=(numDraws),
                     )
-            for par in paramsDrawn.keys():
-                h5f["parameters"][par][n] = paramsDrawn[par]
+            for key, val in paramsDrawn.items():
+                h5f["parameters"][key][n] = val
         # if "FstatMaps" in hdf5_outputs:
         # if n == 0:
         # h5_dset_FstatMaps = h5f.create_dataset(
