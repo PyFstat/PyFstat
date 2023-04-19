@@ -1,8 +1,35 @@
 import logging
 
+import lal
 import lalpulsar
 
 logger = logging.getLogger(__name__)
+
+
+def write_atoms_to_txt_file(fname, atoms, header=[], comments="%%"):
+    """Save F-statistic atoms (time-dependent quantities) to a text file.
+
+    Parameters
+    ----------
+    fname: str
+        Output filename.
+    atoms: lalpulsar.MultiFstatAtomVector
+        The F-stat atoms data to write out.
+    header: list
+        A list of header lines to write to the top of the file.
+    comments: str
+        Comments marker character(s) to be prepended to header lines.
+        Note that the column headers line
+        (last line of the header before the atoms data)
+        is printed by lalpulsar, with `%%` as comments marker,
+        so (different from most other PyFstat functions)
+        the default here is `%%` too.
+    """
+    fo = lal.FileOpen(fname, "w")
+    for hline in header:
+        lal.FilePuts(f"{comments} {hline}\n", fo)
+    lalpulsar.write_MultiFstatAtoms_to_fp(fo, atoms)
+    del fo  # instead of lal.FileClose() which is not SWIG-exported
 
 
 def extract_singleIFOmultiFatoms_from_multiAtoms(

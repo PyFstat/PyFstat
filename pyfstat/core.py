@@ -1654,23 +1654,19 @@ class ComputeFstat(BaseSearchClass):
             where `dopplerName` is a canonical lalpulsar formatting of the
             'Doppler' parameter space point (frequency-evolution parameters).
         comments: str
-            Comments marker character(s) to be prepended to header lines.
-            Note that the column headers line
-            (last line of the header before the atoms data)
-            is printed by lalpulsar, with `%%` as comments marker,
-            so (different from most other PyFstat functions)
-            the default here is `%%` too.
+            Comments marker character(s) to be prepended to header lines,
+            see utils.write_atoms_to_txt_file() for details.
         """
         multiFatoms = getattr(self.FstatResults, "multiFatoms", None)
         if multiFatoms and multiFatoms[0]:
             dopplerName = lalpulsar.PulsarDopplerParams2String(self.PulsarDopplerParams)
-            # fnameAtoms = os.path.join(self.outdir,'Fstatatoms_%s.dat' % dopplerName)
             fnameAtoms = f"{fnamebase}_Fstatatoms_{dopplerName}.dat"
-            fo = lal.FileOpen(fnameAtoms, "w")
-            for hline in self.output_file_header:
-                lal.FilePuts(f"{comments} {hline}\n", fo)
-            lalpulsar.write_MultiFstatAtoms_to_fp(fo, multiFatoms[0])
-            del fo  # instead of lal.FileClose() which is not SWIG-exported
+            utils.write_atoms_to_txt_file(
+                fname=fnameAtoms,
+                atoms=multiFatoms[0],
+                header=self.output_file_header,
+                comments=comments,
+            )
         else:
             raise RuntimeError(
                 "Cannot print atoms vector to file: no FstatResults.multiFatoms, or it is None!"

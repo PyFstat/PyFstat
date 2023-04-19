@@ -120,6 +120,7 @@ class Synthesizer(BaseSearchClass):
             For details of supported `BSGL` parameters,
             see :func:`pyfstat.utils.detstats.get_BSGL_setup`.
         """
+        self._set_init_params_dict(locals())
         if self.duration is not None or self.tstart is not None:
             raise NotImplementedError(
                 "Options 'duration' and 'tstart' are not implemented yet."
@@ -173,6 +174,7 @@ class Synthesizer(BaseSearchClass):
                 numSegments=1,
                 **detstat_params[BSGL],
             )
+        self.output_file_header = self.get_output_file_header()
         logger.debug(
             f"Creating output directory {self.outdir} if it does not yet exist..."
         )
@@ -232,7 +234,7 @@ class Synthesizer(BaseSearchClass):
             arguments set to `"return"`.
             Each entry is an array/list over draws.
         """
-        if "txt" in params or "txt" in FstatMaps or "txt" in atoms:
+        if "txt" in params or "txt" in FstatMaps:
             raise NotImplementedError(".txt file output is not yet implemented.")
         hdf5 = "hdf5" in params or "hdf5" in FstatMaps or "hdf5" in atoms
         if hdf5:
@@ -281,6 +283,15 @@ class Synthesizer(BaseSearchClass):
                     candidates["FstatMaps"].append(FstatMap)
                 if "return" in atoms:
                     candidates["atoms"].append(multiFatoms)
+                if "txt" in atoms:
+                    utils.write_atoms_to_txt_file(
+                        fname=os.path.join(
+                            self.outdir,
+                            f"{self.label}_Fstatatoms_draw{n}_of_{numDraws}.dat",
+                        ),
+                        atoms=multiFatoms,
+                        header=self.output_file_header,
+                    )
                 if "hdf5" in params:
                     if n == 0:
                         h5_group_params = h5.create_group("parameters")

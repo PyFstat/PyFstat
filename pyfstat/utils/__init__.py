@@ -6,7 +6,11 @@ and are of interest mostly only for developers,
 but others can also be helpful for end users.
 """
 
-from .atoms import copy_FstatAtomVector, extract_singleIFOmultiFatoms_from_multiAtoms
+from .atoms import (
+    copy_FstatAtomVector,
+    extract_singleIFOmultiFatoms_from_multiAtoms,
+    write_atoms_to_txt_file,
+)
 from .cli import match_commandlines, run_commandline
 from .converting import (
     convert_aPlus_aCross_to_h0_cosi,
