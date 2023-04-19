@@ -59,7 +59,7 @@ def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=10
     ]
     if len(detectors.split(",")) >= 2:
         detstats.append({"BSGL": {"Fstar0sc": 15}})
-    randSeed = 0
+    randSeed = 1
 
     synth = pyfstat.Synthesizer(
         label="Test",
