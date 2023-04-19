@@ -243,7 +243,8 @@ class Synthesizer(BaseSearchClass):
                     "Could not import 'h5py', please install it to use this method. "
                     "For example: `pip install pyfstat[hdf5]`"
                 )
-            logger.info(f"Will save all F-stat atoms to hdf5 file {atoms}.")
+            h5file = os.path.join(self.outdir, self.label + "_draws.h5")
+            logger.info(f"Will save output from all draws to hdf5 file: {h5file}")
         candidates = {
             stat: np.tile(np.nan, (numDraws, self.numDetectors))
             if stat == "twoFX"
@@ -256,11 +257,7 @@ class Synthesizer(BaseSearchClass):
             candidates["atoms"] = []
         logger.info(f"Drawing {numDraws} results.")
         with (
-            h5py.File(
-                os.path.join(self.outdir, self.label + "_draws.h5"), "w", locking=False
-            )
-            if hdf5
-            else contextlib.nullcontext()
+            h5py.File(h5file, "w", locking=False) if hdf5 else contextlib.nullcontext()
         ) as h5:
             for n in range(numDraws):
                 (
