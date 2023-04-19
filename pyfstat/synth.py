@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import os
 from numbers import Number
@@ -9,6 +10,7 @@ import numpy as np
 
 import pyfstat.utils as utils
 from pyfstat import BaseSearchClass, DetectorStates, InjectionParametersGenerator
+from pyfstat.tcw_fstat_map_funcs import reshape_FstatAtomsVector
 
 logger = logging.getLogger(__name__)
 
@@ -182,36 +184,95 @@ class Synthesizer(BaseSearchClass):
         return ampPrior
 
     def synth_candidates(
-        self, numDraws=1, keep_params=False, keep_FstatMaps=False, keep_atoms=False
+        self,
+        numDraws: int = 1,
+        params: str = None,
+        FstatMaps: str = None,
+        atoms: str = None,
     ):
+        """Draw a batch of signal parameters and corresponding statistics.
+
+        Parameters
+        ----------
+        numDraws:
+            How many candidates to draw.
+        params:
+            What to do with the drawn parameters.
+            If `"return"`, they are stored in the return dictionary.
+        FstatMaps:
+            What to do with the drawn `F`-statistic maps.
+            If `"return", they are stored in the return dictionary.
+        atoms:
+            What to do with the drawn `F`-statistic atoms.
+            If `"return"`, they are stored in the return dictionary.
+            If a filename ending with ".h5", store in hdf5 format.
+
+        Returns
+        -------
+        candidates: dict
+            A dictionary with, at a minimum, one entry for each detection statistic
+            requested via the instance's `detstats` argument,
+            and optional entries according to the [`params`, `FstatMaps`, `atoms`]
+            arguments set to `"return"`.
+            Each entry is an array/list over draws.
+        """
+        if ".h5" in atoms:
+            try:
+                import h5py
+            except ImportError:
+                raise ImportError(
+                    "Could not import 'h5py', please install it to use this method. "
+                    "For example: `pip install pyfstat[hdf5]`"
+                )
+            logger.info(f"Will save all F-stat atoms to hdf5 file {atoms}.")
         candidates = {
             stat: np.tile(np.nan, (numDraws, self.numDetectors))
             if stat == "twoFX"
             else np.repeat(np.nan, numDraws)
             for stat in self.detstats
         }
-        if keep_FstatMaps:
+        if FstatMaps == "return":
             candidates["FstatMaps"] = []
-        if keep_atoms:
+        if atoms == "return":
             candidates["atoms"] = []
         logger.info(f"Drawing {numDraws} results.")
-        for n in range(numDraws):
-            detStats, params, FstatMap, atoms = self.synth_one_candidate()
-            for key, val in detStats.items():
-                if key == "twoFX":
-                    candidates[key][n, :] = val[: self.numDetectors]
-                else:
-                    candidates[key][n] = val
-            if keep_params:
-                if n == 0:
-                    for key in params.keys():
-                        candidates[key] = np.repeat(np.nan, numDraws)
-                for key, val in params.items():
-                    candidates[key][n] = val
-            if keep_FstatMaps:
-                candidates["FstatMaps"].append(FstatMap)
-            if keep_atoms:
-                candidates["atoms"].append(atoms)
+        with (
+            h5py.File(atoms, "w", locking=False)
+            if ".h5" in atoms
+            else contextlib.nullcontext()
+        ) as h5:
+            for n in range(numDraws):
+                (
+                    detStats,
+                    paramsDrawn,
+                    FstatMap,
+                    multiFatoms,
+                ) = self.synth_one_candidate()
+                for key, val in detStats.items():
+                    if key == "twoFX":
+                        candidates[key][n, :] = val[: self.numDetectors]
+                    else:
+                        candidates[key][n] = val
+                if params == "return":
+                    if n == 0:
+                        for key in paramsDrawn.keys():
+                            candidates[key] = np.repeat(np.nan, numDraws)
+                    for key, val in paramsDrawn.items():
+                        candidates[key][n] = val
+                if FstatMaps == "return":
+                    candidates["FstatMaps"].append(FstatMap)
+                if atoms == "return":
+                    candidates["atoms"].append(multiFatoms)
+                if ".h5" in atoms:
+                    if n == 0:
+                        dset_h5 = h5.create_dataset(
+                            "atoms",
+                            shape=(numDraws, multiFatoms.data[0].length, 8),
+                        )
+                    mergedAtoms = lalpulsar.mergeMultiFstatAtomsBinned(
+                        multiFatoms, self.Tsft
+                    )
+                    dset_h5[n] = self._reshape_FstatAtomVector_to_array(mergedAtoms)
         return candidates
 
     def synth_one_candidate(self):
@@ -295,3 +356,22 @@ class Synthesizer(BaseSearchClass):
             aPlus=paramsDict["aPlus"], aCross=paramsDict["aCross"]
         )
         return paramsDict
+
+    def _reshape_FstatAtomVector_to_array(self, atomsVector):
+        """Reshape a FstatAtomVector into an (Ntimestamps,8) np.ndarray.
+
+        Parameters
+        ----------
+        atomsVector: lalpulsar.FstatAtomVector
+            The atoms in a 'vector'-like structure:
+            iterating over timestamps as the higher hierarchical level,
+            with a set of 'atoms' quantities defined at each timestamp.
+
+        Returns
+        -------
+        atoms_for_h5: np.ndarray
+            Array of the atoms, with shape (Ntimestamps,8).
+        """
+        atomsDict = reshape_FstatAtomsVector(atomsVector)
+        atomsArray = np.array(list(atomsDict.values())).transpose()
+        return atomsArray

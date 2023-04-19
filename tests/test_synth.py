@@ -63,7 +63,7 @@ def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=10
 
     synth = pyfstat.Synthesizer(
         label="Test",
-        outdir="TestData/",
+        outdir="TestData/synth",
         priors=priors,
         detectors=detectors,
         timestamps=timestamps,
@@ -94,7 +94,11 @@ def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=10
     meanTwoF_from_snr2 = np.mean(twoF_from_snr2)
     logging.info(f"expected average twoF: {meanTwoF_from_snr2}")
 
-    cands = synth.synth_candidates(numDraws=numDraws, keep_params=True)
+    cands = synth.synth_candidates(
+        numDraws=numDraws,
+        params="return",
+        atoms=os.path.join(synth.outdir, "testAtoms.h5"),
+    )
     twoF = cands["maxTwoF"][0]
     logging.info(f"first draw of 2F: {twoF}")
     assert twoF > 0
