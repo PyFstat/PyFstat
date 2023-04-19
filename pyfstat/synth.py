@@ -199,9 +199,9 @@ class Synthesizer(BaseSearchClass):
     def synth_candidates(
         self,
         numDraws: int = 1,
-        params: str = "",
-        FstatMaps: str = "",
-        atoms: str = "",
+        returns: list = ["detstats"],
+        hdf5_outputs: list = [""],
+        txt_outputs: list = [""],
     ):
         """Draw a batch of signal parameters and corresponding statistics.
 
@@ -209,35 +209,37 @@ class Synthesizer(BaseSearchClass):
         ----------
         numDraws:
             How many candidates to draw.
-        params:
-            What to do with the drawn parameters: comma-separated list.
-            "return": store return dictionary.
-            "hdf5": store in a single .h5 output file for all draws.
-            "txt": store in a single .txt file for all draws.
-        FstatMaps:
-            What to do with the drawn parameters: comma-separated list.
-            "return": store return dictionary.
-            "hdf5": store in a single .h5 output file for all draws.
-            "txt": store in one .txt file per draw.
-        atoms:
-            What to do with the drawn parameters: comma-separated list.
-            "return": store return dictionary.
-            "hdf5": store in a single .h5 output file for all draws.
-            "txt": store in one .txt file per draw.
+        returns:
+            Results to put into the return dictionary:
+            "detstats", "parameters", "FstatMaps", "atoms".
+        hdf5_outputs:
+            Results to put into an .h5 output file
+            (one file for all draws together):
+            "detstats", "parameters", "FstatMaps", "atoms".
+        txt_outputs:
+            Results to put into plain-text .dat file(s):
+            "detstats" (one file for all draws together),
+            "parameters" (one file for all draws together),
+            "FstatMaps" (one file per draw),
+            "atoms" (one file per draw).
 
         Returns
         -------
         candidates: dict
             A dictionary with, at a minimum, one entry for each detection statistic
             requested via the instance's `detstats` argument,
-            and optional entries according to the [`params`, `FstatMaps`, `atoms`]
-            arguments set to `"return"`.
+            and optional entries for [params, FstatMaps, atoms]
+            depending on the `returns` argument.
             Each entry is an array/list over draws.
         """
-        if "txt" in params or "txt" in FstatMaps:
-            raise NotImplementedError(".txt file output is not yet implemented.")
-        hdf5 = "hdf5" in params or "hdf5" in FstatMaps or "hdf5" in atoms
-        if hdf5:
+        for q in ["detstats", "parameters", "FstatMaps"]:
+            if q in "txt_outputs":
+                raise NotImplementedError(
+                    f"text file output of {q}  not yet implemented."
+                )
+        if "FstatMaps" in hdf5_outputs:
+            raise NotImplementedError("hdf5 output of FstatMaps not yet implemented.")
+        if len(hdf5_outputs) > 0:
             try:
                 import h5py
             except ImportError:
@@ -247,19 +249,23 @@ class Synthesizer(BaseSearchClass):
                 )
             h5file = os.path.join(self.outdir, self.label + "_draws.h5")
             logger.info(f"Will save output from all draws to hdf5 file: {h5file}")
-        candidates = {
-            stat: np.tile(np.nan, (numDraws, self.numDetectors))
-            if stat == "twoFX"
-            else np.repeat(np.nan, numDraws)
-            for stat in self.detstats
-        }
-        if "return" in FstatMaps:
+        candidates = {}
+        if "detstats" in returns:
+            for stat in self.detstats:
+                candidates[stat] = (
+                    np.tile(np.nan, (numDraws, self.numDetectors))
+                    if stat == "twoFX"
+                    else np.repeat(np.nan, numDraws)
+                )
+        if "FstatMaps" in returns:
             candidates["FstatMaps"] = []
-        if "return" in atoms:
+        if "atoms" in returns:
             candidates["atoms"] = []
         logger.info(f"Drawing {numDraws} results.")
         with (
-            h5py.File(h5file, "w", locking=False) if hdf5 else contextlib.nullcontext()
+            h5py.File(h5file, "w", locking=False)
+            if len(hdf5_outputs) > 0
+            else contextlib.nullcontext()
         ) as h5:
             for n in range(numDraws):
                 (
@@ -273,17 +279,17 @@ class Synthesizer(BaseSearchClass):
                         candidates[key][n, :] = val[: self.numDetectors]
                     else:
                         candidates[key][n] = val
-                if "return" in params:
+                if "parameters" in returns:
                     if n == 0:
                         for key in paramsDrawn.keys():
                             candidates[key] = np.repeat(np.nan, numDraws)
                     for key, val in paramsDrawn.items():
                         candidates[key][n] = val
-                if "return" in FstatMaps:
+                if "FstatMaps" in returns:
                     candidates["FstatMaps"].append(FstatMap)
-                if "return" in atoms:
+                if "atoms" in returns:
                     candidates["atoms"].append(multiFatoms)
-                if "txt" in atoms:
+                if "atoms" in txt_outputs:
                     utils.write_atoms_to_txt_file(
                         fname=os.path.join(
                             self.outdir,
@@ -292,7 +298,7 @@ class Synthesizer(BaseSearchClass):
                         atoms=multiFatoms,
                         header=self.output_file_header,
                     )
-                if "hdf5" in params:
+                if "params" in hdf5_outputs:
                     if n == 0:
                         h5_group_params = h5.create_group("parameters")
                         for par in paramsDrawn.keys():
@@ -302,18 +308,15 @@ class Synthesizer(BaseSearchClass):
                             )
                     for par in paramsDrawn.keys():
                         h5_group_params[par][n] = paramsDrawn[par]
-                if "hdf5" in FstatMaps:
-                    raise NotImplementedError(
-                        "hdf5 export of FstatMaps not yet implemented."
-                    )
-                    # if n == 0:
-                    # h5_dset_FstatMaps = h5.create_dataset(
-                    # "FstatMaps",
-                    # shape=(numDraws),
-                    # )
-                    # FIXME: need to convert to a plain array
-                    # h5_dset_FstatMaps[n] = FstatMap
-                if "hdf5" in atoms:
+                # if "FstatMaps" in hdf5_outputs:
+                # if n == 0:
+                # h5_dset_FstatMaps = h5.create_dataset(
+                # "FstatMaps",
+                # shape=(numDraws),
+                # )
+                # FIXME: need to convert to a plain array
+                # h5_dset_FstatMaps[n] = FstatMap
+                if "atoms" in hdf5_outputs:
                     if n == 0:
                         h5_dset_atoms = h5.create_dataset(
                             "atoms",

@@ -89,8 +89,8 @@ def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=10
 
     cands = synth.synth_candidates(
         numDraws=numDraws,
-        params="return,hdf5",
-        atoms="hdf5,txt",
+        returns=["detstats", "parameters"],
+        hdf5_outputs=["parameters,atoms"],
     )
     twoF = cands["twoF"][0]
     logging.info(f"first draw of 2F: {twoF}")
