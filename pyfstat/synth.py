@@ -151,20 +151,20 @@ class Synthesizer(BaseSearchClass):
         else:
             raise NotImplementedError("Transients are not yet implemented.")
             # FIXME: handle transient injection and search ranges separately
-            self.injectWindow_type = self.transientWindowType
-            self.searchWindow_type = self.transientWindowType
-            self.injectWindow_t0 = self.transientStartTime
-            self.injectWindow_tau = self.transientTau
-            self.injectWindow_t0Band = 0
-            self.injectWindow_tauBand = 0
-            self.transientInjectRange.type = lalpulsar.ParseTransientWindowName(
-                self.injectWindow_type
-            )
-            self.transientInjectRange.t0 = self.tstart + self.injectWindow_t0
+            # self.injectWindow_type = self.transientWindowType
+            # self.searchWindow_type = self.transientWindowType
+            # self.injectWindow_t0 = self.transientStartTime
+            # self.injectWindow_tau = self.transientTau
+            # self.injectWindow_t0Band = 0
+            # self.injectWindow_tauBand = 0
+            # self.transientInjectRange.type = lalpulsar.ParseTransientWindowName(
+            # self.injectWindow_type
+            # )
+            # self.transientInjectRange.t0 = self.tstart + self.injectWindow_t0
             # tauMax = self.injectWindow_tau + self.injectWindow_tau
-            self.transientInjectRange.t0Band = self.injectWindow_t0Band
-            self.transientInjectRange.tau = self.injectWindow_tau
-            self.transientInjectRange.tauBand = self.injectWindow_tauBand
+            # self.transientInjectRange.t0Band = self.injectWindow_t0Band
+            # self.transientInjectRange.tau = self.injectWindow_tau
+            # self.transientInjectRange.tauBand = self.injectWindow_tauBand
         self.detstats, detstat_params = utils.parse_detstats(self.detstats)
         BSGL = utils.get_canonical_detstat_name("BSGL")
         if BSGL in self.detstats:
