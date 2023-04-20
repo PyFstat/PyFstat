@@ -175,6 +175,17 @@ class Synthesizer(BaseSearchClass):
                 **detstat_params[BSGL],
             )
         self.output_file_header = self.get_output_file_header()
+        self.param_keys = [
+            "Alpha",
+            "Delta",
+            "aPlus",
+            "aCross",
+            "h0",
+            "cosi",
+            "psi",
+            "phi",
+            "snr",
+        ]
         logger.debug(
             f"Creating output directory {self.outdir} if it does not yet exist..."
         )
@@ -199,9 +210,9 @@ class Synthesizer(BaseSearchClass):
     def synth_candidates(
         self,
         numDraws: int = 1,
-        returns: list = ["detstats"],
-        hdf5_outputs: list = [""],
-        txt_outputs: list = [""],
+        returns: Sequence[str] = ("detstats", "parameters"),
+        hdf5_outputs: Sequence[str] = (),
+        txt_outputs: Sequence[str] = (),
     ):
         """Draw a batch of signal parameters and corresponding statistics.
 
@@ -250,6 +261,10 @@ class Synthesizer(BaseSearchClass):
             h5file = os.path.join(self.outdir, self.label + "_draws.h5")
             logger.info(f"Will save output from all draws to hdf5 file: {h5file}")
         candidates = {}
+        if "parameters" in returns:
+            for key in self.param_keys:
+                # FIXME: add transient parameters
+                candidates[key] = np.repeat(np.nan, numDraws)
         if "detstats" in returns:
             for stat in self.detstats:
                 candidates[stat] = (
@@ -258,15 +273,18 @@ class Synthesizer(BaseSearchClass):
                     else np.repeat(np.nan, numDraws)
                 )
         if "FstatMaps" in returns:
-            candidates["FstatMaps"] = []
+            candidates["FstatMaps"] = [None for n in range(numDraws)]
         if "atoms" in returns:
-            candidates["atoms"] = []
+            candidates["atoms"] = [None for n in range(numDraws)]
         logger.info(f"Drawing {numDraws} results.")
         with (
             h5py.File(h5file, "w", locking=False)
             if len(hdf5_outputs) > 0
             else contextlib.nullcontext()
         ) as h5f:
+            # FIXME: for metadata would be better to store the individual params
+            h5f.attrs["header"] = self.output_file_header
+            h5f.attrs["numDraws"] = numDraws
             for n in range(numDraws):
                 (
                     detStats,
@@ -274,21 +292,18 @@ class Synthesizer(BaseSearchClass):
                     FstatMap,
                     multiFatoms,
                 ) = self.synth_one_candidate()
+                if "parameters" in returns:
+                    for key, val in paramsDrawn.items():
+                        candidates[key][n] = val
                 for key, val in detStats.items():
                     if key == "twoFX":
                         candidates[key][n, :] = val[: self.numDetectors]
                     else:
                         candidates[key][n] = val
-                if "parameters" in returns:
-                    if n == 0:
-                        for key in paramsDrawn.keys():
-                            candidates[key] = np.repeat(np.nan, numDraws)
-                    for key, val in paramsDrawn.items():
-                        candidates[key][n] = val
                 if "FstatMaps" in returns:
-                    candidates["FstatMaps"].append(FstatMap)
+                    candidates["FstatMaps"][n] = FstatMap
                 if "atoms" in returns:
-                    candidates["atoms"].append(multiFatoms)
+                    candidates["atoms"][n] = multiFatoms
                 if "atoms" in txt_outputs:
                     utils.write_atoms_to_txt_file(
                         fname=os.path.join(
@@ -382,6 +397,16 @@ class Synthesizer(BaseSearchClass):
         FstatMaps,
         multiFatoms,
     ):
+        if "parameters" in hdf5_outputs:
+            if n == 0:
+                h5_group_params = h5f.create_group("parameters")
+                for key in paramsDrawn.keys():
+                    h5_group_params.create_dataset(
+                        key,
+                        shape=(numDraws),
+                    )
+            for key, val in paramsDrawn.items():
+                h5f["parameters"][key][n] = val
         if "detstats" in hdf5_outputs:
             if n == 0:
                 h5_group_detstats = h5f.create_group("detstats")
@@ -397,16 +422,6 @@ class Synthesizer(BaseSearchClass):
                     h5f["detstats"][key][n, :] = val[: self.numDetectors]
                 else:
                     h5f["detstats"][key][n] = val
-        if "parameters" in hdf5_outputs:
-            if n == 0:
-                h5_group_params = h5f.create_group("parameters")
-                for key in paramsDrawn.keys():
-                    h5_group_params.create_dataset(
-                        key,
-                        shape=(numDraws),
-                    )
-            for key, val in paramsDrawn.items():
-                h5f["parameters"][key][n] = val
         # if "FstatMaps" in hdf5_outputs:
         # if n == 0:
         # h5_dset_FstatMaps = h5f.create_dataset(
@@ -439,8 +454,8 @@ class Synthesizer(BaseSearchClass):
             "Delta": paramsStruct.skypos.latitude,
             "aPlus": paramsStruct.ampParams.aPlus,
             "aCross": paramsStruct.ampParams.aCross,
-            "phi": paramsStruct.ampParams.phi0,
             "psi": paramsStruct.ampParams.psi,
+            "phi": paramsStruct.ampParams.phi0,
             "snr": paramsStruct.SNR,
         }
         paramsDict["h0"], paramsDict["cosi"] = utils.convert_aPlus_aCross_to_h0_cosi(
