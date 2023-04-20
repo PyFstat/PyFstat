@@ -51,6 +51,7 @@ extras_require = {
         "mistune==0.8.4",
         "Pillow==9.3.0",
     ],
+    "hdf5": ["h5py"],
     "pycuda": ["pycuda"],
     "style": [
         "black",

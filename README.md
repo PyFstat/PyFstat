@@ -184,6 +184,7 @@ Available sets of optional dependencies are:
 plotting methods and some of the [example scripts](./examples).
 * `dev`: Collects `docs`, `style`, `test` and `wheel`.
 * `docs`: Required dependencies to build the documentation.
+* `hdf5`: Adds the `h5py` dependency for optional hdf5 file output.
 * `pycuda` ([PyPI](https://pypi.org/project/pycuda/)): Required for the `tCWFstatMapVersion=pycuda`
   option of the `TransientGridSearch` class. (Note: Installing `pycuda` requires a working
   `nvcc` compiler in your path.)
