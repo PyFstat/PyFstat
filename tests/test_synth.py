@@ -58,16 +58,7 @@ def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=10
         detstats.append({"BSGL": {"Fstar0sc": 15}})
     randSeed = 1
 
-    synth = pyfstat.Synthesizer(
-        label="TestSynthCWs",
-        outdir="TestData/synth",
-        priors=priors,
-        detectors=detectors,
-        timestamps=timestamps,
-        randSeed=randSeed,
-        detstats=detstats,
-    )
-
+    # for comparison: predicted 2F from SignalToNoiseRatio
     paramsGen = pyfstat.InjectionParametersGenerator(priors=priors, seed=randSeed)
     detstates = pyfstat.snr.DetectorStates()
     snr = pyfstat.SignalToNoiseRatio(
@@ -88,6 +79,16 @@ def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=10
     meanTwoF_from_snr2 = np.mean(twoF_from_snr2)
     logging.info(f"expected average twoF: {meanTwoF_from_snr2}")
 
+    # the actual synthing
+    synth = pyfstat.Synthesizer(
+        label="TestSynthCWs",
+        outdir="TestData/synth",
+        priors=priors,
+        detectors=detectors,
+        timestamps=timestamps,
+        randSeed=randSeed,
+        detstats=detstats,
+    )
     try:
         cands = synth.synth_candidates(
             numDraws=numDraws,
