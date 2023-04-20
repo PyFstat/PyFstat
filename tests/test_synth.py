@@ -88,11 +88,20 @@ def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=10
     meanTwoF_from_snr2 = np.mean(twoF_from_snr2)
     logging.info(f"expected average twoF: {meanTwoF_from_snr2}")
 
-    cands = synth.synth_candidates(
-        numDraws=numDraws,
-        returns=["detstats", "parameters"],
-        hdf5_outputs=["detstats", "parameters", "atoms"],
-    )
+    try:
+        cands = synth.synth_candidates(
+            numDraws=numDraws,
+            returns=["detstats", "parameters"],
+            hdf5_outputs=["detstats", "parameters", "atoms"],
+        )
+    except ImportError:
+        logging.warning("hdf5 not available, skipping output tests.")
+        cands = synth.synth_candidates(
+            numDraws=numDraws,
+            returns=["detstats", "parameters"],
+            hdf5_outputs=[],
+        )
+
     twoF = cands["twoF"][0]
     logging.info(f"first draw of 2F: {twoF}")
     assert twoF > 0
