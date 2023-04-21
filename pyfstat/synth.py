@@ -306,19 +306,22 @@ class Synthesizer(BaseSearchClass):
         atoms_for_hdf5 = (
             [None for n in range(chunk_size_hdf5)] if "atoms" in hdf5_outputs else None
         )
-        logger.info(f"Drawing {numDraws} results.")
+        logger.info(f"Drawing {numDraws} sets of signal parameters.")
+        injParams = self.paramsGen.draw_many(numDraws)
+        logger.info(f"Synthesizing {numDraws} results.")
         with (
             h5py.File(h5file, "w", locking=False)
             if len(hdf5_outputs) > 0
             else contextlib.nullcontext()
         ) as h5f:
             for n in range(numDraws):
+                injParams_n = {key: val[n] for key, val in injParams.items()}
                 (
                     paramsDrawn,
                     detStats,
                     FstatMap,
                     multiFatoms,
-                ) = self.synth_one_candidate()
+                ) = self.synth_one_candidate(injParams_n)
                 if "parameters" in returns:
                     for key, val in paramsDrawn.items():
                         candidates[key][n] = val
@@ -383,8 +386,7 @@ class Synthesizer(BaseSearchClass):
                         )
         return candidates
 
-    def synth_one_candidate(self):
-        injParams = self.paramsGen.draw()
+    def synth_one_candidate(self, injParams):
         ampPrior = self._set_amplitude_prior(injParams)
         injParamsLalpulsar = (
             lalpulsar.InjParams_t()

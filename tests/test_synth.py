@@ -70,8 +70,9 @@ def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=10
         assumeSqrtSX=1,
     )
     twoF_from_snr2 = np.zeros(numDraws)
+    allParams = paramsGen.draw_many(numDraws)
     for n in range(numDraws):
-        injParams = paramsGen.draw()
+        injParams = {key: val[n] for key, val in allParams.items()}
         if "snr" in priors.keys():
             injSNR = injParams.pop("snr")
             injParams["h0"] = snr.compute_h0_from_snr2(**injParams, snr2=injSNR**2)
