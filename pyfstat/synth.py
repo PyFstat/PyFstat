@@ -218,6 +218,7 @@ class Synthesizer(BaseSearchClass):
         returns: Sequence[str] = ("detstats", "parameters"),
         hdf5_outputs: Sequence[str] = (),
         txt_outputs: Sequence[str] = (),
+        **hdf5_kwargs,
     ):
         """Draw a batch of signal parameters and corresponding statistics.
 
@@ -238,6 +239,13 @@ class Synthesizer(BaseSearchClass):
             "parameters" (one file for all draws together),
             "FstatMaps" (one file per draw),
             "atoms" (one file per draw).
+        hdf5_kwargs:
+            Dictionary of extra arguments for hdf5 output.
+            "chunk_size" will be used locally for efficient writing
+            (default: 1000).
+            All other kwargs (e.g. compression settings)
+            will be passed on to h5py,
+            see https://docs.h5py.org/en/stable/high/dataset.html
 
         Returns
         -------
@@ -277,6 +285,27 @@ class Synthesizer(BaseSearchClass):
             candidates["FstatMaps"] = [None for n in range(numDraws)]
         if "atoms" in returns:
             candidates["atoms"] = [None for n in range(numDraws)]
+        chunk_size_hdf5 = (
+            hdf5_kwargs.pop("chunk_size") if "chunk_size" in hdf5_kwargs else 1000
+        )
+        params_for_hdf5 = (
+            np.zeros((chunk_size_hdf5, len(self.param_keys)))
+            if "parameters" in hdf5_outputs
+            else None
+        )
+        detstats_for_hdf5 = (
+            np.zeros((chunk_size_hdf5, len(self.detstats)))
+            if "detstats" in hdf5_outputs
+            else None
+        )
+        # FstatMaps_for_hdf5 = (
+        # [None for n in range(chunk_size_hdf5)]
+        # if "FstatMaps" in hdf5_outputs
+        # else None
+        # )
+        atoms_for_hdf5 = (
+            [None for n in range(chunk_size_hdf5)] if "atoms" in hdf5_outputs else None
+        )
         logger.info(f"Drawing {numDraws} results.")
         with (
             h5py.File(h5file, "w", locking=False)
@@ -285,8 +314,8 @@ class Synthesizer(BaseSearchClass):
         ) as h5f:
             for n in range(numDraws):
                 (
-                    detStats,
                     paramsDrawn,
+                    detStats,
                     FstatMap,
                     multiFatoms,
                 ) = self.synth_one_candidate()
@@ -313,18 +342,45 @@ class Synthesizer(BaseSearchClass):
                         # this can't be done before the loop
                         # because for the multiFatoms we can't easily guess the length
                         self._prepare_hdf5_datasets(
-                            h5f, hdf5_outputs, numDraws, multiFatoms
+                            h5f,
+                            hdf5_outputs,
+                            numDraws,
+                            multiFatoms,
+                            chunk_size_hdf5,
+                            **hdf5_kwargs,
                         )
-                    self._write_to_hdf5(
-                        h5f,
-                        hdf5_outputs,
-                        n,
-                        numDraws,
-                        detStats,
-                        paramsDrawn,
-                        FstatMap,
-                        multiFatoms,
-                    )
+                    if "parameters" in hdf5_outputs:
+                        params_for_hdf5[np.mod(n, chunk_size_hdf5), :] = list(
+                            paramsDrawn.values()
+                        )
+                    if "detstats" in hdf5_outputs:
+                        detstats_for_hdf5[np.mod(n, chunk_size_hdf5), :] = list(
+                            detStats.values()
+                        )
+                    if "atoms" in hdf5_outputs:
+                        mergedAtoms = lalpulsar.mergeMultiFstatAtomsBinned(
+                            multiFatoms, self.Tsft
+                        )
+                        atoms_for_hdf5[
+                            np.mod(n, chunk_size_hdf5)
+                        ] = self._reshape_FstatAtomVector_to_array(mergedAtoms)
+                    if np.mod(n + 1, chunk_size_hdf5) == 0 or n == numDraws - 1:
+                        nLast = int(chunk_size_hdf5 * np.floor(n / chunk_size_hdf5))
+                        logger.info(
+                            f"Writing chunk {nLast} to {n} of {numDraws} draws"
+                            f" to {h5file} ..."
+                        )
+                        self._write_to_hdf5_chunked(
+                            h5f,
+                            hdf5_outputs,
+                            nLast,
+                            chunk_size_hdf5,
+                            numDraws,
+                            params_for_hdf5,
+                            detstats_for_hdf5,
+                            FstatMap,
+                            atoms_for_hdf5,
+                        )
         return candidates
 
     def synth_one_candidate(self):
@@ -391,63 +447,78 @@ class Synthesizer(BaseSearchClass):
         for stat in self.detstats:
             if stat not in detStats.keys():
                 raise RuntimeError(f"Sorry, we somehow forgot to compute `{stat}`!")
-        return detStats, injParamsDict, FstatMap, multiAtoms
+        return injParamsDict, detStats, FstatMap, multiAtoms
 
-    def _prepare_hdf5_datasets(self, h5f, hdf5_outputs, numDraws, multiFatoms):
+    def _prepare_hdf5_datasets(
+        self, h5f, hdf5_outputs, numDraws, multiFatoms, chunk_size_hdf5, **kwargs
+    ):
         # FIXME: for metadata would be better to store the individual params
         h5f.attrs["header"] = self.output_file_header
         h5f.attrs["numDraws"] = numDraws
         if "parameters" in hdf5_outputs:
             h5f.create_dataset(
                 "parameters",
-                shape=(numDraws, len(self.param_keys)),
+                shape=(numDraws),
+                chunks=(chunk_size_hdf5),
                 dtype=np.dtype(
                     {
                         "names": self.param_keys,
                         "formats": [(float)] * len(self.param_keys),
                     }
                 ),
+                **kwargs,
             )
         if "detstats" in hdf5_outputs:
             h5f.create_dataset(
                 "detstats",
-                shape=(numDraws, len(self.detstats)),
+                shape=(numDraws),
+                chunks=(chunk_size_hdf5),
                 dtype=np.dtype(
                     {"names": self.detstats, "formats": [(float)] * len(self.detstats)}
                 ),
+                **kwargs,
             )
         if "FstatMaps" in hdf5_outputs:
             h5f.create_dataset(
-                "FstatMaps",
-                shape=(numDraws),
+                "FstatMaps", shape=(numDraws), chunks=(chunk_size_hdf5), **kwargs
             )
         if "atoms" in hdf5_outputs:
             h5f.create_dataset(
                 "atoms",
                 shape=(numDraws, multiFatoms.data[0].length, 8),
+                chunks=(chunk_size_hdf5, multiFatoms.data[0].length, 8),
+                **kwargs,
             )
 
-    def _write_to_hdf5(
+    def _write_to_hdf5_chunked(
         self,
         h5f,
         hdf5_outputs,
-        n,
+        nLast,
+        chunk_size_hdf5,
         numDraws,
-        detStats,
         paramsDrawn,
+        detStats,
         FstatMaps,
-        multiFatoms,
+        atoms,
     ):
         if "parameters" in hdf5_outputs:
-            h5f["parameters"][n] = list(paramsDrawn.values())
+            for k, key in enumerate(h5f["parameters"].dtype.names):
+                h5f["parameters"][nLast : nLast + chunk_size_hdf5, key] = paramsDrawn[
+                    : min(chunk_size_hdf5, numDraws - nLast), k
+                ]
         if "detstats" in hdf5_outputs:
-            h5f["detstats"][n] = list(detStats.values())
+            for k, key in enumerate(h5f["detstats"].dtype.names):
+                h5f["detstats"][nLast : nLast + chunk_size_hdf5, key] = detStats[
+                    : min(chunk_size_hdf5, numDraws - nLast), k
+                ]
         # if "FstatMaps" in hdf5_outputs:
         # FIXME: need to convert to a plain array
-        # h5f["FstatMaps"][n] = FstatMap
+        # h5f["FstatMaps"][nLast:nLast+chunk_size_hdf5] = FstatMaps[:min(chunk_size_hdf5,numDraws-nLast)]
         if "atoms" in hdf5_outputs:
-            mergedAtoms = lalpulsar.mergeMultiFstatAtomsBinned(multiFatoms, self.Tsft)
-            h5f["atoms"][n] = self._reshape_FstatAtomVector_to_array(mergedAtoms)
+            h5f["atoms"][nLast : nLast + chunk_size_hdf5] = atoms[
+                : min(chunk_size_hdf5, numDraws - nLast)
+            ]
 
     def _InjParams_t_to_dict(self, paramsStruct):
         """
@@ -459,18 +530,18 @@ class Synthesizer(BaseSearchClass):
           * transientWindow
           * detM1o8
         """
-        paramsDict = {
-            "Alpha": paramsStruct.skypos.longitude,
-            "Delta": paramsStruct.skypos.latitude,
-            "aPlus": paramsStruct.ampParams.aPlus,
-            "aCross": paramsStruct.ampParams.aCross,
-            "psi": paramsStruct.ampParams.psi,
-            "phi": paramsStruct.ampParams.phi0,
-            "snr": paramsStruct.SNR,
-        }
+        # ensure we always store in the same order
+        paramsDict = dict.fromkeys(self.param_keys)
+        paramsDict["Alpha"] = paramsStruct.skypos.longitude
+        paramsDict["Delta"] = paramsStruct.skypos.latitude
+        paramsDict["aPlus"] = paramsStruct.ampParams.aPlus
+        paramsDict["aCross"] = paramsStruct.ampParams.aCross
         paramsDict["h0"], paramsDict["cosi"] = utils.convert_aPlus_aCross_to_h0_cosi(
             aPlus=paramsDict["aPlus"], aCross=paramsDict["aCross"]
         )
+        paramsDict["psi"] = paramsStruct.ampParams.psi
+        paramsDict["phi"] = paramsStruct.ampParams.phi0
+        paramsDict["snr"] = paramsStruct.SNR
         return paramsDict
 
     def _reshape_FstatAtomVector_to_array(self, atomsVector):
