@@ -174,6 +174,11 @@ class Synthesizer(BaseSearchClass):
                 numSegments=1,
                 **detstat_params[BSGL],
             )
+        if "twoFX" in self.detstats or BSGL in self.detstats:
+            for IFO in self.detectors.split(","):
+                self.detstats.append("twoF" + IFO)
+        if "twoFX" in self.detstats:
+            self.detstats.remove("twoFX")
         self.output_file_header = self.get_output_file_header()
         self.param_keys = [
             "Alpha",
@@ -267,11 +272,7 @@ class Synthesizer(BaseSearchClass):
                 candidates[key] = np.repeat(np.nan, numDraws)
         if "detstats" in returns:
             for stat in self.detstats:
-                candidates[stat] = (
-                    np.tile(np.nan, (numDraws, self.numDetectors))
-                    if stat == "twoFX"
-                    else np.repeat(np.nan, numDraws)
-                )
+                candidates[stat] = np.repeat(np.nan, numDraws)
         if "FstatMaps" in returns:
             candidates["FstatMaps"] = [None for n in range(numDraws)]
         if "atoms" in returns:
@@ -293,10 +294,7 @@ class Synthesizer(BaseSearchClass):
                     for key, val in paramsDrawn.items():
                         candidates[key][n] = val
                 for key, val in detStats.items():
-                    if key == "twoFX":
-                        candidates[key][n, :] = val[: self.numDetectors]
-                    else:
-                        candidates[key][n] = val
+                    candidates[key][n] = val
                 if "FstatMaps" in returns:
                     candidates["FstatMaps"][n] = FstatMap
                 if "atoms" in returns:
@@ -358,15 +356,20 @@ class Synthesizer(BaseSearchClass):
         BtSG = utils.get_canonical_detstat_name("BtSG")
         if "twoF" in self.detstats or BSGL in self.detstats:
             detStats["twoF"] = lalpulsar.ComputeFstatFromAtoms(multiAtoms, -1)
-        if "twoFX" in self.detstats or BSGL in self.detstats:
-            detStats["twoFX"] = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
-            detStats["twoFX"][: self.numDetectors] = [
+        if (
+            "twoF" + self.detectors.split(",")[0] in self.detstats
+            or BSGL in self.detstats
+        ):
+            twoFX = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
+            twoFX[: self.numDetectors] = [
                 lalpulsar.ComputeFstatFromAtoms(multiAtoms, X)
                 for X in range(self.numDetectors)
             ]
+            for X, IFO in enumerate(self.detectors.split(",")):
+                detStats["twoF" + IFO] = twoFX[X]
         if BSGL in self.detstats:
             detStats[BSGL] = lalpulsar.ComputeBSGL(
-                detStats["twoF"], detStats["twoFX"], self.BSGLSetup
+                detStats["twoF"], twoFX, self.BSGLSetup
             )
         if "maxTwoF" in self.detstats or BtSG in self.detstats:
             transientWindowRange = self.transientInjectRange  # FIXME
@@ -395,21 +398,24 @@ class Synthesizer(BaseSearchClass):
         h5f.attrs["header"] = self.output_file_header
         h5f.attrs["numDraws"] = numDraws
         if "parameters" in hdf5_outputs:
-            h5_group_params = h5f.create_group("parameters")
-            for key in self.param_keys:
-                h5_group_params.create_dataset(
-                    key,
-                    shape=(numDraws),
-                )
+            h5f.create_dataset(
+                "parameters",
+                shape=(numDraws, len(self.param_keys)),
+                dtype=np.dtype(
+                    {
+                        "names": self.param_keys,
+                        "formats": [(float)] * len(self.param_keys),
+                    }
+                ),
+            )
         if "detstats" in hdf5_outputs:
-            h5_group_detstats = h5f.create_group("detstats")
-            for key in self.detstats:
-                h5_group_detstats.create_dataset(
-                    key,
-                    shape=(numDraws, self.numDetectors)
-                    if key == "twoFX"
-                    else (numDraws),
-                )
+            h5f.create_dataset(
+                "detstats",
+                shape=(numDraws, len(self.detstats)),
+                dtype=np.dtype(
+                    {"names": self.detstats, "formats": [(float)] * len(self.detstats)}
+                ),
+            )
         if "FstatMaps" in hdf5_outputs:
             h5f.create_dataset(
                 "FstatMaps",
@@ -433,14 +439,9 @@ class Synthesizer(BaseSearchClass):
         multiFatoms,
     ):
         if "parameters" in hdf5_outputs:
-            for key, val in paramsDrawn.items():
-                h5f["parameters"][key][n] = val
+            h5f["parameters"][n] = list(paramsDrawn.values())
         if "detstats" in hdf5_outputs:
-            for key, val in detStats.items():
-                if key == "twoFX":
-                    h5f["detstats"][key][n, :] = val[: self.numDetectors]
-                else:
-                    h5f["detstats"][key][n] = val
+            h5f["detstats"][n] = list(detStats.values())
         # if "FstatMaps" in hdf5_outputs:
         # FIXME: need to convert to a plain array
         # h5f["FstatMaps"][n] = FstatMap
