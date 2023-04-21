@@ -358,12 +358,13 @@ class Synthesizer(BaseSearchClass):
         BtSG = utils.get_canonical_detstat_name("BtSG")
         if "twoF" in self.detstats or BSGL in self.detstats:
             detStats["twoF"] = lalpulsar.ComputeFstatFromAtoms(multiAtoms, -1)
-        if BSGL in self.detstats:
+        if "twoFX" in self.detstats or BSGL in self.detstats:
             detStats["twoFX"] = np.zeros(lalpulsar.PULSAR_MAX_DETECTORS)
             detStats["twoFX"][: self.numDetectors] = [
                 lalpulsar.ComputeFstatFromAtoms(multiAtoms, X)
                 for X in range(self.numDetectors)
             ]
+        if BSGL in self.detstats:
             detStats[BSGL] = lalpulsar.ComputeBSGL(
                 detStats["twoF"], detStats["twoFX"], self.BSGLSetup
             )
