@@ -17,40 +17,72 @@ def timestamps():
     return np.arange(tstart, tstart + duration, Tsft)
 
 
-@pytest.mark.parametrize("amp_priors", ["fixedamp", "PK2009", "fixedsnr", "logunisnr"])
-@pytest.mark.parametrize("sky_priors", ["targeted", "allsky"])
-@pytest.mark.parametrize("h0", [0, 1])  # also used for snr
-@pytest.mark.parametrize("detectors", ["H1", "H1,L1"])
-def test_synth_CW(timestamps, amp_priors, sky_priors, h0, detectors, numDraws=1000):
-    if amp_priors == "fixedamp":
-        priors = {
-            "h0": h0,
+@pytest.fixture
+def amp_priors(amp_val):
+    prior_choices = {
+        "allfixed": {
+            "h0": amp_val,
             "cosi": 0,
             "psi": 0,
             "phi": 0,
-        }
-    else:
-        priors = {
+        },
+        "unifangles": {
             "cosi": {"stats.uniform": {"loc": -1.0, "scale": 2.0}},
             "psi": {"stats.uniform": {"loc": -0.25 * np.pi, "scale": 0.5 * np.pi}},
             "phi": {"stats.uniform": {"loc": 0.0, "scale": 2.0 * np.pi}},
-        }
-        if amp_priors == "fixedsnr":
-            priors["snr"] = h0
-        if amp_priors == "logunisnr":
-            if h0 == 0:
-                pytest.skip()
-            priors["snr"] = {"stats.loguniform": {"a": 1, "b": 10}}
-        elif amp_priors == "PK2009":
-            if h0 == 0:
-                pytest.skip()
-            priors["h0"] = {"stats.uniform": {"loc": 0.0, "scale": h0}}
-    if sky_priors == "targeted":
-        priors["Alpha"] = 0
-        priors["Delta"] = 0
-    elif sky_priors == "allsky":
-        priors["Alpha"] = {"stats.uniform": {"loc": 0.0, "scale": 2 * np.pi}}
-        priors["Delta"] = {"uniform_sky_declination": {}}
+        },
+        "fixedsnr": {
+            "snr": amp_val,
+        },
+        "logunifsnr": {
+            "snr": {"stats.loguniform": {"a": 1, "b": 10}},
+        },
+        "unifh0": {
+            "h0": {"stats.uniform": {"loc": 0.0, "scale": amp_val}},
+        },
+    }
+    return prior_choices
+
+
+@pytest.fixture
+def sky_priors(amp_val):
+    prior_choices = {
+        "targeted": {
+            "Alpha": 0,
+            "Delta": 0,
+        },
+        "allsky": {
+            "Alpha": {"stats.uniform": {"loc": 0.0, "scale": 2 * np.pi}},
+            "Delta": {"uniform_sky_declination": {}},
+        },
+    }
+    return prior_choices
+
+
+@pytest.mark.parametrize(
+    "amp_prior_choice", ["allfixed", "unifh0", "fixedsnr", "logunifsnr"]
+)
+@pytest.mark.parametrize("sky_prior_choice", ["targeted", "allsky"])
+@pytest.mark.parametrize("amp_val", [0, 1])
+@pytest.mark.parametrize("detectors", ["H1", "H1,L1"])
+def test_synth_CW(
+    timestamps,
+    amp_priors,
+    sky_priors,
+    amp_prior_choice,
+    sky_prior_choice,
+    amp_val,
+    detectors,
+    numDraws=1000,
+):
+    if amp_prior_choice == "allfixed":
+        priors = amp_priors["allfixed"]
+    else:
+        priors = amp_priors["unifangles"]
+        priors.update(amp_priors[amp_prior_choice])
+        if amp_val == 0 and amp_prior_choice in ["unifh0", "logunifsnr"]:
+            pytest.skip()
+    priors.update(sky_priors[sky_prior_choice])
 
     detstats = ["twoF"]
     if len(detectors.split(",")) >= 2:
