@@ -16,6 +16,8 @@ from time import time
 
 import numpy as np
 
+from pyfstat.utils import reshape_FstatAtomVector_to_dict_of_arrays
+
 logger = logging.getLogger(__name__)
 
 
@@ -497,58 +499,6 @@ def lalpulsar_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=Fal
     return FstatMap
 
 
-def reshape_FstatAtomsVector(atomsVector):
-    """Make a dictionary of ndarrays out of an F-stat atoms 'vector' structure.
-
-    Parameters
-    ----------
-    atomsVector: lalpulsar.FstatAtomVector
-        The atoms in a 'vector'-like structure:
-        iterating over timestamps as the higher hierarchical level,
-        with a set of 'atoms' quantities defined at each timestamp.
-
-    Returns
-    -------
-    atomsDict: dict
-        A dictionary with an entry for each quantity,
-        which then is a 1D ndarray over timestamps for that one quantity.
-    """
-
-    numAtoms = atomsVector.length
-    atomsDict = {}
-    tempDict = {}
-    atom_fields = [
-        ("timestamp", np.uint32),
-        ("a2_alpha", np.float32),
-        ("b2_alpha", np.float32),
-        ("ab_alpha", np.float32),
-        ("Fa_alpha", complex),
-        ("Fb_alpha", complex),
-    ]
-    for dtype in atom_fields:
-        if dtype[1] == complex:
-            for part in "re", "im":
-                atomsDict[dtype[0] + "_" + part] = np.ndarray(
-                    numAtoms, dtype=np.float32
-                )
-            tempDict[dtype[0]] = np.ndarray(numAtoms, dtype=complex)
-        else:
-            atomsDict[dtype[0]] = np.ndarray(numAtoms, dtype=dtype[1])
-    for n, atom in enumerate(atomsVector.data):
-        for dtype in atom_fields:
-            if dtype[1] == complex:
-                tempDict[dtype[0]][n] = atom.__getattribute__(dtype[0])
-            else:
-                atomsDict[dtype[0]][n] = atom.__getattribute__(dtype[0])
-    for dtype in atom_fields:
-        if dtype[1] == complex:
-            for part in "real", "imag":
-                atomsDict[dtype[0] + "_" + part[:2]] = np.float32(
-                    getattr(tempDict[dtype[0]], part)
-                )
-    return atomsDict
-
-
 def _get_absolute_kernel_path(kernel):
     pyfstatdir = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
     kernelfile = kernel + ".cu"
@@ -615,7 +565,7 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=False)
 
     # make a combined input matrix of all atoms vectors, for transfer to GPU
     tCWparams["numAtoms"] = atoms.length
-    atomsDict = reshape_FstatAtomsVector(atoms)
+    atomsDict = reshape_FstatAtomVector_to_dict_of_arrays(atoms)
     atomsInputMatrix = np.column_stack(
         (
             atomsDict["a2_alpha"],

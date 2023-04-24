@@ -2,6 +2,7 @@ import logging
 
 import lal
 import lalpulsar
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -94,3 +95,75 @@ def copy_FstatAtomVector(
         # this is now copying the actual FstatAtom object,
         # with its actual data in memory (no more pointers)
         dest.data[k] = src.data[k]
+
+
+def reshape_FstatAtomVector_to_dict_of_arrays(atomsVector):
+    """Make a dictionary of ndarrays out of an F-stat atoms 'vector' structure.
+
+    Parameters
+    ----------
+    atomsVector: lalpulsar.FstatAtomVector
+        The atoms in a 'vector'-like structure:
+        iterating over timestamps as the higher hierarchical level,
+        with a set of 'atoms' quantities defined at each timestamp.
+
+    Returns
+    -------
+    atomsDict: dict
+        A dictionary with an entry for each quantity,
+        which then is a 1D ndarray over timestamps for that one quantity.
+    """
+
+    numAtoms = atomsVector.length
+    atomsDict = {}
+    tempDict = {}
+    atom_fields = [
+        ("timestamp", np.uint32),
+        ("a2_alpha", np.float32),
+        ("b2_alpha", np.float32),
+        ("ab_alpha", np.float32),
+        ("Fa_alpha", complex),
+        ("Fb_alpha", complex),
+    ]
+    for dtype in atom_fields:
+        if dtype[1] == complex:
+            for part in "re", "im":
+                atomsDict[dtype[0] + "_" + part] = np.ndarray(
+                    numAtoms, dtype=np.float32
+                )
+            tempDict[dtype[0]] = np.ndarray(numAtoms, dtype=complex)
+        else:
+            atomsDict[dtype[0]] = np.ndarray(numAtoms, dtype=dtype[1])
+    for n, atom in enumerate(atomsVector.data):
+        for dtype in atom_fields:
+            if dtype[1] == complex:
+                tempDict[dtype[0]][n] = atom.__getattribute__(dtype[0])
+            else:
+                atomsDict[dtype[0]][n] = atom.__getattribute__(dtype[0])
+    for dtype in atom_fields:
+        if dtype[1] == complex:
+            for part in "real", "imag":
+                atomsDict[dtype[0] + "_" + part[:2]] = np.float32(
+                    getattr(tempDict[dtype[0]], part)
+                )
+    return atomsDict
+
+
+def reshape_FstatAtomVector_to_array(atomsVector):
+    """Reshape a FstatAtomVector into an (Ntimestamps,8) np.ndarray.
+
+    Parameters
+    ----------
+    atomsVector: lalpulsar.FstatAtomVector
+        The atoms in a 'vector'-like structure:
+        iterating over timestamps as the higher hierarchical level,
+        with a set of 'atoms' quantities defined at each timestamp.
+
+    Returns
+    -------
+    atoms_for_h5: np.ndarray
+        Array of the atoms, with shape (Ntimestamps,8).
+    """
+    atomsDict = reshape_FstatAtomVector_to_dict_of_arrays(atomsVector)
+    atomsArray = np.array(list(atomsDict.values())).transpose()
+    return atomsArray

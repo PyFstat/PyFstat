@@ -9,6 +9,8 @@ but others can also be helpful for end users.
 from .atoms import (
     copy_FstatAtomVector,
     extract_singleIFOmultiFatoms_from_multiAtoms,
+    reshape_FstatAtomVector_to_array,
+    reshape_FstatAtomVector_to_dict_of_arrays,
     write_atoms_to_txt_file,
 )
 from .cli import match_commandlines, run_commandline

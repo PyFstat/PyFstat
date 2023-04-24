@@ -699,7 +699,7 @@ def test_atoms_io(tmp_path, CFS_default_params, lambda_params):
         computeAtoms=True,
     )
     search.get_fullycoherent_detstat(**lambda_params)
-    atoms_orig = pyfstat.tcw_fstat_map_funcs.reshape_FstatAtomsVector(
+    atoms_orig = pyfstat.utils.reshape_FstatAtomVector_to_dict_of_arrays(
         search.FstatResults.multiFatoms[0].data[0]
     )
     atomsdir = tmp_path

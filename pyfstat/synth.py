@@ -10,7 +10,6 @@ import numpy as np
 
 import pyfstat.utils as utils
 from pyfstat import BaseSearchClass, DetectorStates, InjectionParametersGenerator
-from pyfstat.tcw_fstat_map_funcs import reshape_FstatAtomsVector
 
 logger = logging.getLogger(__name__)
 
@@ -366,7 +365,7 @@ class Synthesizer(BaseSearchClass):
                         )
                         atoms_for_hdf5[
                             np.mod(n, chunk_size_hdf5)
-                        ] = self._reshape_FstatAtomVector_to_array(mergedAtoms)
+                        ] = utils.reshape_FstatAtomVector_to_array(mergedAtoms)
                     if np.mod(n + 1, chunk_size_hdf5) == 0 or n == numDraws - 1:
                         nLast = int(chunk_size_hdf5 * np.floor(n / chunk_size_hdf5))
                         logger.info(
@@ -545,22 +544,3 @@ class Synthesizer(BaseSearchClass):
         paramsDict["phi"] = paramsStruct.ampParams.phi0
         paramsDict["snr"] = paramsStruct.SNR
         return paramsDict
-
-    def _reshape_FstatAtomVector_to_array(self, atomsVector):
-        """Reshape a FstatAtomVector into an (Ntimestamps,8) np.ndarray.
-
-        Parameters
-        ----------
-        atomsVector: lalpulsar.FstatAtomVector
-            The atoms in a 'vector'-like structure:
-            iterating over timestamps as the higher hierarchical level,
-            with a set of 'atoms' quantities defined at each timestamp.
-
-        Returns
-        -------
-        atoms_for_h5: np.ndarray
-            Array of the atoms, with shape (Ntimestamps,8).
-        """
-        atomsDict = reshape_FstatAtomsVector(atomsVector)
-        atomsArray = np.array(list(atomsDict.values())).transpose()
-        return atomsArray
