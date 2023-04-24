@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+from glob import glob
 from numbers import Number
 
 import numpy as np
@@ -122,17 +123,18 @@ def test_synth_CW(
         randSeed=randSeed,
         detstats=detstats,
     )
+    returns = ["detstats", "parameters", "atoms"]
     try:
         cands = synth.synth_candidates(
             numDraws=numDraws,
-            returns=["detstats", "parameters"],
+            returns=returns,
             hdf5_outputs=["detstats", "parameters", "atoms"],
         )
     except ImportError:
         logging.warning("hdf5 not available, skipping output tests.")
         cands = synth.synth_candidates(
             numDraws=numDraws,
-            returns=["detstats", "parameters"],
+            returns=returns,
             hdf5_outputs=[],
         )
 
@@ -160,8 +162,91 @@ def test_synth_CW(
             )
     # FIXME: add more tests of other parameters and detstats
 
+    # only do this once, but in the most complex case
+    if (
+        amp_prior_choice == "fixedsnr"
+        and sky_prior_choice == "allsky"
+        and amp_val == 1
+        and detectors == "H1,L1"
+    ):
+        _test_synth_against_lalpulsar_exec(
+            timestamps, amp_val, detectors, numDraws, randSeed, synth.outdir, cands
+        )
+
     if os.path.isdir(synth.outdir):
         shutil.rmtree(synth.outdir)
+
+
+def _test_synth_against_lalpulsar_exec(
+    timestamps, snr, detectors, numDraws, randSeed, outdir, cands
+):
+    outputParams = os.path.join(outdir, "lalpulsar_synth_params.dat")
+    outputStats = os.path.join(outdir, "lalpulsar_synth_stats.dat")
+    outputAtoms = os.path.join(outdir, "lalpulsar_synth_atoms.dat")
+    Tsft = timestamps[1] - timestamps[0]
+    params = {
+        "fixedSNR": snr,
+        "IFOs": detectors,
+        "dataStartGPS": timestamps[0],
+        "dataDuration": timestamps[-1] - timestamps[0] + Tsft,
+        "injectWindow-type": "none",
+        "numDraws": numDraws,
+        "randSeed": randSeed,
+        "outputStats": outputStats,
+        "outputInjParams": outputParams,
+        "outputAtoms": outputAtoms,
+    }
+    cl = "lalpulsar_synthesizeTransientStats --computeFtotal " + " ".join(
+        [f"--{key}={val}" for key, val in params.items()]
+    )
+    pyfstat.utils.run_commandline(cl)
+    assert os.path.isfile(outputParams)
+    assert os.path.isfile(outputStats)
+    atomsFiles = glob(outputAtoms + "*")
+    assert len(atomsFiles) == numDraws
+    params_lalpulsar = pyfstat.utils.read_txt_file_with_header(
+        outputParams, comments="%"
+    )
+    par_names = {
+        "Alpha": "Alpha",
+        "Delta": "Delta",
+        "h0": "h0",
+        "cosi": "cosi",
+        "psi": "psi",
+        "phi": "phi0",
+        "snr": "SNR",
+    }
+    for k1, k2 in par_names.items():
+        mean_pyfstat = np.mean(cands[k1])
+        mean_lalpulsar = np.mean(params_lalpulsar[k2])
+        logging.info(
+            f"Mean {k1} from PyFstat: {mean_pyfstat}, mean {k2} from lalpulsar: {mean_lalpulsar}"
+        )
+        if np.abs(mean_lalpulsar) < 0.1:
+            assert pytest.approx(mean_pyfstat, abs=0.1) == mean_lalpulsar
+        else:
+            assert pytest.approx(mean_pyfstat, rel=0.1) == mean_lalpulsar
+    stats_lalpulsar = pyfstat.utils.read_txt_file_with_header(outputStats, comments="%")
+    par_names = {
+        "twoF": "fkdot3",  # hacky solution where total (CW) 2F is stored in this field
+    }
+    for k1, k2 in par_names.items():
+        mean_pyfstat = np.mean(cands[k1])
+        mean_lalpulsar = np.mean(stats_lalpulsar[k2])
+        logging.info(
+            f"Mean {k1} from PyFstat: {mean_pyfstat}, mean {k2} from lalpulsar: {mean_lalpulsar}"
+        )
+        assert pytest.approx(mean_pyfstat, rel=0.1) == mean_lalpulsar
+    for n in [0, numDraws - 1]:
+        atoms_lalpulsar = pyfstat.utils.read_txt_file_with_header(
+            atomsFiles[0], comments="%"
+        )
+        for X, IFO in enumerate(detectors.split(",")):
+            atomsX = pyfstat.utils.reshape_FstatAtomVector_to_array(
+                cands["atoms"][n].data[X]
+            )
+            assert np.shape(atomsX)[0] == np.shape(atoms_lalpulsar)[0] / 2
+            assert np.shape(atomsX)[1] == len(atoms_lalpulsar[0])
 
 
 def test_synth_tCW(timestamps):
