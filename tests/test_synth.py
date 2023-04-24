@@ -162,15 +162,17 @@ def test_synth_CW(
             )
     # FIXME: add more tests of other parameters and detstats
 
-    # only do this once, but in the most complex case
+    # only do lalpulsar comparison twice, in the simplest and a more complex prior case
     if (
-        amp_prior_choice == "fixedsnr"
-        and sky_prior_choice == "allsky"
-        and amp_val == 1
+        amp_val == 1
         and detectors == "H1,L1"
+        and (
+            (amp_prior_choice == "allfixed" and sky_prior_choice == "targeted")
+            or (amp_prior_choice == "fixedsnr" and sky_prior_choice == "allsky")
+        )
     ):
         _test_synth_against_lalpulsar_exec(
-            timestamps, amp_val, detectors, numDraws, randSeed, synth.outdir, cands
+            timestamps, priors, detectors, numDraws, randSeed, synth.outdir, cands
         )
 
     if os.path.isdir(synth.outdir):
@@ -178,14 +180,13 @@ def test_synth_CW(
 
 
 def _test_synth_against_lalpulsar_exec(
-    timestamps, snr, detectors, numDraws, randSeed, outdir, cands
+    timestamps, priors, detectors, numDraws, randSeed, outdir, cands
 ):
     outputParams = os.path.join(outdir, "lalpulsar_synth_params.dat")
     outputStats = os.path.join(outdir, "lalpulsar_synth_stats.dat")
     outputAtoms = os.path.join(outdir, "lalpulsar_synth_atoms.dat")
     Tsft = timestamps[1] - timestamps[0]
     params = {
-        "fixedSNR": snr,
         "IFOs": detectors,
         "dataStartGPS": timestamps[0],
         "dataDuration": timestamps[-1] - timestamps[0] + Tsft,
@@ -196,6 +197,12 @@ def _test_synth_against_lalpulsar_exec(
         "outputInjParams": outputParams,
         "outputAtoms": outputAtoms,
     }
+    fixed = np.all([isinstance(prior, Number) for prior in priors.values()])
+    if fixed:
+        params.update(priors)
+        params["fixedh0Nat"] = params.pop("h0")
+    else:
+        params["fixedSNR"] = priors["snr"]
     cl = "lalpulsar_synthesizeTransientStats --computeFtotal " + " ".join(
         [f"--{key}={val}" for key, val in params.items()]
     )
@@ -217,20 +224,29 @@ def _test_synth_against_lalpulsar_exec(
         "snr": "SNR",
     }
     for k1, k2 in par_names.items():
-        mean_pyfstat = np.mean(cands[k1])
-        mean_lalpulsar = np.mean(params_lalpulsar[k2])
-        logging.info(
-            f"Mean {k1} from PyFstat: {mean_pyfstat}, mean {k2} from lalpulsar: {mean_lalpulsar}"
-        )
-        if np.abs(mean_lalpulsar) < 0.1:
-            assert pytest.approx(mean_pyfstat, abs=0.1) == mean_lalpulsar
+        if fixed:
+            logging.info(
+                "Fixed priors, should have unique and identical values for all parameters..."
+            )
+            assert len(np.unique(cands[k1])) == 1
+            assert len(np.unique(params_lalpulsar[k2])) == 1
+            assert pytest.approx(cands[k1][0], rel=1e-5) == params_lalpulsar[k2][0]
         else:
-            assert pytest.approx(mean_pyfstat, rel=0.1) == mean_lalpulsar
+            mean_pyfstat = np.mean(cands[k1])
+            mean_lalpulsar = np.mean(params_lalpulsar[k2])
+            logging.info(
+                f"Mean {k1} from PyFstat: {mean_pyfstat}, mean {k2} from lalpulsar: {mean_lalpulsar}"
+            )
+            if np.abs(mean_lalpulsar) < 0.1:
+                assert pytest.approx(mean_pyfstat, abs=0.1) == mean_lalpulsar
+            else:
+                assert pytest.approx(mean_pyfstat, rel=0.1) == mean_lalpulsar
     stats_lalpulsar = pyfstat.utils.read_txt_file_with_header(outputStats, comments="%")
     par_names = {
         "twoF": "fkdot3",  # hacky solution where total (CW) 2F is stored in this field
     }
     for k1, k2 in par_names.items():
+        # stats won't be unique even for fully fixed prior, due to noise variance
         mean_pyfstat = np.mean(cands[k1])
         mean_lalpulsar = np.mean(stats_lalpulsar[k2])
         logging.info(
