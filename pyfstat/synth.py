@@ -241,7 +241,7 @@ class Synthesizer(BaseSearchClass):
         hdf5_kwargs:
             Dictionary of extra arguments for hdf5 output.
             "chunk_size" will be used locally for efficient writing
-            (default: 1000).
+            (default: min(numDraws,1000)).
             All other kwargs (e.g. compression settings)
             will be passed on to h5py,
             see https://docs.h5py.org/en/stable/high/dataset.html
@@ -285,7 +285,9 @@ class Synthesizer(BaseSearchClass):
         if "atoms" in returns:
             candidates["atoms"] = [None for n in range(numDraws)]
         chunk_size_hdf5 = (
-            hdf5_kwargs.pop("chunk_size") if "chunk_size" in hdf5_kwargs else 1000
+            hdf5_kwargs.pop("chunk_size")
+            if "chunk_size" in hdf5_kwargs
+            else min(numDraws, 1000)
         )
         params_for_hdf5 = (
             np.zeros((chunk_size_hdf5, len(self.param_keys)))
