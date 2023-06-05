@@ -21,7 +21,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e ${GITHUB_WORKSPACE}[style,test,wheel]
-        pip install --upgrade --pre lalsuite
+        pip install --upgrade --pre lalsuite[lalpulsar]
     - name: Linting with flake8
       run: |
         flake8 --count --statistics .

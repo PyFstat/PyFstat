@@ -63,7 +63,9 @@ A simple
 pip install pyfstat
 ```
 should give you the latest release version with all dependencies;
-recent releases now also include a sufficient minimal set of ephemerides files.
+recent releases now also include
+(or pull in, via dependency)
+a sufficient minimal set of ephemerides files.
 
 If you are not installing into a [venv](https://docs.python.org/3/library/venv.html)
 or [conda environment](#conda-installation)
@@ -107,8 +109,7 @@ or, if you have an ssh key installed in github:
 pip install git+ssh://git@github.com/PyFstat/PyFstat
 ```
 
-This should pull in all dependencies in the same way as installing from PyPI,
-and recent lalsuite dependencies will include ephemerides files too.
+This should pull in all dependencies in the same way as installing from PyPI.
 
 ### install PyFstat from source (Zenodo or git clone)
 
@@ -145,8 +146,7 @@ python -c 'import pyfstat'
 if no error message is output, then you have installed `pyfstat`. Note that
 the module will be installed to whichever python executable you call it from.
 
-This should pull in all dependencies in the same way as installing from PyPI,
-and recent lalsuite dependencies will include ephemerides files too.
+This should pull in all dependencies in the same way as installing from PyPI.
 
 ### Dependencies
 
@@ -161,6 +161,8 @@ which should all be pulled in automatically if you use `pip`:
 * [pathos](https://pypi.python.org/pypi/pathos)
 * [ptemcee](https://github.com/willvousden/ptemcee)
 * [scipy](https://www.scipy.org/)
+* [solar-system-ephemerides](https://pypi.org/project/solar-system-ephemerides/)
+  (from `lalsuite>7.15` on)
 * [tqdm](https://pypi.python.org/pypi/tqdm)
 * [versioneer](https://pypi.org/project/versioneer/)
 
@@ -173,6 +175,12 @@ NOTE: currently we have pinned to
 NOTE: We require a recent LALSuite (>=7.13) / lalpulsar (>=6.0).
 If you need to work with older versions,
 the last PyFstat release supporting those was `1.19.1`.
+
+NOTE: Through pip, we install the dependency `lalsuite[lalpulsar]`.
+The optional flag `[lalpulsar]` is ignored for `lalsuite <=  7.15`,
+as those releases carry their own ephemerides.
+For `lalsuite > 7.15`, `[lalpulsar]` installs `solar-system-ephemerides`
+and uses this auxiliary package to access the ephemerides.
 
 ### Optional dependencies
 
