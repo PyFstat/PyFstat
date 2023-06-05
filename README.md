@@ -176,7 +176,11 @@ NOTE: We require a recent LALSuite (>=7.13) / lalpulsar (>=6.0).
 If you need to work with older versions,
 the last PyFstat release supporting those was `1.19.1`.
 
-NOTE: Through pip, we install the dependency `lalsuite[lalpulsar]`
+NOTE: Through pip, we install the dependency `lalsuite[lalpulsar]`.
+The optional flag `[lalpulsar]` is ignored for `lalsuite <=  7.15`,
+as those releases carry their own ephemerides.
+For `lalsuite > 7.15`, `[lalpulsar]` installs `solar-system-ephemerides`
+and uses this auxiliary package to access the ephemerides.
 
 ### Optional dependencies
 
