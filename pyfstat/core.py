@@ -619,7 +619,7 @@ class ComputeFstat(BaseSearchClass):
         if self.allowedMismatchFromSFTLength:
             FstatOAs.allowedMismatchFromSFTLength = self.allowedMismatchFromSFTLength
 
-        if hasattr(self, "injectSources") and type(self.injectSources) == dict:
+        if hasattr(self, "injectSources") and isinstance(self.injectSources, dict):
             logger.info("Injecting source with params: {}".format(self.injectSources))
             PPV = lalpulsar.CreatePulsarParamsVector(1)
             PP = PPV.data[0]
@@ -647,7 +647,7 @@ class ComputeFstat(BaseSearchClass):
             if "t0" not in self.injectSources:
                 PP.Transient.type = lalpulsar.TRANSIENT_NONE
             FstatOAs.injectSources = PPV
-        elif hasattr(self, "injectSources") and type(self.injectSources) == str:
+        elif hasattr(self, "injectSources") and isinstance(self.injectSources, str):
             logger.info(
                 "Injecting source from param file: {}".format(self.injectSources)
             )

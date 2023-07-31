@@ -173,7 +173,7 @@ def _extract_data_from_prior(prior):
     lims_keys = []
     lims_idxs = []
     for i, key in enumerate(keys):
-        if type(prior[key]) == dict:
+        if isinstance(prior[key], dict):
             if prior[key]["type"] == "unif":
                 lims.append([prior[key]["lower"], prior[key]["upper"]])
                 lims_keys.append(key)
@@ -194,7 +194,7 @@ def _extract_data_from_prior(prior):
         p.append(basex)
     spindowns = int(np.sum([np.sum(lims_keys == k) for k in spindown_keys]))
     sky = any([key in lims_keys for key in sky_keys])
-    if type(prior["F0"]) == dict:
+    if isinstance(prior["F0"], dict):
         fiducial_freq = prior["F0"]["upper"]
     else:
         fiducial_freq = prior["F0"]

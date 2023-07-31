@@ -647,9 +647,8 @@ class MCMCSearch(BaseSearchClass):
         """
         # Todo: add option to time on a machine, and move coefficients to
         # ~/.pyfstat.conf
-        if (
-            type(self.theta_prior["Alpha"]) == dict
-            or type(self.theta_prior["Delta"]) == dict
+        if isinstance(self.theta_prior["Alpha"], dict) or isinstance(
+            self.theta_prior["Delta"], dict
         ):
             tau0LD = 5.2e-7
             tau0T = 1.5e-8
@@ -851,7 +850,7 @@ class MCMCSearch(BaseSearchClass):
 
         if "multiplier" in self.transform_dictionary[key]:
             val = self.transform_dictionary[key]["multiplier"]
-            if type(val) == str:
+            if isinstance(val, str):
                 if hasattr(self, val):
                     multiplier = getattr(
                         self, self.transform_dictionary[key]["multiplier"]
@@ -876,7 +875,7 @@ class MCMCSearch(BaseSearchClass):
 
         if "subtractor" in self.transform_dictionary[key]:
             val = self.transform_dictionary[key]["subtractor"]
-            if type(val) == str:
+            if isinstance(val, str):
                 if hasattr(self, val):
                     subtractor = getattr(
                         self, self.transform_dictionary[key]["subtractor"]
@@ -1700,7 +1699,7 @@ class MCMCSearch(BaseSearchClass):
     def _generate_initial_p0(self):
         """Generate a set of init vals for the walkers"""
 
-        if type(self.theta_initial) == dict:
+        if isinstance(self.theta_initial, dict):
             logger.info("Generate initial values from initial dictionary")
             if hasattr(self, "nglitch") and self.nglitch > 1:
                 raise ValueError("Initial dict not implemented for nglitch>1")
