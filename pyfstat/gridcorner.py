@@ -162,7 +162,7 @@ def gridcorner(
     ndim = D.ndim
     fig, axes = _get_fig_and_axes(ndim, factor, whspace)
 
-    if type(projection) == str:
+    if isinstance(projection, str):
         if projection in ["log_mean"]:
             projection = log_mean
         elif projection in ["max_slice"]:

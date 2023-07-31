@@ -103,12 +103,12 @@ def set_up_logger(
     stream_names = [
         handler.stream.name
         for handler in logger.handlers
-        if type(handler) == logging.StreamHandler
+        if isinstance(handler, logging.StreamHandler)
     ]
     file_names = [
         handler.baseFilename
         for handler in logger.handlers
-        if type(handler) == logging.FileHandler
+        if isinstance(handler, logging.FileHandler)
     ]
 
     common_formatter = logging.Formatter(

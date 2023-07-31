@@ -46,7 +46,7 @@ def texify_float(x, d=2):
     """
     if x == 0:
         return 0
-    if type(x) == str:
+    if isinstance(x, str):
         return x
     x = round_to_n(x, d)
     if 0.01 < abs(x) < 100:
