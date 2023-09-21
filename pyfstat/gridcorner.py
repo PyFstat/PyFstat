@@ -190,13 +190,13 @@ def gridcorner(
                 ax.set_yticks([])
                 continue
 
-            ax.get_shared_x_axes().join(axes[ndim - 1, j], ax)
+            ax.sharex(axes[ndim - 1, j])
             if i < ndim - 1:
-                ax.set_xticklabels([])
+                ax.tick_params(labelbottom=False)
             if j < i:
-                ax.get_shared_y_axes().join(axes[i, i - 1], ax)
+                ax.sharey(axes[i, i - 1])
                 if j > 0:
-                    ax.set_yticklabels([])
+                    ax.tick_params(labelleft=False)
             if j == i:
                 continue
 
