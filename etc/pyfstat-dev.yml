@@ -16,7 +16,7 @@ dependencies:
   - corner
   - dill
   - lalpulsar >=6.0
-  - matplotlib-base >=2.1
+  - matplotlib-base >=3.3
   - numpy <1.24.0
   - pathos
   - pip
