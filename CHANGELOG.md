@@ -1,3 +1,11 @@
+## 2.0.1 [11/10/2023]
+
+ - Fixed compatibility with matplotlib=3.8 and bumped minimum requirement to >=3.3.
+ - Fixed pulling in ephemerides via lalpulsar optional dependency.
+ - Fixed line simulation in "generating noise" tutorial.
+ - Fixed some type checks to conform to flake8>=1.7 standards.
+ - PyPI uploads now done using "trusted publishing" (OIDC).
+
 ## 2.0.0 [18/04/2023]
 
  - This is a major release of PyFstat in the sense that
