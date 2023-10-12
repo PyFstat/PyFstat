@@ -7,14 +7,20 @@ import versioneer
 
 # check python version
 min_python_version = (3, 8, 0)  # (major,minor,micro)
+next_unsupported_python_version = (3, 12)  # (major,minor) - don't restrict micro
 python_version = sys.version_info
-print("Running Python version %s.%s.%s" % python_version[:3])
-if python_version < min_python_version:
+if (
+    python_version < min_python_version
+    or python_version > next_unsupported_python_version
+):
     sys.exit(
-        "Python < %s.%s.%s is not supported, aborting setup" % min_python_version[:3]
+        f"Python {'.'.join(str(v) for v in python_version[:3])} is not supported, aborting setup."
     )
 else:
-    print("Confirmed Python version %s.%s.%s or above" % min_python_version[:3])
+    print(
+        f"Confirmed Python version between [{'.'.join(str(v) for v in min_python_version[:3])},"
+        f" {'.'.join(str(v) for v in next_unsupported_python_version[:2])}]"
+    )
 
 
 here = os.path.abspath(os.path.dirname(__file__))
