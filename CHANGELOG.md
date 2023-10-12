@@ -1,3 +1,8 @@
+## 2.0.2 [12/10/2023]
+
+ - Pinned to python<3.12 until more dependencies are updated
+   and a few things fixed on our end.
+
 ## 2.0.1 [11/10/2023]
 
  - Fixed compatibility with matplotlib=3.8 and bumped minimum requirement to >=3.3.
@@ -53,7 +58,7 @@
  - This is the first PyFstat release to officially support python 3.11.
  - LALSuite is introducing an SFT specification and filename update
    - see https://dcc.ligo.org/T040164-v2/public)
-   - This version of PyFstat is pinned to `lalsuite<=7.11` (or `lalpulsar<6.0`) 
+   - This version of PyFstat is pinned to `lalsuite<=7.11` (or `lalpulsar<6.0`)
      so that it is ensured to keep working with the old convention.
    - Next PyFstat release will adapt to the LALSuite changes.
    - Added `get_official_sft_filename()` utility function to ease migration.
@@ -88,7 +93,7 @@
 
 ## 1.18.0 [06/09/2022]
 
- - refurbished logging system: 
+ - refurbished logging system:
    - on `import.pyfstat`, stdout logging at INFO level is activated
      unless there are already handlers attached to the root logger
    - recommended to further call `pyfstat.set_up_logger` and define an output log file,
@@ -114,7 +119,7 @@
      without worrying about the level one further down
    - moved `matplotlib` setup into new `utils.safe_X_less_plt()`
    - removed deprecated/unused helper functions
-        - `get_peak_values` 
+        - `get_peak_values`
         - `get_comb_values`
         - `get_sft_array`
  - can install with `NO_LALSUITE_FROM_PYPI` environment variable,
@@ -453,7 +458,7 @@
  - improved helper_functions.get_sft_array()
  - extended, cleaned up and further modularised test suite
  - updated examples to changes in Writer and other classes
- 
+
 ## 1.5.2 [06/08/2020]
 
  - fixed semi-coherent search bug introduced in 1.5.0:
@@ -465,7 +470,7 @@
       and deprecated get_median_stds()
     - fixes to some of the more exotic prior types.
  - Extended MCMC test coverage.
-   
+
 ## 1.5.1 [30/07/2020]
 
  - The only change in this release is an updated README
