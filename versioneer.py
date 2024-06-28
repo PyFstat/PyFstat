@@ -924,15 +924,19 @@ def render_pep440(pieces: Dict[str, Any]) -> str:
         rendered = pieces["closest-tag"]
         if pieces["distance"] or pieces["dirty"]:
             rendered += plus_or_dot(pieces)
-            rendered += "%%d.g%%s" %% (pieces["distance"], pieces["short"])
+            rendered += "%%d.%%s" %% (pieces["distance"], pieces["short"])
             if pieces["dirty"]:
                 rendered += ".dirty"
+            else:
+                rendered += ".clean"
     else:
         # exception #1
-        rendered = "0+untagged.%%d.g%%s" %% (pieces["distance"],
+        rendered = "0+untagged.%%d.%%s" %% (pieces["distance"],
                                           pieces["short"])
         if pieces["dirty"]:
             rendered += ".dirty"
+        else:
+            rendered += ".clean"
     return rendered
 
 
@@ -951,18 +955,22 @@ def render_pep440_branch(pieces: Dict[str, Any]) -> str:
             if pieces["branch"] != "master":
                 rendered += ".dev0"
             rendered += plus_or_dot(pieces)
-            rendered += "%%d.g%%s" %% (pieces["distance"], pieces["short"])
+            rendered += "%%d.%%s" %% (pieces["distance"], pieces["short"])
             if pieces["dirty"]:
                 rendered += ".dirty"
+            else:
+                rendered += ".clean"
     else:
         # exception #1
         rendered = "0"
         if pieces["branch"] != "master":
             rendered += ".dev0"
-        rendered += "+untagged.%%d.g%%s" %% (pieces["distance"],
+        rendered += "+untagged.%%d.%%s" %% (pieces["distance"],
                                           pieces["short"])
         if pieces["dirty"]:
             rendered += ".dirty"
+        else:
+            rendered += ".clean"
     return rendered
 
 
@@ -1017,13 +1025,13 @@ def render_pep440_post(pieces: Dict[str, Any]) -> str:
             if pieces["dirty"]:
                 rendered += ".dev0"
             rendered += plus_or_dot(pieces)
-            rendered += "g%%s" %% pieces["short"]
+            rendered += "%%s" %% pieces["short"]
     else:
         # exception #1
         rendered = "0.post%%d" %% pieces["distance"]
         if pieces["dirty"]:
             rendered += ".dev0"
-        rendered += "+g%%s" %% pieces["short"]
+        rendered += "+%%s" %% pieces["short"]
     return rendered
 
 
@@ -1042,17 +1050,21 @@ def render_pep440_post_branch(pieces: Dict[str, Any]) -> str:
             if pieces["branch"] != "master":
                 rendered += ".dev0"
             rendered += plus_or_dot(pieces)
-            rendered += "g%%s" %% pieces["short"]
+            rendered += "%%s" %% pieces["short"]
             if pieces["dirty"]:
                 rendered += ".dirty"
+            else:
+                rendered += ".clean"
     else:
         # exception #1
         rendered = "0.post%%d" %% pieces["distance"]
         if pieces["branch"] != "master":
             rendered += ".dev0"
-        rendered += "+g%%s" %% pieces["short"]
+        rendered += "+%%s" %% pieces["short"]
         if pieces["dirty"]:
             rendered += ".dirty"
+        else:
+            rendered += ".clean"
     return rendered
 
 
@@ -1089,7 +1101,7 @@ def render_git_describe(pieces: Dict[str, Any]) -> str:
     if pieces["closest-tag"]:
         rendered = pieces["closest-tag"]
         if pieces["distance"]:
-            rendered += "-%%d-g%%s" %% (pieces["distance"], pieces["short"])
+            rendered += "-%%d-%%s" %% (pieces["distance"], pieces["short"])
     else:
         # exception #1
         rendered = pieces["short"]
@@ -1109,7 +1121,7 @@ def render_git_describe_long(pieces: Dict[str, Any]) -> str:
     """
     if pieces["closest-tag"]:
         rendered = pieces["closest-tag"]
-        rendered += "-%%d-g%%s" %% (pieces["distance"], pieces["short"])
+        rendered += "-%%d-%%s" %% (pieces["distance"], pieces["short"])
     else:
         # exception #1
         rendered = pieces["short"]
@@ -1341,6 +1353,7 @@ def git_pieces_from_vcs(
             "--dirty",
             "--always",
             "--long",
+            "--abbrev=8",
             "--match",
             f"{tag_prefix}[[:digit:]]*",
         ],
@@ -1357,7 +1370,7 @@ def git_pieces_from_vcs(
 
     pieces: Dict[str, Any] = {}
     pieces["long"] = full_out
-    pieces["short"] = full_out[:7]  # maybe improved later
+    pieces["short"] = full_out[:8]  # maybe improved later
     pieces["error"] = None
 
     branch_name, rc = runner(GITS, ["rev-parse", "--abbrev-ref", "HEAD"], cwd=root)
@@ -1585,14 +1598,18 @@ def render_pep440(pieces: Dict[str, Any]) -> str:
         rendered = pieces["closest-tag"]
         if pieces["distance"] or pieces["dirty"]:
             rendered += plus_or_dot(pieces)
-            rendered += "%d.g%s" % (pieces["distance"], pieces["short"])
+            rendered += "%d.%s" % (pieces["distance"], pieces["short"])
             if pieces["dirty"]:
                 rendered += ".dirty"
+            else:
+                rendered += ".clean"
     else:
         # exception #1
-        rendered = "0+untagged.%d.g%s" % (pieces["distance"], pieces["short"])
+        rendered = "0+untagged.%d.%s" % (pieces["distance"], pieces["short"])
         if pieces["dirty"]:
             rendered += ".dirty"
+        else:
+            rendered += ".clean"
     return rendered
 
 
@@ -1611,17 +1628,21 @@ def render_pep440_branch(pieces: Dict[str, Any]) -> str:
             if pieces["branch"] != "master":
                 rendered += ".dev0"
             rendered += plus_or_dot(pieces)
-            rendered += "%d.g%s" % (pieces["distance"], pieces["short"])
+            rendered += "%d.%s" % (pieces["distance"], pieces["short"])
             if pieces["dirty"]:
                 rendered += ".dirty"
+            else:
+                rendered += ".clean"
     else:
         # exception #1
         rendered = "0"
         if pieces["branch"] != "master":
             rendered += ".dev0"
-        rendered += "+untagged.%d.g%s" % (pieces["distance"], pieces["short"])
+        rendered += "+untagged.%d.%s" % (pieces["distance"], pieces["short"])
         if pieces["dirty"]:
             rendered += ".dirty"
+        else:
+            rendered += ".clean"
     return rendered
 
 
@@ -1676,13 +1697,13 @@ def render_pep440_post(pieces: Dict[str, Any]) -> str:
             if pieces["dirty"]:
                 rendered += ".dev0"
             rendered += plus_or_dot(pieces)
-            rendered += "g%s" % pieces["short"]
+            rendered += "%s" % pieces["short"]
     else:
         # exception #1
         rendered = "0.post%d" % pieces["distance"]
         if pieces["dirty"]:
             rendered += ".dev0"
-        rendered += "+g%s" % pieces["short"]
+        rendered += "+%s" % pieces["short"]
     return rendered
 
 
@@ -1701,17 +1722,21 @@ def render_pep440_post_branch(pieces: Dict[str, Any]) -> str:
             if pieces["branch"] != "master":
                 rendered += ".dev0"
             rendered += plus_or_dot(pieces)
-            rendered += "g%s" % pieces["short"]
+            rendered += "%s" % pieces["short"]
             if pieces["dirty"]:
                 rendered += ".dirty"
+            else:
+                rendered += ".clean"
     else:
         # exception #1
         rendered = "0.post%d" % pieces["distance"]
         if pieces["branch"] != "master":
             rendered += ".dev0"
-        rendered += "+g%s" % pieces["short"]
+        rendered += "+%s" % pieces["short"]
         if pieces["dirty"]:
             rendered += ".dirty"
+        else:
+            rendered += ".clean"
     return rendered
 
 
@@ -1748,7 +1773,7 @@ def render_git_describe(pieces: Dict[str, Any]) -> str:
     if pieces["closest-tag"]:
         rendered = pieces["closest-tag"]
         if pieces["distance"]:
-            rendered += "-%d-g%s" % (pieces["distance"], pieces["short"])
+            rendered += "-%d-%s" % (pieces["distance"], pieces["short"])
     else:
         # exception #1
         rendered = pieces["short"]
@@ -1768,7 +1793,7 @@ def render_git_describe_long(pieces: Dict[str, Any]) -> str:
     """
     if pieces["closest-tag"]:
         rendered = pieces["closest-tag"]
-        rendered += "-%d-g%s" % (pieces["distance"], pieces["short"])
+        rendered += "-%d-%s" % (pieces["distance"], pieces["short"])
     else:
         # exception #1
         rendered = pieces["short"]
