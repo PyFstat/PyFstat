@@ -38,6 +38,7 @@ requires = [
     "pathos",
     "ptemcee",
     "scipy",
+    "setuptools; python_version >= '3.12'",
     "tqdm",
     "versioneer",
 ]
