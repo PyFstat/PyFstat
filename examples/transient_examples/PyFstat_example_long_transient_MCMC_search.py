@@ -10,6 +10,7 @@ and the transient max2F statistic are compared.
 You can turn on either `BSGL = True` or `BtSG = True` (not both!)
 to test alternative statistics.
 """
+
 import os
 
 import numpy as np

@@ -1,4 +1,5 @@
 """Generate injection parameters drawn from different prior populations"""
+
 import functools
 import logging
 from collections.abc import Mapping
@@ -216,9 +217,9 @@ class InjectionParametersGenerator:
 
             if not isinstance(parameter_prior, Mapping):
                 # If not dictionary, then return as is (delta prior)
-                self.priors[
-                    parameter_name
-                ] = lambda size, val=parameter_prior: np.repeat(val, repeats=size)
+                self.priors[parameter_name] = (
+                    lambda size, val=parameter_prior: np.repeat(val, repeats=size)
+                )
                 continue
 
             if len(parameter_prior) > 1:

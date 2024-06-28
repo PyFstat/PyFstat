@@ -1,6 +1,5 @@
 """PyFstat search classes using grid-based methods."""
 
-
 import itertools
 import logging
 import os

@@ -5,6 +5,7 @@ Directed grid search: Quadratic spindown
 Search for CW signal including two spindown parameters
 using a parameter space grid (i.e. no MCMC).
 """
+
 import os
 
 import numpy as np

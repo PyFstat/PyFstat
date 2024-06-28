@@ -1,6 +1,5 @@
 """ The core tools used in pyfstat """
 
-
 import getpass
 import glob
 import logging
@@ -665,9 +664,9 @@ class ComputeFstat(BaseSearchClass):
                 )
             FstatOAs.injectSqrtSX = lalpulsar.MultiNoiseFloor()
             FstatOAs.injectSqrtSX.length = len(self.injectSqrtSX)
-            FstatOAs.injectSqrtSX.sqrtSn[
-                : FstatOAs.injectSqrtSX.length
-            ] = self.injectSqrtSX
+            FstatOAs.injectSqrtSX.sqrtSn[: FstatOAs.injectSqrtSX.length] = (
+                self.injectSqrtSX
+            )
         else:
             FstatOAs.injectSqrtSX = lalpulsar.FstatOptionalArgsDefaults.injectSqrtSX
         # Here we are treating 0 and None as equivalent
@@ -1579,9 +1578,11 @@ class ComputeFstat(BaseSearchClass):
         # Set up plot-related objects
         axis_kwargs = {
             "xlabel": f"Days from $t_\\mathrm{{start}}={actual_tstart_CFS:.0f}$",
-            "ylabel": "$\\log_{10}(\\mathrm{BSGL})_{\\mathrm{cumulative}}$"
-            if self.BSGL
-            else "$\\widetilde{2\\mathcal{F}}_{\\mathrm{cumulative}}$",
+            "ylabel": (
+                "$\\log_{10}(\\mathrm{BSGL})_{\\mathrm{cumulative}}$"
+                if self.BSGL
+                else "$\\widetilde{2\\mathcal{F}}_{\\mathrm{cumulative}}$"
+            ),
             "xlim": (0, taus_CFS_days[-1]),
         }
         plot_label = (
@@ -2009,9 +2010,9 @@ class SemiCoherentSearch(ComputeFstat):
                 twoFX_per_segment = np.nan_to_num(twoFX_per_segment, nan=0.0)
                 self.twoFX[X] = twoFX_per_segment.sum()
             if record_segments:
-                self.twoFX_per_segment[
-                    : self.FstatResults.numDetectors, :
-                ] = twoFX_per_segment
+                self.twoFX_per_segment[: self.FstatResults.numDetectors, :] = (
+                    twoFX_per_segment
+                )
         return self.twoFX
 
     def get_semicoherent_log10BSGL(self):

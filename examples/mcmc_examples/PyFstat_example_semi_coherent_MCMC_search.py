@@ -5,6 +5,7 @@ MCMC search: Semicoherent F-statistic
 Directed MCMC search for an isolated CW signal using the
 semicoherent F-statistic.
 """
+
 import os
 
 import numpy as np
