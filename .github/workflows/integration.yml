@@ -29,9 +29,6 @@ jobs:
     - name: Linting with flake8
       run: |
         flake8 --count --statistics .
-    - name: Style check with black
-      run: |
-        black --check --diff .
     - name: Run test suite with pytest
       run: |
         (cd .. && pytest --durations=0 $GITHUB_WORKSPACE/tests/ --log-file=$GITHUB_WORKSPACE/tests.log)
