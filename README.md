@@ -172,7 +172,7 @@ For a general introduction to installing modules, see
 [here](https://docs.python.org/3/installing/index.html).
 
 NOTE: currently we have pinned to
-`numpy<1.24.0` (due to an incompatibility with ptemcee).
+`numpy<2.0` (same as LALSuite).
 
 NOTE: We require a recent LALSuite (>=7.13) / lalpulsar (>=6.0).
 If you need to work with older versions,

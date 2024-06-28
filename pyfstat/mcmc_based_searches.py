@@ -54,6 +54,11 @@ import dill as pickle
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import ptemcee
+
+if ptemcee.__version__ == "1.0.0":
+    # This is a very ugly hack to support numpy>=1.24
+    ptemcee.sampler.np.float = float
 from ptemcee import Sampler as PTSampler
 from scipy.stats import lognorm
 from tqdm import tqdm

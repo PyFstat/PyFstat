@@ -17,11 +17,11 @@ dependencies:
   - dill
   - lalpulsar >=6.0
   - matplotlib-base >=3.3
-  - numpy <1.24.0
+  - numpy <2.0
   - pathos
   - pip
   - ptemcee
-  - python >=3.8,<3.12
+  - python >=3.9,<3.12
   - python-lal >=7.1.5
   - python-lalpulsar >=6.0
   - scipy
