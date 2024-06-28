@@ -81,7 +81,7 @@ def get_sft_as_arrays(
             frequencies, old_frequencies
         ):
             raise ValueError(
-                f"Frequencies don't match between {ifo_labels.data[ind-1]} and {ifo}"
+                f"Frequencies don't match between {ifo_labels.data[ind - 1]} and {ifo}"
             )
         old_frequencies = frequencies
 
