@@ -12,9 +12,9 @@ jobs:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12']
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install package and development dependencies
@@ -22,12 +22,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e ${GITHUB_WORKSPACE}[style,test,wheel]
         pip install --upgrade --pre lalsuite[lalpulsar]
-    - name: Linting with flake8
-      run: |
-        flake8 --count --statistics .
-    - name: Style check with black
-      run: |
-        black --check --diff .
     - name: Test with pytest
       run: |
         (cd .. && pytest --durations=0 $GITHUB_WORKSPACE/tests/ --log-file=$GITHUB_WORKSPACE/tests.log)
