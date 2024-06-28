@@ -6,8 +6,8 @@ from setuptools import find_packages, setup
 import versioneer
 
 # check python version
-min_python_version = (3, 8, 0)  # (major,minor,micro)
-next_unsupported_python_version = (3, 12)  # (major,minor) - don't restrict micro
+min_python_version = (3, 9, 0)  # (major,minor,micro)
+next_unsupported_python_version = (3, 13)  # (major,minor) - don't restrict micro
 python_version = sys.version_info
 if (
     python_version < min_python_version
@@ -34,10 +34,11 @@ requires = [
     "corner",
     "dill",
     "matplotlib>=3.3",
-    "numpy<1.24.0",
+    "numpy<2.0",
     "pathos",
     "ptemcee",
     "scipy",
+    "setuptools; python_version >= '3.12'",
     "tqdm",
     "versioneer",
 ]
@@ -66,7 +67,7 @@ extras_require = {
         "flake8-isort",
         "isort",
     ],
-    "test": ["pytest", "pytest-cov", "flaky", "nbmake"],
+    "test": ["pytest<8.2.2", "pytest-cov", "flaky", "nbmake"],
     "wheel": ["wheel", "check-wheel-contents"],
 }
 for key in ["docs", "style", "test", "wheel"]:

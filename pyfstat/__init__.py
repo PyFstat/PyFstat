@@ -13,6 +13,7 @@ except Exception as e:  # pragma: no cover
         "Proceeding without default logging."
     )
 
+from . import _version
 from .core import (
     BaseSearchClass,
     ComputeFstat,
@@ -52,3 +53,5 @@ from .mcmc_based_searches import (
 )
 from .snr import DetectorStates, SignalToNoiseRatio
 from .tcw_fstat_map_funcs import pyTransientFstatMap
+
+__version__ = _version.get_versions()["version"]
