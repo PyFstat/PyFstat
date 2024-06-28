@@ -6,6 +6,7 @@ Directed MCMC search for an isolated CW signal using the
 fully-coherent F-statistic. Prior to the burn-in stage, walkers
 are initialized with a certain scattering factor.
 """
+
 import os
 
 import numpy as np

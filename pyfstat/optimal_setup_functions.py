@@ -4,7 +4,6 @@ Provides functions to aid in calculating the optimal setup for zoom follow up
 
 """
 
-
 import logging
 
 import lal

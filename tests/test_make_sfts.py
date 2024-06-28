@@ -400,9 +400,11 @@ class TestWriter(BaseForTestsWithData):
             SFTWindowType=self.SFTWindowType,
             SFTWindowParam=self.SFTWindowParam,
             noiseSFTs=os.path.join(self.outdir, "*NB*"),
-            F0=self.signal_parameters["F0"]
-            if self.writer_class_to_test.mfd.endswith("v4")
-            else None,
+            F0=(
+                self.signal_parameters["F0"]
+                if self.writer_class_to_test.mfd.endswith("v4")
+                else None
+            ),
             # **self.signal_parameters, # FIXME this will fail, need MFDv5 fix
         )
         NB_recycling_writer.make_data(verbose=True)

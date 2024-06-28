@@ -1,6 +1,5 @@
 """PyFstat tools to generate and manipulate data in the form of SFTs."""
 
-
 import glob
 import logging
 import os
