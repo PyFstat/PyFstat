@@ -1,4 +1,4 @@
-name: Integration Tests
+name: Flake8 linting
 
 on: [push, pull_request]
 
