@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 import versioneer
 
 # check python version
-min_python_version = (3, 8, 0)  # (major,minor,micro)
+min_python_version = (3, 9, 0)  # (major,minor,micro)
 next_unsupported_python_version = (3, 12)  # (major,minor) - don't restrict micro
 python_version = sys.version_info
 if (

@@ -15,7 +15,7 @@ jobs:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.9', '3.10', '3.11']
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
@@ -40,7 +40,7 @@ jobs:
         python setup.py sdist bdist_wheel
         check-wheel-contents dist/*.whl
     - name: upload artifacts
-      if: matrix.python-version == 3.8  # only upload from one version (oldest, for max compatibility)
+      if: matrix.python-version == 3.9  # only upload from one version (oldest, for max compatibility)
       uses: actions/upload-artifact@v3
       with:
         name: python-package-distributions
