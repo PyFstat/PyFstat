@@ -20,14 +20,14 @@ logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 gw_data = {
     "sqrtSX": 1e-23,
     "tstart": 1000000000,
-    "duration": 100 * 86400,
+    "duration": 10 * 86400,
     "detectors": "H1,L1",
     "Band": 4,
     "Tsft": 1800,
 }
 
 # Properties of the signal
-depth = 100
+depth = 30
 phase_parameters = {
     "F0": 30.0,
     "F1": -1e-10,
