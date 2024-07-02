@@ -177,9 +177,11 @@ def get_predict_fstat_parameters_from_dict(signal_parameters, transientWindowTyp
         "transient_duration": "transientTau",
     }
     predict_fstat_params = {key: signal_parameters[key] for key in required_keys}
-    for key in transient_keys:
+    for key, val in transient_keys.items():
         if key in signal_parameters:
-            predict_fstat_params[transient_keys[key]] = signal_parameters[key]
+            predict_fstat_params[val] = signal_parameters[key]
+        elif val in signal_parameters:
+            predict_fstat_params[val] = signal_parameters[val]
     if transientWindowType is not None:
         predict_fstat_params["transientWindowType"] = transientWindowType
     return predict_fstat_params
