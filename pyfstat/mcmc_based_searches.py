@@ -1315,7 +1315,7 @@ class MCMCSearch(BaseSearchClass):
         if fig_and_axes is None:
             fig, axes = plt.subplots(nrows=self.ndim, figsize=(8, 4 * self.ndim))
         else:
-            fig, ax = fig_and_axes
+            fig, axes = fig_and_axes
         if self.ndim == 1:
             axes = [axes]
         N = 1000
