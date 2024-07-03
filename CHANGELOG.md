@@ -1,3 +1,15 @@
+## 2.1.0 [03/07/2024]
+
+ - This is a maintenance release for updating python and numpy compatibility and fixing minor bugs.
+ - Dropped python 3.8 support.
+ - Enabled python 3.12 support.
+ - Enabled support for numpy >=1.24.0 as long as it's still <2.0.
+ - Fixed binder notebooks.
+ - Fixes to some MCMC plotting methods in case of returning fig and axes (rather than saving to files).
+ - Fix for transient parameters in get_predict_fstat_parameters_from_dict().
+ - for developers: upgraded to black 24 style,
+   refactored and updated the github actions
+
 ## 2.0.2 [12/10/2023]
 
  - Pinned to python<3.12 until more dependencies are updated
