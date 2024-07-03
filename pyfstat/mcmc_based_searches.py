@@ -774,6 +774,8 @@ class MCMCSearch(BaseSearchClass):
             )
             self._run_sampler(p0, nburn=n, window=window)
             if plot_walkers:
+                # For now, this plot will always be saved to disk,
+                # never returned as fig/axes.
                 try:
                     walker_fig, walker_axes = self._plot_walkers(**walker_plot_args)
                     walker_fig.tight_layout()
@@ -821,23 +823,24 @@ class MCMCSearch(BaseSearchClass):
 
         if plot_walkers:
             try:
-                walkers_fig, walkers_axes = self._plot_walkers(
+                walker_fig, walker_axes = self._plot_walkers(
                     nprod=nprod, **walker_plot_args
                 )
-                walkers_fig.tight_layout()
+                walker_fig.tight_layout()
             except Exception as e:
                 logger.warning("Failed to plot walkers due to Error {}".format(e))
+                return
             if (walker_plot_args.get("fig") is not None) and (
                 walker_plot_args.get("axes") is not None
             ):
-                self.walker_fig = walkers_fig
-                self.walker_axes = walkers_axes
+                self.walker_fig = walker_fig
+                self.walker_axes = walker_axes
             else:
                 try:
-                    walkers_fig.savefig(
+                    walker_fig.savefig(
                         os.path.join(self.outdir, self.label + "_walkers.png")
                     )
-                    plt.close(walkers_fig)
+                    plt.close(walker_fig)
                 except Exception as e:
                     logger.warning(
                         "Failed to save walker plots due to Error {}".format(e)
@@ -3145,10 +3148,10 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
 
             if plot_walkers:
                 try:
-                    walkers_fig, walkers_axes = self._plot_walkers(
+                    walker_fig, walker_axes = self._plot_walkers(
                         nprod=nprod, xoffset=nsteps_total, **walker_plot_args
                     )
-                    for ax in walkers_axes[: self.ndim]:
+                    for ax in walker_axes[: self.ndim]:
                         ax.axvline(nsteps_total, color="k", ls="--", lw=0.25)
                 except Exception as e:
                     logger.warning("Failed to plot walkers due to Error {}".format(e))
@@ -3162,7 +3165,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
             mids = np.cumsum(nstep_list) - nstep_list / 2
             mid_labels = ["{:1.0f}".format(i) for i in np.arange(0, len(mids) - 1)]
             mid_labels += ["Production"]
-            for ax in walkers_axes[: self.ndim]:
+            for ax in walker_axes[: self.ndim]:
                 axy = ax.twiny()
                 axy.tick_params(pad=-10, direction="in", axis="x", which="major")
                 axy.minorticks_off()
@@ -3187,7 +3190,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
 
         if plot_walkers:
             try:
-                walkers_fig.tight_layout()
+                walker_fig.tight_layout()
             except Exception as e:
                 logger.warning(
                     "Failed to set tight layout for walkers plot due to Error {}".format(
@@ -3197,14 +3200,14 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
             if (walker_plot_args.get("fig") is not None) and (
                 walker_plot_args.get("axes") is not None
             ):
-                self.walkers_fig = walkers_fig
-                self.walkers_axes = walkers_axes
+                self.walker_fig = walker_fig
+                self.walker_axes = walker_axes
             else:
                 try:
-                    walkers_fig.savefig(
+                    walker_fig.savefig(
                         os.path.join(self.outdir, self.label + "_walkers.png")
                     )
-                    plt.close(walkers_fig)
+                    plt.close(walker_fig)
                 except Exception as e:
                     logger.warning(
                         "Failed to save walker plots due to Error {}".format(e)
