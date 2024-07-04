@@ -1,4 +1,4 @@
-## 2.1.0 [03/07/2024]
+## 2.1.0 [04/07/2024]
 
  - This is a maintenance release for updating python and numpy compatibility and fixing minor bugs.
  - Dropped python 3.8 support.
