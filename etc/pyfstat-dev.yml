@@ -21,7 +21,7 @@ dependencies:
   - pathos
   - pip
   - ptemcee
-  - python >=3.9,<3.12
+  - python >=3.9,<=3.12
   - python-lal >=7.1.5
   - python-lalpulsar >=6.0
   - scipy
