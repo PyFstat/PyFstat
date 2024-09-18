@@ -83,7 +83,7 @@ def compare_detector_states_series(dss_0, dss_1):
         ts_0 = dss_0.data[ind].tGPS
         ts_1 = dss_1.data[ind].tGPS
         if ts_0 != ts_1:
-            raise ValueError(f"Timetamps are not consistent: {ts_0} vs. {ts_1}")
+            raise ValueError(f"Timestamps are not consistent: {ts_0} vs. {ts_1}")
 
     return True
 

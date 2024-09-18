@@ -577,7 +577,7 @@ def pycuda_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=False)
     the actual CUDA computations are performed in one of the functions
     `pycuda_compute_transient_fstat_map_rect()`
     or `pycuda_compute_transient_fstat_map_exp()`,
-    depending on the window functon defined in `windowRange`.
+    depending on the window function defined in `windowRange`.
 
     Parameters
     ----------
@@ -742,7 +742,7 @@ def pycuda_compute_transient_fstat_map_rect(atomsInputMatrix, windowRange, tCWpa
 
     As discussed in Keitel & Ashton (CQG 35, 205003, 2018):
     https://arxiv.org/abs/1805.05652
-    this version only does GPU parallization for the outer loop,
+    this version only does GPU parallelization for the outer loop,
     keeping the partial sums of the inner loop local to each individual kernel
     using the 'memory trick'.
 
@@ -824,7 +824,7 @@ def pycuda_compute_transient_fstat_map_exp(atomsInputMatrix, windowRange, tCWpar
 
     As discussed in Keitel & Ashton (CQG 35, 205003, 2018):
     https://arxiv.org/abs/1805.05652
-    this version does full GPU parallization
+    this version does full GPU parallelization
     of both the inner and outer loop.
 
     Parameters

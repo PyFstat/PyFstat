@@ -276,7 +276,7 @@ class Writer(BaseSearchClass):
         If noiseSFTs are given, use them to obtain relevant data parameters (tstart,
         duration, detectors and Tsft). The corresponding input values will be used to
         set up a lalpulsar.SFTConstraints object to be imposed to the SFTs. Keep in
-        mind that Tsft will also be checked to be consistent accross all SFTs (this is
+        mind that Tsft will also be checked to be consistent across all SFTs (this is
         not implemented through SFTConstraints but through a simple list check).
         """
         SFTConstraint = self._get_sft_constraints_from_tstart_duration()
@@ -491,7 +491,7 @@ class Writer(BaseSearchClass):
                 "noiseSFTs is not None: Inferring tstart, duration, Tsft. "
                 "Input tstart and duration will be treated as SFT constraints "
                 "using lalpulsar.SFTConstraints; Tsft will be checked for "
-                "internal consistency accross input SFTs."
+                "internal consistency across input SFTs."
             )
             self._get_setup_from_noiseSFTs()
         elif np.any([getattr(self, k, None) is None for k in no_noiseSFTs_options]):
@@ -673,7 +673,7 @@ class Writer(BaseSearchClass):
 
         need_new = "Will create new SFT file(s)."
 
-        logger.info("Checking if we can re-use existing SFT data file(s)...")
+        logger.info("Checking if we can reuse existing SFT data file(s)...")
         for sftfile in self.sftfilenames:
             if os.path.isfile(sftfile) is False:
                 logger.info(
@@ -701,7 +701,7 @@ class Writer(BaseSearchClass):
                     "...OK: The config file '{}' is older than the SFT file(s)"
                     " '{}'.".format(self.config_file_name, self.sftfilepath)
                 )
-                # NOTE: at this point we assume it's safe to re-use, since
+                # NOTE: at this point we assume it's safe to reuse, since
                 # _check_if_cff_file_needs_rewriting()
                 # should have already been called before
         elif "injectionSources" in cl_mfd:
@@ -736,7 +736,7 @@ class Writer(BaseSearchClass):
         logger.info("......OK: Commandline matched with old SFT header(s).")
         logger.info(
             "...all data consistency checks passed: Looks like existing"
-            " SFT data matches current options, will re-use it!"
+            " SFT data matches current options, will reuse it!"
         )
         return True
 
@@ -746,7 +746,7 @@ class Writer(BaseSearchClass):
         Returns True if the file should be overwritten - where possible avoid
         overwriting to allow cached data to be used
         """
-        logger.info("Checking if we can re-use injection config file...")
+        logger.info("Checking if we can reuse injection config file...")
         if os.path.isfile(self.config_file_name) is False:
             logger.info("...no config file {} found.".format(self.config_file_name))
             return True
@@ -1221,7 +1221,7 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
 
     def _get_base_template(self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref):
         """FIXME: ported over from Writer,
-        should be replaced by a more elegant re-use of _parse_args_consistent_with_mfd
+        should be replaced by a more elegant reuse of _parse_args_consistent_with_mfd
         """
         return """[TS{}]
 Alpha = {:1.18e}
@@ -1657,7 +1657,7 @@ class FrequencyModulatedArtifactWriter(Writer):
         """Create a full multi-SFT data set.
 
         This loops over SFTs and generate them serially or in parallel,
-        then contatenates the results together at the end.
+        then concatenates the results together at the end.
 
         Parameters
         ----------

@@ -61,6 +61,7 @@ extras_require = {
     "pycuda": ["pycuda"],
     "style": [
         "black",
+        "codespell",
         "flake8",
         "flake8-docstrings",
         "flake8-executable",

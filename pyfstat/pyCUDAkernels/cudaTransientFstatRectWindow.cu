@@ -74,9 +74,9 @@ __global__ void cudaTransientFstatRectWindow ( float *input,
 
       for ( unsigned int i = i_t1_last; i <= i_t1; i ++ ) {
         /* sum up atoms,
-         * special optimiziation in the rectangular-window case:
+         * special optimization in the rectangular-window case:
          * just add on to previous tau values,
-         * ie re-use the sum over [i_t0, i_t1_last]
+         * ie reuse the sum over [i_t0, i_t1_last]
          from the pevious tau-loop iteration
          */
         Ad    += input[i*input_cols+0]; // a2_alpha

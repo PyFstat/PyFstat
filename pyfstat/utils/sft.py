@@ -23,7 +23,7 @@ def get_sft_as_arrays(
         multiple patterns can be given separated by colons.
     fMin, fMax:
         Restrict frequency range to `[fMin, fMax]`.
-        If None, retreive the full frequency range.
+        If None, retrieve the full frequency range.
     constraints:
         Constrains to be fed into XLALSFTdataFind to specify detector,
         GPS time range or timestamps to be retrieved.

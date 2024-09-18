@@ -284,7 +284,7 @@ class ComputeFstat(BaseSearchClass):
             GPS seconds of the reference time.
         sftfilepattern : str
             Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
-            mutiple patterns can be given separated by colons.
+            multiple patterns can be given separated by colons.
         minStartTime, maxStartTime : int
             Only use SFTs with timestamps starting from within this range,
             following the XLALCWGPSinRange convention:
@@ -388,7 +388,7 @@ class ComputeFstat(BaseSearchClass):
            Running-Median window size for F-statistic noise normalization
            (number of SFT bins).
         tCWFstatMapVersion: str
-            Choose between implementations of the transient F-statistic funcionality:
+            Choose between implementations of the transient F-statistic functionality:
             standard `lal` implementation,
             `pycuda` for GPU version,
             and some others only for devel/debug.
@@ -1124,7 +1124,7 @@ class ComputeFstat(BaseSearchClass):
         If you want to restrict the range of data used for a single 2F computation,
         you need to set a `self.transientWindowType` and then call
         `self.get_fullycoherent_detstat()` with `tstart` and `tend` options
-        instead of this funcion.
+        instead of this function.
 
         Parameters
         ----------
@@ -1677,11 +1677,11 @@ class ComputeFstat(BaseSearchClass):
             dopplerName = lalpulsar.PulsarDopplerParams2String(self.PulsarDopplerParams)
             # fnameAtoms = os.path.join(self.outdir,'Fstatatoms_%s.dat' % dopplerName)
             fnameAtoms = f"{fnamebase}_Fstatatoms_{dopplerName}.dat"
-            fo = lal.FileOpen(fnameAtoms, "w")
+            fpout = lal.FileOpen(fnameAtoms, "w")
             for hline in self.output_file_header:
-                lal.FilePuts(f"{comments} {hline}\n", fo)
-            lalpulsar.write_MultiFstatAtoms_to_fp(fo, multiFatoms[0])
-            del fo  # instead of lal.FileClose() which is not SWIG-exported
+                lal.FilePuts(f"{comments} {hline}\n", fpout)
+            lalpulsar.write_MultiFstatAtoms_to_fp(fpout, multiFatoms[0])
+            del fpout  # instead of lal.FileClose() which is not SWIG-exported
         else:
             raise RuntimeError(
                 "Cannot print atoms vector to file: no FstatResults.multiFatoms, or it is None!"
@@ -2267,16 +2267,16 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
 
         twoFSum = 0
         for i, theta_i_at_tref in enumerate(thetas):
-            ts, te = tboundaries[i], tboundaries[i + 1]
-            if te - ts > 1800:
+            tstart, tend = tboundaries[i], tboundaries[i + 1]
+            if tend - tstart > 1800:
                 twoFVal = self.get_fullycoherent_detstat(
                     F0=theta_i_at_tref[1],
                     F1=theta_i_at_tref[2],
                     F2=theta_i_at_tref[3],
                     Alpha=Alpha,
                     Delta=Delta,
-                    tstart=ts,
-                    tend=te,
+                    tstart=tstart,
+                    tend=tend,
                 )
                 twoFSum += twoFVal
 

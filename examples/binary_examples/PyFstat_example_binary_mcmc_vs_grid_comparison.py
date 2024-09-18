@@ -3,7 +3,7 @@ Binary CW example: Comparison between MCMC and grid search
 ==========================================================
 
 Comparison of the semicoherent F-statistic MCMC search algorithm
-to a simple grid search accross the parameter space corresponding
+to a simple grid search across the parameter space corresponding
 to a CW source in a binary system.
 """
 
@@ -162,7 +162,7 @@ if circular_orbit:
 ntemps = 2
 log10beta_min = -1
 nwalkers = 100
-nsteps = [100, 100]  # [burnin,production]
+nsteps = [100, 100]  # [burn-in,production]
 
 mcmcsearch = pyfstat.MCMCSearch(
     label=label + "MCMCSearch",

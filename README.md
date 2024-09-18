@@ -194,11 +194,14 @@ Available sets of optional dependencies are:
 plotting methods and some of the [example scripts](./examples).
 * `dev`: Collects `docs`, `style`, `test` and `wheel`.
 * `docs`: Required dependencies to build the documentation.
-* `pycuda` ([PyPI](https://pypi.org/project/pycuda/)): Required for the `tCWFstatMapVersion=pycuda`
-  option of the `TransientGridSearch` class. (Note: Installing `pycuda` requires a working
-  `nvcc` compiler in your path.)
+* `pycuda`: Required for the `tCWFstatMapVersion=pycuda`
+  option of the `TransientGridSearch` class.
+  (Note: Installing the `pycuda` package,
+  see e.g. on [PyPI](https://pypi.org/project/pycuda/),
+  requires a working `nvcc` compiler in your path.)
 * `style`: Includes the `flake8` linter ([flake8.pycqa](https://flake8.pycqa.org/en/latest)),
   `black` style checker ([black.readthedocs](https://black.readthedocs.io)),
+  `codespell` typo checker ([github.com/codespell-project/codespell](https://github.com/codespell-project/codespell)),
   and `isort` for import ordering ([pycqa.github.io](https://pycqa.github.io/isort/)).
   These checks are required to pass by the online integration pipeline.
 * `test`: For running the test suite locally using [pytest](https://docs.pytest.org) and some of its addons
@@ -271,6 +274,7 @@ Here's what you need to know:
   `isort .` to sort package imports,
   `flake8 --count --statistics .` to find common coding errors and then fix them manually,
   `black --check --diff .` to show the required style changes, or `black .` to automatically apply them.
+  `codespell -w -i 3 pyfstat/core.py` or similar (swap in the relevant file name) to interactively fix spelling mistakes.
 
 ## Contributors
 

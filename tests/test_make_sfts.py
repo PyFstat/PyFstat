@@ -139,7 +139,7 @@ class TestWriter(BaseForTestsWithData):
         self.Writer.run_makefakedata()
         time_first = os.path.getmtime(self.Writer.sftfilepath)
 
-        # second run: should re-use .cff and .sft
+        # second run: should reuse .cff and .sft
         self.Writer.make_cff(verbose=True)
         self.Writer.run_makefakedata()
         time_second = os.path.getmtime(self.Writer.sftfilepath)
