@@ -114,7 +114,7 @@ def generate_loudest_file(
         Search name bit to be used in the output filename.
     sftfilepattern: str
         Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
-        mutiple patterns can be given separated by colons.
+        multiple patterns can be given separated by colons.
     minStartTime, maxStartTime: int or None
         GPS seconds of the start time and end time;
         default: use al available data.

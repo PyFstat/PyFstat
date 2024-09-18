@@ -228,7 +228,7 @@ if __name__ == "__main__":
     ntemps = 2
     log10beta_min = -1
     nwalkers = 100
-    nsteps = [200, 200]  # [burnin,production]
+    nsteps = [200, 200]  # [burn-in,production]
 
     mcmcsearch = pyfstat.MCMCSearch(
         label="MCMCSearch" + search_keys_label,

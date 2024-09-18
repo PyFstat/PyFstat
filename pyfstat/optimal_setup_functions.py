@@ -99,7 +99,7 @@ def _get_nsegs_ip1(
 
     Raises
     ------
-    ValueError: Optimisation unsuccesful
+    ValueError: Optimisation unsuccessful
         A value error is raised if the optimization step fails
 
     """
@@ -143,7 +143,7 @@ def _get_nsegs_ip1(
             ),
         )
     else:
-        raise ValueError("Optimisation unsuccesful")
+        raise ValueError("Optimisation unsuccessful")
 
 
 def _extract_data_from_prior(prior):

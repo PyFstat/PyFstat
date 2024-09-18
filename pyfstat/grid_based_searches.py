@@ -117,7 +117,7 @@ class GridSearch(BaseSearchClass):
             (do not interpret as 3-tuples of [min,max,step]).
         clean: bool
             If true, ignore existing data and overwrite.
-            Otherwise, re-use existing data if no inconsistencies are found.
+            Otherwise, reuse existing data if no inconsistencies are found.
         """
 
         self._set_init_params_dict(locals())
@@ -955,7 +955,7 @@ class TransientGridSearch(GridSearch):
             If true, write additional output files for the F-stat `atoms`.
             (One file for each grid point!)
         tCWFstatMapVersion: str
-            Choose between implementations of the transient F-statistic funcionality:
+            Choose between implementations of the transient F-statistic functionality:
             standard `lal` implementation,
             `pycuda` for GPU version,
             and some others only for devel/debug.

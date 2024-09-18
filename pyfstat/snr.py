@@ -254,7 +254,7 @@ class SignalToNoiseRatio:
         """
         Compute Mmunu matrix at a specific sky position using the detector states
         (and possible noise weights) given at initialization time.
-        If no noise weigths were given, unit weights are assumed.
+        If no noise weights were given, unit weights are assumed.
 
         Parameters
         ----------

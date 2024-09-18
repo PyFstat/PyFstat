@@ -167,10 +167,10 @@ class MCMCSearch(BaseSearchClass):
             name files
         sftfilepattern: str, optional
             Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
-            mutiple patterns can be given separated by colons.
+            multiple patterns can be given separated by colons.
         detectors: str, optional
             Two character reference to the detectors to use, specify None for no
-            contraint and comma separated strings for multiple references.
+            constraint and comma separated strings for multiple references.
         nsteps: list (2,), optional
             Number of burn-in and production steps to take, [nburn, nprod]. See
             `pyfstat.MCMCSearch.setup_initialisation()` for details on adding
@@ -223,7 +223,7 @@ class MCMCSearch(BaseSearchClass):
             [Default: what's hardcoded in XLALFstatMaximumSFTLength].
         clean: bool
             If true, ignore existing data and overwrite.
-            Otherwise, re-use existing data if no inconsistencies are found.
+            Otherwise, reuse existing data if no inconsistencies are found.
         """
         self._set_init_params_dict(locals())
         self.theta_prior = theta_prior
@@ -462,7 +462,7 @@ class MCMCSearch(BaseSearchClass):
                 p0 = self._generate_new_p0_to_fix_initial_points(p0, nt)
 
     def _generate_new_p0_to_fix_initial_points(self, p0, nt):
-        logger.info("Attempting to correct intial values")
+        logger.info("Attempting to correct initial values")
         init_logpost = self._evaluate_logpost(p0[nt])
         idxs = np.arange(self.nwalkers)[init_logpost == -np.inf]
         count = 0
@@ -477,14 +477,14 @@ class MCMCSearch(BaseSearchClass):
         if sum(init_logpost == -np.inf) > 0:
             logger.info("Failed to fix initial priors")
         else:
-            logger.info("Suceeded to fix initial priors")
+            logger.info("Succeeded to fix initial priors")
 
         return p0
 
     def setup_initialisation(self, nburn0, scatter_val=1e-10):
         """Add an initialisation step to the MCMC run
 
-        If called prior to `run()`, adds an intial step in which the MCMC
+        If called prior to `run()`, adds an initial step in which the MCMC
         simulation is run for `nburn0` steps. After this, the MCMC simulation
         continues in the usual manner (i.e. for nburn and nprod steps), but the
         walkers are reset scattered around the maximum likelihood position
@@ -698,7 +698,7 @@ class MCMCSearch(BaseSearchClass):
         walker_plot_args=None,
         window=50,
     ):
-        """Run the MCMC simulatation
+        """Run the MCMC simulation
 
         Parameters
         ----------
@@ -849,7 +849,7 @@ class MCMCSearch(BaseSearchClass):
     def _get_rescale_multiplier_for_key(self, key):
         """Get the rescale multiplier from the transform_dictionary
 
-        Can either be a float, a string (in which case it is interpretted as
+        Can either be a float, a string (in which case it is interpreted as
         a attribute of the MCMCSearch class, e.g. minStartTime, or non-existent
         in which case 0 is returned
         """
@@ -874,7 +874,7 @@ class MCMCSearch(BaseSearchClass):
     def _get_rescale_subtractor_for_key(self, key):
         """Get the rescale subtractor from the transform_dictionary
 
-        Can either be a float, a string (in which case it is interpretted as
+        Can either be a float, a string (in which case it is interpreted as
         a attribute of the MCMCSearch class, e.g. minStartTime, or non-existent
         in which case 0 is returned
         """
@@ -2263,7 +2263,7 @@ class MCMCSearch(BaseSearchClass):
         return pdf.real
 
     def _p_val_twoFhat(self, twoFhat, ntrials, twoFhatmax=500, Npoints=1000):
-        """Caluculate the p-value for the given twoFhat in Gaussian noise
+        """Calculate the p-value for the given twoFhat in Gaussian noise
 
         Parameters
         ----------
@@ -2739,9 +2739,9 @@ class MCMCGlitchSearch(MCMCSearch):
         tboundaries = [self.minStartTime] + tglitches + [self.maxStartTime]
 
         for j in range(self.nglitch + 1):
-            ts = tboundaries[j]
-            te = tboundaries[j + 1]
-            if (te - ts) / 86400 < 5:
+            tstart = tboundaries[j]
+            tend = tboundaries[j + 1]
+            if (tend - tstart) / 86400 < 5:
                 logger.info("Period too short to perform cumulative search")
                 continue
             if j < self.theta0_idx:
@@ -2753,8 +2753,8 @@ class MCMCGlitchSearch(MCMCSearch):
                     F2=d["F2"],
                     Alpha=d["Alpha"],
                     Delta=d["Delta"],
-                    tstart=ts,
-                    tend=te,
+                    tstart=tstart,
+                    tend=tend,
                 )
 
             elif j >= self.theta0_idx:
@@ -2766,8 +2766,8 @@ class MCMCGlitchSearch(MCMCSearch):
                     F2=d["F2"],
                     Alpha=d["Alpha"],
                     Delta=d["Delta"],
-                    tstart=ts,
-                    tend=te,
+                    tstart=tstart,
+                    tend=tend,
                 )
             ax.plot(actual_ts + taus, twoFs)
 
@@ -2835,7 +2835,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         Parameters
         ----------
         nsegs: int
-            The number of segments into which the input datastream will be devided.
+            The number of segments into which the input datastream will be divided.
             Coherence time is computed internally as (maxStartTime - minStarTime) / nsegs.
         """
         self._set_init_params_dict(locals())
@@ -3228,8 +3228,8 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
         no_template_counting=True,
     ):
         """
-        Initialize the setup of the follow-up run computing the required quantities fro, NstarMax
-        and Nsegs0.
+        Initialize the setup of the follow-up run computing the required quantities
+        for NstarMax and Nsegs0.
 
         Parameters
         ----------
