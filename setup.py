@@ -44,7 +44,7 @@ requires = [
 ]
 lalsuite = "lalsuite[lalpulsar]>=7.13"
 extras_require = {
-    "chainconsumer": ["chainconsumer"],
+    "chainconsumer": ["chainconsumer<1.0"],
     "dev": [
         "pre-commit",
     ],
