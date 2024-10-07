@@ -386,7 +386,7 @@ class MCMCSearch(BaseSearchClass):
                 )
             full_theta_keys_copy.pop(full_theta_keys_copy.index(key))
 
-        if len(full_theta_keys_copy) > 0:
+        if len(full_theta_keys_copy) > 0:  # pragma: no cover
             raise ValueError(
                 ("Input dictionary `theta` is missing the following keys: {}").format(
                     full_theta_keys_copy
@@ -2147,14 +2147,24 @@ class MCMCSearch(BaseSearchClass):
                         a = prior["lower"]
                         b = prior["upper"]
                         line = r"{} & $\mathrm{{Unif}}$({}, {}) & {}\\"
-                    elif Type == "norm":
+                    elif Type == "log10unif":
+                        a = prior["log10lower"]
+                        b = prior["log10upper"]
+                        line = r"{} & $\mathrm{{log10Unif}}$({}, {}) & {}\\"
+                    else:
+                        # FIXME: Currently all non-uniform priors have loc and scale;
+                        # this assumption might break in the future,
+                        # but priors have to be redesigned anyway.
                         a = prior["loc"]
                         b = prior["scale"]
-                        line = r"{} & $\mathcal{{N}}$({}, {}) & {}\\"
-                    elif Type == "halfnorm":
-                        a = prior["loc"]
-                        b = prior["scale"]
-                        line = r"{} & $|\mathcal{{N}}$({}, {})| & {}\\"
+                        if Type == "norm":
+                            line = r"{} & $\mathcal{{N}}$({}, {}) & {}\\"
+                        elif Type == "halfnorm" or Type == "neghalfnorm":
+                            line = r"{} & $|\mathcal{{N}}$({}, {})| & {}\\"
+                        elif Type == "lognorm":
+                            line = r"{} & $|\mathcal{{lnN}}$({}, {})| & {}\\"
+                        else:  # pragma: no cover
+                            raise ValueError(f"Unknown prior type '{Type}'")
 
                     u = self.unit_dictionary[key]
                     s = self.tex_labels[key]
@@ -2576,7 +2586,7 @@ class MCMCGlitchSearch(MCMCSearch):
             else:
                 full_theta_keys_copy.pop(full_theta_keys_copy.index(key))
 
-        if len(full_theta_keys_copy) > 0:
+        if len(full_theta_keys_copy) > 0:  # pragma: no cover
             raise ValueError(
                 ("Input dictionary `theta` is missing the following keys: {}").format(
                     full_theta_keys_copy
@@ -3477,7 +3487,7 @@ class MCMCTransientSearch(MCMCSearch):
                 )
             full_theta_keys_copy.pop(full_theta_keys_copy.index(key))
 
-        if len(full_theta_keys_copy) > 0:
+        if len(full_theta_keys_copy) > 0:  # pragma: no cover
             raise ValueError(
                 ("Input dictionary `theta` is missing the following keys: {}").format(
                     full_theta_keys_copy

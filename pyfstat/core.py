@@ -124,7 +124,7 @@ class BaseSearchClass:
         matches = [item for sublist in matches for item in sublist]
         if len(matches) > 0:
             return matches
-        else:
+        else:  # pragma: no cover
             raise IOError("No sfts found matching {}".format(self.sftfilepattern))
 
     def tex_label0(self, key):
@@ -1151,12 +1151,15 @@ class ComputeFstat(BaseSearchClass):
         The full transient-F-stat map is also computed here,
         but stored in `self.FstatMap`, not returned.
 
-        NOTE the old way of calling this with explicit [F0,F1,F2,Alpha,Delta,...]
+        NOTE: the old way of calling this with explicit [F0,F1,F2,Alpha,Delta,...]
         parameters is DEPRECATED and may be removed in future versions.
         Currently, this method can be either called with
+
         * a complete set of `(F0, F1, F2, Alpha, Delta)`
           (plus optional binary parameters),
+
         * OR a `params` dictionary;
+
         and only the latter version will be supported going forward.
 
         Parameters
@@ -1248,13 +1251,15 @@ class ComputeFstat(BaseSearchClass):
             required_keys = ["F0", "Alpha", "Delta"]
             parkeys = list(params.keys())
             keysetdiff = np.setdiff1d(required_keys, parkeys)
-            if len(keysetdiff) > 0:
+            if len(keysetdiff) > 0:  # pragma: no cover
                 raise ValueError(
                     f"Required keys not found in params.keys(): {keysetdiff}"
                 )
             # all supported parameters are either required, binary, or of "Fk" type
             keysetdiff = np.setdiff1d(parkeys, required_keys + self.binary_keys)
-            if not np.all([key.startswith("F") for key in keysetdiff]):
+            if not np.all(
+                [key.startswith("F") for key in keysetdiff]
+            ):  # pragma: no cover
                 raise ValueError(
                     f"Unknown parameters in input dictionary: {[key for key in keysetdiff if not key.startswith('F')]}"
                 )
@@ -1264,11 +1269,11 @@ class ComputeFstat(BaseSearchClass):
             if self.binary:
                 for key in self.binary_keys:
                     bpar = eval(key)
-                    if bpar is None:
+                    if bpar is None:  # pragma: no cover
                         raise ValueError(f"We got self.binary but {key}=None.")
                     params[key] = float(bpar)
                 parkeys += self.binary_keys
-        else:
+        else:  # pragma: no cover
             raise ValueError(
                 "Need either a 'params' dictionary"
                 f" or a full set of {list(base_params_oldstyle.keys())} (DEPRECATED)"
@@ -1279,11 +1284,11 @@ class ComputeFstat(BaseSearchClass):
         for key in [key for key in parkeys if key.startswith("F")]:
             try:
                 k = int(key[1:])
-            except ValueError:
+            except ValueError:  # pragma: no cover
                 raise ValueError(
                     f"Unknown parameter {key} in input dictionary, it looks like a 'Fk'-style spindown term but cannot convert the part after the 'F' to an integer."
                 )
-            if k >= lalpulsar.PULSAR_MAX_SPINS:
+            if k >= lalpulsar.PULSAR_MAX_SPINS:  # pragma: no cover
                 raise ValueError(
                     f"Input parameter {key} exceeds lalpulsar.PULSAR_MAX_SPINS={lalpulsar.PULSAR_MAX_SPINS}."
                 )
@@ -1319,9 +1324,12 @@ class ComputeFstat(BaseSearchClass):
         NOTE the old way of calling this with explicit (F0,F1,F2,Alpha,Delta,...)
         parameters is DEPRECATED and may be removed in future versions.
         Currently, this method can be either called with
+
         * a complete set of `(F0, F1, F2, Alpha, Delta)`
           (plus optional binary parameters),
+
         * OR a `params` dictionary;
+
         and only the latter version will be supported going forward.
 
         Parameters

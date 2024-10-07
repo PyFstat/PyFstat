@@ -20,9 +20,15 @@ class TestGridSearch(BaseForTestsWithData):
 
     def _test_plots(self, search_keys):
         for key in search_keys:
-            self.search.plot_1D(xkey=key, savefig=True)
+            self.search.plot_1D(xkey=key, x0=self.Writer.F0, savefig=True)
         if len(search_keys) == 2:
-            self.search.plot_2D(xkey=search_keys[0], ykey=search_keys[1], colorbar=True)
+            self.search.plot_2D(
+                xkey=search_keys[0],
+                ykey=search_keys[1],
+                x0=self.Writer.F0,
+                y0=self.Writer.F1,
+                colorbar=True,
+            )
         vals = [
             np.unique(self.search.data[key]) - getattr(self.Writer, key)
             for key in search_keys

@@ -193,6 +193,7 @@ class TestMCMCSearch(BaseForMCMCSearchTests):
             )
             self.search.run(plot_walkers=False)
             self.search.print_summary()
+            self.search.write_prior_table()
             self._check_twoF_predicted()
             self._check_mcmc_quantiles()
             self._test_plots()
