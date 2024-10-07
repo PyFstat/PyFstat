@@ -262,7 +262,7 @@ class BaseSearchClass:
 
         translation = {"F0": "Freq"}
         translation.update(
-            {f"F{k+1}": f"f{k+1}dot" for k in range(lalpulsar.PULSAR_MAX_SPINS - 1)}
+            {f"F{k + 1}": f"f{k + 1}dot" for k in range(lalpulsar.PULSAR_MAX_SPINS - 1)}
         )
         translation.update(
             {

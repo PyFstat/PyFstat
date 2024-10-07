@@ -1409,7 +1409,7 @@ class SearchOverGridFile(TransientGridSearch):
             "delta": "Delta",
         }
         translation.update(
-            {f"f{k+1}dot": f"F{k+1}" for k in range(lalpulsar.PULSAR_MAX_SPINS - 1)}
+            {f"f{k + 1}dot": f"F{k+1}" for k in range(lalpulsar.PULSAR_MAX_SPINS - 1)}
         )
 
         translated = [
