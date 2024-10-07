@@ -43,31 +43,6 @@ class GridSearch(BaseSearchClass):
     only the additional ones are documented here:
     """
 
-    tex_labels = {
-        "F0": r"$f$",
-        "F1": r"$\dot{f}$",
-        "F2": r"$\ddot{f}$",
-        "Alpha": r"$\alpha$",
-        "Delta": r"$\delta$",
-        "twoF": r"$\widetilde{2\mathcal{F}}$",
-        "maxTwoF": r"$\max\widetilde{2\mathcal{F}}$",
-        "log10BSGL": r"$\log_{10}\mathcal{B}_{\mathrm{S/GL}}$",
-        "lnBtSG": r"$\ln\mathcal{B}_{\mathrm{tS/G}}$",
-    }
-    """Formatted labels used for plot annotations."""
-
-    tex_labels0 = {
-        "F0": r"$-f_0$",
-        "F1": r"$-\dot{f}_0$",
-        "F2": r"$-\ddot{f}_0$",
-        "Alpha": r"$-\alpha_0$",
-        "Delta": r"$-\delta_0$",
-    }
-    """Formatted labels used for annotating central values in plots."""
-
-    fmt_detstat = "%.9g"
-    """Standard output precision for detection statistics."""
-
     @utils.initializer
     def __init__(
         self,
@@ -123,9 +98,9 @@ class GridSearch(BaseSearchClass):
         self._set_init_params_dict(locals())
         os.makedirs(outdir, exist_ok=True)
         self.set_out_file()
-        self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
-        for k in self.search_keys:
+        for k in self.default_search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
+        self.search_keys = self.default_search_keys.copy()
         if self.BSGL:
             self.detstat = "log10BSGL"
         else:
@@ -565,7 +540,7 @@ class GridSearch(BaseSearchClass):
         if xlabel:
             ax.set_xlabel(xlabel)
         elif x0:
-            ax.set_xlabel(self.tex_labels[xkey] + self.tex_labels0[xkey])
+            ax.set_xlabel(self.tex_label0(xkey))
         else:
             ax.set_xlabel(self.tex_labels[xkey])
         if ylabel:
@@ -722,14 +697,14 @@ class GridSearch(BaseSearchClass):
         if xlabel:
             ax.set_xlabel(xlabel)
         elif x0:
-            ax.set_xlabel(self.tex_labels[xkey] + self.tex_labels0[xkey])
+            ax.set_xlabel(self.tex_label0(xkey))
         else:
             ax.set_xlabel(self.tex_labels[xkey])
 
         if ylabel:
             ax.set_ylabel(ylabel)
         elif y0:
-            ax.set_ylabel(self.tex_labels[ykey] + self.tex_labels0[ykey])
+            ax.set_ylabel(self.tex_label0(ykey))
         else:
             ax.set_ylabel(self.tex_labels[ykey])
 
@@ -968,9 +943,9 @@ class TransientGridSearch(GridSearch):
         self.nsegs = 1
         os.makedirs(outdir, exist_ok=True)
         self.set_out_file()
-        self.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
-        for k in self.search_keys:
+        for k in self.default_search_keys:
             setattr(self, k, np.atleast_1d(getattr(self, k + "s")))
+        self.search_keys = self.default_search_keys.copy()
         if self.BSGL and self.BtSG:  # pragma: no cover
             raise ValueError("Please choose only one of [BSGL,BtSG].")
         elif self.BSGL:
@@ -1255,12 +1230,7 @@ class GridGlitchSearch(GridSearch):
         self.input_arrays = False
         if tglitchs is None:
             raise ValueError("You must specify `tglitchs`")
-        self.search_keys = [
-            "F0",
-            "F1",
-            "F2",
-            "Alpha",
-            "Delta",
+        self.search_keys = self.default_search_keys + [
             "delta_F0",
             "delta_F1",
             "tglitch",
@@ -1293,8 +1263,8 @@ class GridGlitchSearch(GridSearch):
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
         fmt_dict = utils.get_doppler_params_output_format(self.output_keys)
-        fmt_dict["delta_F0"] = "%.16g"
-        fmt_dict["delta_F1"] = "%.16g"
+        fmt_dict["delta_F0"] = self.fmt_doppler
+        fmt_dict["delta_F1"] = self.fmt_doppler
         fmt_dict["tglitch"] = "%d"
         fmt_dict[self.detstat] = self.fmt_detstat
         return fmt_dict

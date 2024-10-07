@@ -36,6 +36,82 @@ class BaseSearchClass:
     along with full initialization and any other custom methods.
     """
 
+    binary_keys = ["asini", "period", "ecc", "tp", "argp"]
+    """List of extra parameters for sources in binaries."""
+
+    default_search_keys = [
+        "F0",
+        "F1",
+        "F2",
+        "Alpha",
+        "Delta",
+    ]
+    """Default order of the traditionally supported search parameter names.
+
+    FIXME: these are only used as fallbacks for the deprecated style
+    of passing keys one by one;
+    not needed when using the new parameters dictionary.
+    """
+
+    tex_labels = {
+        # standard Doppler parameters
+        "F0": r"$f$",
+        "F1": r"$\dot{f}$",
+        "F2": r"$\ddot{f}$",
+        "F3": r"$\dddot{f}$",
+        "Alpha": r"$\alpha$",
+        "Delta": r"$\delta$",
+        # binary parameters
+        "asini": r"$\mathrm{asin}\,i$",
+        "period": r"$P$",
+        "ecc": r"$\mathrm{ecc}$",
+        "tp": r"$t_p$",
+        "argp": r"$\mathrm{argp}$",
+        # transient parameters
+        "transient_tstart": r"$t_\mathrm{start}$",
+        "transient_duration": r"$\Delta T$",
+        # glitch parameters
+        "delta_F0": r"$\delta f$",
+        "delta_F1": r"$\delta \dot{f}$",
+        "tglitch": r"$t_\mathrm{glitch}$",
+        # detection statistics
+        "twoF": r"$\widetilde{2\mathcal{F}}$",
+        "maxTwoF": r"$\max\widetilde{2\mathcal{F}}$",
+        "log10BSGL": r"$\log_{10}\mathcal{B}_{\mathrm{SGL}}$",
+        "lnBtSG": r"$\ln\mathcal{B}_{\mathrm{tS/G}}$",
+    }
+    """Formatted labels used for plot annotations."""
+
+    unit_dictionary = dict(
+        # standard Doppler parameters
+        F0=r"Hz",
+        F1=r"Hz/s",
+        F2=r"Hz/s$^2$",
+        F3=r"Hz/s$^3$",
+        Alpha=r"rad",
+        Delta=r"rad",
+        # binary parameters
+        asini="",
+        period=r"s",
+        ecc="",
+        tp=r"s",
+        argp="",
+        # transient parameters
+        transient_tstart=r"s",
+        transient_duration=r"s",
+        # glitch parameters
+        delta_F0=r"Hz",
+        delta_F1=r"Hz/s",
+        tglitch=r"s",
+    )
+    """Units for standard parameters."""
+
+    fmt_detstat = "%.9g"
+    """Standard output precision for detection statistics."""
+
+    fmt_doppler = "%.16g"
+    """Standard output precision for Doppler (frequency evolution) parameters."""
+
     def __new__(cls, *args, **kwargs):
         logger.info(f"Creating {cls.__name__} object...")
         instance = super().__new__(cls)
@@ -48,8 +124,13 @@ class BaseSearchClass:
         matches = [item for sublist in matches for item in sublist]
         if len(matches) > 0:
             return matches
-        else:
+        else:  # pragma: no cover
             raise IOError("No sfts found matching {}".format(self.sftfilepattern))
+
+    def tex_label0(self, key):
+        """Formatted labels used for annotating central values in plots."""
+        label = self.tex_labels[key].strip("$")
+        return f"${label} - {label}_0$"
 
     def set_ephemeris_files(self, earth_ephem=None, sun_ephem=None):
         """Set the ephemeris files to use for the Earth and Sun.
@@ -691,8 +772,6 @@ class ComputeFstat(BaseSearchClass):
         logger.info("Initialising PulsarDoplerParams")
         PulsarDopplerParams = lalpulsar.PulsarDopplerParams()
         PulsarDopplerParams.refTime = self.tref
-        PulsarDopplerParams.Alpha = 1
-        PulsarDopplerParams.Delta = 1
         PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
         self.PulsarDopplerParams = PulsarDopplerParams
 
@@ -1023,16 +1102,17 @@ class ComputeFstat(BaseSearchClass):
 
     def get_fullycoherent_detstat(
         self,
-        F0,
-        F1,
-        F2,
-        Alpha,
-        Delta,
+        F0=None,
+        F1=None,
+        F2=None,
+        Alpha=None,
+        Delta=None,
         asini=None,
         period=None,
         ecc=None,
         tp=None,
         argp=None,
+        params=None,
         tstart=None,
         tend=None,
     ):
@@ -1071,12 +1151,26 @@ class ComputeFstat(BaseSearchClass):
         The full transient-F-stat map is also computed here,
         but stored in `self.FstatMap`, not returned.
 
+        NOTE: the old way of calling this with explicit [F0,F1,F2,Alpha,Delta,...]
+        parameters is DEPRECATED and may be removed in future versions.
+        Currently, this method can be either called with
+
+        * a complete set of `(F0, F1, F2, Alpha, Delta)`
+          (plus optional binary parameters),
+
+        * OR a `params` dictionary;
+
+        and only the latter version will be supported going forward.
+
         Parameters
         ----------
         F0, F1, F2, Alpha, Delta: float
-            Parameters at which to compute the statistic.
+            DEPRECATED: Parameters at which to compute the statistic.
         asini, period, ecc, tp, argp: float, optional
-            Optional: Binary parameters at which to compute the statistic.
+            DEPRECATED: Optional: Binary parameters at which to compute the statistic.
+        params: dict
+            A dictionary defining a parameter space point.
+            See get_fullycoherent_twoF() for more information.
         tstart, tend: int or None
             GPS times to restrict the range of data used.
             If None: falls back to self.minStartTime and self.maxStartTime.
@@ -1090,7 +1184,17 @@ class ComputeFstat(BaseSearchClass):
             at the input parameter values.
         """
         self.get_fullycoherent_twoF(
-            F0, F1, F2, Alpha, Delta, asini, period, ecc, tp, argp
+            F0=F0,
+            F1=F1,
+            F2=F2,
+            Alpha=Alpha,
+            Delta=Delta,
+            asini=asini,
+            period=period,
+            ecc=ecc,
+            tp=tp,
+            argp=argp,
+            params=params,
         )
         if not self.transientWindowType:
             if self.singleFstats:
@@ -1104,18 +1208,109 @@ class ComputeFstat(BaseSearchClass):
             tend=tend,
         )
 
-    def get_fullycoherent_twoF(
+    def _set_PulsarDopplerParams(
         self,
-        F0,
-        F1,
-        F2,
-        Alpha,
-        Delta,
+        params=None,
+        F0=None,
+        F1=None,
+        F2=None,
+        Alpha=None,
+        Delta=None,
         asini=None,
         period=None,
         ecc=None,
         tp=None,
         argp=None,
+    ):
+        """Helper function to set a PulsarDoplerParams struct from user inputs.
+
+        No return value, struct is set as an attribute of the class instance.
+
+        FIXME: this can be simplified a lot when removing the deprecated
+        way of calling with individual parameters instead of a dict!
+
+        Parameters
+        ----------
+        params: dict, optional
+            A dictionary defining a parameter space point.
+            See get_fullycoherent_twoF() for more information.
+        F0, F1, F2, Alpha, Delta: float, optional
+            DEPRECATED: Parameters at which to compute the statistic.
+        asini, period, ecc, tp, argp: float, optional
+            DEPRECATED: Optional: Binary parameters at which to compute the statistic
+
+        """
+        base_params_oldstyle = {
+            "F0": F0,
+            "F1": F1,
+            "F2": F2,
+            "Alpha": Alpha,
+            "Delta": Delta,
+        }
+        if params is not None:
+            required_keys = ["F0", "Alpha", "Delta"]
+            parkeys = list(params.keys())
+            keysetdiff = np.setdiff1d(required_keys, parkeys)
+            if len(keysetdiff) > 0:  # pragma: no cover
+                raise ValueError(
+                    f"Required keys not found in params.keys(): {keysetdiff}"
+                )
+            # all supported parameters are either required, binary, or of "Fk" type
+            keysetdiff = np.setdiff1d(parkeys, required_keys + self.binary_keys)
+            if not np.all(
+                [key.startswith("F") for key in keysetdiff]
+            ):  # pragma: no cover
+                raise ValueError(
+                    f"Unknown parameters in input dictionary: {[key for key in keysetdiff if not key.startswith('F')]}"
+                )
+        elif sum([val is not None for val in base_params_oldstyle.values()]) == 5:
+            params = {key: float(val) for key, val in base_params_oldstyle.items()}
+            parkeys = list(params.keys())
+            if self.binary:
+                for key in self.binary_keys:
+                    bpar = eval(key)
+                    if bpar is None:  # pragma: no cover
+                        raise ValueError(f"We got self.binary but {key}=None.")
+                    params[key] = float(bpar)
+                parkeys += self.binary_keys
+        else:  # pragma: no cover
+            raise ValueError(
+                "Need either a 'params' dictionary"
+                f" or a full set of {list(base_params_oldstyle.keys())} (DEPRECATED)"
+                f" plus optional binary parameters (also DEPRECATED)."
+            )
+
+        self.PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
+        for key in [key for key in parkeys if key.startswith("F")]:
+            try:
+                k = int(key[1:])
+            except ValueError:  # pragma: no cover
+                raise ValueError(
+                    f"Unknown parameter {key} in input dictionary, it looks like a 'Fk'-style spindown term but cannot convert the part after the 'F' to an integer."
+                )
+            if k >= lalpulsar.PULSAR_MAX_SPINS:  # pragma: no cover
+                raise ValueError(
+                    f"Input parameter {key} exceeds lalpulsar.PULSAR_MAX_SPINS={lalpulsar.PULSAR_MAX_SPINS}."
+                )
+            self.PulsarDopplerParams.fkdot[k] = params[key]
+        self.PulsarDopplerParams.Alpha = float(params["Alpha"])
+        self.PulsarDopplerParams.Delta = float(params["Delta"])
+        for key in np.intersect1d(self.binary_keys, parkeys, assume_unique=True):
+            setattr(self.PulsarDopplerParams, key, float(params[key]))
+
+    def get_fullycoherent_twoF(
+        self,
+        F0=None,
+        F1=None,
+        F2=None,
+        Alpha=None,
+        Delta=None,
+        asini=None,
+        period=None,
+        ecc=None,
+        tp=None,
+        argp=None,
+        params=None,
     ):
         """Computes the fully-coherent 2F statistic at a single point.
 
@@ -1126,12 +1321,30 @@ class ComputeFstat(BaseSearchClass):
         `self.get_fullycoherent_detstat()` with `tstart` and `tend` options
         instead of this function.
 
+        NOTE the old way of calling this with explicit (F0,F1,F2,Alpha,Delta,...)
+        parameters is DEPRECATED and may be removed in future versions.
+        Currently, this method can be either called with
+
+        * a complete set of `(F0, F1, F2, Alpha, Delta)`
+          (plus optional binary parameters),
+
+        * OR a `params` dictionary;
+
+        and only the latter version will be supported going forward.
+
         Parameters
         ----------
         F0, F1, F2, Alpha, Delta: float
-            Parameters at which to compute the statistic.
+            DEPRECATED: Parameters at which to compute the statistic.
         asini, period, ecc, tp, argp: float, optional
-            Optional: Binary parameters at which to compute the statistic.
+            DEPRECATED: Optional: Binary parameters at which to compute the statistic.
+        params: dict
+            A dictionary defining a parameter space point,
+            with `["F0","Alpha","Delta"]` required as a minimum set of keys.
+            Also supported:
+            Fk with `1<k<lalpulsar.PULSAR_MAX_SPINS`
+            and binary parameters `asini, period, ecc, tp, argp`
+            (basically anything that fits within a `PulsarDopplerParams` struct).
 
         Returns
         -------
@@ -1140,16 +1353,20 @@ class ComputeFstat(BaseSearchClass):
             at the input parameter values.
             Also stored as `self.twoF`.
         """
-        self.PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
-        self.PulsarDopplerParams.fkdot[:3] = [F0, F1, F2]
-        self.PulsarDopplerParams.Alpha = float(Alpha)
-        self.PulsarDopplerParams.Delta = float(Delta)
-        if self.binary:
-            self.PulsarDopplerParams.asini = float(asini)
-            self.PulsarDopplerParams.period = float(period)
-            self.PulsarDopplerParams.ecc = float(ecc)
-            self.PulsarDopplerParams.tp = float(tp)
-            self.PulsarDopplerParams.argp = float(argp)
+
+        self._set_PulsarDopplerParams(
+            params,
+            F0=F0,
+            F1=F1,
+            F2=F2,
+            Alpha=Alpha,
+            Delta=Delta,
+            asini=asini,
+            period=period,
+            ecc=ecc,
+            tp=tp,
+            argp=argp,
+        )
 
         lalpulsar.ComputeFstat(
             Fstats=self.FstatResults,
@@ -1158,6 +1375,7 @@ class ComputeFstat(BaseSearchClass):
             numFreqBins=1,
             whatToCompute=self.whatToCompute,
         )
+
         # We operate on a single frequency bin, so we grab the 0 component
         # of what is internally a twoF array.
         self.twoF = float(self.FstatResults.twoF[0])
@@ -1367,16 +1585,17 @@ class ComputeFstat(BaseSearchClass):
 
     def calculate_twoF_cumulative(
         self,
-        F0,
-        F1,
-        F2,
-        Alpha,
-        Delta,
+        F0=None,
+        F1=None,
+        F2=None,
+        Alpha=None,
+        Delta=None,
         asini=None,
         period=None,
         ecc=None,
         tp=None,
         argp=None,
+        params=None,
         tstart=None,
         tend=None,
         transient_tstart=None,
@@ -1393,9 +1612,12 @@ class ComputeFstat(BaseSearchClass):
         Parameters
         ----------
         F0, F1, F2, Alpha, Delta: float
-            Parameters at which to compute the cumulative twoF.
+            DEPRECATED: Parameters at which to compute the cumulative twoF.
         asini, period, ecc, tp, argp: float, optional
-            Optional: Binary parameters at which to compute the cumulative 2F.
+            DEPRECATED: Optional: Binary parameters at which to compute the cumulative 2F.
+        params: dict
+            A dictionary defining a parameter space point.
+            See get_fullycoherent_twoF() for more information.
         tstart, tend: int or None
             GPS times to restrict the range of data used.
             If None: falls back to self.minStartTime and self.maxStartTime;.
@@ -1438,6 +1660,7 @@ class ComputeFstat(BaseSearchClass):
                 ecc=ecc,
                 tp=tp,
                 argp=argp,
+                params=params,
             )
             for duration in cumulative_durations
         ]
@@ -1851,16 +2074,17 @@ class SemiCoherentSearch(ComputeFstat):
 
     def get_semicoherent_det_stat(
         self,
-        F0,
-        F1,
-        F2,
-        Alpha,
-        Delta,
+        F0=None,
+        F1=None,
+        F2=None,
+        Alpha=None,
+        Delta=None,
         asini=None,
         period=None,
         ecc=None,
         tp=None,
         argp=None,
+        params=None,
         record_segments=False,
     ):
         """Computes the detection statistic (twoF or log10BSGL) semi-coherently at a single point.
@@ -1872,9 +2096,12 @@ class SemiCoherentSearch(ComputeFstat):
         Parameters
         ----------
         F0, F1, F2, Alpha, Delta: float
-            Parameters at which to compute the statistic.
+            DEPRECATED: Parameters at which to compute the statistic.
         asini, period, ecc, tp, argp: float, optional
-            Optional: Binary parameters at which to compute the statistic.
+            DEPRECATED:Optional: Binary parameters at which to compute the statistic.
+        params: dict
+            A dictionary defining a parameter space point.
+            See get_fullycoherent_twoF() for more information.
         record_segments: boolean
             If True, store the per-segment F-stat values as `self.twoF_per_segment`
             and (if `self.singleFstats`) the per-detector per-segment F-stats
@@ -1889,7 +2116,18 @@ class SemiCoherentSearch(ComputeFstat):
         """
 
         self.get_semicoherent_twoF(
-            F0, F1, F2, Alpha, Delta, asini, period, ecc, tp, argp, record_segments
+            F0=F0,
+            F1=F1,
+            F2=F2,
+            Alpha=Alpha,
+            Delta=Delta,
+            asini=asini,
+            period=period,
+            ecc=ecc,
+            tp=tp,
+            argp=argp,
+            params=params,
+            record_segments=record_segments,
         )
 
         if self.singleFstats:
@@ -1901,16 +2139,17 @@ class SemiCoherentSearch(ComputeFstat):
 
     def get_semicoherent_twoF(
         self,
-        F0,
-        F1,
-        F2,
-        Alpha,
-        Delta,
+        F0=None,
+        F1=None,
+        F2=None,
+        Alpha=None,
+        Delta=None,
         asini=None,
         period=None,
         ecc=None,
         tp=None,
         argp=None,
+        params=None,
         record_segments=False,
     ):
         """Computes the semi-coherent twoF statistic at a single point.
@@ -1918,9 +2157,12 @@ class SemiCoherentSearch(ComputeFstat):
         Parameters
         ----------
         F0, F1, F2, Alpha, Delta: float
-            Parameters at which to compute the statistic.
+            DEPRECATED: Parameters at which to compute the statistic.
         asini, period, ecc, tp, argp: float, optional
-            Optional: Binary parameters at which to compute the statistic.
+            DEPRECATED: Optional: Binary parameters at which to compute the statistic.
+        params: dict
+            A dictionary defining a parameter space point.
+            See get_fullycoherent_twoF() for more information.
         record_segments: boolean
             If True, store the per-segment F-stat values as `self.twoF_per_segment`.
 
@@ -1932,16 +2174,19 @@ class SemiCoherentSearch(ComputeFstat):
             Also stored as `self.twoF`.
         """
 
-        self.PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
-        self.PulsarDopplerParams.fkdot[:3] = [F0, F1, F2]
-        self.PulsarDopplerParams.Alpha = float(Alpha)
-        self.PulsarDopplerParams.Delta = float(Delta)
-        if self.binary:
-            self.PulsarDopplerParams.asini = float(asini)
-            self.PulsarDopplerParams.period = float(period)
-            self.PulsarDopplerParams.ecc = float(ecc)
-            self.PulsarDopplerParams.tp = float(tp)
-            self.PulsarDopplerParams.argp = float(argp)
+        self._set_PulsarDopplerParams(
+            params,
+            F0=F0,
+            F1=F1,
+            F2=F2,
+            Alpha=Alpha,
+            Delta=Delta,
+            asini=asini,
+            period=period,
+            ecc=ecc,
+            tp=tp,
+            argp=argp,
+        )
 
         lalpulsar.ComputeFstat(
             Fstats=self.FstatResults,
