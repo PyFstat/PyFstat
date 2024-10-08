@@ -178,9 +178,11 @@ def get_official_sft_filename(
 def plot_real_imag_spectrograms(
     self,
     sftfilepattern: str,
-    outdir: str,
-    label: str,
-    quantity: Optional[str] = "norm_Power",
+    savefig: Optional[bool] = False,
+    outdir: Optional[str] = None,
+    label: Optional[str] = None,
+    quantity: Optional[str] = "Power",
+    sqrtSX: Optional[float] = None,
     fMin: Optional[float] = None,
     fMax: Optional[float] = None,
     constraints: Optional[lalpulsar.SFTConstraints] = None,
@@ -195,14 +197,20 @@ def plot_real_imag_spectrograms(
     sftfilepattern:
         Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
         multiple patterns can be given separated by colons.
+    savefig:
+        If true, save the figure in `outdir`.
+        If false, return an axis object without saving to disk.
     outdir:
         Output folder.
     label:
         Output filename.
     quantity:
         Magnitude to be plotted.
-        It can be "norm_Power" for normalized power, "Re" for the real part of
+        It can be "power" for power, "normpower" for normalized power, "Re" for the real part of
         the SFTs, and "Im" for the imaginary part of the SFTs.
+        Set to "Power" by default.
+    sqrtSX:
+        ???
     fMin, fMax:
         Restrict frequency range to `[fMin, fMax]`.
         If None, retrieve the full frequency range.
@@ -210,7 +218,7 @@ def plot_real_imag_spectrograms(
         Constrains to be fed into XLALSFTdataFind to specify detector,
         GPS time range or timestamps to be retrieved.
     kwarg: dict
-        Other kwargs.
+        Other kwargs, only used to be passed to matplotlip.
 
     Returns
     -------
@@ -218,16 +226,19 @@ def plot_real_imag_spectrograms(
         The axes object containing the plot.
     """
 
-    outpath = os.path.join(outdir, label)
-    logger = logging.set_up_logger(label=label, outdir=outpath)
+    logger = logging.set_up_logger(label=label, outdir=outdir)
 
     logger.info("Loading SFT data")
     frequency, timestamps, fourier_data = get_sft_as_arrays(
         sftfilepattern, fMin, fMax, constraints
     )
 
-    plotfile = os.path.join(outdir, label + ".png")
-    logger.info(f"Plotting to file: {plotfile}")
+    if savefig:
+        if outdir is None or label is None:
+            raise ValueError("Outdir and label needed to save the figure")
+        else:
+            plotfile = os.path.join(outdir, label + ".png")
+            logger.info(f"Plotting to file: {plotfile}")
 
     plt.rcParams["axes.grid"] = False  # turn off the gridlines
     fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))
@@ -235,19 +246,34 @@ def plot_real_imag_spectrograms(
 
     time_in_days = (timestamps - timestamps[0]) / 86400
 
-    if quantity == "norm_Power":
-        logger.info("Computing normalized power")
+    if quantity == "power":
+        logger.info("Computing power")
         sft_power = fourier_data.real**2 + fourier_data.imag**2
-        normalized_power = sft_power
-        # (2 * sft_power / (data_parameters["Tsft"] * data_parameters["sqrtSX"] ** 2)
         c = ax.pcolormesh(
             time_in_days,
             frequency,
-            normalized_power,
+            sft_power,
             cmap="inferno_r",
             shading="nearest",
         )
-        fig.colorbar(c, label="Normalized Power")
+        fig.colorbar(c, label="Power")
+
+    elif quantity == "normpower":
+        if sqrtSX is None:
+            raise ValueError("Value of sqrtSX needed to compute the normalized power")
+        else:
+            logger.info("Computing normalized power")
+            sft_power = fourier_data.real**2 + fourier_data.imag**2
+            Tsft = 1800  # CHANGE!!
+            normalized_power = 2 * sft_power / (Tsft * sqrtSX**2)
+            c = ax.pcolormesh(
+                time_in_days,
+                frequency,
+                normalized_power,
+                cmap="inferno_r",
+                shading="nearest",
+            )
+            fig.colorbar(c, label="Normalized Power")
 
     elif quantity == "Re":
         c = ax.pcolormesh(
@@ -273,10 +299,11 @@ def plot_real_imag_spectrograms(
 
     else:
         raise ValueError(
-            "String `quantity` not accepted. Please, introduce a valid string"
+            "String `quantity` not accepted. Please, introduce a valid string."
         )
 
     plt.tight_layout()
-    fig.savefig(plotfile)
+    if savefig:
+        fig.savefig(plotfile)
 
     return ax
