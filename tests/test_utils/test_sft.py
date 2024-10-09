@@ -78,11 +78,11 @@ def test_spectrogram():
     data = Writer(**data_parameters, **signal_parameters)
     data.make_data()
 
-    outdir = data_parameters["oudtir"]
+    outdir = data_parameters["outdir"]
     label = data_parameters["label"]
 
     ax = plot_real_imag_spectrograms(
-        data.sftfilepath, savefig=True, outdir=outdir, label=label
+        sftfilepattern=data.sftfilepath, savefig=True, outdir=outdir, label=label
     )
 
     plotfile = os.path.join(outdir, label + ".png")

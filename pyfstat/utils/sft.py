@@ -3,8 +3,10 @@ import os
 from typing import Dict, Optional, Tuple
 
 import lalpulsar
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import numpy as np
+
+from pyfstat.logging import set_up_logger
 
 logger = logging.getLogger(__name__)
 
@@ -179,12 +181,11 @@ def get_official_sft_filename(
 
 
 def plot_real_imag_spectrograms(
-    self,
     sftfilepattern: str,
     savefig: Optional[bool] = False,
     outdir: Optional[str] = ".",
     label: Optional[str] = None,
-    quantity: Optional[str] = "Power",
+    quantity: Optional[str] = "power",
     sqrtSX: Optional[float] = None,
     fMin: Optional[float] = None,
     fMax: Optional[float] = None,
@@ -229,7 +230,7 @@ def plot_real_imag_spectrograms(
         The axes object containing the plot.
     """
 
-    logger = logging.set_up_logger(label=label, outdir=outdir)
+    logger = set_up_logger(label=label, outdir=outdir)
 
     logger.info("Loading SFT data")
     frequency, timestamps, fourier_data = get_sft_as_arrays(
@@ -247,11 +248,11 @@ def plot_real_imag_spectrograms(
     fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))
     ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]")
 
-    time_in_days = (timestamps - timestamps[0]) / 86400
+    time_in_days = (timestamps["H1"] - timestamps["H1"][0]) / 86400
 
     if quantity == "power":
         logger.info("Computing power")
-        sft_power = fourier_data.real**2 + fourier_data.imag**2
+        sft_power = fourier_data["H1"].real ** 2 + fourier_data["H1"].imag ** 2
         q = sft_power
         label = "Power"
 
@@ -260,19 +261,19 @@ def plot_real_imag_spectrograms(
             raise ValueError("Value of sqrtSX needed to compute the normalized power")
         else:
             logger.info("Computing normalized power")
-            sft_power = fourier_data.real**2 + fourier_data.imag**2
+            sft_power = fourier_data["H1"].real ** 2 + fourier_data["H1"].imag ** 2
             Tsft = 1800  # CHANGE!!
             normalized_power = 2 * sft_power / (Tsft * sqrtSX**2)
             q = normalized_power
             label = "Normalized Power"
 
     elif quantity == "Re":
-        q = fourier_data.real
+        q = fourier_data["H1"].real
         ax.set_title("SFT Real part")
         label = "Fourier amplitude"
 
     elif quantity == "Im":
-        q = fourier_data.imag
+        q = fourier_data["H1"].imag
         ax.set_title("SFT Imaginary part")
         label = "Fourier amplitude"
 
