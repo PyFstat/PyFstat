@@ -57,7 +57,7 @@ def test_spectrogram():
         "outdir": "tests/test_utils",
         "sqrtSX": 1e-23,
         "tstart": 1238166018,
-        "duration": 2 * 365 * 86400,
+        "duration": 15 * 1800,
         "detectors": "H1",
         "Tsft": 1800,
     }

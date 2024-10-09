@@ -173,6 +173,9 @@ def get_official_sft_filename(
     spec.SFTtimebase = Tsft
     spec.gpsStart = tstart
     # possible gotcha: duration may be different if nanoseconds of sft-epochs are non-zero
+    # (see SFTfileIO.c in lalpulsar)
+    spec.SFTspan = duration
+    return lalpulsar.BuildSFTFilenameFromSpec(spec)
 
 
 def plot_real_imag_spectrograms(
