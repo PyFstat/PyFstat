@@ -3,7 +3,6 @@ import os
 import numpy as np
 
 from pyfstat import Writer
-from pyfstat.make_sfts import BinaryModulatedWriter
 from pyfstat.utils import get_sft_as_arrays, plot_real_imag_spectrograms
 
 
@@ -54,8 +53,10 @@ def test_get_sft_as_arrays(tmp_path):
 def test_spectrogram():
 
     data_parameters = {
+        "label": "SpectogramTest",
+        "outdir": "tests/test_utils",
         "sqrtSX": 1e-23,
-        "tstart": 1000000000,
+        "tstart": 1238166018,
         "duration": 2 * 365 * 86400,
         "detectors": "H1",
         "Tsft": 1800,
@@ -73,14 +74,12 @@ def test_spectrogram():
         "tref": 1238166018,
     }
 
-    outdir = "/PyFstat/tests/test_utils"
-    label = "spectogram_test"
-
     # making data
-    data = BinaryModulatedWriter(
-        label=label, outdir=outdir, **data_parameters, **signal_parameters
-    )
+    data = Writer(**data_parameters, **signal_parameters)
     data.make_data()
+
+    outdir = data_parameters["oudtir"]
+    label = data_parameters["label"]
 
     ax = plot_real_imag_spectrograms(
         data.sftfilepath, savefig=True, outdir=outdir, label=label

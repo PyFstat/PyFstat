@@ -3,7 +3,7 @@ import os
 from typing import Dict, Optional, Tuple
 
 import lalpulsar
-import matplotlip as plt
+import matplotlib as plt
 import numpy as np
 
 logger = logging.getLogger(__name__)
