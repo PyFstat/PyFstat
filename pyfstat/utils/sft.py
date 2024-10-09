@@ -186,6 +186,7 @@ def plot_real_imag_spectrograms(
     outdir: Optional[str] = ".",
     label: Optional[str] = None,
     quantity: Optional[str] = "power",
+    detector: Optional[str] = "H1",
     sqrtSX: Optional[float] = None,
     fMin: Optional[float] = None,
     fMax: Optional[float] = None,
@@ -213,6 +214,10 @@ def plot_real_imag_spectrograms(
         It can be "power" for power, "normpower" for normalized power, "Re" for the real part of
         the SFTs, and "Im" for the imaginary part of the SFTs.
         Set to "Power" by default.
+    detector:
+        Name of the detector of the data that will be plot; it can be "H1", for LIGO Hanford, or "L1", for LIGO Livingstone.
+        Set to "H1" by default.
+
     sqrtSX:
         ???
     fMin, fMax:
@@ -237,6 +242,9 @@ def plot_real_imag_spectrograms(
         sftfilepattern, fMin, fMax, constraints
     )
 
+    if detector != "H1" and detector != "L1":
+        raise ValueError("Introduce a valid detector: 'H1' or 'L1'")
+
     if savefig:
         if label is None:
             raise ValueError("Label needed to save the figure")
@@ -248,11 +256,11 @@ def plot_real_imag_spectrograms(
     fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))
     ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]")
 
-    time_in_days = (timestamps["H1"] - timestamps["H1"][0]) / 86400
+    time_in_days = (timestamps[detector] - timestamps[detector][0]) / 86400
 
     if quantity == "power":
         logger.info("Computing power")
-        sft_power = fourier_data["H1"].real ** 2 + fourier_data["H1"].imag ** 2
+        sft_power = fourier_data[detector].real ** 2 + fourier_data[detector].imag ** 2
         q = sft_power
         label = "Power"
 
@@ -261,19 +269,21 @@ def plot_real_imag_spectrograms(
             raise ValueError("Value of sqrtSX needed to compute the normalized power")
         else:
             logger.info("Computing normalized power")
-            sft_power = fourier_data["H1"].real ** 2 + fourier_data["H1"].imag ** 2
+            sft_power = (
+                fourier_data[detector].real ** 2 + fourier_data[detector].imag ** 2
+            )
             Tsft = 1800  # CHANGE!!
             normalized_power = 2 * sft_power / (Tsft * sqrtSX**2)
             q = normalized_power
             label = "Normalized Power"
 
     elif quantity == "Re":
-        q = fourier_data["H1"].real
+        q = fourier_data[detector].real
         ax.set_title("SFT Real part")
         label = "Fourier amplitude"
 
     elif quantity == "Im":
-        q = fourier_data["H1"].imag
+        q = fourier_data[detector].imag
         ax.set_title("SFT Imaginary part")
         label = "Fourier amplitude"
 
