@@ -249,14 +249,8 @@ def plot_real_imag_spectrograms(
     if quantity == "power":
         logger.info("Computing power")
         sft_power = fourier_data.real**2 + fourier_data.imag**2
-        c = ax.pcolormesh(
-            time_in_days,
-            frequency,
-            sft_power,
-            cmap="inferno_r",
-            shading="nearest",
-        )
-        fig.colorbar(c, label="Power")
+        q = sft_power
+        label = "Power"
 
     elif quantity == "normpower":
         if sqrtSX is None:
@@ -266,42 +260,32 @@ def plot_real_imag_spectrograms(
             sft_power = fourier_data.real**2 + fourier_data.imag**2
             Tsft = 1800  # CHANGE!!
             normalized_power = 2 * sft_power / (Tsft * sqrtSX**2)
-            c = ax.pcolormesh(
-                time_in_days,
-                frequency,
-                normalized_power,
-                cmap="inferno_r",
-                shading="nearest",
-            )
-            fig.colorbar(c, label="Normalized Power")
+            q = normalized_power
+            label = "Normalized Power"
 
     elif quantity == "Re":
-        c = ax.pcolormesh(
-            time_in_days,
-            frequency,
-            fourier_data.real,
-            cmap="inferno_r",
-            shading="nearest",
-        )
+        q = fourier_data.real
         ax.set_title("SFT Real part")
-        fig.colorbar(c, label="Fourier amplitude")
+        label = "Fourier amplitude"
 
     elif quantity == "Im":
-        c = ax.pcolormesh(
-            time_in_days,
-            frequency,
-            fourier_data.imag,
-            cmap="inferno_r",
-            shading="nearest",
-        )
+        q = fourier_data.imag
         ax.set_title("SFT Imaginary part")
-        fig.colorbar(c, label="Fourier amplitude")
+        label = "Fourier amplitude"
 
     else:
         raise ValueError(
             "String `quantity` not accepted. Please, introduce a valid string."
         )
 
+    c = ax.pcolormesh(
+        time_in_days,
+        frequency,
+        q,
+        cmap="inferno_r",
+        shading="nearest",
+    )
+    fig.colorbar(c, label=label)
     plt.tight_layout()
     if savefig:
         fig.savefig(plotfile)
