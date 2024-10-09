@@ -179,7 +179,7 @@ def plot_real_imag_spectrograms(
     self,
     sftfilepattern: str,
     savefig: Optional[bool] = False,
-    outdir: Optional[str] = None,
+    outdir: Optional[str] = ".",
     label: Optional[str] = None,
     quantity: Optional[str] = "Power",
     sqrtSX: Optional[float] = None,
@@ -234,8 +234,8 @@ def plot_real_imag_spectrograms(
     )
 
     if savefig:
-        if outdir is None or label is None:
-            raise ValueError("Outdir and label needed to save the figure")
+        if label is None:
+            raise ValueError("Label needed to save the figure")
         else:
             plotfile = os.path.join(outdir, label + ".png")
             logger.info(f"Plotting to file: {plotfile}")
