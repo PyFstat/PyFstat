@@ -11,6 +11,7 @@ import os
 import matplotlib.pyplot as plt
 
 import pyfstat
+from pyfstat.utils import plot_spectrogram
 
 # not github-action compatible
 # plt.rcParams["font.family"] = "serif"
@@ -21,13 +22,15 @@ import pyfstat
 # see https://github.com/matplotlib/matplotlib/issues/21723
 plt.rcParams["axes.grid"] = False
 
-label = "PyFstatExampleSpectrogram"
+label = "PyFstatExampleSpectrogramNormPower"
 outdir = os.path.join("PyFstat_example_data", label)
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 depth = 5
 
 data_parameters = {
+    # "label": "SpectogramTest",
+    # "outdir": "tests/test_utils",
     "sqrtSX": 1e-23,
     "tstart": 1000000000,
     "duration": 2 * 365 * 86400,
@@ -55,6 +58,19 @@ data = pyfstat.BinaryModulatedWriter(
 )
 data.make_data()
 
+# outdir = data_parameters["outdir"]
+# label = data_parameters["label"]
+
+
+ax = plot_spectrogram(
+    sftfilepattern=data.sftfilepath,
+    quantity="normpower",
+    savefig=True,
+    outdir=outdir,
+    label=label,
+)
+
+"""
 logger.info("Loading SFT data and computing normalized power...")
 freqs, times, sft_data = pyfstat.utils.get_sft_as_arrays(data.sftfilepath)
 sft_power = sft_data["H1"].real ** 2 + sft_data["H1"].imag ** 2
@@ -76,3 +92,4 @@ c = ax.pcolormesh(
 fig.colorbar(c, label="Normalized Power")
 plt.tight_layout()
 fig.savefig(plotfile)
+"""

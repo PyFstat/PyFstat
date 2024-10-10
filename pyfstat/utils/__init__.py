@@ -31,5 +31,5 @@ from .sft import (
     get_commandline_from_SFTDescriptor,
     get_official_sft_filename,
     get_sft_as_arrays,
-    plot_real_imag_spectrograms,
+    plot_spectrogram,
 )

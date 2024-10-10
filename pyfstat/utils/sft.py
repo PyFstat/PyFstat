@@ -180,7 +180,7 @@ def get_official_sft_filename(
     return lalpulsar.BuildSFTFilenameFromSpec(spec)
 
 
-def plot_real_imag_spectrograms(
+def plot_spectrogram(
     sftfilepattern: str,
     savefig: Optional[bool] = False,
     outdir: Optional[str] = ".",
@@ -262,11 +262,12 @@ def plot_real_imag_spectrograms(
         logger.info("Computing power")
         sft_power = fourier_data[detector].real ** 2 + fourier_data[detector].imag ** 2
         q = sft_power
+        logger.info("Computing power: done")
         label = "Power"
 
     elif quantity == "normpower":
         if sqrtSX is None:
-            raise ValueError("Value of sqrtSX needed to compute the normalized power")
+            raise ValueError("Value of sqrtSX needed to compute the normalized power.")
         else:
             logger.info("Computing normalized power")
             sft_power = (
@@ -275,6 +276,7 @@ def plot_real_imag_spectrograms(
             Tsft = 1800  # CHANGE!!
             normalized_power = 2 * sft_power / (Tsft * sqrtSX**2)
             q = normalized_power
+            logger.info("Computing normalized power: done")
             label = "Normalized Power"
 
     elif quantity == "Re":

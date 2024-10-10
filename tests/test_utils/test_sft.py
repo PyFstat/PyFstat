@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from pyfstat import Writer
-from pyfstat.utils import get_sft_as_arrays, plot_real_imag_spectrograms
+from pyfstat.utils import get_sft_as_arrays, plot_spectrogram
 
 
 def test_get_sft_as_arrays(tmp_path):
@@ -81,7 +81,7 @@ def test_spectrogram():
     outdir = data_parameters["outdir"]
     label = data_parameters["label"]
 
-    ax = plot_real_imag_spectrograms(
+    ax = plot_spectrogram(
         sftfilepattern=data.sftfilepath, savefig=True, outdir=outdir, label=label
     )
 
