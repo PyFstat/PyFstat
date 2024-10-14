@@ -11,7 +11,6 @@ import os
 import matplotlib.pyplot as plt
 
 import pyfstat
-from pyfstat.utils import plot_spectrogram
 
 # not github-action compatible
 # plt.rcParams["font.family"] = "serif"
@@ -29,8 +28,6 @@ logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 depth = 5
 
 data_parameters = {
-    # "label": "SpectogramTest",
-    # "outdir": "tests/test_utils",
     "sqrtSX": 1e-23,
     "tstart": 1000000000,
     "duration": 2 * 365 * 86400,
@@ -58,38 +55,11 @@ data = pyfstat.BinaryModulatedWriter(
 )
 data.make_data()
 
-# outdir = data_parameters["outdir"]
-# label = data_parameters["label"]
-
-
-ax = plot_spectrogram(
+ax = pyfstat.utils.plot_spectrogram(
     sftfilepattern=data.sftfilepath,
+    sqrtSX=data_parameters["sqrtSX"],
     quantity="normpower",
     savefig=True,
     outdir=outdir,
     label=label,
 )
-
-"""
-logger.info("Loading SFT data and computing normalized power...")
-freqs, times, sft_data = pyfstat.utils.get_sft_as_arrays(data.sftfilepath)
-sft_power = sft_data["H1"].real ** 2 + sft_data["H1"].imag ** 2
-normalized_power = (
-    2 * sft_power / (data_parameters["Tsft"] * data_parameters["sqrtSX"] ** 2)
-)
-
-plotfile = os.path.join(outdir, label + ".png")
-logger.info(f"Plotting to file: {plotfile}")
-fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))
-ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]", ylim=(99.98, 100.02))
-c = ax.pcolormesh(
-    (times["H1"] - times["H1"][0]) / 86400,
-    freqs,
-    normalized_power,
-    cmap="inferno_r",
-    shading="nearest",
-)
-fig.colorbar(c, label="Normalized Power")
-plt.tight_layout()
-fig.savefig(plotfile)
-"""
