@@ -3,10 +3,9 @@ import os
 from typing import Dict, Optional, Tuple
 
 import lalpulsar
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-
-from pyfstat.logging import set_up_logger
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +46,7 @@ def get_sft_as_arrays(
         Keys correspond to the official detector names as returned by
         lalpulsar.ListIFOsInCatalog.
     """
+
     constraints = constraints or lalpulsar.SFTConstraints()
     if fMin is None and fMax is None:
         fMin = fMax = -1
@@ -182,17 +182,17 @@ def get_official_sft_filename(
 
 def plot_spectrogram(
     sftfilepattern: str,
+    detector: str,
     savefig: Optional[bool] = False,
     outdir: Optional[str] = ".",
     label: Optional[str] = None,
     quantity: Optional[str] = "power",
-    detector: Optional[str] = "H1",
     sqrtSX: Optional[float] = None,
     fMin: Optional[float] = None,
     fMax: Optional[float] = None,
     constraints: Optional[lalpulsar.SFTConstraints] = None,
     **kwargs,
-):
+) -> matplotlib.axes.Axes:
     """
     Compute spectrograms of a set of SFTs.
     This is useful to produce visualizations of the Doppler modulation of a CW signal.
@@ -202,9 +202,11 @@ def plot_spectrogram(
     sftfilepattern:
         Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
         multiple patterns can be given separated by colons.
+    detector:
+        Name of the detector of the data that will be plot.
     savefig:
-        If true, save the figure in `outdir`.
-        If false, return an axis object without saving to disk.
+        If True, save the figure in `outdir`.
+        If False, return an axis object without saving to disk.
     outdir:
         Output folder.
     label:
@@ -213,37 +215,29 @@ def plot_spectrogram(
         Magnitude to be plotted.
         It can be "power" for power, "normpower" for normalized power, "Re" for the real part of
         the SFTs, and "Im" for the imaginary part of the SFTs.
-        Set to "Power" by default.
-    detector:
-        Name of the detector of the data that will be plot; it can be "H1", for LIGO Hanford, or "L1", for LIGO Livingstone.
-        Set to "H1" by default.
-
+        Set to "power" by default.
     sqrtSX:
-        ???
+        Amplitude spectral density of the data.
+        Only needed if `quantity = "normpower".
     fMin, fMax:
         Restrict frequency range to `[fMin, fMax]`.
         If None, retrieve the full frequency range.
     constraints:
-        Constrains to be fed into XLALSFTdataFind to specify detector,
+        Constraints to be fed into XLALSFTdataFind to specify detector,
         GPS time range or timestamps to be retrieved.
     kwarg: dict
-        Other kwargs, only used to be passed to matplotlip.
+        Other kwargs, only used to be passed to `matplotlib.pcolormesh`.
 
     Returns
     -------
-    ax: matplotlib.axes._subplots_AxesSubplot
+    ax: matplotlib.axes.Axes
         The axes object containing the plot.
     """
-
-    logger = set_up_logger(label=label, outdir=outdir)
 
     logger.info("Loading SFT data")
     frequency, timestamps, fourier_data = get_sft_as_arrays(
         sftfilepattern, fMin, fMax, constraints
     )
-
-    if detector != "H1" and detector != "L1":
-        raise ValueError("Introduce a valid detector: 'H1' or 'L1'")
 
     if savefig:
         if label is None:
@@ -253,52 +247,45 @@ def plot_spectrogram(
             logger.info(f"Plotting to file: {plotfile}")
 
     plt.rcParams["axes.grid"] = False  # turn off the gridlines
-    fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))
+    fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))  # FIXME: make configurable
     ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]")
 
     time_in_days = (timestamps[detector] - timestamps[detector][0]) / 86400
 
-    if quantity == "power":
-        logger.info("Computing power")
-        sft_power = fourier_data[detector].real ** 2 + fourier_data[detector].imag ** 2
-        q = sft_power
-        logger.info("Computing power: done")
-        label = "Power"
-
-    elif quantity == "normpower":
-        if sqrtSX is None:
-            raise ValueError("Value of sqrtSX needed to compute the normalized power.")
-        else:
-            logger.info("Computing normalized power")
-            sft_power = (
-                fourier_data[detector].real ** 2 + fourier_data[detector].imag ** 2
-            )
+    if "power" in quantity:
+        logger.info("Computing SFT power")
+        q = fourier_data[detector].real ** 2 + fourier_data[detector].imag ** 2
+        if quantity == "normpower":
+            if sqrtSX is None:
+                raise ValueError(
+                    "Value of sqrtSX needed to compute the normalized power."
+                )
             Tsft = 1800  # CHANGE!!
-            normalized_power = 2 * sft_power / (Tsft * sqrtSX**2)
-            q = normalized_power
-            logger.info("Computing normalized power: done")
-            label = "Normalized Power"
+            q *= 2 / (Tsft * sqrtSX**2)
+            label = "Normalized power"
+        else:
+            label = "Power"
 
     elif quantity == "Re":
         q = fourier_data[detector].real
-        ax.set_title("SFT Real part")
+        ax.set_title("SFT real part")
         label = "Fourier amplitude"
 
     elif quantity == "Im":
         q = fourier_data[detector].imag
-        ax.set_title("SFT Imaginary part")
+        ax.set_title("SFT imaginary part")
         label = "Fourier amplitude"
 
     else:
         raise ValueError(
-            "String `quantity` not accepted. Please, introduce a valid string."
+            f"Quantity '{quantity}' not accepted. Please, introduce a supported quantity."
         )
 
     c = ax.pcolormesh(
         time_in_days,
         frequency,
         q,
-        cmap="inferno_r",
+        cmap=kwargs["cmap"] if "cmap" in kwargs else "inferno_r",
         shading="nearest",
     )
     fig.colorbar(c, label=label)

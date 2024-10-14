@@ -57,6 +57,7 @@ data.make_data()
 
 ax = pyfstat.utils.plot_spectrogram(
     sftfilepattern=data.sftfilepath,
+    detector=data_parameters["detectors"],
     sqrtSX=data_parameters["sqrtSX"],
     quantity="normpower",
     savefig=True,
