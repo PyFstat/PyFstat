@@ -250,6 +250,11 @@ def plot_spectrogram(
     fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))  # FIXME: make configurable
     ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]")
 
+    if detector not in timestamps:
+        raise ValueError(
+            f"Detector {detector} not found in timestamps, available detectors are {timestamps.keys()}"
+        )
+
     time_in_days = (timestamps[detector] - timestamps[detector][0]) / 86400
 
     if "power" in quantity:
