@@ -244,8 +244,10 @@ def plot_spectrogram(
         Output filename.
     quantity:
         Magnitude to be plotted.
-        It can be "power" for power, "normpower" for normalized power, "real" for the real part of
-        the SFTs, and "imag" for the imaginary part of the SFTs.
+        It can be "power" for SFT power,
+        "normpower" for normalized power (`2*power/(Tsft*sqrtSX**2)`),
+        "real" for the real part of the SFTs,
+        and "imag" for the imaginary part of the SFTs.
         Set to "power" by default.
     sqrtSX:
         Amplitude spectral density of the data.
