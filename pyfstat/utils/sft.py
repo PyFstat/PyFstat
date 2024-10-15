@@ -181,10 +181,29 @@ def get_official_sft_filename(
     return lalpulsar.BuildSFTFilenameFromSpec(spec)
 
 
-def get_sft_constraints_from_tstart_duration(tstart, duration, timestamps=None):
+def get_sft_constraints_from_tstart_duration(
+    tstart: Optional[int] = None,
+    duration: Optional[int] = None,
+    timestamps: Optional[dict] = None,
+) -> lalpulsar.SFTConstraints:
     """
     Use start and duration to set up a lalpulsar.SFTConstraints
     object.
+
+    Parameters
+    ----------
+    tstart:
+        GPS seconds of first SFT start time
+    duration:
+        Total time-spanned by all SFTs in seconds.
+    timestamps:
+        The SFT start times as a dictionary of 1D arrays, one for each detector.
+        Keys correspond to the official detector names as returned by lalpulsar.ListIFOsInCatalog
+
+    Returns
+    -------
+    SFTConstraint: lalpulsar.SFTConstraints
+        Constrains to be fed into XLALSFTdataFind to specify detector, GPS time range or timestamps to be retrieved.
     """
     SFTConstraint = lalpulsar.SFTConstraints()
 
@@ -222,6 +241,7 @@ def plot_spectrogram(
     fMin: Optional[float] = None,
     fMax: Optional[float] = None,
     constraints: Optional[lalpulsar.SFTConstraints] = None,
+    figsize: Optional[Tuple] = (16, 9),
     **kwargs,
 ) -> matplotlib.axes.Axes:
     """
@@ -258,6 +278,8 @@ def plot_spectrogram(
     constraints:
         Constraints to be fed into XLALSFTdataFind to specify detector,
         GPS time range or timestamps to be retrieved.
+    figsize:
+
     kwarg: dict
         Other kwargs, only used to be passed to `matplotlib.pcolormesh`.
 
@@ -279,7 +301,7 @@ def plot_spectrogram(
             plotfile = os.path.join(outdir, label + ".png")
 
     plt.rcParams["axes.grid"] = False  # turn off the gridlines
-    fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))  # FIXME: make configurable
+    fig, ax = plt.subplots(figsize=figsize)
     ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]")
 
     if detector not in timestamps:  # pragma: no cover
@@ -293,7 +315,7 @@ def plot_spectrogram(
         logger.info("Computing SFT power")
         q = fourier_data[detector].real ** 2 + fourier_data[detector].imag ** 2
         if quantity == "normpower":
-            if sqrtSX is None:
+            if sqrtSX is None:  # pragma: no cover
                 raise ValueError(
                     "Value of sqrtSX needed to compute the normalized power."
                 )
@@ -326,7 +348,7 @@ def plot_spectrogram(
 
     if savefig:
         logger.info(f"Plotting to file: {plotfile}")
-    else:
+    else:  # pragma: no cover
         logger.info("Plotting, will return axes object")
     c = ax.pcolormesh(
         time_in_days,
