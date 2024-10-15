@@ -198,7 +198,7 @@ def get_sft_constraints_from_tstart_duration(tstart, duration, timestamps=None):
         SFTConstraint.maxStartTime = SFTConstraint.minStartTime + duration
 
     SFTConstraint.timestamps = None  # FIXME: not currently supported
-    if timestamps is not None:
+    if timestamps is not None:  # pragma: no cover
         raise NotImplementedError("Timestamps not yet supported in this function.")
 
     logger.info(
