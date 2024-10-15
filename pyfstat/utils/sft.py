@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Dict, Optional, Tuple
 
+import lal
 import lalpulsar
 import matplotlib
 import matplotlib.pyplot as plt
@@ -180,6 +181,36 @@ def get_official_sft_filename(
     return lalpulsar.BuildSFTFilenameFromSpec(spec)
 
 
+def get_sft_constraints_from_tstart_duration(tstart, duration, timestamps=None):
+    """
+    Use start and duration to set up a lalpulsar.SFTConstraints
+    object.
+    """
+    SFTConstraint = lalpulsar.SFTConstraints()
+
+    if tstart is None:
+        SFTConstraint.minStartTime = None
+        SFTConstraint.maxStartTime = None
+    elif duration is None:
+        SFTConstraint.maxStartTime = None
+    else:
+        SFTConstraint.minStartTime = lal.LIGOTimeGPS(tstart)
+        SFTConstraint.maxStartTime = SFTConstraint.minStartTime + duration
+
+    SFTConstraint.timestamps = None  # FIXME: not currently supported
+    if timestamps is not None:
+        raise NotImplementedError("Timestamps not yet supported in this function.")
+
+    logger.info(
+        "SFT Constraints: [minStartTime:{}, maxStartTime:{}]".format(
+            SFTConstraint.minStartTime,
+            SFTConstraint.maxStartTime,
+        )
+    )
+
+    return SFTConstraint
+
+
 def plot_spectrogram(
     sftfilepattern: str,
     detector: str,
@@ -240,17 +271,16 @@ def plot_spectrogram(
     )
 
     if savefig:
-        if label is None:
+        if label is None:  # pragma: no cover
             raise ValueError("Label needed to save the figure")
         else:
             plotfile = os.path.join(outdir, label + ".png")
-            logger.info(f"Plotting to file: {plotfile}")
 
     plt.rcParams["axes.grid"] = False  # turn off the gridlines
     fig, ax = plt.subplots(figsize=(0.8 * 16, 0.8 * 9))  # FIXME: make configurable
     ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]")
 
-    if detector not in timestamps:
+    if detector not in timestamps:  # pragma: no cover
         raise ValueError(
             f"Detector {detector} not found in timestamps, available detectors are {timestamps.keys()}"
         )
@@ -265,27 +295,37 @@ def plot_spectrogram(
                 raise ValueError(
                     "Value of sqrtSX needed to compute the normalized power."
                 )
-            Tsft = 1800  # CHANGE!!
+
+            constraints = constraints or lalpulsar.SFTConstraints()
+            multi_sft_catalog = lalpulsar.GetMultiSFTCatalogView(
+                lalpulsar.SFTdataFind(sftfilepattern, constraints)
+            )
+            Tsft = int(round(1.0 / multi_sft_catalog.data[0].data[0].header.deltaF))
+            logger.info(f"Extracted Tsft={Tsft}")
             q *= 2 / (Tsft * sqrtSX**2)
             label = "Normalized power"
         else:
             label = "Power"
 
-    elif quantity == "Re":
+    elif quantity == "real":
         q = fourier_data[detector].real
         ax.set_title("SFT real part")
         label = "Fourier amplitude"
 
-    elif quantity == "Im":
+    elif quantity == "imag":
         q = fourier_data[detector].imag
         ax.set_title("SFT imaginary part")
         label = "Fourier amplitude"
 
-    else:
+    else:  # pragma: no cover
         raise ValueError(
             f"Quantity '{quantity}' not accepted. Please, introduce a supported quantity."
         )
 
+    if savefig:
+        logger.info(f"Plotting to file: {plotfile}")
+    else:
+        logger.info("Plotting, will return axes object")
     c = ax.pcolormesh(
         time_in_days,
         frequency,

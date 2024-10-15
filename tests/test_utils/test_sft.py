@@ -64,10 +64,13 @@ def test_get_sft_as_arrays(data_for_test, timestamps_for_test):
         assert frequencies.shape + times[ifo].shape == amplitudes[ifo].shape
 
 
-def test_spectrogram(data_for_test, timestamps_for_test):
+@pytest.mark.parametrize("quantity", ["power", "normpower", "real", "imag"])
+def test_spectrogram(data_for_test, timestamps_for_test, quantity):
 
     ax = plot_spectrogram(
         sftfilepattern=data_for_test.sftfilepath,
+        quantity=quantity,
+        sqrtSX=data_for_test.sqrtSX,
         detector=data_for_test.detectors.split(",")[0],
         savefig=True,
         outdir=data_for_test.outdir,
