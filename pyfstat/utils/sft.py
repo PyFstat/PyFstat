@@ -203,7 +203,7 @@ def get_sft_constraints_from_tstart_duration(
     Returns
     -------
     SFTConstraint: lalpulsar.SFTConstraints
-        Constrains to be fed into XLALSFTdataFind to specify detector, GPS time range or timestamps to be retrieved.
+        Constraints to be fed into XLALSFTdataFind to specify detector, GPS time range or timestamps to be retrieved.
     """
     SFTConstraint = lalpulsar.SFTConstraints()
 
@@ -279,7 +279,7 @@ def plot_spectrogram(
         Constraints to be fed into XLALSFTdataFind to specify detector,
         GPS time range or timestamps to be retrieved.
     figsize:
-
+        Size of the figure, as a tuple of (horizontal,vertical) measurements (standard matplotlib convention).
     kwarg: dict
         Other kwargs, only used to be passed to `matplotlib.pcolormesh`.
 
