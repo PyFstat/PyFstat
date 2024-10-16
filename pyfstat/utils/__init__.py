@@ -31,4 +31,6 @@ from .sft import (
     get_commandline_from_SFTDescriptor,
     get_official_sft_filename,
     get_sft_as_arrays,
+    get_sft_constraints_from_tstart_duration,
+    plot_spectrogram,
 )
