@@ -11,9 +11,21 @@ from pyfstat.utils import get_sft_as_arrays, plot_spectrogram
 @pytest.fixture
 def timestamps_for_test():
     # Set up SFTs with arbitrary gaps
-    return {
+    """return {
         "H1": 1800 * np.array([1, 2, 4, 6, 8, 10]),
         "L1": 1800 * np.array([1, 3, 5, 7, 9, 12]),
+    }"""
+    return {
+        "H1": np.array(
+            [
+                1000000000,
+                1000000000 + 1800,
+                1000000000 + 3600,
+                1000000000 + 10000,
+                1000000000 + 11800,
+            ]
+        ),
+        "L1": 1238166018 + 1800 * np.array([0, 2, 4, 8]),
     }
 
 
