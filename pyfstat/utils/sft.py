@@ -317,13 +317,12 @@ def plot_spectrogram(
     # Fill up gaps with Nans
     gap_length = np.diff(timestamps[detector]) - Tsft
     gap_data = [fourier_data[detector][:, 0]]
-    print(np.shape(fourier_data[detector]))
     gap_timestamps = [timestamps[detector][0]]
 
+    gaps = False
     for ind, gap in enumerate(gap_length):
         if gap > 0:
             gaps = True
-            # print(f"Gap length = {gap}")
             num_nans = gap // Tsft
             remainder = gap % Tsft
 
@@ -332,8 +331,6 @@ def plot_spectrogram(
                     np.full_like(fourier_data[detector][:, ind], np.nan + 1j * np.nan)
                 )
                 gap_timestamps.append(timestamps[detector][ind] + (i + 1) * Tsft)
-                # print(timestamps[detector][ind])
-                # print(f'timestamp: {(i+1)*Tsft}')
 
             if remainder > 0:
                 gap_data.append(
@@ -342,8 +339,6 @@ def plot_spectrogram(
                 gap_timestamps.append(
                     timestamps[detector][ind] + (num_nans * Tsft) + remainder
                 )
-                # print(timestamps[detector][ind])
-                # print(f'timestamp: {num_nans*Tsft + remainder}')
 
         gap_data.append(fourier_data[detector][:, ind + 1])
         gap_timestamps.append(timestamps[detector][ind + 1])
@@ -351,6 +346,7 @@ def plot_spectrogram(
     if gaps is True:
         timestamps = {detector: np.hstack(gap_timestamps)}
         fourier_data = {detector: np.vstack(gap_data).T}
+
     # Initialize plot
     plt.rcParams["axes.grid"] = False  # turn off the gridlines
     fig, ax = plt.subplots(figsize=figsize)
