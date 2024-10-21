@@ -299,7 +299,6 @@ def plot_spectrogram(
             raise ValueError("Label needed to save the figure")
         else:
             plotfile = os.path.join(outdir, label + ".png")
-            print(f"Plotfile: {plotfile}")
 
     if detector not in timestamps:  # pragma: no cover
         raise ValueError(
