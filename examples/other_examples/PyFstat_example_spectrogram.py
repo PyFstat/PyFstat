@@ -22,7 +22,7 @@ import pyfstat
 # see https://github.com/matplotlib/matplotlib/issues/21723
 plt.rcParams["axes.grid"] = False
 
-label = "PyFstatExampleSpectrogramNormPower"
+label = "PyFstatExampleSpectrogramImag"
 outdir = os.path.join("PyFstat_example_data", label)
 logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
@@ -75,7 +75,7 @@ ax = pyfstat.utils.plot_spectrogram(
     sftfilepattern=data.sftfilepath,
     detector=data_parameters["detectors"],
     sqrtSX=data_parameters["sqrtSX"],
-    quantity="normpower",
+    quantity="imag",
     savefig=True,
     outdir=outdir,
     label=label,

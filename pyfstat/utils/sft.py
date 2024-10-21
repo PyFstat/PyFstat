@@ -299,6 +299,7 @@ def plot_spectrogram(
             raise ValueError("Label needed to save the figure")
         else:
             plotfile = os.path.join(outdir, label + ".png")
+            print(f"Plotfile: {plotfile}")
 
     if detector not in timestamps:  # pragma: no cover
         raise ValueError(
@@ -312,10 +313,11 @@ def plot_spectrogram(
     )
     Tsft = int(round(1.0 / multi_sft_catalog.data[0].data[0].header.deltaF))
     logger.info(f"Extracted Tsft={Tsft}")
-    # Fill up gaps with Nans
-    gap_length = timestamps[detector][1:] - (timestamps[detector][:-1] + Tsft)
 
+    # Fill up gaps with Nans
+    gap_length = np.diff(timestamps[detector]) - Tsft
     gap_data = [fourier_data[detector][:, 0]]
+    print(np.shape(fourier_data[detector]))
     gap_timestamps = [timestamps[detector][0]]
 
     for ind, gap in enumerate(gap_length):

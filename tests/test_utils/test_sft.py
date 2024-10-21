@@ -11,10 +11,15 @@ from pyfstat.utils import get_sft_as_arrays, plot_spectrogram
 @pytest.fixture
 def timestamps_for_test():
     # Set up SFTs with arbitrary gaps
-    """return {
+    return {
         "H1": 1800 * np.array([1, 2, 4, 6, 8, 10]),
         "L1": 1800 * np.array([1, 3, 5, 7, 9, 12]),
-    }"""
+    }
+
+
+@pytest.fixture
+def timestamps_for_test_with_gaps():
+    # Set up SFTs with arbitrary gaps
     return {
         "H1": np.array(
             [
@@ -77,7 +82,10 @@ def test_get_sft_as_arrays(data_for_test, timestamps_for_test):
 
 
 @pytest.mark.parametrize("quantity", ["power", "normpower", "real", "imag"])
-def test_spectrogram(data_for_test, timestamps_for_test, quantity):
+@pytest.mark.parametrize(
+    "timestamps", ["timestamps_for_test", "timestamps_for_test_with_gaps"]
+)
+def test_spectrogram(data_for_test, timestamps, quantity):
 
     ax = plot_spectrogram(
         sftfilepattern=data_for_test.sftfilepath,
