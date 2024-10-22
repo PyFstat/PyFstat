@@ -246,6 +246,7 @@ def plot_spectrogram(
 ) -> matplotlib.axes.Axes:
     """
     Compute spectrograms of a set of SFTs.
+    In case the signal contains gaps, these are replaced by "nans", so in the plot they appear in white.
     This is useful to produce visualizations of the Doppler modulation of a CW signal.
 
     Parameters

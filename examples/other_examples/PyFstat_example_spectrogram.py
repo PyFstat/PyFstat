@@ -28,23 +28,26 @@ logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 depth = 5
 
-# timestamps = {"H1": 1238166018 + 1800 * np.array([0, 2, 4, 8])}
+gap_duration = 10 * 86400
+Tsft = 1800
+
+segments = [  # Define the tstart and duration of each segment of data
+    {"tstart": 1000000000, "duration": 120 * 86400},
+    {"tstart": 1000000000 + 120 * 86400 + gap_duration, "duration": 300 * 86400},
+    {"tstart": 1000000000 + 420 * 86400 + 2 * gap_duration, "duration": 120 * 86400},
+]
+
 timestamps = {
-    "H1": np.array(
-        [
-            1000000000,
-            1000000000 + 1800,
-            1000000000 + 3600,
-            1000000000 + 10000,
-            1000000000 + 11800,
+    "H1": np.concatenate(
+        [  # Generate timestamps for each segment and concatenate them
+            segment["tstart"] + Tsft * np.arange(segment["duration"] // Tsft)
+            for segment in segments
         ]
     )
 }
 
 data_parameters = {
     "sqrtSX": 1e-23,
-    # "tstart": 1000000000,
-    # "duration": 2 * 365 * 86400,
     "timestamps": timestamps,
     "detectors": "H1",
     "Tsft": 1800,
@@ -56,11 +59,10 @@ signal_parameters = {
     "F2": 0,
     "Alpha": 0.0,
     "Delta": 0.5,
-    # "tp": data_parameters["tstart"],
-    # "asini": 25.0,
-    # "period": 50 * 86400,
-    # "tref": data_parameters["tstart"],
-    "tref": 1000000000,
+    "tp": segments[0]["tstart"],
+    "asini": 25.0,
+    "period": 50 * 86400,
+    "tref": segments[0]["tstart"],
     "h0": data_parameters["sqrtSX"] / depth,
     "cosi": 1.0,
 }
