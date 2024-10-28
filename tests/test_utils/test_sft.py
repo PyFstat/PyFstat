@@ -10,7 +10,7 @@ from pyfstat.utils import get_sft_as_arrays, plot_spectrogram
 
 @pytest.fixture
 def timestamps_for_test():
-    # Set up SFTs without gaps
+    # Set up SFTs with arbitrary gaps
     return {
         "H1": 1800 * np.array([1, 2, 3, 4, 5, 6]),
         "L1": 1800 * np.array([1, 2, 3, 4, 5, 6]),
@@ -55,6 +55,27 @@ def data_for_test(tmp_path, timestamps_for_test):
     return writer
 
 
+@pytest.fixture
+def data_for_test_with_gaps(tmp_path, timestamps_for_test_with_gaps):
+    writer_kwargs = {
+        "sqrtSX": 1,
+        "Tsft": 1800,
+        "timestamps": timestamps_for_test_with_gaps,
+        "detectors": "H1,L1",
+        "SFTWindowType": "tukey",
+        "SFTWindowParam": 0.001,
+        "randSeed": 42,
+        "F0": 10.0,
+        "Band": 0.1,
+        "label": "TestingSftToArray",
+        "outdir": tmp_path,
+    }
+    writer = Writer(**writer_kwargs)
+    writer.make_data()
+
+    return writer
+
+
 def test_get_sft_as_arrays(data_for_test, timestamps_for_test):
 
     frequency_step = 1 / data_for_test.Tsft
@@ -82,19 +103,19 @@ def test_get_sft_as_arrays(data_for_test, timestamps_for_test):
 
 
 @pytest.mark.parametrize("quantity", ["power", "normpower", "real", "imag"])
-@pytest.mark.parametrize(
-    "timestamps", ["timestamps_for_test", "timestamps_for_test_with_gaps"]
-)
-def test_spectrogram(data_for_test, timestamps, quantity):
+@pytest.mark.parametrize("data_function", [data_for_test, data_for_test_with_gaps])
+def test_spectrogram(data_function, quantity):
+
+    data = data_function()
 
     ax = plot_spectrogram(
-        sftfilepattern=data_for_test.sftfilepath,
+        sftfilepattern=data.sftfilepath,
         quantity=quantity,
-        sqrtSX=data_for_test.sqrtSX,
-        detector=data_for_test.detectors.split(",")[0],
+        sqrtSX=data.sqrtSX,
+        detector=data.detectors.split(",")[0],
         savefig=True,
-        outdir=data_for_test.outdir,
-        label=data_for_test.label,
+        outdir=data.outdir,
+        label=data.label,
     )
 
     assert isinstance(ax, matplotlib.axes.Axes)
