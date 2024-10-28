@@ -10,7 +10,7 @@ from pyfstat.utils import get_sft_as_arrays, plot_spectrogram
 
 @pytest.fixture
 def timestamps_for_test():
-    # Set up SFTs with arbitrary gaps
+    # Set up SFTs without gaps
     return {
         "H1": 1800 * np.array([1, 2, 3, 4, 5, 6]),
         "L1": 1800 * np.array([1, 2, 3, 4, 5, 6]),
