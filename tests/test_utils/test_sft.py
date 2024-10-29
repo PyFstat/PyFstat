@@ -19,7 +19,7 @@ def data_for_test(tmp_path_factory, request):
     gaps = request.param
     if gaps == "gaps":
         for ifo in timestamps.keys():
-            timestamps[ifo] = np.delete(timestamps[ifo], [2, 4])
+            timestamps[ifo][-1] += 100
     writer_kwargs = {
         "sqrtSX": 1,
         "Tsft": 1800,
