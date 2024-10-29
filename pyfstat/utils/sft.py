@@ -246,6 +246,7 @@ def plot_spectrogram(
 ) -> matplotlib.axes.Axes:
     """
     Compute spectrograms of a set of SFTs.
+    In case the signal contains gaps, these are replaced by "nans", so in the plot they appear in white.
     This is useful to produce visualizations of the Doppler modulation of a CW signal.
 
     Parameters
@@ -300,14 +301,56 @@ def plot_spectrogram(
         else:
             plotfile = os.path.join(outdir, label + ".png")
 
-    plt.rcParams["axes.grid"] = False  # turn off the gridlines
-    fig, ax = plt.subplots(figsize=figsize)
-    ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]")
-
     if detector not in timestamps:  # pragma: no cover
         raise ValueError(
             f"Detector {detector} not found in timestamps, available detectors are {timestamps.keys()}"
         )
+
+    # Compute Tsft
+    constraints = constraints or lalpulsar.SFTConstraints()
+    multi_sft_catalog = lalpulsar.GetMultiSFTCatalogView(
+        lalpulsar.SFTdataFind(sftfilepattern, constraints)
+    )
+    Tsft = int(round(1.0 / multi_sft_catalog.data[0].data[0].header.deltaF))
+    logger.info(f"Extracted Tsft={Tsft}")
+
+    # Fill up gaps with Nans
+    gap_length = np.diff(timestamps[detector]) - Tsft
+    gap_data = [fourier_data[detector][:, 0]]
+    gap_timestamps = [timestamps[detector][0]]
+
+    gaps = False
+    for ind, gap in enumerate(gap_length):
+        if gap > 0:
+            gaps = True
+            num_nans = gap // Tsft
+            remainder = gap % Tsft
+
+            for i in range(num_nans):
+                gap_data.append(
+                    np.full_like(fourier_data[detector][:, ind], np.nan + 1j * np.nan)
+                )
+                gap_timestamps.append(timestamps[detector][ind] + (i + 1) * Tsft)
+
+            if remainder > 0:
+                gap_data.append(
+                    np.full_like(fourier_data[detector][:, ind], np.nan + 1j * np.nan)
+                )
+                gap_timestamps.append(
+                    timestamps[detector][ind] + (num_nans * Tsft) + remainder
+                )
+
+        gap_data.append(fourier_data[detector][:, ind + 1])
+        gap_timestamps.append(timestamps[detector][ind + 1])
+
+    if gaps is True:
+        timestamps = {detector: np.hstack(gap_timestamps)}
+        fourier_data = {detector: np.vstack(gap_data).T}
+
+    # Initialize plot
+    plt.rcParams["axes.grid"] = False  # turn off the gridlines
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.set(xlabel="Time [days]", ylabel="Frequency [Hz]")
 
     time_in_days = (timestamps[detector] - timestamps[detector][0]) / 86400
 
@@ -319,13 +362,6 @@ def plot_spectrogram(
                 raise ValueError(
                     "Value of sqrtSX needed to compute the normalized power."
                 )
-
-            constraints = constraints or lalpulsar.SFTConstraints()
-            multi_sft_catalog = lalpulsar.GetMultiSFTCatalogView(
-                lalpulsar.SFTdataFind(sftfilepattern, constraints)
-            )
-            Tsft = int(round(1.0 / multi_sft_catalog.data[0].data[0].header.deltaF))
-            logger.info(f"Extracted Tsft={Tsft}")
             q *= 2 / (Tsft * sqrtSX**2)
             label = "Normalized power"
         else:
