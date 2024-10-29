@@ -31,7 +31,7 @@ def data_for_test(tmp_path_factory, request):
         "F0": 10.0,
         "Band": 0.1,
         "label": "TestSFTs" + gaps,
-        "outdir": tmp_path_factory.mktemp("SFTdata"),
+        "outdir": tmp_path_factory.mktemp("SFTdata" + gaps),
     }
     writer = Writer(**writer_kwargs)
     writer.make_data()
