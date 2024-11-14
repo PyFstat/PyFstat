@@ -6,3 +6,4 @@
 docs/build/
 docs/source/*_example*/
 *tutorials*
+*PyFstat_example_data*
