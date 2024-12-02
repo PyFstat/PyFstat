@@ -352,8 +352,9 @@ class TestSearchOverGridFile(BaseForTestsWithData):
                 for key in default_binary_params.keys():
                     fp.write(f" {key}")
             fp.write("\n")
-            for F0 in np.arange(*self.F0s):
-                for F3 in self.F3s:
+            # to match CFSv2 F0 must be the innermost loop
+            for F3 in self.F3s:
+                for F0 in np.arange(*self.F0s):
                     fp.write(
                         f"{F0:.16g} {self.Writer.Alpha:.16g} {self.Writer.Delta:.16g} {self.Writer.F1:.16g} {self.Writer.F2:.16g}  {F3:.16g}"
                     )
@@ -388,6 +389,7 @@ class TestSearchOverGridFile(BaseForTestsWithData):
             search.out_file, comments="#"
         )
         CFSv2_out_file = os.path.join(self.outdir, "CFSv2_Fstat_from_gridfile_out.txt")
+
         CFSv2_loudest_file = os.path.join(
             self.outdir, "CFSv2_Fstat_from_gridfile_loudest.txt"
         )
@@ -397,15 +399,15 @@ class TestSearchOverGridFile(BaseForTestsWithData):
             # CFSv2 would ignore binary parameters in gridfile,
             # so set everything manually
             cl_CFSv2.append(f"--Freq {self.F0s[0]:.16g}")
-            cl_CFSv2.append(f"--FreqBand {self.F0s[1]-self.F0s[0]:.16g}")
+            cl_CFSv2.append(f"--FreqBand {self.F0s[1] - self.F0s[0]:.16g}")
             cl_CFSv2.append(f"--dFreq {self.F0s[2]:.16g}")
             cl_CFSv2.append(f"--Alpha {self.Writer.Alpha:.16g}")
             cl_CFSv2.append(f"--Delta {self.Writer.Delta:.16g}")
             cl_CFSv2.append(f"--f1dot {self.Writer.F1:.16g}")
             cl_CFSv2.append(f"--f2dot {self.Writer.F2:.16g}")
             cl_CFSv2.append(f"--f3dot {self.F3s[0]:.16g}")
-            cl_CFSv2.append(f"--f3dotBand {(self.F3s[1]-self.F3s[0]):.16g}")
-            cl_CFSv2.append(f"--df3dot {(self.F3s[1]-self.F3s[0]):.16g}")
+            cl_CFSv2.append(f"--f3dotBand {(self.F3s[1] - self.F3s[0]):.16g}")
+            cl_CFSv2.append(f"--df3dot {(self.F3s[1] - self.F3s[0]):.16g}")
             translated_binary_params = search.translate_keys_to_lal(
                 default_binary_params
             )
@@ -444,7 +446,18 @@ class TestSearchOverGridFile(BaseForTestsWithData):
             len(np.atleast_1d(CFSv2_out["2F"]))
             == len(np.atleast_1d(pyfstat_out["twoF"]))
         )
-        self.assertTrue(np.max(np.abs(CFSv2_out["freq"] - pyfstat_out["F0"]) < 1e-16))
+
+        # we first compare the Doppler parameters, which are the first six columns of the output files
+        for i in range(6):
+            self.assertTrue(
+                np.max(
+                    np.abs(
+                        CFSv2_out[CFSv2_out.dtype.names[i]]
+                        - pyfstat_out[pyfstat_out.dtype.names[i]]
+                    )
+                )
+                < 1e-16
+            )
         self.assertTrue(np.max(np.abs(CFSv2_out["2F"] - pyfstat_out["twoF"]) < 1))
         self.assertTrue(np.max(CFSv2_out["2F"]) == np.max(pyfstat_out["twoF"]))
         if transient:
@@ -470,24 +483,6 @@ class TestSearchOverGridFile(BaseForTestsWithData):
                 np.max(CFSv2_out_transient["maxTwoF"])
                 - np.max(pyfstat_out["maxTwoF"] < 1e-3)
             )
-        search.generate_loudest()
-        self.assertTrue(os.path.isfile(search.loudest_file))
-        loudest = {}
-        for run, f in zip(
-            ["CFSv2", "PyFstat"], [CFSv2_loudest_file, search.loudest_file]
-        ):
-            loudest[run] = pyfstat.utils.read_par(
-                filename=f,
-                suffix="loudest",
-                raise_error=False,
-            )
-        for key in ["Alpha", "Delta", "Freq", "f1dot", "f2dot", "f3dot"]:
-            self.assertTrue(
-                np.abs(loudest["CFSv2"][key] - loudest["PyFstat"][key]) < 1e-16
-            )
-        self.assertTrue(
-            np.abs(loudest["CFSv2"]["twoF"] - loudest["PyFstat"]["twoF"]) < 1
-        )
 
     def test_gridfile_search_binary(self):
         self.test_gridfile_search(binary=True)
