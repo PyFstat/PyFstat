@@ -344,6 +344,8 @@ class TestSearchOverGridFile(BaseForTestsWithData):
     Band = 0.5
 
     def _write_gridfile(self, binary=False):
+        # This is a simple test just looping over two parameters, F0 and F3,
+        # and writing the gridfile by hand.
         self.gridfile = os.path.join(self.outdir, "test_grid.txt")
         with open(self.gridfile, "w") as fp:
             fp.write("%% columns:\n")
@@ -352,7 +354,7 @@ class TestSearchOverGridFile(BaseForTestsWithData):
                 for key in default_binary_params.keys():
                     fp.write(f" {key}")
             fp.write("\n")
-            # to match CFSv2 F0 must be the innermost loop
+            # to match CFSv2, F0 must be the innermost loop
             for F3 in self.F3s:
                 for F0 in np.arange(*self.F0s):
                     fp.write(
@@ -363,8 +365,41 @@ class TestSearchOverGridFile(BaseForTestsWithData):
                             fp.write(f" {default_binary_params[key]:.16g}")
                     fp.write("\n")
 
-    def test_gridfile_search(self, binary=False, transient=False):
-        self._write_gridfile(binary)
+    def _write_gridfile_with_CFSv2(self):
+        # Here we let the CFSv2 itself create the gridfile
+        # and loop over frequency plus three spin-down parameters.
+        self.gridfile = os.path.join(self.outdir, "test_grid_CFSv2.txt")
+        cl_CFSv2 = []
+        cl_CFSv2.append("lalpulsar_ComputeFstatistic_v2")
+        cl_CFSv2.append(f"--Freq {self.F0s[0]:.16g}")
+        cl_CFSv2.append(f"--FreqBand {(self.F0s[1] - self.F0s[0]):.16g}")
+        cl_CFSv2.append(f"--Alpha {self.Writer.Alpha:.16g}")
+        cl_CFSv2.append(f"--Delta {self.Writer.Delta:.16g}")
+        cl_CFSv2.append(f"--f1dot {self.Writer.F1:.16g}")
+        cl_CFSv2.append(f"--f1dotBand {3e-7:.16g}")
+        cl_CFSv2.append(f"--f2dot {self.Writer.F2:.16g}")
+        cl_CFSv2.append(f"--f2dotBand {3e-11:.16g}")
+        cl_CFSv2.append(f"--f3dot {self.F3s[0]:.16g}")
+        cl_CFSv2.append(f"--f3dotBand {3e-15:.16g}")
+        cl_CFSv2.append("--gridType 8")
+        cl_CFSv2.append("--DataFiles '{}'".format(self.Writer.sftfilepath))
+        cl_CFSv2.append("--refTime {}".format(self.tref))
+        cl_CFSv2.append(f"--metricMismatch {0.02:.16g}")
+        cl_CFSv2.append("--countTemplates TRUE")
+        cl_CFSv2.append("--strictSpindownBounds TRUE")
+        cl_CFSv2.append(f"--outputGrid {self.gridfile}")
+        # to match ComputeFstat default (and hence PyFstat) defaults on older
+        # CFSv2 versions, set the RngMedWindow manually:
+        cl_CFSv2.append("--RngMedWindow=101")
+        cl_CFSv2 = " ".join(cl_CFSv2)
+        pyfstat.utils.run_commandline(cl_CFSv2)
+
+    def test_gridfile_search(self, binary=False, transient=False, grid="manual"):
+        if grid == "manual":
+            self._write_gridfile(binary)
+        elif grid == "CFSv2":
+            self._write_gridfile_with_CFSv2()
+
         if transient:
             transient_search_params = {
                 "transientWindowType": "rect",
@@ -375,6 +410,7 @@ class TestSearchOverGridFile(BaseForTestsWithData):
             }
         else:
             transient_search_params = {}
+
         search = pyfstat.SearchOverGridFile(
             label=f"grid_search{'_binary' if binary else ''}",
             outdir=self.outdir,
@@ -489,3 +525,6 @@ class TestSearchOverGridFile(BaseForTestsWithData):
 
     def test_gridfile_transient_search(self):
         self.test_gridfile_search(transient=True)
+
+    def test_gridfile_from_CFSv2(self):
+        self.test_gridfile_search(grid="CFSv2")
