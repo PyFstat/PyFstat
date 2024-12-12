@@ -1286,6 +1286,7 @@ class SearchOverGridFile(TransientGridSearch):
         earth_ephem=None,
         sun_ephem=None,
         clean=False,
+        reading_method="numpy",
     ):
         """
         Parameters
@@ -1301,8 +1302,15 @@ class SearchOverGridFile(TransientGridSearch):
             )
         os.makedirs(outdir, exist_ok=True)
         self.set_out_file()
-        self._read_grid_with_numpy()
-        self.search_keys = list(self.grid.dtype.names)
+        if reading_method == "numpy":
+            self._read_grid_with_numpy()
+        elif reading_method == "pandas":
+            self._read_grid_with_pandas()
+        else:
+            raise ValueError(
+                f"Invalid reading method: {reading_method}. Expected 'numpy' or 'pandas'."
+            )
+        self.search_keys = list(self.grid.dtype.names)  # this is okey with pandas
         if self.BSGL:
             self.detstat = "log10BSGL"
         elif self.transientWindowType is not None:
@@ -1322,12 +1330,19 @@ class SearchOverGridFile(TransientGridSearch):
     def _read_grid_with_pandas(self):
         """FIXME!!!"""
         logging.info(f"Loading grid from file: {self.gridfile}")
+        nhead = 0
+        with open(self.gridfile, "r") as fp:
+            for line in fp:
+                if not line.startswith("%%"):
+                    break
+                nhead += 1
+
         grid = pd.read_csv(
             self.gridfile,
             comment="%",
-            delim_whitespace=True,
+            sep="\\s+",  # whitespace
             engine="c",
-            header=0,
+            header=None,  # Do not infer headers
             names=[
                 "F0",
                 "Alpha",
@@ -1336,19 +1351,40 @@ class SearchOverGridFile(TransientGridSearch):
                 "F2",
                 "F3",
             ],
+            skiprows=nhead,  # Skip the first `nhead` rows (comments)
         )
-        self.grid = np.array(
-            grid,
-            dtype=np.dtype(list(zip(grid.dtypes.index, grid.dtypes))),
-        )
-        # logging.info ("Full pandas dataframe is:")
-        # logging.info(grid)
+        logging.info("Full pandas dataframe is:")
+        logging.info(grid)
+        logging.info("Grid.dtypes:")
+        logging.info(grid.dtypes)
+
+        # Map Pandas dtypes to NumPy-compatible dtypes
+        mapped_dtypes = {
+            "float64": "f8",
+            "int64": "i8",
+            "object": "U",  # Adjust for string columns if needed
+        }
+        numpy_dtypes = [
+            (col, mapped_dtypes[str(dtype)])
+            for col, dtype in zip(grid.columns, grid.dtypes)
+        ]
+        logging.info("Mapped dtypes for structured array:")
+        logging.info(numpy_dtypes)
+        try:
+            self.grid = np.array(
+                list(grid.itertuples(index=False, name=None)), dtype=numpy_dtypes
+            )
+        except Exception as e:
+            raise TypeError(f"Failed to convert pandas DataFrame to NumPy array: {e}")
+
         logging.info(
             f"Successfully loaded grid of size {np.shape(self.grid)}"
             " with the following dtype:"
         )
         logging.info(self.grid.dtype)
+
         self.grid.dtype.names = self.translate_keys_from_cfsv2(self.grid.dtype.names)
+
         logging.info("Updated dtype to:")
         logging.info(self.grid.dtype)
         logging.info("Full grid is:")
@@ -1379,6 +1415,8 @@ class SearchOverGridFile(TransientGridSearch):
         self.grid.dtype.names = self.translate_keys_from_cfsv2(self.grid.dtype.names)
         logging.info("Updated dtype to match PyFstat parameter naming convention:")
         logging.info(self.grid.dtype)
+        logging.info("Full grid is:")
+        logging.info(self.grid)
 
     def translate_keys_from_cfsv2(self, keylist):
         """Convert grid column heading keys into PyFstat convention.
