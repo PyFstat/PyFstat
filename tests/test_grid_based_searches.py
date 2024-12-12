@@ -394,7 +394,9 @@ class TestSearchOverGridFile(BaseForTestsWithData):
         cl_CFSv2 = " ".join(cl_CFSv2)
         pyfstat.utils.run_commandline(cl_CFSv2)
 
-    def test_gridfile_search(self, binary=False, transient=False, grid="manual"):
+    def test_gridfile_search(
+        self, binary=False, transient=False, grid="manual", reading_method="numpy"
+    ):
         if grid == "manual":
             self._write_gridfile(binary)
         elif grid == "CFSv2":
@@ -417,6 +419,7 @@ class TestSearchOverGridFile(BaseForTestsWithData):
             sftfilepattern=self.Writer.sftfilepath,
             gridfile=self.gridfile,
             tref=self.tref,
+            reading_method=reading_method,
             **transient_search_params,
         )
         search.run()
@@ -528,3 +531,6 @@ class TestSearchOverGridFile(BaseForTestsWithData):
 
     def test_gridfile_from_CFSv2(self):
         self.test_gridfile_search(grid="CFSv2")
+
+    def test_gridfile_from_CFSv2_pandas(self):
+        self.test_gridfile_search(grid="CFSv2", reading_method="pandas")
