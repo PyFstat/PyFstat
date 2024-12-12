@@ -359,11 +359,11 @@ class GridSearch(BaseSearchClass):
                 try:
                     X = self.search.detector_names.index(key.lstrip("twoF"))
                     data[key][n] = thisCand["twoFX"][X]
-                except (KeyError, IndexError):
+                except (KeyError, IndexError):  # pragma: no cover
                     raise RuntimeError(
                         f"Could not get value for key {key} from candidate dict {thisCand}."
                     )
-            else:
+            else:  # pragma: no cover
                 raise RuntimeError(
                     f"Could not get value for key {key} from candidate dict {thisCand}."
                 )
@@ -1109,7 +1109,7 @@ class TransientGridSearch(GridSearch):
         if self.detstat not in ["twoF", "maxTwoF"]:
             thisCand[self.detstat] = detstat
         if getattr(self, "transientWindowType", None):
-            if not hasattr(self.search, "FstatMap"):
+            if not hasattr(self.search, "FstatMap"):  # pragma: no cover
                 raise RuntimeError(
                     "Since transientWindowType!=None, we expected to have a FstatMap."
                 )
@@ -1296,7 +1296,7 @@ class SearchOverGridFile(TransientGridSearch):
         """
 
         self._set_init_params_dict(locals())
-        if self.nsegs > 1 and self.transientWindowType is not None:
+        if self.nsegs > 1 and self.transientWindowType is not None:  # pragma: no cover
             raise ValueError(
                 f"nsegs={self.nsegs} is incompatible with transient options (transientWindowType={self.transientWindowType})."
             )
@@ -1306,7 +1306,7 @@ class SearchOverGridFile(TransientGridSearch):
             self._read_grid_with_numpy()
         elif reading_method == "pandas":
             self._read_grid_with_pandas()
-        else:
+        else:  # pragma: no cover
             raise ValueError(
                 f"Invalid reading method: {reading_method}. Expected 'numpy' or 'pandas'."
             )
@@ -1328,8 +1328,13 @@ class SearchOverGridFile(TransientGridSearch):
             )
 
     def _read_grid_with_pandas(self):
-        """FIXME!!!"""
-        logging.info(f"Loading grid from file: {self.gridfile}")
+        """Use pandas, but purely as a reading backend.
+
+        This should be faster for large grids.
+        But we convert back to a standard numpy array at the end.
+        """
+
+        logging.info(f"Loading grid from file using pandas backend: {self.gridfile}")
         nhead = 0
         with open(self.gridfile, "r") as fp:
             for line in fp:
@@ -1337,7 +1342,7 @@ class SearchOverGridFile(TransientGridSearch):
                     break
                 nhead += 1
 
-        grid = pd.read_csv(
+        pd_grid = pd.read_csv(
             self.gridfile,
             comment="%",
             sep="\\s+",  # whitespace
@@ -1353,10 +1358,9 @@ class SearchOverGridFile(TransientGridSearch):
             ],
             skiprows=nhead,  # Skip the first `nhead` rows (comments)
         )
-        logging.info("Full pandas dataframe is:")
-        logging.info(grid)
-        logging.info("Grid.dtypes:")
-        logging.info(grid.dtypes)
+        logging.info(
+            f"Successfully loaded grid of size {pd_grid.shape} as a pandas DataFrame."
+        )
 
         # Map Pandas dtypes to NumPy-compatible dtypes
         mapped_dtypes = {
@@ -1366,32 +1370,24 @@ class SearchOverGridFile(TransientGridSearch):
         }
         numpy_dtypes = [
             (col, mapped_dtypes[str(dtype)])
-            for col, dtype in zip(grid.columns, grid.dtypes)
+            for col, dtype in zip(pd_grid.columns, pd_grid.dtypes)
         ]
-        logging.info("Mapped dtypes for structured array:")
-        logging.info(numpy_dtypes)
         try:
             self.grid = np.array(
-                list(grid.itertuples(index=False, name=None)), dtype=numpy_dtypes
+                list(pd_grid.itertuples(index=False, name=None)), dtype=numpy_dtypes
             )
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             raise TypeError(f"Failed to convert pandas DataFrame to NumPy array: {e}")
-
-        logging.info(
-            f"Successfully loaded grid of size {np.shape(self.grid)}"
-            " with the following dtype:"
-        )
+        if len(pd_grid) == 0:  # pragma: no cover
+            raise IOError("Got 0-length grid.")
+        logging.info("Successfully converted to NumPy array with the following dtype:")
         logging.info(self.grid.dtype)
-
         self.grid.dtype.names = self.translate_keys_from_cfsv2(self.grid.dtype.names)
-
-        logging.info("Updated dtype to:")
+        logging.info("Updated dtype to match PyFstat parameter naming convention:")
         logging.info(self.grid.dtype)
-        logging.info("Full grid is:")
-        logging.info(self.grid)
 
     def _read_grid_with_numpy(self):
-        logging.info(f"Loading grid from file: {self.gridfile}")
+        logging.info(f"Loading grid from file using NumPy backend: {self.gridfile}")
         nhead = 0
         with open(self.gridfile, "r") as fp:
             for line in fp:
@@ -1404,19 +1400,16 @@ class SearchOverGridFile(TransientGridSearch):
             skip_header=nhead - 1,
             names=True,
         )
-        if len(self.grid) == 0:
+        if len(self.grid) == 0:  # pragma: no cover
             raise IOError("Got 0-length grid.")
         logging.info(
-            f"Successfully loaded grid of length {len(self.grid)},"
-            f" size {np.shape(self.grid)},"
+            f"Successfully loaded grid as NumPy array of size {np.shape(self.grid)}"
             " with the following dtype:"
         )
         logging.info(self.grid.dtype)
         self.grid.dtype.names = self.translate_keys_from_cfsv2(self.grid.dtype.names)
         logging.info("Updated dtype to match PyFstat parameter naming convention:")
         logging.info(self.grid.dtype)
-        logging.info("Full grid is:")
-        logging.info(self.grid)
 
     def translate_keys_from_cfsv2(self, keylist):
         """Convert grid column heading keys into PyFstat convention.
