@@ -1854,7 +1854,7 @@ class MCMCSearch(BaseSearchClass):
             fmt_dict["log10BSGL"] = self.fmt_detstat
         return fmt_dict
 
-    def _get_savetxt_gmt_list(self):
+    def _get_savetxt_fmt_list(self):
         """Returns a list of output format specifiers, ordered like the samples
 
         This is required because the output of _get_savetxt_fmt_dict()
@@ -1872,7 +1872,7 @@ class MCMCSearch(BaseSearchClass):
         logger.info("Exporting samples to {}".format(self.samples_file))
         header = "\n".join(self.output_file_header)
         header += "\n" + " ".join(self.output_keys)
-        outfmt = self._get_savetxt_gmt_list()
+        outfmt = self._get_savetxt_fmt_list()
         samples_out = copy.copy(self.samples)
         # For convenience, we always save a twoF column,
         # even if log10BSGL was used for the likelihood.
