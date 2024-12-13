@@ -14,12 +14,8 @@ def get_covering_band(
     tref,
     tstart,
     tend,
-    F0,
-    F1,
-    F2,
-    F0band=0.0,
-    F1band=0.0,
-    F2band=0.0,
+    fkdot,
+    fkdotBand=0.0,
     maxOrbitAsini=0.0,
     minOrbitPeriod=0.0,
     maxOrbitEcc=0.0,
@@ -41,10 +37,10 @@ def get_covering_band(
         Start time (in GPS seconds) for the signal evolution to consider.
     tend: int
         End time (in GPS seconds) for the signal evolution to consider.
-    F0, F1, F1: float
-        Minimum frequency and spin-down of signals to be covered.
-    F0band, F1band, F1band: float
-        Ranges of frequency and spin-down of signals to be covered.
+    fkdot: list
+        Minimum frequency and spin-downs of signals to be covered.
+    fktotBand: list
+        Ranges of frequency and spin-downs of signals to be covered.
     maxOrbitAsini: float
         Largest orbital projected semi-major axis to be covered.
     minOrbitPeriod: float
@@ -62,12 +58,8 @@ def get_covering_band(
     tstart = lal.LIGOTimeGPS(tstart)
     tend = lal.LIGOTimeGPS(tend)
     psr = lalpulsar.PulsarSpinRange()
-    psr.fkdot[0] = F0
-    psr.fkdot[1] = F1
-    psr.fkdot[2] = F2
-    psr.fkdotBand[0] = F0band
-    psr.fkdotBand[1] = F1band
-    psr.fkdotBand[2] = F2band
+    psr.fkdot = fkdot
+    psr.fkdotBand = fkdotBand
     psr.refTime = tref
     minCoverFreq, maxCoverFreq = lalpulsar.CWSignalCoveringBand(
         tstart, tend, psr, maxOrbitAsini, minOrbitPeriod, maxOrbitEcc
@@ -131,8 +123,10 @@ def generate_loudest_file(
     loudest_file: str
         The filename of the CFSv2 output file.
     """
-    logger.info("Running CFSv2 to get .loudest file")
-    if np.any([key in max_params for key in ["delta_F0", "delta_F1", "tglitch"]]):
+    logging.info(f"Running CFSv2 to get .loudest file with max_params={max_params} ...")
+    if np.any(
+        [key in max_params for key in ["delta_F0", "delta_F1", "tglitch"]]
+    ):  # pragma: no cover
         raise RuntimeError("CFSv2 --outputLoudest cannot deal with glitch parameters.")
     if transientWindowType:
         logger.warning(

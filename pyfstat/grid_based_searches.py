@@ -4,11 +4,12 @@ import itertools
 import logging
 import os
 import re
-from collections import OrderedDict
 
+import lalpulsar
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 
 import pyfstat.utils as utils
@@ -322,6 +323,52 @@ class GridSearch(BaseSearchClass):
             return False
         return False
 
+    def _get_single_cand_results(self, data, n, vals):
+        """Obtain the results at each grid iteration step.
+
+        Re-formats the input params into the format required by self.search.get_det_stat()
+        and gets additional detection statistic by-products as needed,
+        then stores them all into the right columns of the data array.
+        Can be overridden e.g. for legacy get_det_stat() variants.
+
+        Parameters
+        ----------
+        data: np.ndarray
+            The inputs+outputs data set to be updated.
+        n: int
+            Row index of the data array to update.
+        vals: tuple
+            Iteration of our iterable.
+
+        Returns
+        -------
+        data: np.ndarray
+            The updated inputs+outputs data set.
+        """
+        thisCand = {key: val for key, val in zip(self.search_keys, vals)}
+        detstat = self.search.get_det_stat(params=thisCand)
+        thisCand["twoF"] = self.search.twoF
+        if self.search.singleFstats:
+            thisCand["twoFX"] = list(self.search.twoFX[: self.search.numDetectors])
+        if self.detstat != "twoF":
+            thisCand[self.detstat] = detstat
+        for key in self.output_keys:
+            if key in thisCand.keys():
+                data[key][n] = thisCand[key]
+            elif key.startswith("twoF"):
+                try:
+                    X = self.search.detector_names.index(key.lstrip("twoF"))
+                    data[key][n] = thisCand["twoFX"][X]
+                except (KeyError, IndexError):  # pragma: no cover
+                    raise RuntimeError(
+                        f"Could not get value for key {key} from candidate dict {thisCand}."
+                    )
+            else:  # pragma: no cover
+                raise RuntimeError(
+                    f"Could not get value for key {key} from candidate dict {thisCand}."
+                )
+        return data
+
     def run(self, return_data=False):
         """Execute the actual search over the full grid.
 
@@ -368,15 +415,7 @@ class GridSearch(BaseSearchClass):
         for n, vals in enumerate(
             tqdm(iterable, total=getattr(self, "total_iterations", None))
         ):
-            thisCand = list(vals)
-            detstat = self.search.get_det_stat(*vals)
-            thisCand.append(self.search.twoF)
-            if self.search.singleFstats:
-                thisCand += list(self.search.twoFX[: self.search.numDetectors])
-            if self.detstat != "twoF":
-                thisCand.append(detstat)
-            for k, key in enumerate(self.output_keys):
-                data[key][n] = thisCand[k]
+            data = self._get_single_cand_results(data, n, vals)
 
         if return_data:
             return data
@@ -386,7 +425,9 @@ class GridSearch(BaseSearchClass):
 
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
-        fmt_dict = utils.get_doppler_params_output_format(self.output_keys)
+        fmt_dict = utils.get_doppler_params_output_format(
+            self.output_keys, self.fmt_doppler
+        )
         fmt_dict["twoF"] = self.fmt_detstat
         if self.search.singleFstats:
             for IFO in self.search.detector_names:
@@ -734,7 +775,7 @@ class GridSearch(BaseSearchClass):
             Dictionary containing parameters and detection statistic at the maximum.
         """
         idx = np.argmax(self.data[self.detstat])
-        d = OrderedDict([(key, self.data[key][idx]) for key in self.output_keys])
+        d = {key: self.data[key][idx] for key in self.output_keys}
         return d
 
     def get_max_twoF(self):
@@ -748,7 +789,7 @@ class GridSearch(BaseSearchClass):
             Dictionary containing parameters and twoF value at the maximum.
         """
         idx = np.argmax(self.data["twoF"])
-        d = OrderedDict([(key, self.data[key][idx]) for key in self.output_keys])
+        d = {key: self.data[key][idx] for key in self.output_keys}
         return d
 
     def print_max_twoF(self):
@@ -765,7 +806,11 @@ class GridSearch(BaseSearchClass):
     def generate_loudest(self):
         """Use ComputeFstatistic_v2 executable to produce a .loudest file"""
         max_params = self.get_max_twoF()
-        max_params.pop("twoF")
+        if "twoF" in max_params.keys():
+            max_params.pop("twoF")
+        for key in [self.detstat, "t0", "tau"]:
+            if key in max_params.keys():
+                max_params.pop(key)
         max_params = self.translate_keys_to_lal(max_params)
         self.loudest_file = utils.generate_loudest_file(
             max_params=max_params,
@@ -984,10 +1029,10 @@ class TransientGridSearch(GridSearch):
             self.output_keys += [
                 f"twoF{IFO}atMaxTwoF" for IFO in self.search.detector_names
             ]
-        if self.detstat != "maxTwoF":
+        if self.detstat not in ["twoF", "maxTwoF"]:
             self.output_keys.append(self.detstat)
         if self.transientWindowType:
-            # for consistency below, t0/tau must come after detstat
+            # for consistency, t0/tau must come after detstat
             # they are not included in self.search_keys because the main Fstat
             # code does not loop over them
             self.output_keys += ["t0", "tau"]
@@ -1026,6 +1071,59 @@ class TransientGridSearch(GridSearch):
         # passed None and they were read from SFTs
         self.minStartTime = self.search.minStartTime
         self.maxStartTime = self.search.maxStartTime
+
+    def _get_single_cand_results(self, data, n, vals):
+        """Obtain the results at each grid iteration step.
+
+        Re-formats the input params into the format required by self.search.get_det_stat()
+        and gets additional detection statistic by-products as needed,
+        then stores them all into the right columns of the data array.
+
+        We override the default method here to get the extra transient output values.
+
+        Parameters
+        ----------
+        data: np.ndarray
+            The inputs+outputs data set to be updated.
+        n: int
+            Row index of the data array to update.
+        vals: tuple
+            Iteration of our iterable.
+
+        Returns
+        -------
+        data: np.ndarray
+            The updated inputs+outputs data set.
+        """
+        thisCand = {key: val for key, val in zip(self.search_keys, vals)}
+        detstat = self.search.get_det_stat(params=thisCand)
+        windowRange = getattr(self.search, "windowRange", None)
+        self.timingFstatMap += getattr(self.search, "timingFstatMap", 0.0)
+        thisCand["twoF"] = self.search.twoF
+        if self.search.singleFstats:
+            thisCand += list(self.search.twoFX[: self.search.numDetectors])
+        if windowRange is not None:
+            thisCand["maxTwoF"] = self.search.maxTwoF
+            if hasattr(self.search, "twoFXatMaxTwoF"):
+                thisCand += list(self.search.twoFXatMaxTwoF[: self.search.numDetectors])
+        if self.detstat not in ["twoF", "maxTwoF"]:
+            thisCand[self.detstat] = detstat
+        if getattr(self, "transientWindowType", None):
+            if not hasattr(self.search, "FstatMap"):  # pragma: no cover
+                raise RuntimeError(
+                    "Since transientWindowType!=None, we expected to have a FstatMap."
+                )
+            if self.outputTransientFstatMap:
+                tCWfile = self.get_transient_fstat_map_filename(thisCand)
+                self.search.FstatMap.write_F_mn_to_file(
+                    tCWfile, windowRange, self.output_file_header
+                )
+            maxidx = self.search.FstatMap.get_maxF_idx()
+            thisCand["t0"] = windowRange.t0 + maxidx[0] * windowRange.dt0
+            thisCand["tau"] = windowRange.tau + maxidx[1] * windowRange.dtau
+        for key in self.output_keys:
+            data[key][n] = thisCand[key]
+        return data
 
     def run(self, return_data=False):
         """Execute the actual search over the full grid.
@@ -1070,36 +1168,7 @@ class TransientGridSearch(GridSearch):
             )
         )
         for n, vals in enumerate(tqdm(self.input_data)):
-            thisCand = list(vals)
-            detstat = self.search.get_det_stat(*vals)
-            windowRange = getattr(self.search, "windowRange", None)
-            self.timingFstatMap += getattr(self.search, "timingFstatMap", 0.0)
-            thisCand.append(self.search.twoF)
-            if self.search.singleFstats:
-                thisCand += list(self.search.twoFX[: self.search.numDetectors])
-            if hasattr(self.search, "maxTwoF"):
-                thisCand.append(self.search.maxTwoF)
-            if hasattr(self.search, "twoFXatMaxTwoF"):
-                thisCand += list(self.search.twoFXatMaxTwoF[: self.search.numDetectors])
-            if self.detstat != "maxTwoF":
-                thisCand.append(detstat)
-            if getattr(self, "transientWindowType", None):
-                if not hasattr(self.search, "FstatMap"):
-                    raise RuntimeError(
-                        "Since transientWindowType!=None, we expected to have a FstatMap."
-                    )
-                if self.outputTransientFstatMap:
-                    tCWfile = self.get_transient_fstat_map_filename(thisCand)
-                    self.search.FstatMap.write_F_mn_to_file(
-                        tCWfile, windowRange, self.output_file_header
-                    )
-                maxidx = self.search.FstatMap.get_maxF_idx()
-                thisCand += [
-                    windowRange.t0 + maxidx[0] * windowRange.dt0,
-                    windowRange.tau + maxidx[1] * windowRange.dtau,
-                ]
-            for k, key in enumerate(self.output_keys):
-                data[key][n] = thisCand[k]
+            data = self._get_single_cand_results(data, n, vals)
             if self.outputAtoms:
                 self.search.write_atoms_to_file(os.path.splitext(self.out_file)[0])
 
@@ -1117,6 +1186,8 @@ class TransientGridSearch(GridSearch):
 
     def get_transient_fstat_map_filename(self, param_point):
         """Filename convention for given grid point: freq_alpha_delta_f1dot_f2dot
+
+        FIXME: This does not yet deal properly with spindown terms higher than F2!
 
         Parameters
         ----------
@@ -1145,7 +1216,9 @@ class TransientGridSearch(GridSearch):
 
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
-        fmt_dict = utils.get_doppler_params_output_format(self.output_keys)
+        fmt_dict = utils.get_doppler_params_output_format(
+            self.output_keys, self.fmt_doppler
+        )
         fmt_dict["twoF"] = self.fmt_detstat
         if self.search.singleFstats:
             for IFO in self.search.detector_names:
@@ -1159,6 +1232,250 @@ class TransientGridSearch(GridSearch):
         fmt_dict["t0"] = "%d"
         fmt_dict["tau"] = "%d"
         return fmt_dict
+
+
+class SearchOverGridFile(TransientGridSearch):
+    """A search over a grid defined in an input text file.
+
+    Such a file can be generated for example with
+    lalapps_ComputeFstatistic_v2 using the --outputGrid option.
+
+    WARNING: The header file of the grid file is NOT yet parsed
+    for consistency of CFSv2 options (such as reference time)
+    with the PyFstat options,
+    so please ensure yourself that these match!
+
+    Most parameters are the same as for `GridSearch`, `TransientGridSearch`
+    and the `core.ComputeFstat` class,
+    only the additional ones are documented here.
+
+    NOTE: `nsegs>1` is incompatible with transient options.
+    """
+
+    @utils.initializer
+    def __init__(
+        self,
+        label,
+        outdir,
+        sftfilepattern,
+        gridfile,
+        tref,
+        minStartTime=None,
+        maxStartTime=None,
+        nsegs=1,
+        BSGL=False,
+        BtSG=False,
+        minCoverFreq=None,
+        maxCoverFreq=None,
+        detectors=None,
+        SSBprec=None,
+        RngMedWindow=None,
+        injectSources=None,
+        input_arrays=False,
+        assumeSqrtSX=None,
+        transientWindowType=None,
+        t0Band=None,
+        tauBand=None,
+        tauMin=None,
+        dt0=None,
+        dtau=None,
+        outputTransientFstatMap=False,
+        outputAtoms=False,
+        tCWFstatMapVersion="lal",
+        cudaDeviceName=None,
+        earth_ephem=None,
+        sun_ephem=None,
+        clean=False,
+        reading_method="numpy",
+    ):
+        """
+        Parameters
+        ----------
+        gridfile: str
+            filename of the grid file to load
+        reading_method: str
+            Currently, grid files can be read with either `numpy` or `pandas`.
+            Pandas is expected to be faster for large files.
+        """
+
+        self._set_init_params_dict(locals())
+        if self.nsegs > 1 and self.transientWindowType is not None:  # pragma: no cover
+            raise ValueError(
+                f"nsegs={self.nsegs} is incompatible with transient options (transientWindowType={self.transientWindowType})."
+            )
+        os.makedirs(outdir, exist_ok=True)
+        self.set_out_file()
+        if reading_method == "numpy":
+            self._read_grid_with_numpy()
+        elif reading_method == "pandas":
+            self._read_grid_with_pandas()
+        else:  # pragma: no cover
+            raise ValueError(
+                f"Invalid reading method: {reading_method}. Expected 'numpy' or 'pandas'."
+            )
+        self.search_keys = list(self.grid.dtype.names)
+        if self.BSGL:
+            self.detstat = "log10BSGL"
+        elif self.transientWindowType is not None:
+            self.detstat = "maxTwoF"
+        else:
+            self.detstat = "twoF"
+        self._initiate_search_object()
+        self._set_output_keys()
+        self.output_file_header = self.get_output_file_header()
+        if self.outputTransientFstatMap:
+            self.tCWfilebase = os.path.splitext(self.out_file)[0] + "_tCW_"
+            logging.info(
+                "Will save per-Doppler Fstatmap"
+                " results to {}*.dat".format(self.tCWfilebase)
+            )
+
+    def _read_grid_with_pandas(self):
+        """Use pandas, but purely as a reading backend.
+
+        This should be faster for large grids.
+        But we convert back to a standard numpy array at the end.
+        """
+
+        logging.info(f"Loading grid from file using pandas backend: {self.gridfile}")
+        nhead = 0
+        with open(self.gridfile, "r") as fp:
+            for line in fp:
+                if not line.startswith("%%"):
+                    break
+                nhead += 1
+
+        pd_grid = pd.read_csv(
+            self.gridfile,
+            comment="%",
+            sep="\\s+",  # whitespace
+            engine="c",
+            header=None,  # Do not infer headers
+            names=[
+                "F0",
+                "Alpha",
+                "Delta",
+                "F1",
+                "F2",
+                "F3",
+            ],
+            skiprows=nhead,  # Skip the first `nhead` rows (comments)
+        )
+        logging.info(
+            f"Successfully loaded grid of size {pd_grid.shape} as a pandas DataFrame."
+        )
+
+        # Map Pandas dtypes to NumPy-compatible dtypes
+        mapped_dtypes = {
+            "float64": "f8",
+            "int64": "i8",
+            "object": "U",  # Adjust for string columns if needed
+        }
+        numpy_dtypes = [
+            (col, mapped_dtypes[str(dtype)])
+            for col, dtype in zip(pd_grid.columns, pd_grid.dtypes)
+        ]
+        try:
+            self.grid = np.array(
+                list(pd_grid.itertuples(index=False, name=None)), dtype=numpy_dtypes
+            )
+        except Exception as e:  # pragma: no cover
+            raise TypeError(f"Failed to convert pandas DataFrame to NumPy array: {e}")
+        if len(pd_grid) == 0:  # pragma: no cover
+            raise IOError("Got 0-length grid.")
+        logging.info("Successfully converted to NumPy array with the following dtype:")
+        logging.info(self.grid.dtype)
+        self.grid.dtype.names = self._translate_keys_from_cfsv2(self.grid.dtype.names)
+        logging.info("Updated dtype to match PyFstat parameter naming convention:")
+        logging.info(self.grid.dtype)
+
+    def _read_grid_with_numpy(self):
+        logging.info(f"Loading grid from file using NumPy backend: {self.gridfile}")
+        nhead = 0
+        with open(self.gridfile, "r") as fp:
+            for line in fp:
+                if not line.startswith("%%"):
+                    break
+                nhead += 1
+        self.grid = np.genfromtxt(
+            self.gridfile,
+            comments="%",
+            skip_header=nhead - 1,
+            names=True,
+        )
+        if len(self.grid) == 0:  # pragma: no cover
+            raise IOError("Got 0-length grid.")
+        logging.info(
+            f"Successfully loaded grid as NumPy array of size {np.shape(self.grid)}"
+            " with the following dtype:"
+        )
+        logging.info(self.grid.dtype)
+        self.grid.dtype.names = self._translate_keys_from_cfsv2(self.grid.dtype.names)
+        logging.info("Updated dtype to match PyFstat parameter naming convention:")
+        logging.info(self.grid.dtype)
+
+    def _translate_keys_from_cfsv2(self, keylist):
+        """Convert grid column heading keys into PyFstat convention.
+
+        In our convention, input keys (search parameter names)
+        are F0, F1, F2, ...,
+        while CFSv2 grid file headers are freq, f1dot, f2dot, ....
+
+        This is sort of an inverse to core's translate_keys_to_lal(),
+        just for a list instead of a dict.
+        Also unfortunately, in this type of files parameters are all lower-cased,
+        inconsistent with other parts of lalpulsar/lalapps.
+
+        Parameters
+        ----------
+        keylist: list
+            List of parameters to translate. A copy will be returned.
+
+        Returns
+        -------
+        translated: list
+            Copy of "keylist" with new keys according to PyFstat convention.
+        """
+
+        translation = {
+            "freq": "F0",
+            "alpha": "Alpha",
+            "delta": "Delta",
+        }
+        translation.update(
+            {f"f{k + 1}dot": f"F{k + 1}" for k in range(lalpulsar.PULSAR_MAX_SPINS - 1)}
+        )
+
+        translated = [
+            translation[key] if key in translation.keys() else key for key in keylist
+        ]
+
+        return translated
+
+    def _get_search_ranges(self):
+        logging.info("Getting search ranges...")
+        if (self.minCoverFreq is None) or (self.maxCoverFreq is None):
+            minmaxdict = {
+                key: [np.min(self.grid[key]), np.max(self.grid[key])]
+                for key in self.search_keys
+            }
+            logging.info(f"Search ranges span: {minmaxdict}")
+            return minmaxdict
+        else:
+            return None
+
+    def _get_input_data_array(self):
+        """Set up an input data array from the previously loaded grid.
+
+        This is a numpy structured array with named columns
+        and explicit dtype (cannot have named columns without that).
+        """
+
+        logging.info("Generating input data array from loaded grid.")
+        self.coord_arrays = self.grid
+        self.total_iterations = len(self.grid)
+        if not self.clean:
+            self.input_data = self.grid
 
 
 class SliceGridSearch(DefunctClass):
@@ -1262,12 +1579,47 @@ class GridGlitchSearch(GridSearch):
 
     def _get_savetxt_fmt_dict(self):
         """Define the output precision for each parameter and computed quantity."""
-        fmt_dict = utils.get_doppler_params_output_format(self.output_keys)
+        fmt_dict = utils.get_doppler_params_output_format(
+            self.output_keys, self.fmt_doppler
+        )
         fmt_dict["delta_F0"] = self.fmt_doppler
         fmt_dict["delta_F1"] = self.fmt_doppler
         fmt_dict["tglitch"] = "%d"
         fmt_dict[self.detstat] = self.fmt_detstat
         return fmt_dict
+
+    def _get_single_cand_results(self, data, n, vals):
+        """Obtain the results at each grid iteration step.
+
+        FIXME: currently we need to override the default method here
+        because the SemiCoherentGlitchSearch.get_semicoherent_nglitch_twoF()
+        is not yet ported to the new parameter dictionary style
+        of other detection statistics methods.
+
+        Parameters
+        ----------
+        data: np.ndarray
+            The inputs+outputs data set to be updated.
+        n: int
+            Row index of the data array to update.
+        vals: tuple
+            Iteration of our iterable.
+
+        Returns
+        -------
+        data: np.ndarray
+            The updated inputs+outputs data set.
+        """
+        thisCand = list(vals)
+        detstat = self.search.get_det_stat(*vals)
+        thisCand.append(self.search.twoF)
+        if self.search.singleFstats:
+            thisCand += list(self.search.twoFX[: self.search.numDetectors])
+        if self.detstat != "twoF":
+            thisCand.append(detstat)
+        for k, key in enumerate(self.output_keys):
+            data[key][n] = thisCand[k]
+        return data
 
 
 class SlidingWindow(DefunctClass):

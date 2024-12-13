@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 # FIXME this should be made cleaner with fixtures
-from commons_for_tests import BaseForTestsWithData
+from commons_for_tests import BaseForTestsWithData, default_binary_params
 
 import pyfstat
 
@@ -308,6 +308,7 @@ class TestTransientGridSearch(BaseForTestsWithData):
             Deltas=[self.Writer.Delta],
             tref=self.tref,
             **transient_params,
+            outputAtoms=True,
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
@@ -332,3 +333,205 @@ class TestTransientGridSearch(BaseForTestsWithData):
 
     def test_transient_grid_search_BtSG(self):
         self.test_transient_grid_search(transient=True, BtSG=True)
+
+
+class TestSearchOverGridFile(BaseForTestsWithData):
+    label = "TestSearchOverGridFile"
+    # Need to hand-pick values F0s here for the CFSv2 comparison:
+    # that code sometimes includes endpoints, sometimes not.
+    # For the F0s here, it happens to match our convention (include endpoint).
+    F0s = [29.999, 30.001, 1e-4]
+    F3s = np.logspace(-29, -28, 2)
+    Band = 0.5
+
+    def _write_gridfile(self, binary=False):
+        # This is a simple test just looping over two parameters, F0 and F3,
+        # and writing the gridfile by hand.
+        self.gridfile = os.path.join(self.outdir, "test_grid.txt")
+        with open(self.gridfile, "w") as fp:
+            fp.write("%% columns:\n")
+            fp.write("%% freq alpha delta f1dot f2dot f3dot")
+            if binary:
+                for key in default_binary_params.keys():
+                    fp.write(f" {key}")
+            fp.write("\n")
+            # to match CFSv2, F0 must be the innermost loop
+            for F3 in self.F3s:
+                for F0 in np.arange(*self.F0s):
+                    fp.write(
+                        f"{F0:.16g} {self.Writer.Alpha:.16g} {self.Writer.Delta:.16g} {self.Writer.F1:.16g} {self.Writer.F2:.16g}  {F3:.16g}"
+                    )
+                    if binary:
+                        for key in default_binary_params.keys():
+                            fp.write(f" {default_binary_params[key]:.16g}")
+                    fp.write("\n")
+
+    def _write_gridfile_with_CFSv2(self):
+        # Here we let the CFSv2 itself create the gridfile
+        # and loop over frequency plus three spin-down parameters.
+        self.gridfile = os.path.join(self.outdir, "test_grid_CFSv2.txt")
+        cl_CFSv2 = []
+        cl_CFSv2.append("lalpulsar_ComputeFstatistic_v2")
+        cl_CFSv2.append(f"--Freq {self.F0s[0]:.16g}")
+        cl_CFSv2.append(f"--FreqBand {(self.F0s[1] - self.F0s[0]):.16g}")
+        cl_CFSv2.append(f"--Alpha {self.Writer.Alpha:.16g}")
+        cl_CFSv2.append(f"--Delta {self.Writer.Delta:.16g}")
+        cl_CFSv2.append(f"--f1dot {self.Writer.F1:.16g}")
+        cl_CFSv2.append(f"--f1dotBand {3e-7:.16g}")
+        cl_CFSv2.append(f"--f2dot {self.Writer.F2:.16g}")
+        cl_CFSv2.append(f"--f2dotBand {3e-11:.16g}")
+        cl_CFSv2.append(f"--f3dot {self.F3s[0]:.16g}")
+        cl_CFSv2.append(f"--f3dotBand {3e-15:.16g}")
+        cl_CFSv2.append("--gridType 8")
+        cl_CFSv2.append("--DataFiles '{}'".format(self.Writer.sftfilepath))
+        cl_CFSv2.append("--refTime {}".format(self.tref))
+        cl_CFSv2.append(f"--metricMismatch {0.02:.16g}")
+        cl_CFSv2.append("--countTemplates TRUE")
+        cl_CFSv2.append("--strictSpindownBounds TRUE")
+        cl_CFSv2.append(f"--outputGrid {self.gridfile}")
+        # to match ComputeFstat default (and hence PyFstat) defaults on older
+        # CFSv2 versions, set the RngMedWindow manually:
+        cl_CFSv2.append("--RngMedWindow=101")
+        cl_CFSv2 = " ".join(cl_CFSv2)
+        pyfstat.utils.run_commandline(cl_CFSv2)
+
+    def test_gridfile_search(
+        self, binary=False, transient=False, grid="manual", reading_method="numpy"
+    ):
+        if grid == "manual":
+            self._write_gridfile(binary)
+        elif grid == "CFSv2":
+            self._write_gridfile_with_CFSv2()
+
+        if transient:
+            transient_search_params = {
+                "transientWindowType": "rect",
+                "t0Band": self.Writer.duration - 2 * self.Writer.Tsft,
+                "tauBand": self.Writer.duration,
+                "outputTransientFstatMap": True,
+                "tCWFstatMapVersion": "lal",
+            }
+        else:
+            transient_search_params = {}
+
+        search = pyfstat.SearchOverGridFile(
+            label=f"grid_search{'_binary' if binary else ''}",
+            outdir=self.outdir,
+            sftfilepattern=self.Writer.sftfilepath,
+            gridfile=self.gridfile,
+            tref=self.tref,
+            reading_method=reading_method,
+            **transient_search_params,
+        )
+        search.run()
+        self.assertTrue(os.path.isfile(search.out_file))
+        pyfstat_out = pyfstat.utils.read_txt_file_with_header(
+            search.out_file, comments="#"
+        )
+        CFSv2_out_file = os.path.join(self.outdir, "CFSv2_Fstat_from_gridfile_out.txt")
+
+        CFSv2_loudest_file = os.path.join(
+            self.outdir, "CFSv2_Fstat_from_gridfile_loudest.txt"
+        )
+        cl_CFSv2 = []
+        cl_CFSv2.append("lalpulsar_ComputeFstatistic_v2")
+        if binary:
+            # CFSv2 would ignore binary parameters in gridfile,
+            # so set everything manually
+            cl_CFSv2.append(f"--Freq {self.F0s[0]:.16g}")
+            cl_CFSv2.append(f"--FreqBand {self.F0s[1] - self.F0s[0]:.16g}")
+            cl_CFSv2.append(f"--dFreq {self.F0s[2]:.16g}")
+            cl_CFSv2.append(f"--Alpha {self.Writer.Alpha:.16g}")
+            cl_CFSv2.append(f"--Delta {self.Writer.Delta:.16g}")
+            cl_CFSv2.append(f"--f1dot {self.Writer.F1:.16g}")
+            cl_CFSv2.append(f"--f2dot {self.Writer.F2:.16g}")
+            cl_CFSv2.append(f"--f3dot {self.F3s[0]:.16g}")
+            cl_CFSv2.append(f"--f3dotBand {(self.F3s[1] - self.F3s[0]):.16g}")
+            cl_CFSv2.append(f"--df3dot {(self.F3s[1] - self.F3s[0]):.16g}")
+            translated_binary_params = search.translate_keys_to_lal(
+                default_binary_params
+            )
+            for key in translated_binary_params.keys():
+                cl_CFSv2.append(f"--{key} {translated_binary_params[key]:.16g}")
+        else:
+            cl_CFSv2.append("--gridType 6")
+            cl_CFSv2.append(f"--gridFile {self.gridfile}")
+        if transient:
+            cl_CFSv2.append(
+                f"--transient-WindowType {transient_search_params['transientWindowType']}"
+            )
+            cl_CFSv2.append("--transient-t0Offset 0")
+            cl_CFSv2.append(f"--transient-t0Band {transient_search_params['t0Band']:d}")
+            cl_CFSv2.append(f"--transient-tau {int(2 * self.Tsft):d}")
+            cl_CFSv2.append(
+                f"--transient-tauBand {transient_search_params['tauBand']:d}"
+            )
+            CFSv2_out_file_transient = CFSv2_out_file.replace(".txt", "_transient.txt")
+            cl_CFSv2.append(f"--outputTransientStats {CFSv2_out_file_transient}")
+        cl_CFSv2.append("--DataFiles '{}'".format(self.Writer.sftfilepath))
+        cl_CFSv2.append("--refTime {}".format(self.tref))
+        cl_CFSv2.append("--outputFstat " + CFSv2_out_file)
+        cl_CFSv2.append("--outputLoudest " + CFSv2_loudest_file)
+        # to match ComputeFstat default (and hence PyFstat) defaults on older
+        # CFSv2 versions, set the RngMedWindow manually:
+        cl_CFSv2.append("--RngMedWindow=101")
+        cl_CFSv2 = " ".join(cl_CFSv2)
+        pyfstat.utils.run_commandline(cl_CFSv2)
+        self.assertTrue(os.path.isfile(CFSv2_out_file))
+        self.assertTrue(os.path.isfile(CFSv2_loudest_file))
+        CFSv2_out = pyfstat.utils.read_txt_file_with_header(
+            CFSv2_out_file, comments="%"
+        )
+        self.assertTrue(
+            len(np.atleast_1d(CFSv2_out["2F"]))
+            == len(np.atleast_1d(pyfstat_out["twoF"]))
+        )
+
+        # we first compare the Doppler parameters, which are the first six columns of the output files
+        for i in range(6):
+            self.assertTrue(
+                np.max(
+                    np.abs(
+                        CFSv2_out[CFSv2_out.dtype.names[i]]
+                        - pyfstat_out[pyfstat_out.dtype.names[i]]
+                    )
+                )
+                < 1e-16
+            )
+        self.assertTrue(np.max(np.abs(CFSv2_out["2F"] - pyfstat_out["twoF"]) < 1))
+        self.assertTrue(np.max(CFSv2_out["2F"]) == np.max(pyfstat_out["twoF"]))
+        if transient:
+            self.assertTrue(os.path.isfile(CFSv2_out_file_transient))
+            CFSv2_out_transient = pyfstat.utils.read_txt_file_with_header(
+                CFSv2_out_file_transient, comments="%"
+            )
+            self.assertTrue(
+                len(np.atleast_1d(CFSv2_out_transient["maxTwoF"]))
+                == len(np.atleast_1d(pyfstat_out["maxTwoF"]))
+            )
+            self.assertTrue(
+                np.max(
+                    np.abs(CFSv2_out_transient["FreqHz"] - pyfstat_out["F0"]) < 1e-16
+                )
+            )
+            self.assertTrue(
+                np.max(
+                    np.abs(CFSv2_out_transient["maxTwoF"] - pyfstat_out["maxTwoF"]) < 1
+                )
+            )
+            self.assertTrue(
+                np.max(CFSv2_out_transient["maxTwoF"])
+                - np.max(pyfstat_out["maxTwoF"] < 1e-3)
+            )
+
+    def test_gridfile_search_binary(self):
+        self.test_gridfile_search(binary=True)
+
+    def test_gridfile_transient_search(self):
+        self.test_gridfile_search(transient=True)
+
+    def test_gridfile_from_CFSv2(self):
+        self.test_gridfile_search(grid="CFSv2")
+
+    def test_gridfile_from_CFSv2_pandas(self):
+        self.test_gridfile_search(grid="CFSv2", reading_method="pandas")
