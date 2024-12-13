@@ -1385,7 +1385,7 @@ class SearchOverGridFile(TransientGridSearch):
             raise IOError("Got 0-length grid.")
         logging.info("Successfully converted to NumPy array with the following dtype:")
         logging.info(self.grid.dtype)
-        self.grid.dtype.names = self.translate_keys_from_cfsv2(self.grid.dtype.names)
+        self.grid.dtype.names = self._translate_keys_from_cfsv2(self.grid.dtype.names)
         logging.info("Updated dtype to match PyFstat parameter naming convention:")
         logging.info(self.grid.dtype)
 
@@ -1410,11 +1410,11 @@ class SearchOverGridFile(TransientGridSearch):
             " with the following dtype:"
         )
         logging.info(self.grid.dtype)
-        self.grid.dtype.names = self.translate_keys_from_cfsv2(self.grid.dtype.names)
+        self.grid.dtype.names = self._translate_keys_from_cfsv2(self.grid.dtype.names)
         logging.info("Updated dtype to match PyFstat parameter naming convention:")
         logging.info(self.grid.dtype)
 
-    def translate_keys_from_cfsv2(self, keylist):
+    def _translate_keys_from_cfsv2(self, keylist):
         """Convert grid column heading keys into PyFstat convention.
 
         In our convention, input keys (search parameter names)
