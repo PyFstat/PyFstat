@@ -1293,6 +1293,9 @@ class SearchOverGridFile(TransientGridSearch):
         ----------
         gridfile: str
             filename of the grid file to load
+        reading_method: str
+            Currently, grid files can be read with either `numpy` or `pandas`.
+            Pandas is expected to be faster for large files.
         """
 
         self._set_init_params_dict(locals())
@@ -1310,7 +1313,7 @@ class SearchOverGridFile(TransientGridSearch):
             raise ValueError(
                 f"Invalid reading method: {reading_method}. Expected 'numpy' or 'pandas'."
             )
-        self.search_keys = list(self.grid.dtype.names)  # this is okey with pandas
+        self.search_keys = list(self.grid.dtype.names)
         if self.BSGL:
             self.detstat = "log10BSGL"
         elif self.transientWindowType is not None:
@@ -1471,7 +1474,6 @@ class SearchOverGridFile(TransientGridSearch):
         logging.info("Generating input data array from loaded grid.")
         self.coord_arrays = self.grid
         self.total_iterations = len(self.grid)
-        logging.info(f"self.total_iterations={self.total_iterations}")
         if not self.clean:
             self.input_data = self.grid
 
