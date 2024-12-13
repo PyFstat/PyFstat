@@ -3,6 +3,7 @@
 import getpass
 import glob
 import logging
+import math
 import os
 import socket
 from datetime import datetime
@@ -2320,7 +2321,7 @@ class SearchForSignalWithJumps(BaseSearchClass):
 
         """
         m = np.zeros((n, n))
-        factorial = np.math.factorial
+        factorial = math.factorial
         for i in range(n):
             for j in range(n):
                 if i == j:
