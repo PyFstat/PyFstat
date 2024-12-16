@@ -222,27 +222,10 @@ class Writer(BaseSearchClass):
         Use start and duration to set up a lalpulsar.SFTConstraints
         object. This method is only used if noiseSFTs is not None.
         """
-        SFTConstraint = lalpulsar.SFTConstraints()
 
-        if self.tstart is None:
-            SFTConstraint.minStartTime = None
-            SFTConstraint.maxStartTime = None
-        elif self.duration is None:
-            SFTConstraint.maxStartTime = None
-        else:
-            SFTConstraint.minStartTime = lal.LIGOTimeGPS(self.tstart)
-            SFTConstraint.maxStartTime = SFTConstraint.minStartTime + self.duration
-
-        SFTConstraint.timestamps = None  # FIXME: not currently supported
-
-        logger.info(
-            "SFT Constraints: [minStartTime:{}, maxStartTime:{}]".format(
-                SFTConstraint.minStartTime,
-                SFTConstraint.maxStartTime,
-            )
+        return utils.get_sft_constraints_from_tstart_duration(
+            self.tstart, self.duration
         )
-
-        return SFTConstraint
 
     def _get_setup_from_tstart_duration(self):
         """

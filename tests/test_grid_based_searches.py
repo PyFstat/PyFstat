@@ -308,6 +308,7 @@ class TestTransientGridSearch(BaseForTestsWithData):
             Deltas=[self.Writer.Delta],
             tref=self.tref,
             **transient_params,
+            outputAtoms=True,
         )
         search.run()
         self.assertTrue(os.path.isfile(search.out_file))
