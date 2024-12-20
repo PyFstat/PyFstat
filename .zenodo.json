@@ -1,7 +1,7 @@
 {
   "creators": [
     {
-      "affiliation": "Monash University",
+      "affiliation": "Royal Holloway, University of London",
       "name": "Ashton, Gregory",
       "orcid": "0000-0001-7288-2231"
     },
@@ -19,6 +19,11 @@
       "affiliation": "Universitat de les Illes Balears",
       "name": "Tenorio, Rodrigo",
       "orcid": "0000-0002-3582-2587"
+    },
+    {
+      "affiliation": "Universitat de les Illes Balears",
+      "name": "Ferrer, Maria-Antonia",
+      "orcid": "0009-0008-9801-9506"
     }
   ],
   "keywords": [
@@ -39,7 +44,7 @@
   "notes": "See record https://doi.org/10.5281/zenodo.1243930 for previous versions of PyFstat up to v1.4.1.",
   "related_identifiers": [
         {
-           "scheme": "url", 
+           "scheme": "url",
            "identifier": "https://pyfstat.readthedocs.io/en/stable/",
            "relation": "isDocumentedBy",
            "resource_type": "publication-softwaredocumentation"
