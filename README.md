@@ -282,11 +282,13 @@ Maintainers:
 * Greg Ashton
 * David Keitel
 
-Active contributors:
+Core contributors:
 * Reinhard Prix
 * Rodrigo Tenorio
+* Maria-Antonia Ferrer
 
 Other contributors:
+* Michael J. Williams
 * Karl Wette
 * Sylvia Zhu
 * Dan Foreman-Mackey (`pyfstat.gridcorner` is based on DFM's [corner.py](https://github.com/dfm/corner.py))
