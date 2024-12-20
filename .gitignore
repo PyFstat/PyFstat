@@ -3,7 +3,12 @@
 *pyc
 *Pyfstat_example*
 *swp
+build/
+dist/
 docs/build/
+docs/doctrees/
+docs/html/
+docs/source/sg_execution_times.rst
 docs/source/*_example*/
 *tutorials*
 *PyFstat_example_data*
