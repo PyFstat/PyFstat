@@ -4,6 +4,7 @@ Utils
 
 Utility functions to simplify tutorials.
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colors
@@ -105,13 +106,13 @@ def plot_amplitude_phase_spectrograms(timestamps, frequency, fourier_data):
     time_in_days = (timestamps - timestamps[0]) / 1800
 
     axs[0].set_title("SFT absolute value")
-    c = axs[0].pcolorfast(
+    c = axs[0].pcolormesh(
         time_in_days, frequency, np.absolute(fourier_data), norm=colors.Normalize()
     )
     fig.colorbar(c, ax=axs[0], orientation="horizontal", label="Value")
 
     axs[1].set_title("SFT phase")
-    c = axs[1].pcolorfast(
+    c = axs[1].pcolormesh(
         time_in_days, frequency, np.angle(fourier_data), norm=colors.CenteredNorm()
     )
 
