@@ -1,4 +1,4 @@
-## 2.2.0 [20/12/2024]
+## 2.2.0 [07/01/2025]
 
  - Changed the core F-stat functions to alternatively take parameter-space points as dictionaries.
    The old individual arguments are still supported, but deprecated and will be removed in a future version.
@@ -11,6 +11,7 @@
  - Added codespell to pre-commit hooks.
  - Fixed some deprecations and code-formatting issues.
  - Extended tests.
+ - Changed tutorial notebooks plotting from pcolorfast to pcolormesh.
 
 ## 2.1.0 [04/07/2024]
 
