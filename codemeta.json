@@ -3,7 +3,7 @@
     "@type": "SoftwareSourceCode",
     "name": "PyFstat: Continuous gravitational-wave data analysis",
     "description": "PyFstat performs F-statistic-based continuous gravitational wave (CW) searches and other CW data analysis tasks. It is built on top of the LALSuite library, making its functionality more accessible through a Python interface. It also provides an MCMC-based followup of promising candidates from wide-parameter-space searches.",
-   
+
     "identifier": "https://doi.org/10.5281/zenodo.3967045",
     "author": [
         {
@@ -29,6 +29,12 @@
             "givenName": "Reinhard",
             "familyName": "Prix",
             "@id": "https://orcid.org/0000-0002-3789-6424"
+        },
+        {
+            "@type": "Person",
+            "givenName": "Maria-Antonia",
+            "familyName": "Ferrer",
+            "@id": "https://orcid.org/0009-0008-9801-9506"
         }
     ],
     "citation": "Please see citation information here: https://github.com/PyFstat/PyFstat/#citing-this-work",

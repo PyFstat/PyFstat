@@ -79,7 +79,7 @@ setup(
     name="PyFstat",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    author="Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio",
+    author="Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio, Maria-Antonia Ferrer",
     author_email="gregory.ashton@ligo.org",
     maintainer="David Keitel",
     maintainer_email="david.keitel@ligo.org",

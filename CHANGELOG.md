@@ -1,3 +1,18 @@
+## 2.2.0 [07/01/2025]
+
+ - Changed the core F-stat functions to alternatively take parameter-space points as dictionaries.
+   The old individual arguments are still supported, but deprecated and will be removed in a future version.
+ - Added new function `utils.plot_spectrogram`.
+ - Added support for spindown orders >3 in Writer and search classes (up to `lalpulsar.PULSAR_MAX_SPINS`).
+ - Added SearchOverGridFile class that can read a grid file following the format of `lalpulsar_ComputeFStatistic_v2`.
+ - Some internal refactoring of code between mcmc, grid and core classes.
+ - Updated various dependencies, mostly for developers.
+ - Pinned chainconsumer dependency to <1.0.
+ - Added codespell to pre-commit hooks.
+ - Fixed some deprecations and code-formatting issues.
+ - Extended tests.
+ - Changed tutorial notebooks plotting from pcolorfast to pcolormesh.
+
 ## 2.1.0 [04/07/2024]
 
  - This is a maintenance release for updating python and numpy compatibility and fixing minor bugs.
