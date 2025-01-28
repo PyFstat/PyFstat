@@ -1316,8 +1316,12 @@ class SearchOverGridFile(TransientGridSearch):
                 f"Invalid reading method: {reading_method}. Expected 'numpy' or 'pandas'."
             )
         self.search_keys = list(self.grid.dtype.names)
+        if self.BSGL and self.BtSG:  # pragma: no cover
+            raise ValueError("Please choose only one of [BSGL,BtSG].")
         if self.BSGL:
             self.detstat = "log10BSGL"
+        elif self.BtSG:
+            self.detstat = "lnBtSG"
         elif self.transientWindowType is not None:
             self.detstat = "maxTwoF"
         else:
