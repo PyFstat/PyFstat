@@ -106,6 +106,7 @@ class GridSearch(BaseSearchClass):
             self.detstat = "log10BSGL"
         else:
             self.detstat = "twoF"
+        logger.info(f"Detection statistic set to {self.detstat}.")
         self._initiate_search_object()
         self._set_output_keys()
         self.output_file_header = self.get_output_file_header()
@@ -999,6 +1000,7 @@ class TransientGridSearch(GridSearch):
             self.detstat = "lnBtSG"
         else:
             self.detstat = "maxTwoF"
+        logger.info(f"Detection statistic set to {self.detstat}.")
         self._initiate_search_object()
         self._set_output_keys()
         self.output_file_header = self.get_output_file_header()
@@ -1320,6 +1322,7 @@ class SearchOverGridFile(TransientGridSearch):
             self.detstat = "maxTwoF"
         else:
             self.detstat = "twoF"
+        logger.info(f"Detection statistic set to {self.detstat}.")
         self._initiate_search_object()
         self._set_output_keys()
         self.output_file_header = self.get_output_file_header()
