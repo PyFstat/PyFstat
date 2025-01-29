@@ -396,7 +396,12 @@ class TestSearchOverGridFile(BaseForTestsWithData):
         pyfstat.utils.run_commandline(cl_CFSv2)
 
     def test_gridfile_search(
-        self, binary=False, transient=False, grid="manual", reading_method="numpy"
+        self,
+        binary=False,
+        transient=False,
+        BtSG=False,
+        grid="manual",
+        reading_method="numpy",
     ):
         if grid == "manual":
             self._write_gridfile(binary)
@@ -421,6 +426,7 @@ class TestSearchOverGridFile(BaseForTestsWithData):
             gridfile=self.gridfile,
             tref=self.tref,
             reading_method=reading_method,
+            BtSG=BtSG,
             **transient_search_params,
         )
         search.run()
@@ -524,6 +530,28 @@ class TestSearchOverGridFile(BaseForTestsWithData):
                 - np.max(pyfstat_out["maxTwoF"] < 1e-3)
             )
 
+            if BtSG:
+                # Check if 'maxTwoF' and 'lnBtSG' exist in the file headers
+                self.assertIn(
+                    "maxTwoF",
+                    pyfstat_out.dtype.names,
+                    "Column 'maxTwoF' is missing in the output file!",
+                )
+                self.assertIn(
+                    "lnBtSG",
+                    pyfstat_out.dtype.names,
+                    "Column 'lnBtSG' is missing in the output file!",
+                )
+
+                # Validate the numerical values of 'lnBtSG' and 'maxTwoF'
+                self.assertTrue(
+                    np.max(
+                        np.abs(CFSv2_out_transient["logBstat"] - pyfstat_out["lnBtSG"])
+                        < 1e-3
+                    ),
+                    "'lnBtSG' values differ more than the allowed tolerance (1e-3)!",
+                )
+
     def test_gridfile_search_binary(self):
         self.test_gridfile_search(binary=True)
 
@@ -535,3 +563,6 @@ class TestSearchOverGridFile(BaseForTestsWithData):
 
     def test_gridfile_from_CFSv2_pandas(self):
         self.test_gridfile_search(grid="CFSv2", reading_method="pandas")
+
+    def test_gridfile_transient_BtSG_search(self):
+        self.test_gridfile_search(transient=True, BtSG=True)
