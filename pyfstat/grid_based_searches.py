@@ -106,6 +106,7 @@ class GridSearch(BaseSearchClass):
             self.detstat = "log10BSGL"
         else:
             self.detstat = "twoF"
+        logger.info(f"Detection statistic set to {self.detstat}.")
         self._initiate_search_object()
         self._set_output_keys()
         self.output_file_header = self.get_output_file_header()
@@ -999,6 +1000,7 @@ class TransientGridSearch(GridSearch):
             self.detstat = "lnBtSG"
         else:
             self.detstat = "maxTwoF"
+        logger.info(f"Detection statistic set to {self.detstat}.")
         self._initiate_search_object()
         self._set_output_keys()
         self.output_file_header = self.get_output_file_header()
@@ -1314,18 +1316,23 @@ class SearchOverGridFile(TransientGridSearch):
                 f"Invalid reading method: {reading_method}. Expected 'numpy' or 'pandas'."
             )
         self.search_keys = list(self.grid.dtype.names)
+        if self.BSGL and self.BtSG:  # pragma: no cover
+            raise ValueError("Please choose only one of [BSGL,BtSG].")
         if self.BSGL:
             self.detstat = "log10BSGL"
+        elif self.BtSG:
+            self.detstat = "lnBtSG"
         elif self.transientWindowType is not None:
             self.detstat = "maxTwoF"
         else:
             self.detstat = "twoF"
+        logger.info(f"Detection statistic set to {self.detstat}.")
         self._initiate_search_object()
         self._set_output_keys()
         self.output_file_header = self.get_output_file_header()
         if self.outputTransientFstatMap:
             self.tCWfilebase = os.path.splitext(self.out_file)[0] + "_tCW_"
-            logging.info(
+            logger.info(
                 "Will save per-Doppler Fstatmap"
                 " results to {}*.dat".format(self.tCWfilebase)
             )
@@ -1337,7 +1344,7 @@ class SearchOverGridFile(TransientGridSearch):
         But we convert back to a standard numpy array at the end.
         """
 
-        logging.info(f"Loading grid from file using pandas backend: {self.gridfile}")
+        logger.info(f"Loading grid from file using pandas backend: {self.gridfile}")
         nhead = 0
         with open(self.gridfile, "r") as fp:
             for line in fp:
@@ -1361,7 +1368,7 @@ class SearchOverGridFile(TransientGridSearch):
             ],
             skiprows=nhead,  # Skip the first `nhead` rows (comments)
         )
-        logging.info(
+        logger.info(
             f"Successfully loaded grid of size {pd_grid.shape} as a pandas DataFrame."
         )
 
@@ -1383,14 +1390,14 @@ class SearchOverGridFile(TransientGridSearch):
             raise TypeError(f"Failed to convert pandas DataFrame to NumPy array: {e}")
         if len(pd_grid) == 0:  # pragma: no cover
             raise IOError("Got 0-length grid.")
-        logging.info("Successfully converted to NumPy array with the following dtype:")
-        logging.info(self.grid.dtype)
+        logger.info("Successfully converted to NumPy array with the following dtype:")
+        logger.info(self.grid.dtype)
         self.grid.dtype.names = self._translate_keys_from_cfsv2(self.grid.dtype.names)
-        logging.info("Updated dtype to match PyFstat parameter naming convention:")
-        logging.info(self.grid.dtype)
+        logger.info("Updated dtype to match PyFstat parameter naming convention:")
+        logger.info(self.grid.dtype)
 
     def _read_grid_with_numpy(self):
-        logging.info(f"Loading grid from file using NumPy backend: {self.gridfile}")
+        logger.info(f"Loading grid from file using NumPy backend: {self.gridfile}")
         nhead = 0
         with open(self.gridfile, "r") as fp:
             for line in fp:
@@ -1405,14 +1412,14 @@ class SearchOverGridFile(TransientGridSearch):
         )
         if len(self.grid) == 0:  # pragma: no cover
             raise IOError("Got 0-length grid.")
-        logging.info(
+        logger.info(
             f"Successfully loaded grid as NumPy array of size {np.shape(self.grid)}"
             " with the following dtype:"
         )
-        logging.info(self.grid.dtype)
+        logger.info(self.grid.dtype)
         self.grid.dtype.names = self._translate_keys_from_cfsv2(self.grid.dtype.names)
-        logging.info("Updated dtype to match PyFstat parameter naming convention:")
-        logging.info(self.grid.dtype)
+        logger.info("Updated dtype to match PyFstat parameter naming convention:")
+        logger.info(self.grid.dtype)
 
     def _translate_keys_from_cfsv2(self, keylist):
         """Convert grid column heading keys into PyFstat convention.
@@ -1453,13 +1460,13 @@ class SearchOverGridFile(TransientGridSearch):
         return translated
 
     def _get_search_ranges(self):
-        logging.info("Getting search ranges...")
+        logger.info("Getting search ranges...")
         if (self.minCoverFreq is None) or (self.maxCoverFreq is None):
             minmaxdict = {
                 key: [np.min(self.grid[key]), np.max(self.grid[key])]
                 for key in self.search_keys
             }
-            logging.info(f"Search ranges span: {minmaxdict}")
+            logger.info(f"Search ranges span: {minmaxdict}")
             return minmaxdict
         else:
             return None
@@ -1471,7 +1478,7 @@ class SearchOverGridFile(TransientGridSearch):
         and explicit dtype (cannot have named columns without that).
         """
 
-        logging.info("Generating input data array from loaded grid.")
+        logger.info("Generating input data array from loaded grid.")
         self.coord_arrays = self.grid
         self.total_iterations = len(self.grid)
         if not self.clean:
