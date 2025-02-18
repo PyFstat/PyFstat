@@ -80,6 +80,16 @@ class pyTransientFstatMap:
         Natural log of the marginalised transient Bayes factor.
         NOTE: This is always initialised as `nan`,
         and you have to call `get_lnBtSG()` to get its actual value.
+    t0_MP: float
+        Maximum posterior estimate of the transient start time `t0`.
+        NOTE: This is always initialised as `nan`,
+        and you have to call `get_t0_max_posterior()` to get its actual value
+        (or its LALpular equivalent).
+    tau_MP: float
+        Maximum posterior estimate of the transient duration `tau`.
+        NOTE: This is always initialised as `nan`,
+        and you have to call `get_tau_max_posterior()` to get its actual value
+        (or its LALpular equivalent).
     """
 
     def __init__(
@@ -235,9 +245,9 @@ class pyTransientFstatMap:
         # which at worst can underflow, while e^F_mn can overflow.
         # The constant offset e^Fmax is irrelevant for posteriors (normalization constant).
         sum_eF = np.sum(np.exp(-(self.maxF - self.F_mn)), axis=1)
-        logger.warning(f"windowRange.dt0 = {windowRange.dt0}")
-        dx = windowRange.t0Band / np.shape(self.F_mn)[0]
-        logger.warning(f"dx = ( xMax - xMin ) / numBins = {dx}")
+        dx = windowRange.t0Band / (
+            np.shape(self.F_mn)[0]
+        )  # like this it is consistent with LAL
         self.t0_MP = windowRange.t0 + (np.argmax(sum_eF) + 0.5) * dx  # windowRange.dt0
         return self.t0_MP
 
@@ -270,7 +280,10 @@ class pyTransientFstatMap:
         # which at worst can underflow, while e^F_mn can overflow.
         # The constant offset e^Fmax is irrelevant for posteriors (normalization constant).
         sum_eF = np.sum(np.exp(-(self.maxF - self.F_mn)), axis=0)
-        self.tau_MP = windowRange.tau + (np.argmax(sum_eF) + 0.5) * windowRange.dtau
+        dy = windowRange.tauBand / (
+            np.shape(self.F_mn)[1]
+        )  # like this it is consistent with LAL
+        self.tau_MP = windowRange.tau + (np.argmax(sum_eF) + 0.5) * dy
         return self.tau_MP
 
     def write_F_mn_to_file(self, tCWfile, windowRange, header=[]):
@@ -566,27 +579,11 @@ def lalpulsar_compute_transient_fstat_map(multiFstatAtoms, windowRange, BtSG=Fal
             windowRange, FstatMap_lalpulsar
         )
         pdf_t0 = lalpulsar.ComputeTransientPosterior_t0(windowRange, FstatMap_lalpulsar)
-        logger.warning(pdf_t0.xTics.data)
-        logger.warning(pdf_t0.xTics.length)
-        logger.warning(
-            f"{windowRange.t0,windowRange.t0Band,windowRange.tau,windowRange.tauBand}"
-        )
         pdf_tau = lalpulsar.ComputeTransientPosterior_tau(
             windowRange, FstatMap_lalpulsar
         )
         FstatMap.t0_MP = lalpulsar.FindModeOfPDF1D(pdf_t0)
         FstatMap.tau_MP = lalpulsar.FindModeOfPDF1D(pdf_tau)
-        logger.warning(
-            f"lalcomputed: lnBtSG={FstatMap.lnBtSG:.4f},"
-            f" t0_MP={FstatMap.t0_MP}, tau_MP={FstatMap.tau_MP}"
-        )
-        FstatMap.get_lnBtSG()
-        FstatMap.get_t0_max_posterior(windowRange)
-        FstatMap.get_tau_max_posterior(windowRange)
-        logger.warning(
-            f"recomputed:  lnBtSG={FstatMap.lnBtSG:.4f},"
-            f" t0_MP={FstatMap.t0_MP}, tau_MP={FstatMap.tau_MP}"
-        )
     return FstatMap
 
 

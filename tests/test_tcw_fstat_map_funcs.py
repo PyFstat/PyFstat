@@ -38,7 +38,10 @@ def test_compute_transient_fstat_map(tCWFstatMapVersion, window, snr):
     day = 86400
     duration = day
     windowRange = lalpulsar.transientWindowRange_t()
-    windowRange.type = 1
+    if window == "rect":
+        windowRange.type = lalpulsar.TRANSIENT_RECTANGULAR
+    elif window == "exp":
+        windowRange.type = lalpulsar.TRANSIENT_EXPONENTIAL
     windowRange.t0 = Tstart
     windowRange.t0Band = duration - 2 * Tsft
     windowRange.dt0 = Tsft
@@ -50,7 +53,7 @@ def test_compute_transient_fstat_map(tCWFstatMapVersion, window, snr):
     statsfile = os.path.join(outdir, "synthTS_H1L_stats1.dat")
     atomsfile = os.path.join(outdir, "synthTS_H1L_atoms")
     pyfstat.utils.run_commandline(
-        f"lalpulsar_synthesizeTransientStats --fixedSNR={snr} --IFOs=H1 --dataStartGPS {Tstart} --dataDuration {duration} --injectWindow-type={window} --injectWindow-tauDays={0.25} --injectWindow-tauDaysBand=0 --injectWindow-t0Days={0.25} --injectWindow-t0DaysBand=0 --searchWindow-type={window} --searchWindow-tauDays={windowRange.tau/day} --searchWindow-tauDaysBand={windowRange.tauBand/day} --searchWindow-t0Days={0} --searchWindow-t0DaysBand={windowRange.t0Band/day} --computeFtotal=TRUE --numDraws=1 --randSeed=1 --outputStats={statsfile} --outputAtoms={atomsfile}"
+        f"lalpulsar_synthesizeTransientStats --fixedSNR={snr} --IFOs=H1 --dataStartGPS {Tstart} --dataDuration {duration} --injectWindow-type={window} --injectWindow-tauDays={0.25} --injectWindow-tauDaysBand=0 --injectWindow-t0Days={0.25} --injectWindow-t0DaysBand=0 --searchWindow-type={window} --searchWindow-tauDays={windowRange.tau / day} --searchWindow-tauDaysBand={windowRange.tauBand / day} --searchWindow-t0Days={0} --searchWindow-t0DaysBand={windowRange.t0Band / day} --computeFtotal=TRUE --numDraws=1 --randSeed=1 --outputStats={statsfile} --outputAtoms={atomsfile}"
     )
     atomsfile += "_0001_of_0001.dat"
 
@@ -97,13 +100,18 @@ def test_compute_transient_fstat_map(tCWFstatMapVersion, window, snr):
     reltol = 0.15 if window == "exp" else 0.01
     assert pytest.approx(2 * FstatMap.maxF, rel=reltol) == stats["maxTwoF"]
     assert pytest.approx(FstatMap.lnBtSG, rel=reltol) == stats["logBstat"]
-    logging.warning(f"{FstatMap.t0_ML,FstatMap.tau_ML,FstatMap.t0_MP,FstatMap.tau_MP}")
     if snr > 0:
         assert (
             pytest.approx(FstatMap.t0_ML, abs=4 * Tsft)
             == stats["t0_MLd"] * day + Tstart
         )
         assert pytest.approx(FstatMap.tau_ML, abs=4 * Tsft) == stats["tau_MLd"] * day
+        assert (
+            pytest.approx(FstatMap.t0_MP, abs=4 * Tsft)
+            == stats["t0_MPd"] * day + Tstart
+        )
+        assert pytest.approx(FstatMap.tau_MP, abs=4 * Tsft) == stats["tau_MPd"] * day
+
     if window == "rect":
         # first t0 / last tau entry of F_mn should correspond to total F-stat
         # (which for historical reasons is hacked into "fkdot3" column of synth stats file)
