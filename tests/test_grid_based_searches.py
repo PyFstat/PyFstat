@@ -323,8 +323,8 @@ class TestTransientGridSearch(BaseForTestsWithData):
                     max2F_point["twoF"], tCW_out["2F"][max2Fidx], rtol=1e-6, atol=0
                 )
             )
-            self.assertTrue(max2F_point["t0"] == tCW_out["t0s"][max2Fidx])
-            self.assertTrue(max2F_point["tau"] == tCW_out["taus"][max2Fidx])
+            self.assertTrue(max2F_point["t0_ML"] == tCW_out["t0s"][max2Fidx])
+            self.assertTrue(max2F_point["tau_ML"] == tCW_out["taus"][max2Fidx])
         if BtSG:
             self.assertTrue(hasattr(search.search, "lnBtSG"))
 
