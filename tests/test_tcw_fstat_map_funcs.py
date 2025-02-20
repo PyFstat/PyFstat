@@ -112,6 +112,15 @@ def test_compute_transient_fstat_map(tCWFstatMapVersion, window, snr):
         )
         assert pytest.approx(FstatMap.tau_MP, abs=4 * Tsft) == stats["tau_MPd"] * day
 
+        if tCWFstatMapVersion == "lal":
+            # in this case, only the LALpulsar version is called by default so we manually check that our own version is working
+            assert pytest.approx(
+                FstatMap.get_t0_max_posterior(windowRange=windowRange), abs=4 * Tsft
+            ) == ((stats["t0_MPd"]) * day + Tstart)
+            assert pytest.approx(
+                FstatMap.get_tau_max_posterior(windowRange=windowRange), abs=4 * Tsft
+            ) == ((stats["tau_MPd"]) * day)
+
     if window == "rect":
         # first t0 / last tau entry of F_mn should correspond to total F-stat
         # (which for historical reasons is hacked into "fkdot3" column of synth stats file)
