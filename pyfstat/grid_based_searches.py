@@ -809,7 +809,7 @@ class GridSearch(BaseSearchClass):
         max_params = self.get_max_twoF()
         if "twoF" in max_params.keys():
             max_params.pop("twoF")
-        for key in [self.detstat, "t0", "tau"]:
+        for key in [self.detstat, "t0_ML", "tau_ML", "t0_MP", "tau_MP"]:
             if key in max_params.keys():
                 max_params.pop(key)
         max_params = self.translate_keys_to_lal(max_params)
@@ -949,6 +949,9 @@ class TransientGridSearch(GridSearch):
         """
         Parameters
         ----------
+        BtSG: bool
+            If True, compute the transient Bayes factor detection statistic.
+            This search also returns `t0_MP` and `tau_MP` values.
         transientWindowType: str
             If `rect` or `exp`,
             allow for the Fstat to be computed over a transient range.
@@ -1037,7 +1040,9 @@ class TransientGridSearch(GridSearch):
             # for consistency, t0/tau must come after detstat
             # they are not included in self.search_keys because the main Fstat
             # code does not loop over them
-            self.output_keys += ["t0", "tau"]
+            self.output_keys += ["t0_ML", "tau_ML"]
+            if self.BtSG:
+                self.output_keys += ["t0_MP", "tau_MP"]
 
     def _initiate_search_object(self):
         logger.info("Setting up search object")
@@ -1121,8 +1126,12 @@ class TransientGridSearch(GridSearch):
                     tCWfile, windowRange, self.output_file_header
                 )
             maxidx = self.search.FstatMap.get_maxF_idx()
-            thisCand["t0"] = windowRange.t0 + maxidx[0] * windowRange.dt0
-            thisCand["tau"] = windowRange.tau + maxidx[1] * windowRange.dtau
+            thisCand["t0_ML"] = windowRange.t0 + maxidx[0] * windowRange.dt0
+            thisCand["tau_ML"] = windowRange.tau + maxidx[1] * windowRange.dtau
+            if self.BtSG:
+                thisCand["t0_MP"] = self.search.FstatMap.t0_MP
+                thisCand["tau_MP"] = self.search.FstatMap.tau_MP
+
         for key in self.output_keys:
             data[key][n] = thisCand[key]
         return data
@@ -1231,8 +1240,11 @@ class TransientGridSearch(GridSearch):
                 fmt_dict[f"twoF{IFO}atMaxTwoF"] = self.fmt_detstat
         if self.detstat != "maxTwoF":
             fmt_dict[self.detstat] = self.fmt_detstat
-        fmt_dict["t0"] = "%d"
-        fmt_dict["tau"] = "%d"
+        fmt_dict["t0_ML"] = "%d"
+        fmt_dict["tau_ML"] = "%d"
+        if self.BtSG:
+            fmt_dict["t0_MP"] = "%d"
+            fmt_dict["tau_MP"] = "%d"
         return fmt_dict
 
 
