@@ -292,10 +292,13 @@ class TestGridSearchBSGL(TestGridSearch):
 
 class TestTransientGridSearch(BaseForTestsWithData):
     label = "TestTransientGridSearch"
+    detectors = "H1,L1"
     F0s = [29.95, 30.05, 0.01]
     Band = 0.2
 
-    def test_transient_grid_search(self, transient=True, BtSG=False):
+    def test_transient_grid_search(
+        self, transient=True, singleFstats=False, BtSG=False, BSGL=False
+    ):
         if transient:
             transient_params = {
                 "minStartTime": self.Writer.tstart,
@@ -305,7 +308,6 @@ class TestTransientGridSearch(BaseForTestsWithData):
                 "tauBand": self.Writer.duration,
                 "outputTransientFstatMap": True,
                 "tCWFstatMapVersion": "lal",
-                "BtSG": BtSG,
             }
         else:
             transient_params = {}
@@ -319,6 +321,9 @@ class TestTransientGridSearch(BaseForTestsWithData):
             Alphas=[self.Writer.Alpha],
             Deltas=[self.Writer.Delta],
             tref=self.tref,
+            singleFstats=singleFstats,
+            BSGL=BSGL,
+            BtSG=BtSG,
             **transient_params,
             outputAtoms=True,
         )
@@ -328,6 +333,8 @@ class TestTransientGridSearch(BaseForTestsWithData):
         self.assertTrue(np.all(max2F_point["twoF"] >= search.data["twoF"]))
         if transient:
             tCWfile = search.get_transient_fstat_map_filename(max2F_point)
+            self.assertTrue("twoF" in search.data.dtype.names)
+            self.assertTrue("maxTwoF" in search.data.dtype.names)
             tCW_out = pyfstat.utils.read_txt_file_with_header(tCWfile, comments="#")
             max2Fidx = np.argmax(tCW_out["2F"])
             self.assertTrue(
@@ -337,14 +344,38 @@ class TestTransientGridSearch(BaseForTestsWithData):
             )
             self.assertTrue(max2F_point["t0_ML"] == tCW_out["t0s"][max2Fidx])
             self.assertTrue(max2F_point["tau_ML"] == tCW_out["taus"][max2Fidx])
+        if singleFstats:
+            self.assertTrue(hasattr(search.search, "twoFX"))
+            for IFO in search.search.detector_names:
+                self.assertTrue(f"twoF{IFO}" in search.data.dtype.names)
+        if BSGL:
+            self.assertTrue(hasattr(search.search, "log10BSGL"))
+            self.assertTrue("log10BSGL" in search.data.dtype.names)
         if BtSG:
-            self.assertTrue(hasattr(search.search, "lnBtSG"))
+            self.assertTrue("lnBtSG" in search.data.dtype.names)
+            self.assertTrue("t0_MP" in search.data.dtype.names)
+            self.assertTrue("tau_MP" in search.data.dtype.names)
 
     def test_transient_grid_search_notransient(self):
         self.test_transient_grid_search(transient=False)
 
+    def test_transient_grid_search_notransient_singleF(self):
+        self.test_transient_grid_search(transient=False, singleFstats=True)
+
+    def test_transient_grid_search_notransient_BSGL(self):
+        self.test_transient_grid_search(transient=False, BSGL=True)
+
+    def test_transient_grid_search_singleF(self):
+        self.test_transient_grid_search(transient=True, singleFstats=True)
+
+    def test_transient_grid_search_BSGL(self):
+        self.test_transient_grid_search(transient=True, BSGL=True)
+
     def test_transient_grid_search_BtSG(self):
         self.test_transient_grid_search(transient=True, BtSG=True)
+
+    def test_transient_grid_search_BtSG_singleF(self):
+        self.test_transient_grid_search(transient=True, BtSG=True, singleFstats=True)
 
 
 class TestSearchOverGridFile(BaseForTestsWithData):
