@@ -1215,9 +1215,9 @@ class ComputeFstat(BaseSearchClass):
             argp=argp,
             params=params,
         )
+        if self.singleFstats:
+            self.get_fullycoherent_single_IFO_twoFs()
         if not self.transientWindowType:
-            if self.singleFstats:
-                self.get_fullycoherent_single_IFO_twoFs()
             if not self.BSGL:
                 return self.twoF
             self.get_fullycoherent_log10BSGL()
