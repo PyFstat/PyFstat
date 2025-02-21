@@ -224,7 +224,7 @@ class TestGridSearchBSGL(TestGridSearch):
             SFTWindowParam=self.Writer.SFTWindowParam,
         )
         extra_writer.make_data()
-        data_with_line = ";".join([SFTs_L1, extra_writer.sftfilepath])
+        data_with_line = ";".join([extra_writer.sftfilepath, SFTs_L1])
         # now run a standard F-stat search over this data
         searchF = pyfstat.GridSearch(
             label="GridSearch",
