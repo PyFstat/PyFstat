@@ -353,20 +353,13 @@ class GridSearch(BaseSearchClass):
         detstat = self.search.get_det_stat(params=thisCand)
         thisCand["twoF"] = self.search.twoF
         if self.search.singleFstats:
-            thisCand["twoFX"] = list(self.search.twoFX[: self.search.numDetectors])
+            for X, IFO in enumerate(self.search.detector_names):
+                thisCand[f"twoF{IFO}"] = self.search.twoFX[X]
         if self.detstat != "twoF":
             thisCand[self.detstat] = detstat
         for key in self.output_keys:
             if key in thisCand.keys():
                 data[key][n] = thisCand[key]
-            elif key.startswith("twoF"):
-                try:
-                    X = self.search.detector_names.index(key.lstrip("twoF"))
-                    data[key][n] = thisCand["twoFX"][X]
-                except (KeyError, IndexError):  # pragma: no cover
-                    raise RuntimeError(
-                        f"Could not get value for key {key} from candidate dict {thisCand}."
-                    )
             else:  # pragma: no cover
                 raise RuntimeError(
                     f"Could not get value for key {key} from candidate dict {thisCand}."
@@ -1113,11 +1106,13 @@ class TransientGridSearch(GridSearch):
         self.timingFstatMap += getattr(self.search, "timingFstatMap", 0.0)
         thisCand["twoF"] = self.search.twoF
         if self.search.singleFstats:
-            thisCand += list(self.search.twoFX[: self.search.numDetectors])
+            for X, IFO in enumerate(self.search.detector_names):
+                thisCand[f"twoF{IFO}"] = self.search.twoFX[X]
         if windowRange is not None:
             thisCand["maxTwoF"] = self.search.maxTwoF
             if hasattr(self.search, "twoFXatMaxTwoF"):
-                thisCand += list(self.search.twoFXatMaxTwoF[: self.search.numDetectors])
+                for X, IFO in enumerate(self.search.detector_names):
+                    thisCand[f"twoF{IFO}atMaxTwoF"] = self.search.twoFXatMaxTwoF[X]
         if self.detstat not in ["twoF", "maxTwoF"]:
             thisCand[self.detstat] = detstat
         if getattr(self, "transientWindowType", None):
@@ -1138,7 +1133,12 @@ class TransientGridSearch(GridSearch):
                 thisCand["tau_MP"] = self.search.FstatMap.tau_MP
 
         for key in self.output_keys:
-            data[key][n] = thisCand[key]
+            if key in thisCand.keys():
+                data[key][n] = thisCand[key]
+            else:  # pragma: no cover
+                raise RuntimeError(
+                    f"Could not get value for key {key} from candidate dict {thisCand}."
+                )
         return data
 
     def run(self, return_data=False):
