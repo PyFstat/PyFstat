@@ -262,23 +262,32 @@ class TestGridSearchBSGL(TestGridSearch):
         self.assertTrue(
             np.all(max2F_point_searchBSGL["twoF"] >= searchBSGL.data["twoF"])
         )
-        # Since we search the same grids and store all output,
-        # the twoF from both searches should be the same.
-        self.assertTrue(max2F_point_searchBSGL["twoF"] == max2F_point_searchF["twoF"])
+        self.assertTrue(
+            max2F_point_searchBSGL["twoF"] == max2F_point_searchF["twoF"],
+            msg=f"The 2F from both searches should be the same, but {max2F_point_searchBSGL['twoF']} != {max2F_point_searchF['twoF']}",
+        )
         maxBSGL_point = searchBSGL.get_max_det_stat()
         self.assertTrue(
-            np.all(maxBSGL_point["log10BSGL"] >= searchBSGL.data["log10BSGL"])
+            np.all(maxBSGL_point["log10BSGL"] >= searchBSGL.data["log10BSGL"]),
+            msg="searchBSGL.get_max_det_stat() should return the maximum over the whole grid, but it didn't.",
         )
-        # The BSGL search should produce a lower max2F value than the F search.
-        self.assertTrue(maxBSGL_point["twoF"] < max2F_point_searchF["twoF"])
-        # But the maxBSGL_point should be the true multi-IFO signal
-        # while max2F_point_searchF should have fallen for the single-IFO line.
+        self.assertTrue(
+            maxBSGL_point["twoF"] < max2F_point_searchF["twoF"],
+            msg=f"The BSGL search should produce a lower max2F value than the F search, but {maxBSGL_point['twoF']} >= {max2F_point_searchF['twoF']}",
+        )
         self.assertTrue(
             np.abs(maxBSGL_point["F0"] - self.F0)
-            < np.abs(max2F_point_searchF["F0"] - self.F0)
+            < np.abs(max2F_point_searchF["F0"] - self.F0),
+            msg="The maxBSGL point should be the true multi-IFO signal, while max2F should have fallen for the single-IFO line. But the former is further away from the injection frequency.",
         )
-        self.assertTrue(maxBSGL_point["twoFH1"] < max2F_point_searchF["twoFH1"])
-        self.assertTrue(maxBSGL_point["twoFL1"] > max2F_point_searchF["twoFL1"])
+        self.assertTrue(
+            maxBSGL_point["twoFH1"] < max2F_point_searchF["twoFH1"],
+            msg=f"Got 2FH1={maxBSGL_point['twoFH1']} at the maximum of the BSGL search and {max2F_point_searchF['twoFH1']} at the maximum of the 2F search. Since we simulated a line in H1, the former should have been lower!",
+        )
+        self.assertTrue(
+            maxBSGL_point["twoFL1"] > max2F_point_searchF["twoFL1"],
+            msg=f"Got 2FH1={maxBSGL_point['twoFL1']} at the maximum of the BSGL search and {max2F_point_searchF['twoFL1']} at the maximum of the 2F search. Since we simulated a line in H1, the former should have been higher!",
+        )
 
 
 class TestTransientGridSearch(BaseForTestsWithData):
