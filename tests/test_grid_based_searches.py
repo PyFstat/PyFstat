@@ -236,6 +236,7 @@ class TestGridSearchBSGL(TestGridSearch):
             Alphas=[self.Writer.Alpha],
             Deltas=[self.Writer.Delta],
             tref=self.tref,
+            singleFstats=True,
             BSGL=False,
         )
         searchF.run()
@@ -276,6 +277,8 @@ class TestGridSearchBSGL(TestGridSearch):
             np.abs(maxBSGL_point["F0"] - self.F0)
             < np.abs(max2F_point_searchF["F0"] - self.F0)
         )
+        self.assertTrue(maxBSGL_point["twoFH1"] < max2F_point_searchF["twoFH1"])
+        self.assertTrue(maxBSGL_point["twoFL1"] > max2F_point_searchF["twoFL1"])
 
 
 class TestTransientGridSearch(BaseForTestsWithData):
