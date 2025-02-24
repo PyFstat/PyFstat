@@ -3,6 +3,8 @@ import sys
 
 from setuptools import find_packages, setup
 
+print(f"setuptools version: {setuptools.__version__}")
+
 import versioneer
 
 # check python version
