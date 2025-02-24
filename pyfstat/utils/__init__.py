@@ -26,7 +26,7 @@ from .io import (
     read_txt_file_with_header,
 )
 from .predict import get_predict_fstat_parameters_from_dict, predict_fstat
-from .runlalsuite import generate_loudest_file, get_covering_band
+from .runlalsuite import generate_loudest_file, get_covering_band, translate_keys_to_lal
 from .sft import (
     get_commandline_from_SFTDescriptor,
     get_official_sft_filename,

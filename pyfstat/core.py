@@ -242,49 +242,11 @@ class BaseSearchClass:
     def translate_keys_to_lal(dictionary):
         """Convert input keys into lalpulsar convention.
 
-        In PyFstat's convention, input keys (search parameter names)
-        are F0, F1, F2, ...,
-        while lalpulsar functions prefer to use Freq, f1dot, f2dot, ....
-
-        Since lalpulsar keys are only used internally to call lalpulsar routines,
-        this function is provided so the keys can be translated on the fly.
-
-        Parameters
-        ----------
-        dictionary: dict
-            Dictionary to translate. A copy will be made (and returned)
-            before translation takes place.
-
-        Returns
-        -------
-        translated_dict: dict
-            Copy of "dictionary" with new keys according to lalpulsar convention.
+        This is a wrapper for `utils.translate_keys_to_lal`,
+        see there for details.
         """
 
-        translation = {"F0": "Freq"}
-        translation.update(
-            {f"F{k + 1}": f"f{k + 1}dot" for k in range(lalpulsar.PULSAR_MAX_SPINS - 1)}
-        )
-        translation.update(
-            {
-                "phi": "phi0",
-                "tref": "refTime",
-                "asini": "orbitasini",
-                "period": "orbitPeriod",
-                "tp": "orbitTp",
-                "argp": "orbitArgp",
-                "ecc": "orbitEcc",
-                "transient_tstart": "transient-t0Epoch",
-                "transient_duration": "transient-tau",
-            }
-        )
-
-        keys_to_translate = [key for key in dictionary.keys() if key in translation]
-
-        translated_dict = dictionary.copy()
-        for key in keys_to_translate:
-            translated_dict[translation[key]] = translated_dict.pop(key)
-        return translated_dict
+        return utils.translate_keys_to_lal(dictionary)
 
 
 class ComputeFstat(BaseSearchClass):
