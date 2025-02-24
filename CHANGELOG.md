@@ -1,3 +1,15 @@
+## 2.2.1 [24/02/2025]
+
+ - Fixed some detection statistic / output values corner cases.
+   - E.g. in case the user wants `twoFX` (via `singleFstats` option), but not `BSGL`.
+   - This includes fixes for regressions in 2.2.0.
+ - Added `t0_MP` and `tau_MP` max-posterior estimates in transient outputs,
+   following lalpulsar conventions.
+   - Correspondingly, renamed the max-likelihood values to `t0_ML` and `tau_ML`.
+ - Added support for `BtSG` detection statistic in `SearchOverGridFile`.
+ - Improved logging of grid search classes.
+ - Added `utils.translate_keys_to_lal()` function.
+
 ## 2.2.0 [08/01/2025]
 
  - Changed the core F-stat functions to alternatively take parameter-space points as dictionaries.
