@@ -576,6 +576,13 @@ class TestComputeFstat(BaseForTestsWithData):
             places=4,
             msg=f"search1.twoF={search1.twoF}, search2.twoF={search2.twoF}",
         )
+        Ndet = len(search2.detectors.split(","))
+        for X in range(Ndet):
+            print(search2.twoFX[X])
+            self.assertTrue(
+                search2.twoFX[X] > 0,
+                msg=f"search2.twoFX={search1.twoFX} but the first {Ndet} entries should be non-zero.",
+            )
         self.assertAlmostEqual(
             search1.maxTwoF,
             search2.maxTwoF,

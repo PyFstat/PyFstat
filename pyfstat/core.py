@@ -636,7 +636,7 @@ class ComputeFstat(BaseSearchClass):
             # maxStartTime must always be > last actual SFT timestamp
             self.maxStartTime = int(SFT_timestamps[-1]) + self.Tsft
 
-        self.detector_names = list(set([d.header.name for d in self.SFTCatalog.data]))
+        self.detector_names = np.unique([d.header.name for d in self.SFTCatalog.data])
         self.numDetectors = len(self.detector_names)
         if self.numDetectors == 0:
             raise ValueError("No data loaded.")
@@ -1215,9 +1215,9 @@ class ComputeFstat(BaseSearchClass):
             argp=argp,
             params=params,
         )
+        if self.singleFstats:
+            self.get_fullycoherent_single_IFO_twoFs()
         if not self.transientWindowType:
-            if self.singleFstats:
-                self.get_fullycoherent_single_IFO_twoFs()
             if not self.BSGL:
                 return self.twoF
             self.get_fullycoherent_log10BSGL()
