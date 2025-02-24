@@ -2,7 +2,7 @@ import os
 import sys
 
 from setuptools import find_packages, setup
-
+import setuptools
 print(f"setuptools version: {setuptools.__version__}")
 
 import versioneer
