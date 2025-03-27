@@ -326,11 +326,12 @@ or use directly the following BibTeX entry:
 @misc{pyfstat,
   author       = {Ashton, Gregory and
                   Keitel, David and
-                  Prix, Reinhard
-                  and Tenorio, Rodrigo},
+                  Prix, Reinhard and
+                  Tenorio, Rodrigo and
+                  Ferrer, Maria-Antonia},
   title        = {{PyFstat}},
-  month        = jul,
-  year         = 2020,
+  month        = jan,
+  year         = 2025,
   publisher    = {Zenodo},
   doi          = {10.5281/zenodo.3967045},
   url          = {https://doi.org/10.5281/zenodo.3967045},
