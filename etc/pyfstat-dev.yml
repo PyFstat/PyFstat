@@ -17,7 +17,7 @@ dependencies:
   - dill
   - lalpulsar >=6.0
   - matplotlib-base >=3.3
-  - numpy <2.0
+  - numpy
   - pandas
   - pathos
   - pip

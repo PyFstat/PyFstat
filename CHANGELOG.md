@@ -1,3 +1,8 @@
+## 2.3.0 [DD/05/2025]
+
+ - Removed outdated pin to numpy<2.0, we should be compatible.
+
+
 ## 2.2.1 [24/02/2025]
 
  - Fixed some detection statistic / output values corner cases.
