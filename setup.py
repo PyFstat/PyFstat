@@ -34,7 +34,7 @@ requires = [
     "corner",
     "dill",
     "matplotlib>=3.3",
-    "numpy<2.0",
+    "numpy",
     "pandas",
     "pathos",
     "ptemcee",
