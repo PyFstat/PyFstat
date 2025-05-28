@@ -7,7 +7,7 @@ import versioneer
 
 # check python version
 min_python_version = (3, 9, 0)  # (major,minor,micro)
-next_unsupported_python_version = (3, 13)  # (major,minor) - don't restrict micro
+next_unsupported_python_version = (3, 14)  # (major,minor) - don't restrict micro
 python_version = sys.version_info
 if (
     python_version < min_python_version
@@ -41,7 +41,6 @@ requires = [
     "scipy",
     "setuptools; python_version >= '3.12'",
     "tqdm",
-    "versioneer",
 ]
 lalsuite = "lalsuite[lalpulsar]>=7.13"
 extras_require = {

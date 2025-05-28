@@ -45,7 +45,7 @@ Latest development versions can
 or [from a local git clone](#install-pyfstat-from-source-zenodo-or-git-clone).
 
 If you don't have a matching `python` installation
-(currently `3.9` to `3.12`)
+(currently `3.9` to `3.13`)
 on your system,
 then `Docker` or `conda` are the easiest paths.
 
@@ -74,12 +74,14 @@ or [conda environment](#conda-installation)
 (you really should!),
 on many systems you may need to use the `--user` flag.
 
-Note that the PyFstat installation will fail at the
-LALSuite dependency stage
-if your `pip` is too old (e.g. 18.1); to fix this, do
+Note that the PyFstat installation can fail with
+`Could not find a version that satisfies the requirement lalsuite`
+if e.g. your `pip`, `setuptools` or `glibc` versions are too old.
+To fix the first two cases, you can run
 ```
 pip install --upgrade pip setuptools
 ```
+For the latter, you should likely upgrade your system.
 
 ### conda installation
 
