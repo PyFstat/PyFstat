@@ -1,6 +1,6 @@
-## 2.3.0 [DD/05/2025]
+## 2.3.0 [28/05/2025]
 
- - Removed outdated pin to numpy<2.0, we should be compatible.
+ - Enabled support for python 3.13 and numpy 2.0.
 
 
 ## 2.2.1 [24/02/2025]
