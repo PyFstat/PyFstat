@@ -41,7 +41,6 @@ requires = [
     "scipy",
     "setuptools; python_version >= '3.12'",
     "tqdm",
-    "versioneer",
 ]
 lalsuite = "lalsuite[lalpulsar]>=7.13"
 extras_require = {
