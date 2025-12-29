@@ -77,6 +77,7 @@ default_signal_params_no_sky = {
     "F0": 30.0,
     "F1": -1e-10,
     "F2": 0,
+    "F3": 0,
     "h0": 5.0,
     "cosi": 0,
     "psi": 0,
