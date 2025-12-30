@@ -119,6 +119,8 @@ def data_fixture(request, outdir):
     The fixture makes the Writer object and related parameters available as class
     attributes so they can be accessed in test methods.
     
+    This fixture is designed for use with class-based tests only.
+    
     Args:
         request: pytest request object
         outdir: Output directory from the outdir fixture
@@ -129,8 +131,13 @@ def data_fixture(request, outdir):
     # Skip making outdir, since Writer should do so on first call
     # Note: outdir fixture already handles directory creation
     
-    # Get test class
+    # Get test class - this fixture requires a class-based test
     test_cls = request.cls
+    if test_cls is None:
+        raise ValueError(
+            "data_fixture is designed for class-based tests. "
+            "Use @pytest.mark.usefixtures('data_fixture') on a test class."
+        )
     
     # Create fake data SFTs
     # If we directly set any options as self.xy = 1 here,

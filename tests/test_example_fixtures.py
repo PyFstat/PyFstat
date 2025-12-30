@@ -84,10 +84,3 @@ class TestExampleWithData:
         assert "F0" in self.search_keys
         assert "F0" in self.search_ranges
 
-
-# You can also use fixtures directly in test functions (not just class methods)
-def test_with_outdir_function(outdir):
-    """Example function test using the outdir fixture directly."""
-    # Note: For function-scoped fixtures, you may want to define
-    # a separate fixture with scope="function" instead of "class"
-    assert os.path.isdir(outdir)
