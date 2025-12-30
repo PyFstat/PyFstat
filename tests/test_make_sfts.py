@@ -5,10 +5,7 @@ import lalpulsar
 import numpy as np
 import pytest
 
-# FIXME this should be made cleaner with fixtures
 from commons_for_tests import (
-    BaseForTestsWithData,
-    BaseForTestsWithOutdir,
     default_binary_params,
     default_signal_params,
     default_signal_params_no_sky,
@@ -98,17 +95,17 @@ def test_timestamp_files(tmp_path, caplog):
         )
 
 
-class TestWriter(BaseForTestsWithData):
+@pytest.mark.usefixtures("data_fixture")
+class TestWriter:
     label = "TestWriter"
     writer_class_to_test = pyfstat.Writer
     signal_parameters = default_signal_params
-    multi_detectors = "H1,L1"  # this needs to be overwritable by child test classes that don't support multi-IFOs
+    # this needs to be overwritable by child test classes that don't support multi-IFOs
+    multi_detectors = "H1,L1"
 
     def test_make_cff(self):
         self.Writer.make_cff(verbose=True)
-        self.assertTrue(
-            os.path.isfile(os.path.join(".", self.outdir, self.label + ".cff"))
-        )
+        assert os.path.isfile(os.path.join(".", self.outdir, self.label + ".cff"))
 
     def test_run_makefakedata(self):
         self.Writer.make_data(verbose=True)
@@ -125,8 +122,8 @@ class TestWriter(BaseForTestsWithData):
                 numSFTs * self.Tsft,
             ),
         )
-        self.assertTrue(os.path.isfile(expected_outfile))
-        self.assertTrue(lalpulsar.ValidateSFTFile(expected_outfile) == 0)
+        assert os.path.isfile(expected_outfile)
+        assert lalpulsar.ValidateSFTFile(expected_outfile == 0)
 
     def test_makefakedata_usecached(self):
         if os.path.isfile(self.Writer.config_file_name):
@@ -143,14 +140,14 @@ class TestWriter(BaseForTestsWithData):
         self.Writer.make_cff(verbose=True)
         self.Writer.run_makefakedata()
         time_second = os.path.getmtime(self.Writer.sftfilepath)
-        self.assertTrue(time_first == time_second)
+        assert time_first == time_second
 
         # third run: touch the .cff to force regeneration
         time.sleep(1)  # make sure timestamp is actually different!
         os.system("touch {}".format(self.Writer.config_file_name))
         self.Writer.run_makefakedata()
         time_third = os.path.getmtime(self.Writer.sftfilepath)
-        self.assertFalse(time_first == time_third)
+        assert not (time_first == time_third)
 
         # fourth run: delete .cff and expect a RuntimeError
         os.remove(self.Writer.config_file_name)
@@ -246,58 +243,48 @@ class TestWriter(BaseForTestsWithData):
             max_freqs_noise_and_signal = noise_and_signal_freqs[
                 np.argmax(ns_data, axis=0)
             ]
-            self.assertTrue(len(times[ifo]) == int(np.ceil(self.duration / self.Tsft)))
+            assert len(times[ifo] == int(np.ceil(self.duration / self.Tsft)))
             # FIXME: CW signals don't have to peak at the same frequency, but there
             # are some consistency criteria which may be useful to implement here.
-            # self.assertTrue(len(np.unique(max_freqs_noise_and_signal)) == 1)
+            # assert len(np.unique(max_freqs_noise_and_signal) == 1)
 
             n_data = np.abs(noise_data[ifo])
             max_values_noise = np.max(n_data, axis=0)
             max_freqs_noise = noise_freqs[np.argmax(n_data, axis=0)]
-            self.assertEqual(len(max_freqs_noise), len(max_freqs_noise_and_signal))
+            assert len(max_freqs_noise) == len(max_freqs_noise_and_signal)
             # pure noise: random peak freq in each SFT, lower max values
-            self.assertFalse(len(np.unique(max_freqs_noise)) == 1)
-            self.assertTrue(np.all(max_values_noise < max_values_noise_and_signal))
+            assert not (len(np.unique(max_freqs_noise)) == 1)
+            assert np.all(max_values_noise < max_values_noise_and_signal)
 
             as_data = np.abs(add_signal_data[ifo])
             max_values_added_signal = np.max(as_data, axis=0)
             max_freqs_added_signal = add_signal_freqs[np.argmax(as_data, axis=0)]
-            self.assertEqual(
-                len(max_freqs_added_signal), len(max_freqs_noise_and_signal)
-            )
+            assert len(max_freqs_added_signal) == len(max_freqs_noise_and_signal)
             # peak freqs expected exactly equal to first case,
             # peak values can have a bit of numerical diff
-            self.assertTrue(
-                np.all(max_freqs_added_signal == max_freqs_noise_and_signal)
-            )
-            self.assertTrue(
-                np.allclose(
-                    max_values_added_signal,
-                    max_values_noise_and_signal,
-                    rtol=1e-6,
-                    atol=0,
-                )
+            assert np.all(max_freqs_added_signal == max_freqs_noise_and_signal)
+            assert np.allclose(
+                max_values_added_signal,
+                max_values_noise_and_signal,
+                rtol=1e-6,
+                atol=0,
             )
 
             c_data = np.abs(constr_data[ifo])
             max_values_added_signal_constr = np.max(c_data, axis=0)
             max_freqs_added_signal_constr = constr_freqs[np.argmax(c_data, axis=0)]
-            self.assertEqual(
-                2 * len(max_freqs_added_signal_constr), len(max_freqs_noise_and_signal)
+            assert 2 * len(max_freqs_added_signal_constr) == len(
+                max_freqs_noise_and_signal
             )
             # peak freqs and values expected to be exactly equal
             # regardless of read-in constraints
-            self.assertTrue(
-                np.all(
-                    max_freqs_added_signal_constr
-                    == max_freqs_added_signal[: len(max_freqs_added_signal_constr)]
-                )
+            assert np.all(
+                max_freqs_added_signal_constr
+                == max_freqs_added_signal[: len(max_freqs_added_signal_constr)]
             )
-            self.assertTrue(
-                np.all(
-                    max_values_added_signal_constr
-                    == max_values_added_signal[: len(max_values_added_signal_constr)]
-                )
+            assert np.all(
+                max_values_added_signal_constr
+                == max_values_added_signal[: len(max_values_added_signal_constr)]
             )
 
     def test_noise_sfts_with_gaps(self):
@@ -364,9 +351,8 @@ class TestWriter(BaseForTestsWithData):
                 total_duration,
             ),
         )
-        self.assertTrue(
-            os.path.isfile(expected_SFT_filepath),
-            f"Could not find expected SFT file '{expected_SFT_filepath}'!",
+        assert os.path.isfile(expected_SFT_filepath), (
+            f"Could not find expected SFT file '{expected_SFT_filepath}'!"
         )
 
     def test_noise_sfts_narrowbanded(self):
@@ -421,7 +407,11 @@ class TestWriter(BaseForTestsWithData):
         tsfiles = [
             os.path.join(
                 self.outdir,
-                f"timestamps_{IFO}{'_gaps' if gaps else ''}{'_ns' if nanoseconds else ''}.txt",
+                (
+                    f"timestamps_{IFO}"
+                    f"{'_gaps' if gaps else ''}"
+                    f"{'_ns' if nanoseconds else ''}.txt"
+                ),
             )
             for IFO in IFOs
         ]
@@ -430,10 +420,12 @@ class TestWriter(BaseForTestsWithData):
             with open(tsfile, "w") as fp:
                 k = 0
                 while k * self.Tsft < self.duration:
-                    if (
-                        not gaps or not k == X + 1
-                    ):  # add gaps at different points for each IFO
-                        line = f"{self.tstart + k*self.Tsft}{' 0' if nanoseconds else ''}\n"
+                    # add gaps at different points for each IFO
+                    if not gaps or not k == X + 1:
+                        line = (
+                            f"{self.tstart + k*self.Tsft}"
+                            f"{' 0' if nanoseconds else ''}\n"
+                        )
                         fp.write(line)
                     k += 1
             if gaps:
@@ -469,13 +461,13 @@ class TestWriter(BaseForTestsWithData):
                     total_duration,
                 ),
             )
-            self.assertTrue(os.path.isfile(expected_outfile))
-            self.assertTrue(lalpulsar.ValidateSFTFile(expected_outfile) == 0)
+            assert os.path.isfile(expected_outfile)
+            assert lalpulsar.ValidateSFTFile(expected_outfile == 0)
         if not gaps:
             # test only first IFO's SFT against standard (tstart,duration) run
             SFTnamesplit = tsWriter.sftfilepath.split(";")[0].split("Test")
-            self.assertTrue(self.Writer.sftfilepath.split("Test")[0] == SFTnamesplit[0])
-            self.assertTrue(
+            assert self.Writer.sftfilepath.split("Test")[0] == SFTnamesplit[0]
+            assert (
                 self.Writer.sftfilepath.split("Test")[1].split("-")[1:]
                 == SFTnamesplit[1].split("-")[1:]
             )
@@ -511,7 +503,7 @@ class TestWriter(BaseForTestsWithData):
             timestamps_file = os.path.join(
                 tsWriter.outdir, f"{tsWriter.label}_timestamps_{ifo}.csv"
             )
-            self.assertTrue(os.path.isfile(timestamps_file))
+            assert os.path.isfile(timestamps_file)
             ts = np.genfromtxt(timestamps_file)
             np.testing.assert_almost_equal(ts, timestamps[ifo])
 
@@ -542,7 +534,7 @@ class TestWriter(BaseForTestsWithData):
             timestamps_file = os.path.join(
                 tsWriter.outdir, f"{tsWriter.label}_timestamps_{ifo}.csv"
             )
-            self.assertTrue(os.path.isfile(timestamps_file))
+            assert os.path.isfile(timestamps_file)
             ts = np.genfromtxt(timestamps_file)
             np.testing.assert_almost_equal(ts, timestamps[ifo])
 
@@ -571,7 +563,7 @@ class TestWriter(BaseForTestsWithData):
             timestamps_file = os.path.join(
                 tsWriter.outdir, f"{tsWriter.label}_timestamps_{ifo}.csv"
             )
-            self.assertTrue(os.path.isfile(timestamps_file))
+            assert os.path.isfile(timestamps_file)
             ts = np.genfromtxt(timestamps_file)
             np.testing.assert_almost_equal(ts, timestamps)
 
@@ -611,14 +603,14 @@ class TestLineWriter(TestWriter):
         # Re-run, and should be unchanged
         writer.make_data(verbose=True)
         second_time = os.path.getmtime(writer.sftfilepath)
-        self.assertTrue(first_time == second_time)
+        assert first_time == second_time
 
         # third run: touch the .cff to force regeneration
         time.sleep(1)  # make sure timestamp is actually different!
         os.system("touch {}".format(writer.config_file_name))
         writer.run_makefakedata()
         third_time = os.path.getmtime(writer.sftfilepath)
-        self.assertFalse(first_time == third_time)
+        assert not (first_time == third_time)
 
     def _check_maximum_power_consistency(self, writer):
         freqs, times, data = pyfstat.utils.get_sft_as_arrays(writer.sftfilepath)
@@ -630,14 +622,10 @@ class TestLineWriter(TestWriter):
             max_power_freq_index_with_line = max_power_freq_index[line_active_mask]
 
             # Maximum power should be a the transient line whenever that's on
-            self.assertTrue(
-                np.all(
-                    max_power_freq_index_with_line == max_power_freq_index_with_line[0]
-                )
+            assert np.all(
+                max_power_freq_index_with_line == max_power_freq_index_with_line[0]
             )
-            self.assertTrue(
-                np.allclose(freqs[max_power_freq_index_with_line], writer.F0)
-            )
+            assert np.allclose(freqs[max_power_freq_index_with_line], writer.F0)
 
     def test_transient_line_injection(self):
         # Create data with a line
@@ -725,7 +713,7 @@ class TestBinaryModulatedWriter(TestWriter):
         relative_difference = np.abs(
             1.0 - max_twoF_sample["tp"] / default_binary_params["tp"]
         )
-        self.assertTrue(relative_difference < 1e-5)
+        assert relative_difference < 1e-5
 
 
 class TestGlitchWriter(TestWriter):
@@ -794,17 +782,18 @@ class TestGlitchWriter(TestWriter):
             ]
             max_freq_glitch = freqs_glitch[np.argmax(np.abs(data_glitch[ifo]), axis=0)]
             print([max_freq_vanilla, max_freq_noglitch, max_freq_glitch])
-            self.assertTrue(np.all(times_noglitch[ifo] == times_vanilla[ifo]))
-            self.assertTrue(np.all(times_glitch[ifo] == times_vanilla[ifo]))
-            self.assertEqual(len(np.unique(max_freq_vanilla)), 1)
-            self.assertEqual(len(np.unique(max_freq_noglitch)), 1)
-            self.assertEqual(len(np.unique(max_freq_glitch)), 2)
-            self.assertEqual(max_freq_noglitch[0], max_freq_vanilla[0])
-            self.assertEqual(max_freq_glitch[0], max_freq_noglitch[0])
-            self.assertTrue(max_freq_glitch[-1] > max_freq_noglitch[-1])
+            assert np.all(times_noglitch[ifo] == times_vanilla[ifo])
+            assert np.all(times_glitch[ifo] == times_vanilla[ifo])
+            assert len(np.unique(max_freq_vanilla)) == 1
+            assert len(np.unique(max_freq_noglitch)) == 1
+            assert len(np.unique(max_freq_glitch)) == 2
+            assert max_freq_noglitch[0] == max_freq_vanilla[0]
+            assert max_freq_glitch[0] == max_freq_noglitch[0]
+            assert max_freq_glitch[-1] > max_freq_noglitch[-1]
 
 
-class TestFrequencyModulatedArtifactWriter(BaseForTestsWithOutdir):
+@pytest.mark.usefixtures("outdir")
+class TestFrequencyModulatedArtifactWriter:
     label = "TestFrequencyModulatedArtifactWriter"
 
     def test(self):
@@ -817,4 +806,4 @@ class TestFrequencyModulatedArtifactWriter(BaseForTestsWithOutdir):
             Band=0.1,
         )
         writer.make_data()
-        self.assertTrue(lalpulsar.ValidateSFTFile(writer.sftfilepath) == 0)
+        assert lalpulsar.ValidateSFTFile(writer.sftfilepath == 0)
