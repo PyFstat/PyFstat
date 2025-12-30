@@ -8,11 +8,7 @@ from commons_for_tests.py instead of the legacy unittest.TestCase base classes.
 import os
 
 import pytest
-
-from commons_for_tests import (
-    default_signal_params,
-    default_Writer_params,
-)
+from commons_for_tests import default_signal_params, default_Writer_params
 
 import pyfstat
 
@@ -88,9 +84,7 @@ class TestExampleWithData:
 # ============================================================================
 
 
-def test_with_parameter_fixtures(
-    default_Writer_parameters, default_signal_parameters
-):
+def test_with_parameter_fixtures(default_Writer_parameters, default_signal_parameters):
     """Example using parameter fixtures for test isolation.
 
     This demonstrates how parameter fixtures provide copies of the default
@@ -119,4 +113,3 @@ def test_with_dictionary_constants():
     custom_params = {**default_Writer_params, "label": "my_custom_test"}
     assert custom_params["label"] == "my_custom_test"
     assert custom_params["Tsft"] == default_Writer_params["Tsft"]
-

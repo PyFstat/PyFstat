@@ -161,6 +161,8 @@ def default_transient_parameters():
 # Pytest fixtures for test setup
 # ============================================================================
 
+
+@pytest.fixture(scope="class")
 def data_fixture(request, outdir):
     """Pytest fixture that provides test data with a Writer object and SFTs.
 
@@ -324,4 +326,3 @@ class BaseForTestsWithData(BaseForTestsWithOutdir):
         cls.Writer.make_data(verbose=True)
         cls.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
         cls.search_ranges = {key: [getattr(cls, key)] for key in cls.search_keys}
-
