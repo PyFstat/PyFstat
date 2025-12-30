@@ -20,13 +20,17 @@ class TestGridSearch(BaseForTestsWithData):
 
     def _test_plots(self, search_keys):
         for key in search_keys:
-            self.search.plot_1D(xkey=key, x0=self.Writer.F0, savefig=True)
+            self.search.plot_1D(
+                xkey=key,
+                x0=self.Writer.signal_parameters["Freq"],
+                savefig=True,
+            )
         if len(search_keys) == 2:
             self.search.plot_2D(
                 xkey=search_keys[0],
                 ykey=search_keys[1],
-                x0=self.Writer.F0,
-                y0=self.Writer.F1,
+                x0=self.Writer.signal_parameters["Freq"],
+                y0=self.Writer.signal_parameters["f1dot"],
                 colorbar=True,
             )
         vals = [
@@ -54,11 +58,11 @@ class TestGridSearch(BaseForTestsWithData):
             self.outdir,
             self.Writer.sftfilepath,
             F0s=self.F0s,
-            F1s=[self.Writer.F1],
-            F2s=[self.Writer.F2],
-            Alphas=[self.Writer.Alpha],
-            Deltas=[self.Writer.Delta],
-            tref=self.tref,
+            F1s=[self.Writer.signal_parameters["f1dot"]],
+            F2s=[self.Writer.signal_parameters["f2dot"]],
+            Alphas=[self.Writer.signal_parameters["Alpha"]],
+            Deltas=[self.Writer.signal_parameters["Delta"]],
+            tref=self.Writer.signal_parameters["refTime"],
             BSGL=self.BSGL,
         )
         self.search.run()
@@ -75,10 +79,10 @@ class TestGridSearch(BaseForTestsWithData):
             self.Writer.sftfilepath,
             F0s=self.F0s,
             F1s=self.F1s,
-            F2s=[self.Writer.F2],
-            Alphas=[self.Writer.Alpha],
-            Deltas=[self.Writer.Delta],
-            tref=self.tref,
+            F2s=[self.Writer.signal_parameters["f2dot"]],
+            Alphas=[self.Writer.signal_parameters["Alpha"]],
+            Deltas=[self.Writer.signal_parameters["Delta"]],
+            tref=self.Writer.signal_parameters["refTime"],
             BSGL=self.BSGL,
         )
         self.search.run()
@@ -94,11 +98,11 @@ class TestGridSearch(BaseForTestsWithData):
             self.outdir,
             self.Writer.sftfilepath,
             F0s=self.F0s,
-            F1s=[self.Writer.F1],
-            F2s=[self.Writer.F2],
-            Alphas=[self.Writer.Alpha],
-            Deltas=[self.Writer.Delta],
-            tref=self.tref,
+            F1s=[self.Writer.signal_parameters["f1dot"]],
+            F2s=[self.Writer.signal_parameters["f2dot"]],
+            Alphas=[self.Writer.signal_parameters["Alpha"]],
+            Deltas=[self.Writer.signal_parameters["Delta"]],
+            tref=self.Writer.signal_parameters["refTime"],
         )
         self.search.run()
         self.assertTrue(os.path.isfile(self.search.out_file))
@@ -109,14 +113,23 @@ class TestGridSearch(BaseForTestsWithData):
         CFSv2_loudest_file = os.path.join(self.outdir, "CFSv2_Fstat_loudest.txt")
         cl_CFSv2 = []
         cl_CFSv2.append("lalpulsar_ComputeFstatistic_v2")
-        cl_CFSv2.append("--Alpha {} --AlphaBand 0".format(self.Alpha))
-        cl_CFSv2.append("--Delta {} --DeltaBand 0".format(self.Delta))
+        cl_CFSv2.append(
+            "--Alpha {} --AlphaBand 0".format(self.Writer.signal_parameters["Alpha"])
+        )
+        cl_CFSv2.append(
+            "--Delta {} --DeltaBand 0".format(self.Writer.signal_parameters["Delta"])
+        )
         cl_CFSv2.append("--Freq {}".format(self.F0s[0]))
         cl_CFSv2.append("--FreqBand {}".format(self.F0s[1] - self.F0s[0]))
         cl_CFSv2.append("--dFreq {}".format(self.F0s[2]))
-        cl_CFSv2.append("--f1dot {} --f1dotBand 0".format(self.F1))
+        cl_CFSv2.append(
+            "--f1dot {} --f1dotBand 0".format(self.Writer.signal_parameters["f1dot"])
+        )
+        cl_CFSv2.append(
+            "--f2dot {} --f2dotBand 0".format(self.Writer.signal_parameters["f2dot"])
+        )
         cl_CFSv2.append("--DataFiles '{}'".format(self.Writer.sftfilepath))
-        cl_CFSv2.append("--refTime {}".format(self.tref))
+        cl_CFSv2.append("--refTime {}".format(self.Writer.signal_parameters["refTime"]))
         cl_CFSv2.append("--outputFstat " + CFSv2_out_file)
         cl_CFSv2.append("--outputLoudest " + CFSv2_loudest_file)
         # to match ComputeFstat default (and hence PyFstat) defaults on older
@@ -131,7 +144,9 @@ class TestGridSearch(BaseForTestsWithData):
         )
         self.assertTrue(
             len(np.atleast_1d(CFSv2_out["2F"]))
-            == len(np.atleast_1d(pyfstat_out["twoF"]))
+            == len(np.atleast_1d(pyfstat_out["twoF"])),
+            f"Length of output arrays from CFSv2 ({len(np.atleast_1d(CFSv2_out['2F']))})"
+            f" and PyFstat ({len(np.atleast_1d(pyfstat_out['twoF']))}) differ.",
         )
         self.assertTrue(np.max(np.abs(CFSv2_out["freq"] - pyfstat_out["F0"]) < 1e-16))
         self.assertTrue(np.max(np.abs(CFSv2_out["2F"] - pyfstat_out["twoF"]) < 1))
@@ -162,11 +177,11 @@ class TestGridSearch(BaseForTestsWithData):
             self.outdir,
             self.Writer.sftfilepath,
             F0s=self.F0s,
-            F1s=[self.Writer.F1],
-            F2s=[self.Writer.F2],
-            Alphas=[self.Writer.Alpha],
-            Deltas=[self.Writer.Delta],
-            tref=self.tref,
+            F1s=[self.Writer.signal_parameters["f1dot"]],
+            F2s=[self.Writer.signal_parameters["f2dot"]],
+            Alphas=[self.Writer.signal_parameters["Alpha"]],
+            Deltas=[self.Writer.signal_parameters["Delta"]],
+            tref=self.Writer.signal_parameters["refTime"],
             nsegs=2,
             BSGL=self.BSGL,
         )
@@ -182,11 +197,11 @@ class TestGridSearch(BaseForTestsWithData):
             self.Writer.sftfilepath,
             F0s=self.F0s,
             F1s=self.F1s,
-            F2s=[self.Writer.F2],
-            Alphas=[self.Writer.Alpha],
-            Deltas=[self.Writer.Delta],
-            tref=self.tref,
-            tglitchs=[self.tref],
+            F2s=[self.Writer.signal_parameters["f2dot"]],
+            Alphas=[self.Writer.signal_parameters["Alpha"]],
+            Deltas=[self.Writer.signal_parameters["Delta"]],
+            tref=self.Writer.signal_parameters["refTime"],
+            tglitchs=[self.Writer.signal_parameters["refTime"]],
             # BSGL=self.BSGL,  # not supported by this class
         )
         self.search.run()
@@ -207,17 +222,23 @@ class TestGridSearchBSGL(TestGridSearch):
         # just restricted to the single detector.
         SFTs_H1 = self.Writer.sftfilepath.split(";")[0]
         SFTs_L1 = self.Writer.sftfilepath.split(";")[1]
+        linefreq = self.Writer.signal_parameters["Freq"] + 0.005
+        F0s_wider = [
+            29.99,
+            30.01,
+            1e-3,
+        ]  # need coarse grid spacing to separate line from signal injection
         extra_writer = pyfstat.Writer(
             label=self.label + "WithLine",
             outdir=self.outdir,
-            tref=self.tref,
-            F0=self.Writer.F0 + 0.0005,
-            F1=self.Writer.F1,
-            F2=self.Writer.F2,
-            Alpha=self.Writer.Alpha,
-            Delta=self.Writer.Delta,
-            h0=10 * self.Writer.h0,
-            cosi=self.Writer.cosi,
+            tref=self.Writer.signal_parameters["refTime"],
+            F0=linefreq,
+            F1=self.Writer.signal_parameters["f1dot"],
+            F2=self.Writer.signal_parameters["f2dot"],
+            Alpha=self.Writer.signal_parameters["Alpha"],
+            Delta=self.Writer.signal_parameters["Delta"],
+            h0=10 * self.Writer.signal_parameters["h0"],
+            cosi=self.Writer.signal_parameters["cosi"],
             sqrtSX=0,  # don't add yet another set of Gaussian noise
             noiseSFTs=SFTs_H1,
             SFTWindowType=self.Writer.SFTWindowType,
@@ -230,12 +251,12 @@ class TestGridSearchBSGL(TestGridSearch):
             label="GridSearch",
             outdir=self.outdir,
             sftfilepattern=data_with_line,
-            F0s=self.F0s,
-            F1s=[self.Writer.F1],
-            F2s=[self.Writer.F2],
-            Alphas=[self.Writer.Alpha],
-            Deltas=[self.Writer.Delta],
-            tref=self.tref,
+            F0s=F0s_wider,
+            F1s=[self.Writer.signal_parameters["f1dot"]],
+            F2s=[self.Writer.signal_parameters["f2dot"]],
+            Alphas=[self.Writer.signal_parameters["Alpha"]],
+            Deltas=[self.Writer.signal_parameters["Delta"]],
+            tref=self.Writer.signal_parameters["refTime"],
             singleFstats=True,
             BSGL=False,
         )
@@ -248,12 +269,12 @@ class TestGridSearchBSGL(TestGridSearch):
             label="GridSearch",
             outdir=self.outdir,
             sftfilepattern=data_with_line,
-            F0s=self.F0s,
-            F1s=[self.Writer.F1],
-            F2s=[self.Writer.F2],
-            Alphas=[self.Writer.Alpha],
-            Deltas=[self.Writer.Delta],
-            tref=self.tref,
+            F0s=F0s_wider,
+            F1s=[self.Writer.signal_parameters["f1dot"]],
+            F2s=[self.Writer.signal_parameters["f2dot"]],
+            Alphas=[self.Writer.signal_parameters["Alpha"]],
+            Deltas=[self.Writer.signal_parameters["Delta"]],
+            tref=self.Writer.signal_parameters["refTime"],
             BSGL=True,
         )
         searchBSGL.run()
@@ -276,9 +297,9 @@ class TestGridSearchBSGL(TestGridSearch):
             msg=f"The BSGL search should produce a lower max2F value than the F search, but {maxBSGL_point['twoF']} >= {max2F_point_searchF['twoF']}",
         )
         self.assertTrue(
-            np.abs(maxBSGL_point["F0"] - self.F0)
-            < np.abs(max2F_point_searchF["F0"] - self.F0),
-            msg="The maxBSGL point should be the true multi-IFO signal, while max2F should have fallen for the single-IFO line. But the former is further away from the injection frequency.",
+            np.abs(maxBSGL_point["F0"] - self.Writer.signal_parameters["Freq"])
+            < np.abs(max2F_point_searchF["F0"] - self.Writer.signal_parameters["Freq"]),
+            msg=f"The maxBSGL point ({maxBSGL_point['F0']}) should be the true multi-IFO signal ({self.Writer.signal_parameters['Freq']}), while max2F  ({max2F_point_searchF['F0']}) should have fallen for the single-IFO line ({linefreq}).",
         )
         self.assertTrue(
             maxBSGL_point["twoFH1"] < max2F_point_searchF["twoFH1"],
@@ -316,11 +337,11 @@ class TestTransientGridSearch(BaseForTestsWithData):
             self.outdir,
             self.Writer.sftfilepath,
             F0s=self.F0s,
-            F1s=[self.Writer.F1],
-            F2s=[self.Writer.F2],
-            Alphas=[self.Writer.Alpha],
-            Deltas=[self.Writer.Delta],
-            tref=self.tref,
+            F1s=[self.Writer.signal_parameters["f1dot"]],
+            F2s=[self.Writer.signal_parameters["f2dot"]],
+            Alphas=[self.Writer.signal_parameters["Alpha"]],
+            Deltas=[self.Writer.signal_parameters["Delta"]],
+            tref=self.Writer.signal_parameters["refTime"],
             singleFstats=singleFstats,
             BSGL=BSGL,
             BtSG=BtSG,
@@ -402,7 +423,7 @@ class TestSearchOverGridFile(BaseForTestsWithData):
             for F3 in self.F3s:
                 for F0 in np.arange(*self.F0s):
                     fp.write(
-                        f"{F0:.16g} {self.Writer.Alpha:.16g} {self.Writer.Delta:.16g} {self.Writer.F1:.16g} {self.Writer.F2:.16g}  {F3:.16g}"
+                        f"{F0:.16g} {self.Writer.signal_parameters["Alpha"]:.16g} {self.Writer.signal_parameters["Delta"]:.16g} {self.Writer.signal_parameters["f1dot"]:.16g} {self.Writer.signal_parameters["f2dot"]:.16g}  {F3:.16g}"
                     )
                     if binary:
                         for key in default_binary_params.keys():
@@ -417,17 +438,17 @@ class TestSearchOverGridFile(BaseForTestsWithData):
         cl_CFSv2.append("lalpulsar_ComputeFstatistic_v2")
         cl_CFSv2.append(f"--Freq {self.F0s[0]:.16g}")
         cl_CFSv2.append(f"--FreqBand {(self.F0s[1] - self.F0s[0]):.16g}")
-        cl_CFSv2.append(f"--Alpha {self.Writer.Alpha:.16g}")
-        cl_CFSv2.append(f"--Delta {self.Writer.Delta:.16g}")
-        cl_CFSv2.append(f"--f1dot {self.Writer.F1:.16g}")
+        cl_CFSv2.append(f"--Alpha {self.Writer.signal_parameters['Alpha']:.16g}")
+        cl_CFSv2.append(f"--Delta {self.Writer.signal_parameters['Delta']:.16g}")
+        cl_CFSv2.append(f"--f1dot {self.Writer.signal_parameters['f1dot']:.16g}")
         cl_CFSv2.append(f"--f1dotBand {3e-7:.16g}")
-        cl_CFSv2.append(f"--f2dot {self.Writer.F2:.16g}")
+        cl_CFSv2.append(f"--f2dot {self.Writer.signal_parameters['f2dot']:.16g}")
         cl_CFSv2.append(f"--f2dotBand {3e-11:.16g}")
         cl_CFSv2.append(f"--f3dot {self.F3s[0]:.16g}")
         cl_CFSv2.append(f"--f3dotBand {3e-15:.16g}")
         cl_CFSv2.append("--gridType 8")
         cl_CFSv2.append("--DataFiles '{}'".format(self.Writer.sftfilepath))
-        cl_CFSv2.append("--refTime {}".format(self.tref))
+        cl_CFSv2.append("--refTime {}".format(self.Writer.signal_parameters["refTime"]))
         cl_CFSv2.append(f"--metricMismatch {0.02:.16g}")
         cl_CFSv2.append("--countTemplates TRUE")
         cl_CFSv2.append("--strictSpindownBounds TRUE")
@@ -467,7 +488,7 @@ class TestSearchOverGridFile(BaseForTestsWithData):
             outdir=self.outdir,
             sftfilepattern=self.Writer.sftfilepath,
             gridfile=self.gridfile,
-            tref=self.tref,
+            tref=self.Writer.signal_parameters["refTime"],
             reading_method=reading_method,
             BtSG=BtSG,
             **transient_search_params,
@@ -490,10 +511,10 @@ class TestSearchOverGridFile(BaseForTestsWithData):
             cl_CFSv2.append(f"--Freq {self.F0s[0]:.16g}")
             cl_CFSv2.append(f"--FreqBand {self.F0s[1] - self.F0s[0]:.16g}")
             cl_CFSv2.append(f"--dFreq {self.F0s[2]:.16g}")
-            cl_CFSv2.append(f"--Alpha {self.Writer.Alpha:.16g}")
-            cl_CFSv2.append(f"--Delta {self.Writer.Delta:.16g}")
-            cl_CFSv2.append(f"--f1dot {self.Writer.F1:.16g}")
-            cl_CFSv2.append(f"--f2dot {self.Writer.F2:.16g}")
+            cl_CFSv2.append(f"--Alpha {self.Writer.signal_parameters['Alpha']:.16g}")
+            cl_CFSv2.append(f"--Delta {self.Writer.signal_parameters['Delta']:.16g}")
+            cl_CFSv2.append(f"--f1dot {self.Writer.signal_parameters['f1dot']:.16g}")
+            cl_CFSv2.append(f"--f2dot {self.Writer.signal_parameters['f2dot']:.16g}")
             cl_CFSv2.append(f"--f3dot {self.F3s[0]:.16g}")
             cl_CFSv2.append(f"--f3dotBand {(self.F3s[1] - self.F3s[0]):.16g}")
             cl_CFSv2.append(f"--df3dot {(self.F3s[1] - self.F3s[0]):.16g}")
@@ -518,7 +539,7 @@ class TestSearchOverGridFile(BaseForTestsWithData):
             CFSv2_out_file_transient = CFSv2_out_file.replace(".txt", "_transient.txt")
             cl_CFSv2.append(f"--outputTransientStats {CFSv2_out_file_transient}")
         cl_CFSv2.append("--DataFiles '{}'".format(self.Writer.sftfilepath))
-        cl_CFSv2.append("--refTime {}".format(self.tref))
+        cl_CFSv2.append("--refTime {}".format(self.Writer.signal_parameters["refTime"]))
         cl_CFSv2.append("--outputFstat " + CFSv2_out_file)
         cl_CFSv2.append("--outputLoudest " + CFSv2_loudest_file)
         # to match ComputeFstat default (and hence PyFstat) defaults on older

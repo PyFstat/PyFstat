@@ -71,13 +71,6 @@ class TestExampleWithData:
         # The sftfilepath may contain wildcards, so check the directory
         assert os.path.isdir(self.outdir)
 
-    def test_search_keys_available(self):
-        """Test that search keys and ranges are available."""
-        assert hasattr(self, "search_keys")
-        assert hasattr(self, "search_ranges")
-        assert "F0" in self.search_keys
-        assert "F0" in self.search_ranges
-
 
 # ============================================================================
 # Examples using default parameter fixtures
@@ -106,7 +99,6 @@ def test_with_dictionary_constants():
     directly, which is recommended when you don't need to modify them.
     """
     # Import and use dictionaries directly
-    assert default_Writer_params["label"] == "test"
     assert default_signal_params["F0"] == 30.0
 
     # Merge dictionaries for custom configurations

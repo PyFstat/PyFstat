@@ -82,6 +82,8 @@ def match_commandlines(cl1, cl2, be_strict_about_full_executable_path=False):
     -------
     match: bool
         Whether the executable and all `key=val` pairs of the two strings matched.
+    unmatched: np.ndarray
+        Sorted 1D array of unique items that are in only one of the commandlines.
     """
     cl1s = cl1.split(" ")
     cl2s = cl2.split(" ")
@@ -91,4 +93,4 @@ def match_commandlines(cl1, cl2, be_strict_about_full_executable_path=False):
         cl1s[0] = os.path.basename(cl1s[0])
         cl2s[0] = os.path.basename(cl2s[0])
     unmatched = np.setxor1d(cl1s, cl2s)
-    return len(unmatched) == 0
+    return len(unmatched) == 0, unmatched

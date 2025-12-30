@@ -756,6 +756,8 @@ class ComputeFstat(BaseSearchClass):
 
         logger.info("Initialising PulsarDoplerParams")
         PulsarDopplerParams = lalpulsar.PulsarDopplerParams()
+        if self.tref is None:
+            raise ValueError("tref must not be None (should be a GPS time)!")
         PulsarDopplerParams.refTime = self.tref
         PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
         self.PulsarDopplerParams = PulsarDopplerParams
