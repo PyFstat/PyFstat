@@ -123,7 +123,7 @@ class TestWriter:
             ),
         )
         assert os.path.isfile(expected_outfile)
-        assert lalpulsar.ValidateSFTFile(expected_outfile == 0)
+        assert lalpulsar.ValidateSFTFile(expected_outfile) == 0
 
     def test_makefakedata_usecached(self):
         if os.path.isfile(self.Writer.config_file_name):
@@ -462,7 +462,7 @@ class TestWriter:
                 ),
             )
             assert os.path.isfile(expected_outfile)
-            assert lalpulsar.ValidateSFTFile(expected_outfile == 0)
+            assert lalpulsar.ValidateSFTFile(expected_outfile) == 0
         if not gaps:
             # test only first IFO's SFT against standard (tstart,duration) run
             SFTnamesplit = tsWriter.sftfilepath.split(";")[0].split("Test")
@@ -806,4 +806,4 @@ class TestFrequencyModulatedArtifactWriter:
             Band=0.1,
         )
         writer.make_data()
-        assert lalpulsar.ValidateSFTFile(writer.sftfilepath == 0)
+        assert lalpulsar.ValidateSFTFile(writer.sftfilepath) == 0
