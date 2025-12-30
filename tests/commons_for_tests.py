@@ -2,7 +2,6 @@ import logging
 import os
 import shutil
 import unittest
-import warnings
 
 import pytest
 
@@ -27,17 +26,17 @@ def is_flaky(err, *args):
 @pytest.fixture(scope="class")
 def outdir(request):
     """Pytest fixture that provides a clean output directory for tests.
-    
+
     This fixture creates a test data directory before tests run and cleans it up
-    afterwards. The directory name can be customized by setting an 'outdir' 
+    afterwards. The directory name can be customized by setting an 'outdir'
     attribute on the test class.
-    
+
     Yields:
         str: Path to the output directory
     """
     # Get outdir from test class if it exists, otherwise use default
     test_outdir = getattr(request.cls, "outdir", "TestData")
-    
+
     # Ensure a clean working directory
     if os.path.isdir(test_outdir):
         try:
@@ -45,13 +44,13 @@ def outdir(request):
         except OSError:
             logging.warning("{} not removed prior to tests".format(test_outdir))
     os.makedirs(test_outdir, exist_ok=True)
-    
+
     # Store outdir on the test class instance if it exists
     if request.cls is not None:
         request.cls.outdir = test_outdir
-    
+
     yield test_outdir
-    
+
     # Cleanup after tests
     if os.path.isdir(test_outdir):
         try:
@@ -111,26 +110,26 @@ default_transient_params = {
 @pytest.fixture(scope="class")
 def data_fixture(request, outdir):
     """Pytest fixture that provides test data with a Writer object and SFTs.
-    
+
     This fixture creates fake data SFTs using the pyfstat.Writer class. It reads
     parameters from the test class attributes (with defaults) and creates a Writer
     object that generates synthetic signal data.
-    
+
     The fixture makes the Writer object and related parameters available as class
     attributes so they can be accessed in test methods.
-    
+
     This fixture is designed for use with class-based tests only.
-    
+
     Args:
         request: pytest request object
         outdir: Output directory from the outdir fixture
-        
+
     Yields:
         The test class instance with Writer and related attributes set
     """
     # Skip making outdir, since Writer should do so on first call
     # Note: outdir fixture already handles directory creation
-    
+
     # Get test class - this fixture requires a class-based test
     test_cls = request.cls
     if test_cls is None:
@@ -138,7 +137,7 @@ def data_fixture(request, outdir):
             "data_fixture is designed for class-based tests. "
             "Use @pytest.mark.usefixtures('data_fixture') on a test class."
         )
-    
+
     # Create fake data SFTs
     # If we directly set any options as self.xy = 1 here,
     # then values set for derived classes may get overwritten,
@@ -147,7 +146,7 @@ def data_fixture(request, outdir):
     for key, val in params.items():
         if not hasattr(test_cls, key):
             setattr(test_cls, key, val)
-    
+
     test_cls.tref = test_cls.tstart
     test_cls.Writer = pyfstat.Writer(
         label=test_cls.label,
@@ -172,8 +171,10 @@ def data_fixture(request, outdir):
     )
     test_cls.Writer.make_data(verbose=True)
     test_cls.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
-    test_cls.search_ranges = {key: [getattr(test_cls, key)] for key in test_cls.search_keys}
-    
+    test_cls.search_ranges = {
+        key: [getattr(test_cls, key)] for key in test_cls.search_keys
+    }
+
     yield test_cls
 
 
@@ -184,19 +185,18 @@ def data_fixture(request, outdir):
 
 class BaseForTestsWithOutdir(unittest.TestCase):
     """Legacy base class for tests requiring an output directory.
-    
+
     .. deprecated::
         Use the `outdir` pytest fixture instead.
     """
-    
+
     outdir = "TestData"
 
     @classmethod
     def setUpClass(cls):
-        warnings.warn(
-            "BaseForTestsWithOutdir is deprecated. Use the 'outdir' pytest fixture instead.",
-            DeprecationWarning,
-            stacklevel=3
+        logging.warning(
+            "BaseForTestsWithOutdir is deprecated. "
+            "Use the 'outdir' pytest fixture instead."
         )
         # ensure a clean working directory
         if os.path.isdir(cls.outdir):
@@ -217,19 +217,18 @@ class BaseForTestsWithOutdir(unittest.TestCase):
 
 class BaseForTestsWithData(BaseForTestsWithOutdir):
     """Legacy base class for tests requiring test data with SFTs.
-    
+
     .. deprecated::
         Use the `data_fixture` pytest fixture instead.
     """
-    
+
     outdir = "TestData"
 
     @classmethod
     def setUpClass(cls):
-        warnings.warn(
-            "BaseForTestsWithData is deprecated. Use the 'data_fixture' pytest fixture instead.",
-            DeprecationWarning,
-            stacklevel=3
+        logging.warning(
+            "BaseForTestsWithData is deprecated. "
+            "Use the 'data_fixture' pytest fixture instead."
         )
         # ensure a clean working directory
         if os.path.isdir(cls.outdir):
