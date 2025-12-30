@@ -189,7 +189,7 @@ class BaseForTestsWithOutdir(unittest.TestCase):
         warnings.warn(
             "BaseForTestsWithOutdir is deprecated. Use the 'outdir' pytest fixture instead.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=3
         )
         # ensure a clean working directory
         if os.path.isdir(cls.outdir):
@@ -222,7 +222,7 @@ class BaseForTestsWithData(BaseForTestsWithOutdir):
         warnings.warn(
             "BaseForTestsWithData is deprecated. Use the 'data_fixture' pytest fixture instead.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=3
         )
         # ensure a clean working directory
         if os.path.isdir(cls.outdir):
