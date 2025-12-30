@@ -4,7 +4,6 @@ import time
 import lalpulsar
 import numpy as np
 import pytest
-
 from commons_for_tests import (
     default_binary_params,
     default_signal_params,
@@ -351,9 +350,9 @@ class TestWriter:
                 total_duration,
             ),
         )
-        assert os.path.isfile(expected_SFT_filepath), (
-            f"Could not find expected SFT file '{expected_SFT_filepath}'!"
-        )
+        assert os.path.isfile(
+            expected_SFT_filepath
+        ), f"Could not find expected SFT file '{expected_SFT_filepath}'!"
 
     def test_noise_sfts_narrowbanded(self):
         # create some broad SFTs
@@ -375,7 +374,7 @@ class TestWriter:
         cl_split = "lalpulsar_splitSFTs"
         cl_split += " --frequency-bandwidth 1"
         cl_split += f" --start-frequency {writer.fmin}"
-        cl_split += f" --end-frequency {writer.fmin+writer.Band}"
+        cl_split += f" --end-frequency {writer.fmin + writer.Band}"
         cl_split += f" --output-directory {self.outdir}"
         cl_split += f" -- {writer.sftfilepath}"
         pyfstat.utils.run_commandline(cl_split)
@@ -423,7 +422,7 @@ class TestWriter:
                     # add gaps at different points for each IFO
                     if not gaps or not k == X + 1:
                         line = (
-                            f"{self.tstart + k*self.Tsft}"
+                            f"{self.tstart + k * self.Tsft}"
                             f"{' 0' if nanoseconds else ''}\n"
                         )
                         fp.write(line)
