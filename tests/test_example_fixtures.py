@@ -10,10 +10,8 @@ import os
 import pytest
 
 from commons_for_tests import (
-    data_fixture,  # noqa: F401 - imported for fixture usage
     default_signal_params,
     default_Writer_params,
-    outdir,  # noqa: F401 - imported for fixture usage
 )
 
 import pyfstat

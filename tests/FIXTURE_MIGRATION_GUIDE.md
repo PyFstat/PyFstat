@@ -7,6 +7,9 @@ This guide demonstrates how to migrate from the legacy `BaseForTestsWithOutdir` 
 The `commons_for_tests.py` module now provides pytest fixtures as the recommended approach for test setup:
 - `outdir` fixture: Provides a clean output directory for tests
 - `data_fixture` fixture: Provides test data with a Writer object and SFTs
+- Parameter fixtures: Provide copies of default parameter dictionaries
+
+The fixtures are automatically discovered by pytest through the `conftest.py` file in the tests directory.
 
 The legacy `BaseForTestsWithOutdir` and `BaseForTestsWithData` classes are still available for backward compatibility but are deprecated.
 
