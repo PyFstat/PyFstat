@@ -114,6 +114,44 @@ When migrating, also update unittest-style assertions to pytest-style:
 - **Modern standard**: pytest is the modern testing standard for Python
 - **No inheritance required**: Simpler test class hierarchies
 
+## Using default parameter fixtures
+
+The module provides both dictionary constants and fixture versions of default parameters for flexibility.
+
+### Approach 1: Using dictionary constants (simpler, recommended for most cases)
+
+```python
+from commons_for_tests import default_Writer_params, default_signal_params
+
+def test_writer_params():
+    # Directly use the dictionaries
+    params = {**default_Writer_params, "label": "custom_test"}
+    writer = pyfstat.Writer(**params, **default_signal_params)
+```
+
+### Approach 2: Using parameter fixtures (recommended for isolated tests)
+
+```python
+import pytest
+
+def test_writer_params_fixture(default_Writer_parameters, default_signal_parameters):
+    # Fixtures provide copies, ensuring test isolation
+    default_Writer_parameters["label"] = "custom_test"
+    writer = pyfstat.Writer(**default_Writer_parameters, **default_signal_parameters)
+```
+
+### Available parameter fixtures
+
+- `default_Writer_parameters()`: Returns a copy of `default_Writer_params`
+- `default_signal_parameters()`: Returns a copy of `default_signal_params`
+- `default_signal_parameters_no_sky()`: Returns a copy of `default_signal_params_no_sky`
+- `default_binary_parameters()`: Returns a copy of `default_binary_params`
+- `default_transient_parameters()`: Returns a copy of `default_transient_params`
+
+**When to use fixtures vs dictionaries:**
+- Use **dictionaries** when you need to merge/spread parameters or for simple read-only access
+- Use **fixtures** when you need to modify parameters without affecting other tests (automatic isolation)
+
 ## Backward compatibility
 
 The legacy `BaseForTestsWithOutdir` and `BaseForTestsWithData` classes will continue to work but will emit deprecation warnings. This allows for gradual migration of existing tests.

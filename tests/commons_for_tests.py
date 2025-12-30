@@ -107,7 +107,60 @@ default_transient_params = {
 }
 
 
-@pytest.fixture(scope="class")
+# ============================================================================
+# Pytest fixtures for default parameters (recommended for new tests)
+# ============================================================================
+
+
+@pytest.fixture
+def default_Writer_parameters():
+    """Fixture providing default Writer parameters.
+
+    Returns a copy of the default_Writer_params dictionary.
+    """
+    return default_Writer_params.copy()
+
+
+@pytest.fixture
+def default_signal_parameters_no_sky():
+    """Fixture providing default signal parameters without sky location.
+
+    Returns a copy of the default_signal_params_no_sky dictionary.
+    """
+    return default_signal_params_no_sky.copy()
+
+
+@pytest.fixture
+def default_signal_parameters():
+    """Fixture providing default signal parameters.
+
+    Returns a copy of the default_signal_params dictionary.
+    """
+    return default_signal_params.copy()
+
+
+@pytest.fixture
+def default_binary_parameters():
+    """Fixture providing default binary parameters.
+
+    Returns a copy of the default_binary_params dictionary.
+    """
+    return default_binary_params.copy()
+
+
+@pytest.fixture
+def default_transient_parameters():
+    """Fixture providing default transient parameters.
+
+    Returns a copy of the default_transient_params dictionary.
+    """
+    return default_transient_params.copy()
+
+
+# ============================================================================
+# Pytest fixtures for test setup
+# ============================================================================
+
 def data_fixture(request, outdir):
     """Pytest fixture that provides test data with a Writer object and SFTs.
 
