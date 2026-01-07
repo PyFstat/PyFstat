@@ -28,6 +28,7 @@ logger = pyfstat.set_up_logger(label=label, outdir=outdir)
 
 signal = True  # turn off for pure noise spectrogram
 binary = True  # turn off for simpler isolated neutron star signal
+transient = False  # turn on for a time-limited signal
 
 # this sets how strong the signal is compared to the noise (higher value -> weaker)
 depth = 5
@@ -90,6 +91,15 @@ if binary:
         }
     )
 
+# optionally add transient parameters
+if transient:
+    signal_parameters.update(
+        {
+            "transientStartTime": segments[1]["tstart"],
+            "transientTau": segments[1]["duration"],
+            "transientWindowType": "exp",  # exponentially decaying signal amplitude
+        }
+    )
 # making data
 data = pyfstat.Writer(
     label=label,
