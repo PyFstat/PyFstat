@@ -423,7 +423,7 @@ class TestSearchOverGridFile(BaseForTestsWithData):
             for F3 in self.F3s:
                 for F0 in np.arange(*self.F0s):
                     fp.write(
-                        f"{F0:.16g} {self.Writer.signal_parameters["Alpha"]:.16g} {self.Writer.signal_parameters["Delta"]:.16g} {self.Writer.signal_parameters["f1dot"]:.16g} {self.Writer.signal_parameters["f2dot"]:.16g}  {F3:.16g}"
+                        f"{F0:.16g} {self.Writer.signal_parameters['Alpha']:.16g} {self.Writer.signal_parameters['Delta']:.16g} {self.Writer.signal_parameters['f1dot']:.16g} {self.Writer.signal_parameters['f2dot']:.16g}  {F3:.16g}"
                     )
                     if binary:
                         for key in default_binary_params.keys():

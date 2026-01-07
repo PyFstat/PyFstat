@@ -363,22 +363,29 @@ class MCMCSearch(BaseSearchClass):
 
     def _logl(self, theta, search):
         in_theta = self._set_point_for_evaluation(theta)
-        detstat = search.get_det_stat(*in_theta)
+        params = {key: val for key, val in zip(self.full_theta_keys, in_theta)}
+        detstat = search.get_det_stat(params=params)
         return detstat * self.likelihooddetstatmultiplier + self.likelihoodcoef
 
     def _unpack_input_theta(self):
-        self.full_theta_keys = self.default_search_keys.copy()
+        # full_theta_keys: all parameters needed to evaluate likelihood
+        self.full_theta_keys = self.supported_search_keys.copy()
         if self.binary:
             self.full_theta_keys += self.binary_keys
+        # copy: to make sure we don't miss any
         full_theta_keys_copy = copy.copy(self.full_theta_keys)
 
+        # theta_keys: the parameters we actually sample over (not fixed)
+        # fixed_theta: those with fixed values
         self.theta_keys = []
         fixed_theta_dict = {}
         for key, val in self.theta_prior.items():
             if type(val) is dict:
+                # these are not fixed (will be sampled over)
                 fixed_theta_dict[key] = 0
                 self.theta_keys.append(key)
             elif type(val) in [float, int, np.float64]:
+                # these are fixed
                 fixed_theta_dict[key] = val
             else:
                 raise ValueError(
@@ -386,13 +393,16 @@ class MCMCSearch(BaseSearchClass):
                 )
             full_theta_keys_copy.pop(full_theta_keys_copy.index(key))
 
-        if len(full_theta_keys_copy) > 0:  # pragma: no cover
-            raise ValueError(
-                ("Input dictionary `theta` is missing the following keys: {}").format(
-                    full_theta_keys_copy
+        for key in full_theta_keys_copy:
+            if key in self.default_search_keys:  # pragma: no cover
+                raise ValueError(
+                    f"Input dictionary `theta` is missing the following required key: {key}"
                 )
-            )
+            else:
+                self.full_theta_keys.pop(self.full_theta_keys.index(key))
 
+        # theta_idx: the indices of the full_theta_keys entries that match theta_keys
+        # (i.e. will be sampled over)
         self.fixed_theta = [fixed_theta_dict[key] for key in self.full_theta_keys]
         self.theta_idxs = [self.full_theta_keys.index(k) for k in self.theta_keys]
         self.theta_symbols = [self.tex_labels[k] for k in self.theta_keys]
@@ -1347,16 +1357,25 @@ class MCMCSearch(BaseSearchClass):
         for consistency with other MCMC plotting functions.
         """
         logger.info("Getting cumulative 2F")
-        d, maxtwoF = self.get_max_twoF()
+        max_dict, maxtwoF = self.get_max_twoF()
+        params_dict_for_cumulative_twoF = {}
+        # Remove transient parameters, since the cumulative plot intrinsically does time steps.
+        # We check for "ransient" to be safe with capitalisation.
+        for key, val in max_dict.items():
+            if "ransient" not in key:
+                params_dict_for_cumulative_twoF[key] = val
         for key, val in self.theta_prior.items():
-            if key not in d:
-                d[key] = val
+            if key not in params_dict_for_cumulative_twoF and "ransient" not in key:
+                params_dict_for_cumulative_twoF[key] = val
 
         if kwargs.get("savefig") is None:
             kwargs["savefig"] = True
 
         self.search.plot_twoF_cumulative(
-            CFS_input=d, label=self.label, outdir=self.outdir, **kwargs
+            CFS_input={"params": params_dict_for_cumulative_twoF},
+            label=self.label,
+            outdir=self.outdir,
+            **kwargs,
         )
 
     def _generic_lnprior(self, **kwargs):

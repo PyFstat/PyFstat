@@ -54,6 +54,19 @@ class BaseSearchClass:
     not needed when using the new parameters dictionary.
     """
 
+    supported_search_keys = (
+        default_search_keys
+        + [f"F{k}" for k in range(3, lalpulsar.PULSAR_MAX_SPINS)]
+        + ["transient_tstart", "transient_duration"]
+        + binary_keys
+    )
+    """All standard parameter names.
+
+    This full set is not all required,
+    but "supported" in the sense that the code knows about these,
+    and they can be passed for detection statistic evaluation if needed.
+    """
+
     tex_labels = {
         # standard Doppler parameters
         "F0": r"$f$",
@@ -756,7 +769,7 @@ class ComputeFstat(BaseSearchClass):
 
         logger.info("Initialising PulsarDoplerParams")
         PulsarDopplerParams = lalpulsar.PulsarDopplerParams()
-        if self.tref is None:
+        if self.tref is None:  # pragma: no cover
             raise ValueError("tref must not be None (should be a GPS time)!")
         PulsarDopplerParams.refTime = self.tref
         PulsarDopplerParams.fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
@@ -1589,6 +1602,8 @@ class ComputeFstat(BaseSearchClass):
         params: dict
             A dictionary defining a parameter space point.
             See get_fullycoherent_twoF() for more information.
+            Note this may NOT include transient parameters.
+            as these are intrinsically taken care of by this function.
         tstart, tend: int or None
             GPS times to restrict the range of data used.
             If None: falls back to self.minStartTime and self.maxStartTime;.
@@ -1606,6 +1621,15 @@ class ComputeFstat(BaseSearchClass):
             Values of twoF computed over
             [[tstart,tstart+duration] for duration in cumulative_durations].
         """
+
+        # Check for transient-related keys in a case-insensitive way.
+        if params:
+            if any(
+                "transient" in str(k).lower() for k in params.keys()
+            ):  # pragma: no cover
+                raise ValueError(
+                    "params dictionary must not include transient parameters"
+                )
 
         reset_old_window = None
         if not self.transientWindowType:

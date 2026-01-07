@@ -320,7 +320,7 @@ class Writer(BaseSearchClass):
         noise_multi_sft_catalog = lalpulsar.GetMultiSFTCatalogView(
             lalpulsar.SFTdataFind(self.noiseSFTs, SFTConstraint)
         )
-        if noise_multi_sft_catalog.length == 0:
+        if noise_multi_sft_catalog.length == 0:  # pragma: no cover
             raise IOError("Got empty SFT catalog.")
 
         # Information to be extracted from the SFTs themselves
@@ -356,9 +356,9 @@ class Writer(BaseSearchClass):
 
         # Get the "overall" values of the search
         Tsft = np.unique(Tsft)
-        if len(Tsft) != 1:
+        if len(Tsft) != 1:  # pragma: no cover
             raise ValueError(f"SFTs contain different basetimes: {Tsft}")
-        if Tsft[0] != self.Tsft:
+        if Tsft[0] != self.Tsft:  # pragma: no cover
             logger.warning(
                 f"Overwriting self.Tsft={self.Tsft}"
                 f" with value {Tsft[0]} read from noiseSFTs."
@@ -381,7 +381,7 @@ class Writer(BaseSearchClass):
         IFOs = self.detectors.split(",")
         # at this point, it's definitely a comma-separated string
         tsfiles = self.timestamps.split(",")
-        if len(IFOs) != len(tsfiles):
+        if len(IFOs) != len(tsfiles):  # pragma: no cover
             raise ValueError(
                 f"Length of detectors=='{self.detectors}'"
                 f" does not match that of timestamps=='{self.timestamps}'"
@@ -453,7 +453,7 @@ class Writer(BaseSearchClass):
 
             if self.detectors is not None:
                 ifos_in_detectors = self.detectors.split(",")
-                if np.setdiff1d(ifos, ifos_in_detectors).size:
+                if np.setdiff1d(ifos, ifos_in_detectors).size:  # pragma: no cover
                     raise ValueError(
                         f"Detector names in timestamps dictionary ({ifos}) "
                         f"are inconsistent with detector names given via keyword ({ifos_in_detectors})."
@@ -479,14 +479,14 @@ class Writer(BaseSearchClass):
     def _basic_setup(self):
         """Basic parameters handling, path setup etc."""
 
-        if not self.label.isalnum():
+        if not self.label.isalnum():  # pragma: no cover
             raise ValueError(
                 f"Label '{self.label}' is not alphanumeric,"
                 " which is incompatible with the SFTv3 naming specification"
                 " ( https://dcc.ligo.org/T040164-v2/public )."
                 " Please avoid underscores, hyphens etc."
             )
-        if len(self.label) > 60:
+        if len(self.label) > 60:  # pragma: no cover
             raise ValueError(
                 f"Label {self.label} is too long to comply with SFT naming rules"
                 f" ({len(self.label)}>60)."
@@ -502,12 +502,14 @@ class Writer(BaseSearchClass):
         if getattr(self, "timestamps", None) is not None:
             if np.any(
                 [getattr(self, k, None) is not None for k in incompatible_with_TS]
-            ):
+            ):  # pragma: no cover
                 raise ValueError(
                     "timestamps option is incompatible with"
                     f" ({','.join(incompatible_with_TS)})."
                 )
-            if np.any([getattr(self, k, None) is None for k in TS_required_options]):
+            if np.any(
+                [getattr(self, k, None) is None for k in TS_required_options]
+            ):  # pragma: no cover
                 raise ValueError(
                     "With timestamps option, need also all of"
                     f" ({','.join(TS_required_options)})."
@@ -521,7 +523,9 @@ class Writer(BaseSearchClass):
                 "internal consistency across input SFTs."
             )
             self._get_setup_from_noiseSFTs()
-        elif np.any([getattr(self, k, None) is None for k in no_noiseSFTs_options]):
+        elif np.any(
+            [getattr(self, k, None) is None for k in no_noiseSFTs_options]
+        ):  # pragma: no cover
             raise ValueError(
                 "Need either noiseSFTs, timestamps or all of ({:s}).".format(
                     ",".join(no_noiseSFTs_options)
@@ -533,11 +537,11 @@ class Writer(BaseSearchClass):
         self.sftfilenames = [os.path.join(self.outdir, fn) for fn in self.sftfilenames]
         self.sftfilepath = ";".join(self.sftfilenames)
 
-        if getattr(self, "SFTWindowBeta", None):
+        if getattr(self, "SFTWindowBeta", None):  # pragma: no cover
             raise ValueError(
                 "Option 'SFTWindowBeta' is defunct, please use 'SFTWindowParam'."
             )
-        if getattr(self, "SFTWindowType", None):
+        if getattr(self, "SFTWindowType", None):  # pragma: no cover
             try:
                 lal.CheckNamedWindow(
                     self.SFTWindowType, self.SFTWindowParam is not None
@@ -579,7 +583,9 @@ class Writer(BaseSearchClass):
                         f"Missing required entry '{key}' in 'signal_parameters' dictionary!"
                     )
             for key in self.signal_parameters.keys():
-                if self.__dict__.get(key, None) is not None and not key == "F0":
+                if (
+                    self.__dict__.get(key, None) is not None and not key == "F0"
+                ):  # pragma: no cover
                     raise ValueError(
                         f"Cannot set {key} both via 'signal_parameters' and as a separate option!"
                     )
@@ -591,11 +597,17 @@ class Writer(BaseSearchClass):
                     )
                 if self.signal_parameters["F0"] != self.F0:  # pragma: no cover
                     raise ValueError(
-                        "'F0' entry in 'self.signal_parameters' must be the same as"
+                        "'F0' entry in 'signal_parameters' must be the same as"
                         f" the separate F0 option ({self.signal_parameters['F0']}!={self.F0})"
                     )
+            elif getattr(self, "F0", None) is None:  # pragma: no cover
+                raise ValueError(
+                    "F0 required either in signal_parameters or as separate option."
+                )
             else:
-                logger.info(f"Setting signal.parameters['F0']={self.F0}")
+                logger.info(
+                    f"Setting signal_parameters['F0']={self.F0} from separate option."
+                )
                 self.signal_parameters["F0"] = self.F0
             for key in self.standard_signal_parameter_keys:
                 if key not in self.signal_parameters.keys():
@@ -670,7 +682,7 @@ class Writer(BaseSearchClass):
                 self.signal_parameters[key] is None
                 for key in self.required_signal_parameters
             ]
-        ):
+        ):  # pragma: no cover
             raise ValueError(
                 "If h0>0, also need all of ({:s})".format(
                     ",".join(self.required_signal_parameters)
@@ -867,7 +879,7 @@ class Writer(BaseSearchClass):
         for sftfile in self.sftfilenames:
             catalog = lalpulsar.SFTdataFind(sftfile, None)
             cl_old = utils.get_commandline_from_SFTDescriptor(catalog.data[0])
-            if len(cl_old) == 0:
+            if len(cl_old) == 0:  # pragma: no cover
                 logger.info(
                     "......could not obtain comparison commandline from first SFT"
                     " header in old file '{}'. {}".format(sftfile, need_new)

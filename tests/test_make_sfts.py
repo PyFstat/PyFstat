@@ -110,6 +110,63 @@ class TestWriter:
         self.Writer.make_cff(verbose=True)
         assert os.path.isfile(os.path.join(".", self.outdir, self.label + ".cff"))
 
+    def test_make_cff_new_style_separate_F0(self):
+        if self.style == "old":
+            pytest.skip()
+        signal_params = default_signal_params.copy()
+        signal_params.pop("F0")
+        test_Writer = pyfstat.Writer(
+            label=self.label + "NoF0",
+            tstart=self.Writer.tstart,
+            duration=self.Writer.duration,
+            signal_parameters=signal_params,
+            F0=default_signal_params["F0"],
+            Tsft=self.Writer.Tsft,
+            outdir=self.outdir,
+            sqrtSX=self.Writer.sqrtSX,
+            Band=self.Writer.Band,
+            detectors=self.Writer.detectors,
+            SFTWindowType=self.Writer.SFTWindowType,
+            SFTWindowParam=self.Writer.SFTWindowParam,
+            randSeed=self.Writer.randSeed,
+        )
+        test_Writer.make_cff(verbose=True)
+        assert os.path.isfile(
+            os.path.join(".", test_Writer.outdir, test_Writer.label + ".cff")
+        )
+
+    def test_make_cff_old_style_without_tref(self):
+        if self.style == "new":
+            pytest.skip()
+        test_Writer = pyfstat.Writer(
+            label=self.label + "NoTref",
+            tstart=self.Writer.tstart,
+            duration=self.Writer.duration,
+            tref=None,
+            F0=default_signal_params["F0"],
+            F1=default_signal_params["F1"],
+            F2=default_signal_params["F2"],
+            Alpha=default_signal_params["Alpha"],
+            Delta=default_signal_params["Delta"],
+            h0=default_signal_params["h0"],
+            cosi=default_signal_params["cosi"],
+            psi=default_signal_params["psi"],
+            phi=default_signal_params["phi"],
+            signal_parameters=None,
+            Tsft=self.Writer.Tsft,
+            outdir=self.outdir,
+            sqrtSX=self.Writer.sqrtSX,
+            Band=self.Writer.Band,
+            detectors=self.Writer.detectors,
+            SFTWindowType=self.Writer.SFTWindowType,
+            SFTWindowParam=self.Writer.SFTWindowParam,
+            randSeed=self.Writer.randSeed,
+        )
+        test_Writer.make_cff(verbose=True)
+        assert os.path.isfile(
+            os.path.join(".", test_Writer.outdir, test_Writer.label + ".cff")
+        )
+
     def test_run_makefakedata(self):
         self.Writer.make_data(verbose=True)
         numSFTs = int(np.ceil(self.Writer.duration / self.Writer.Tsft))
@@ -724,7 +781,7 @@ class TestLineWriter(TestWriter):
             )
             max_power_freq_index_with_line = max_power_freq_index[line_active_mask]
 
-            # Maximum power should be a the transient line whenever that's on
+            # Maximum power should be at the transient line whenever that's on
             assert np.all(
                 max_power_freq_index_with_line == max_power_freq_index_with_line[0]
             )

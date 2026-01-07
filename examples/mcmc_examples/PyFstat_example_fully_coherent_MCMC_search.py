@@ -33,6 +33,7 @@ signal_parameters = {
     "F0": 30.0,
     "F1": -1e-10,
     "F2": 0,
+    "F3": 0,
     "Alpha": np.radians(83.6292),
     "Delta": np.radians(22.0144),
     "tref": mid_time,
@@ -41,7 +42,10 @@ signal_parameters = {
 }
 
 data = pyfstat.Writer(
-    label=label, outdir=outdir, **data_parameters, **signal_parameters
+    label=label,
+    outdir=outdir,
+    **data_parameters,
+    signal_parameters=signal_parameters,
 )
 data.make_data()
 
@@ -67,13 +71,13 @@ theta_prior = {
         "upper": signal_parameters["F1"] + DeltaF1 / 2.0,
     },
 }
-for key in "F2", "Alpha", "Delta":
+for key in "F2", "F3", "Alpha", "Delta":
     theta_prior[key] = signal_parameters[key]
 
 ntemps = 2
 log10beta_min = -0.5
 nwalkers = 100
-nsteps = [300, 300]
+nsteps = [100, 100]
 
 mcmc = pyfstat.MCMCSearch(
     label=label,
