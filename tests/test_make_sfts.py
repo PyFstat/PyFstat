@@ -330,8 +330,8 @@ class TestWriter:
             max_freqs_noise_and_signal = noise_and_signal_freqs[
                 np.argmax(ns_data, axis=0)
             ]
-            assert len(
-                times[ifo] == int(np.ceil(self.Writer.duration / self.Writer.Tsft))
+            assert len(times[ifo]) == int(
+                np.ceil(self.Writer.duration / self.Writer.Tsft)
             )
             # FIXME: CW signals don't have to peak at the same frequency, but there
             # are some consistency criteria which may be useful to implement here.
