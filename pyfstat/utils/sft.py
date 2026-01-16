@@ -362,7 +362,9 @@ def plot_spectrogram(
                 raise ValueError(
                     "Value of sqrtSX needed to compute the normalized power."
                 )
-            q *= 2 / (Tsft * sqrtSX**2)
+            q *= (
+                2 / (Tsft * sqrtSX) / sqrtSX
+            )  # we divide in two steps to avoid overflows
             label = "Normalized power"
         else:
             label = "Power"
