@@ -132,7 +132,7 @@ def _get_nsegs_ip1(
         f, 0.4 * nsegs_i, method="Powell", tol=1, options={"maxiter": 10}
     )
     logger.info("{} with {} evaluations".format(res["message"], res["nfev"]))
-    nsegs_ip1 = int(res.x)
+    nsegs_ip1 = int(res.x[0])
     if nsegs_ip1 == 0:
         nsegs_ip1 = 1
     if res.success:

@@ -289,21 +289,24 @@ class TestComputeFstat(BaseForTestsWithData):
         long_Tsft_params["label"] = "longTsft"
         long_Tsft_params["F0"] = 1500
         long_Tsft_params["Band"] = 2.0
-        long_Tsft_Writer = pyfstat.Writer(**long_Tsft_params)
+        long_Tsft_Writer = pyfstat.Writer(
+            outdir=self.outdir,
+            **long_Tsft_params,
+        )
         long_Tsft_Writer.run_makefakedata()
-
         search = pyfstat.ComputeFstat(
-            tref=long_Tsft_Writer.tref,
+            tref=self.tref,
             sftfilepattern=long_Tsft_Writer.sftfilepath,
             minCoverFreq=1499.5,
             maxCoverFreq=1500.5,
             allowedMismatchFromSFTLength=0.1,
         )
+
         with pytest.raises(RuntimeError):
             search.get_fullycoherent_twoF(F0=1500, F1=0, F2=0, Alpha=0, Delta=0)
 
         search = pyfstat.ComputeFstat(
-            tref=long_Tsft_Writer.tref,
+            tref=self.tref,
             sftfilepattern=long_Tsft_Writer.sftfilepath,
             minCoverFreq=1499.5,
             maxCoverFreq=1500.5,
@@ -1019,13 +1022,16 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
         long_Tsft_params["label"] = "longTsft"
         long_Tsft_params["F0"] = 1500
         long_Tsft_params["Band"] = 2.0
-        long_Tsft_Writer = pyfstat.Writer(**long_Tsft_params)
+        long_Tsft_Writer = pyfstat.Writer(
+            outdir=self.outdir,
+            **long_Tsft_params,
+        )
         long_Tsft_Writer.run_makefakedata()
 
         search = pyfstat.SemiCoherentSearch(
             label=self.label,
             outdir=self.outdir,
-            tref=long_Tsft_Writer.tref,
+            tref=self.tref,
             sftfilepattern=long_Tsft_Writer.sftfilepath,
             nsegs=self.nsegs,
             minCoverFreq=1499.5,
@@ -1038,7 +1044,7 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
         search = pyfstat.SemiCoherentSearch(
             label=self.label,
             outdir=self.outdir,
-            tref=long_Tsft_Writer.tref,
+            tref=self.tref,
             sftfilepattern=long_Tsft_Writer.sftfilepath,
             nsegs=self.nsegs,
             minCoverFreq=1499.5,
@@ -1063,7 +1069,11 @@ class TestSemiCoherentGlitchSearch(BaseForTestsWithData):
             delta_F0=delta_F0,
             detectors=self.detectors,
             sqrtSX=self.sqrtSX,
-            **default_signal_params,
+            **{
+                k: v
+                for k, v in default_signal_params.items()
+                if not (k.startswith("F") and int(k[-1]) > 2)
+            },
             SFTWindowType=self.SFTWindowType,
             SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
@@ -1082,11 +1092,11 @@ class TestSemiCoherentGlitchSearch(BaseForTestsWithData):
         )
 
         # Compute the predicted semi-coherent glitch Fstat for the first half
-        Writer.transientStartTime = Writer.tstart
-        Writer.transientTau = self.dtglitch
+        Writer.signal_parameters["transientStartTime"] = Writer.tstart
+        Writer.signal_parameters["transientTau"] = self.dtglitch
         FSA = Writer.predict_fstat()
         # same for the second half (tau stays the same)
-        Writer.transientStartTime += self.dtglitch
+        Writer.signal_parameters["transientStartTime"] += self.dtglitch
         FSB = Writer.predict_fstat()
         predicted_FS = FSA + FSB
 

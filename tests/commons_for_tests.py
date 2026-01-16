@@ -60,10 +60,9 @@ def outdir(request):
 
 
 default_Writer_params = {
-    "label": "test",
     "sqrtSX": 1,
     "Tsft": 1800,
-    "tstart": 700000000,
+    "tstart": 1000000000,
     "duration": 4 * 1800,
     "detectors": "H1",
     "SFTWindowType": "tukey",
@@ -74,9 +73,11 @@ default_Writer_params = {
 
 
 default_signal_params_no_sky = {
+    "tref": default_Writer_params["tstart"],
     "F0": 30.0,
     "F1": -1e-10,
-    "F2": 0,
+    "F2": 1e-18,
+    "F3": 0.0,
     "h0": 5.0,
     "cosi": 0,
     "psi": 0,
@@ -162,7 +163,7 @@ def default_transient_parameters():
 # ============================================================================
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="class", params=["old", "new"])
 def data_fixture(request, outdir):
     """Pytest fixture that provides test data with a Writer object and SFTs.
 
@@ -182,7 +183,6 @@ def data_fixture(request, outdir):
     Yields:
         The test class instance with Writer and related attributes set
     """
-    # Skip making outdir, since Writer should do so on first call
     # Note: outdir fixture already handles directory creation
 
     # Get test class - this fixture requires a class-based test
@@ -193,42 +193,85 @@ def data_fixture(request, outdir):
             "Use @pytest.mark.usefixtures('data_fixture') on a test class."
         )
 
-    # Create fake data SFTs
-    # If we directly set any options as self.xy = 1 here,
-    # then values set for derived classes may get overwritten,
-    # so use a default dict and only insert if no value previously set
-    params = {**default_Writer_params, **default_signal_params}
-    for key, val in params.items():
-        if not hasattr(test_cls, key):
-            setattr(test_cls, key, val)
+    # transitionary setup to keep testing
+    # the old, deprecated signal parameters style for Writer
+    test_cls.style = request.param
 
-    test_cls.tref = test_cls.tstart
+    # Allow overwriting parameters from child classes
+    signal_params = {}
+    for key, val in default_signal_params.items():
+        signal_params[key] = getattr(test_cls, key, default_signal_params[key])
+
+    # Create fake data SFTs
     test_cls.Writer = pyfstat.Writer(
-        label=test_cls.label,
-        tstart=test_cls.tstart,
-        duration=test_cls.duration,
-        tref=test_cls.tref,
-        F0=test_cls.F0,
-        F1=test_cls.F1,
-        F2=test_cls.F2,
-        Alpha=test_cls.Alpha,
-        Delta=test_cls.Delta,
-        h0=test_cls.h0,
-        cosi=test_cls.cosi,
-        Tsft=test_cls.Tsft,
+        label=getattr(test_cls, "label", "TestWriter"),
+        tstart=getattr(test_cls, "tstart", default_Writer_params["tstart"]),
+        duration=getattr(test_cls, "duration", default_Writer_params["duration"]),
+        tref=(
+            getattr(test_cls, "tref", default_signal_params["tref"])
+            if test_cls.style == "old"
+            else None
+        ),
+        F0=(
+            getattr(test_cls, "F0", default_signal_params["F0"])
+            if test_cls.style == "old"
+            else None
+        ),
+        F1=(
+            getattr(test_cls, "F1", default_signal_params["F1"])
+            if test_cls.style == "old"
+            else None
+        ),
+        F2=(
+            getattr(test_cls, "F2", default_signal_params["F2"])
+            if test_cls.style == "old"
+            else None
+        ),
+        Alpha=(
+            getattr(test_cls, "Alpha", default_signal_params["Alpha"])
+            if test_cls.style == "old"
+            else None
+        ),
+        Delta=(
+            getattr(test_cls, "Delta", default_signal_params["Delta"])
+            if test_cls.style == "old"
+            else None
+        ),
+        h0=(
+            getattr(test_cls, "h0", default_signal_params["h0"])
+            if test_cls.style == "old"
+            else None
+        ),
+        cosi=(
+            getattr(test_cls, "cosi", default_signal_params["cosi"])
+            if test_cls.style == "old"
+            else None
+        ),
+        psi=(
+            getattr(test_cls, "psi", default_signal_params["psi"])
+            if test_cls.style == "old"
+            else None
+        ),
+        phi=(
+            getattr(test_cls, "phi", default_signal_params["phi"])
+            if test_cls.style == "old"
+            else None
+        ),
+        signal_parameters=signal_params if test_cls.style == "new" else None,
+        Tsft=getattr(test_cls, "Tsft", default_Writer_params["Tsft"]),
         outdir=test_cls.outdir,
-        sqrtSX=test_cls.sqrtSX,
-        Band=test_cls.Band,
-        detectors=test_cls.detectors,
-        SFTWindowType=test_cls.SFTWindowType,
-        SFTWindowParam=test_cls.SFTWindowParam,
-        randSeed=test_cls.randSeed,
+        sqrtSX=getattr(test_cls, "sqrtSX", default_Writer_params["sqrtSX"]),
+        Band=getattr(test_cls, "Band", default_Writer_params["Band"]),
+        detectors=getattr(test_cls, "detectors", default_Writer_params["detectors"]),
+        SFTWindowType=getattr(
+            test_cls, "SFTWindowType", default_Writer_params["SFTWindowType"]
+        ),
+        SFTWindowParam=getattr(
+            test_cls, "SFTWindowParam", default_Writer_params["SFTWindowParam"]
+        ),
+        randSeed=getattr(test_cls, "randSeed", default_Writer_params["randSeed"]),
     )
     test_cls.Writer.make_data(verbose=True)
-    test_cls.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
-    test_cls.search_ranges = {
-        key: [getattr(test_cls, key)] for key in test_cls.search_keys
-    }
 
     yield test_cls
 
@@ -301,7 +344,7 @@ class BaseForTestsWithData(BaseForTestsWithOutdir):
         for key, val in {**default_Writer_params, **default_signal_params}.items():
             if not hasattr(cls, key):
                 setattr(cls, key, val)
-        cls.tref = cls.tstart
+        # cls.tref = cls.tstart
         cls.Writer = pyfstat.Writer(
             label=cls.label,
             tstart=cls.tstart,

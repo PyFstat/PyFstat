@@ -43,8 +43,8 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
             inj = {k: getattr(self.Writer, k) for k in self.max_dict}
         else:
             inj = {
-                "transient_tstart": self.Writer.transientStartTime,
-                "transient_duration": self.Writer.transientTau,
+                "transient_tstart": self.Writer.signal_parameters["transientStartTime"],
+                "transient_duration": self.Writer.signal_parameters["transientTau"],
             }
 
         for k in self.max_dict.keys():
@@ -218,10 +218,10 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
             F0=self.Writer.F0 + 0.5e-2,
             F1=0,
             F2=0,
-            Alpha=self.Writer.Alpha,
-            Delta=self.Writer.Delta,
-            h0=10 * self.Writer.h0,
-            cosi=self.Writer.cosi,
+            Alpha=self.Writer.signal_parameters["Alpha"],
+            Delta=self.Writer.signal_parameters["Delta"],
+            h0=10 * self.Writer.signal_parameters["h0"],
+            cosi=self.Writer.signal_parameters["cosi"],
             sqrtSX=0,  # don't add yet another set of Gaussian noise
             noiseSFTs=SFTs_H1,
             SFTWindowType=self.Writer.SFTWindowType,
@@ -412,8 +412,11 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
             label=self.label,
             tstart=self.tstart,
             duration=self.duration,
-            tref=self.tref,
-            **default_signal_params,
+            **{
+                k: v
+                for k, v in default_signal_params.items()
+                if not (k.startswith("F") and int(k[-1]) > 2)
+            },
             outdir=self.outdir,
             sqrtSX=self.sqrtSX,
             Band=self.Band,

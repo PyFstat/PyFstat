@@ -11,7 +11,7 @@ import numpy as np
 from tqdm import tqdm, trange
 
 import pyfstat.utils as utils
-from pyfstat.core import BaseSearchClass, SearchForSignalWithJumps
+from pyfstat.core import BaseSearchClass, DeprecatedClass, SearchForSignalWithJumps
 
 logger = logging.getLogger(__name__)
 
@@ -34,30 +34,61 @@ class Writer(BaseSearchClass):
     """
 
     mfd = "lalpulsar_Makefakedata_v5"
+    max_fkdot = 6  # matching lalpulsar/lib/CWMakeFakeData.c as of a4864772
     """The executable; can be overridden by child classes."""
 
-    signal_parameter_labels = [
-        "tref",
-        "F0",
-        "F1",
-        "F2",
+    standard_signal_parameter_keys = ["tref"]
+    standard_signal_parameter_keys += [f"F{k}" for k in range(max_fkdot + 1)]
+    standard_signal_parameter_keys += [
         "Alpha",
         "Delta",
         "h0",
         "cosi",
         "psi",
         "phi",
+    ]
+    """Default convention of labels for various standard signal parameters."""
+
+    binary_signal_parameter_keys = [
+        "tp",
+        "argp",
+        "asini",
+        "ecc",
+        "period",
+    ]
+    """Default convention of labels for binary orbital signal parameters.
+
+    Kept separate to avoid setting these when not needed.
+    """
+
+    transient_signal_parameter_keys = [
         "transientWindowType",
         "transientStartTime",
         "transientTau",
     ]
-    """Default convention of labels for the various signal parameters."""
+    """Default convention of labels for transient signal parameters.
+
+    Kept separate to avoid setting these when not needed.
+    """
+
+    supported_signal_parameters = (
+        standard_signal_parameter_keys
+        + transient_signal_parameter_keys
+        + binary_signal_parameter_keys
+    )
+    """All standard parameter names.
+
+    This full set is not required,
+    but "supported" in the sense that the code knows about it,
+    and it will be used for various dictionary translations/copies.
+    """
 
     gps_time_and_string_formats_as_LAL = {
         "refTime": ":10.9f",
         "transientWindowType": ":s",
         "transientStartTime": ":10.0f",
         "transientTau": ":10.0f",
+        "orbitTp": ":10.9f",
     }
     """Dictionary to ensure proper format handling for some special parameters.
 
@@ -66,15 +97,17 @@ class Writer(BaseSearchClass):
     """
 
     required_signal_parameters = [
-        # leaving out "F1","F2","psi","phi","tref" as they have defaults
+        "tref",
         "F0",
         "Alpha",
         "Delta",
         "cosi",
     ]
     """List of parameters required for a successful execution of Makefakedata_v5.
-    The rest of available parameters are not required as they have default values
-    silently given by Makefakedata_v5
+
+    The rest of available parameters
+    ("F1","F2",...,"psi","phi" and optional binary/transient parameters)
+    are not required, as they can default to 0.
     """
 
     @utils.initializer
@@ -85,14 +118,15 @@ class Writer(BaseSearchClass):
         duration=None,
         tref=None,
         F0=None,
-        F1=0,
-        F2=0,
+        F1=None,
+        F2=None,
         Alpha=None,
         Delta=None,
         h0=None,
         cosi=None,
-        psi=0.0,
-        phi=0,
+        psi=None,
+        phi=None,
+        signal_parameters=None,
         Tsft=1800,
         outdir=".",
         sqrtSX=None,
@@ -104,7 +138,7 @@ class Writer(BaseSearchClass):
         detectors=None,
         earth_ephem=None,
         sun_ephem=None,
-        transientWindowType="none",
+        transientWindowType=None,
         transientStartTime=None,
         transientTau=None,
         randSeed=None,
@@ -135,18 +169,35 @@ class Writer(BaseSearchClass):
             `SFTConstraint <https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/struct_s_f_t_constraints.html>`_.
             NOTE: mutually exclusive with `timestamps`.
         tref: float or None
+            DEPRECATED, include this in `signal_parameters` instead!
             Reference time for simulated signals.
             Default is `None`, which sets the reference time to `tstart`.
         F0: float or None
-            Frequency of a signal to inject.
-            Also used (if `Band` is not `None`) as center of frequency band.
-            Also needed when noise-only (`h0=None` or `h0==0`)
-            but no `noiseSFTs` given,
-            in which case it is also used as center of frequency band.
+            If `Band` is not `None`, this is the frequency band center for the SFTs,
+            and is required if no `noiseSFTs` or `signal_parameters` are given.
+            Also used as the frequency of a signal to be injected,
+            if `signal_parameters` or a non-zero `h0` are set.
+            Can be used interchangeably with `signal_parameters['F0']`.
         F1, F2, Alpha, Delta, h0, cosi, psi, phi: float or None
-            Additional frequency evolution and amplitude parameters for a signal.
-            If `h0=None` or `h0=0`, these are all ignored.
-            If `h0>0`, then at least `[Alpha,Delta,cosi]` need to be set explicitly.
+            DEPRECATED: Additional frequency evolution and amplitude parameters for a signal.
+            Include these in `signal_parameters` instead!
+        signal_parameters: dict
+            A dictionary of frequency evolution and amplitude parameters for a signal to inject.
+            If `h0=0`, the other parameters are all ignored.
+            If `h0>0`, then at least `[Alpha,Delta,cosi,tref]` need to also be set explicitly.
+            `F0` can be either set here or as a separate argument;
+            if both are set, they must be the same.
+            Also supported:
+            * spin-down terms Fk with `1<k<=6`
+            * binary parameters `asini, period, ecc, tp, argp`
+            * transientWindowType (str):
+            If omitted or `none`, a fully persistent CW signal is simulated.
+            If `rect` or `exp`, a transient signal with the corresponding
+            amplitude evolution is simulated.
+            * transientStartTime (int or None):
+            Start time for a transient signal.
+            * transientTau (int or None):
+            Duration (`rect` case) or decay time (`exp` case) of a transient signal.
         Tsft: int
             The SFT duration in seconds.
             Will be ignored if `noiseSFTs` are given.
@@ -185,12 +236,15 @@ class Writer(BaseSearchClass):
             If None, will check standard sources as per
             utils.get_ephemeris_files().
         transientWindowType: str
+            DEPRECATED, include this in `signal_parameters` instead!
             If `none`, a fully persistent CW signal is simulated.
             If `rect` or `exp`, a transient signal with the corresponding
             amplitude evolution is simulated.
         transientStartTime: int or None
+            DEPRECATED, include this in `signal_parameters` instead!
             Start time for a transient signal.
         transientTau: int or None
+            DEPRECATED, include this in `signal_parameters` instead!
             Duration (`rect` case) or decay time (`exp` case) of a transient signal.
         randSeed: int or None
             Optionally fix the random seed of Gaussian noise generation
@@ -214,7 +268,7 @@ class Writer(BaseSearchClass):
 
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self._basic_setup()
-        self._parse_args_consistent_with_mfd()
+        self._parse_signal_params_consistent_with_mfd()
         self.calculate_fmin_Band()
 
     def _get_sft_constraints_from_tstart_duration(self):
@@ -266,7 +320,7 @@ class Writer(BaseSearchClass):
         noise_multi_sft_catalog = lalpulsar.GetMultiSFTCatalogView(
             lalpulsar.SFTdataFind(self.noiseSFTs, SFTConstraint)
         )
-        if noise_multi_sft_catalog.length == 0:
+        if noise_multi_sft_catalog.length == 0:  # pragma: no cover
             raise IOError("Got empty SFT catalog.")
 
         # Information to be extracted from the SFTs themselves
@@ -302,9 +356,9 @@ class Writer(BaseSearchClass):
 
         # Get the "overall" values of the search
         Tsft = np.unique(Tsft)
-        if len(Tsft) != 1:
+        if len(Tsft) != 1:  # pragma: no cover
             raise ValueError(f"SFTs contain different basetimes: {Tsft}")
-        if Tsft[0] != self.Tsft:
+        if Tsft[0] != self.Tsft:  # pragma: no cover
             logger.warning(
                 f"Overwriting self.Tsft={self.Tsft}"
                 f" with value {Tsft[0]} read from noiseSFTs."
@@ -327,7 +381,7 @@ class Writer(BaseSearchClass):
         IFOs = self.detectors.split(",")
         # at this point, it's definitely a comma-separated string
         tsfiles = self.timestamps.split(",")
-        if len(IFOs) != len(tsfiles):
+        if len(IFOs) != len(tsfiles):  # pragma: no cover
             raise ValueError(
                 f"Length of detectors=='{self.detectors}'"
                 f" does not match that of timestamps=='{self.timestamps}'"
@@ -399,7 +453,7 @@ class Writer(BaseSearchClass):
 
             if self.detectors is not None:
                 ifos_in_detectors = self.detectors.split(",")
-                if np.setdiff1d(ifos, ifos_in_detectors).size:
+                if np.setdiff1d(ifos, ifos_in_detectors).size:  # pragma: no cover
                     raise ValueError(
                         f"Detector names in timestamps dictionary ({ifos}) "
                         f"are inconsistent with detector names given via keyword ({ifos_in_detectors})."
@@ -425,14 +479,14 @@ class Writer(BaseSearchClass):
     def _basic_setup(self):
         """Basic parameters handling, path setup etc."""
 
-        if not self.label.isalnum():
+        if not self.label.isalnum():  # pragma: no cover
             raise ValueError(
                 f"Label '{self.label}' is not alphanumeric,"
                 " which is incompatible with the SFTv3 naming specification"
                 " ( https://dcc.ligo.org/T040164-v2/public )."
                 " Please avoid underscores, hyphens etc."
             )
-        if len(self.label) > 60:
+        if len(self.label) > 60:  # pragma: no cover
             raise ValueError(
                 f"Label {self.label} is too long to comply with SFT naming rules"
                 f" ({len(self.label)}>60)."
@@ -440,16 +494,6 @@ class Writer(BaseSearchClass):
 
         os.makedirs(self.outdir, exist_ok=True)
         self.config_file_name = os.path.join(self.outdir, self.label + ".cff")
-        self.theta = np.array([self.phi, self.F0, self.F1, self.F2])
-
-        if self.h0 and np.any(
-            [getattr(self, k, None) is None for k in self.required_signal_parameters]
-        ):
-            raise ValueError(
-                "If h0>0, also need all of ({:s})".format(
-                    ",".join(self.required_signal_parameters)
-                )
-            )
 
         incompatible_with_TS = ["tstart", "duration", "noiseSFTs"]
         TS_required_options = ["Tsft"]
@@ -458,12 +502,14 @@ class Writer(BaseSearchClass):
         if getattr(self, "timestamps", None) is not None:
             if np.any(
                 [getattr(self, k, None) is not None for k in incompatible_with_TS]
-            ):
+            ):  # pragma: no cover
                 raise ValueError(
                     "timestamps option is incompatible with"
                     f" ({','.join(incompatible_with_TS)})."
                 )
-            if np.any([getattr(self, k, None) is None for k in TS_required_options]):
+            if np.any(
+                [getattr(self, k, None) is None for k in TS_required_options]
+            ):  # pragma: no cover
                 raise ValueError(
                     "With timestamps option, need also all of"
                     f" ({','.join(TS_required_options)})."
@@ -477,7 +523,9 @@ class Writer(BaseSearchClass):
                 "internal consistency across input SFTs."
             )
             self._get_setup_from_noiseSFTs()
-        elif np.any([getattr(self, k, None) is None for k in no_noiseSFTs_options]):
+        elif np.any(
+            [getattr(self, k, None) is None for k in no_noiseSFTs_options]
+        ):  # pragma: no cover
             raise ValueError(
                 "Need either noiseSFTs, timestamps or all of ({:s}).".format(
                     ",".join(no_noiseSFTs_options)
@@ -489,14 +537,11 @@ class Writer(BaseSearchClass):
         self.sftfilenames = [os.path.join(self.outdir, fn) for fn in self.sftfilenames]
         self.sftfilepath = ";".join(self.sftfilenames)
 
-        if self.tref is None:
-            self.tref = self.tstart
-
-        if getattr(self, "SFTWindowBeta", None):
+        if getattr(self, "SFTWindowBeta", None):  # pragma: no cover
             raise ValueError(
                 "Option 'SFTWindowBeta' is defunct, please use 'SFTWindowParam'."
             )
-        if getattr(self, "SFTWindowType", None):
+        if getattr(self, "SFTWindowType", None):  # pragma: no cover
             try:
                 lal.CheckNamedWindow(
                     self.SFTWindowType, self.SFTWindowParam is not None
@@ -518,14 +563,136 @@ class Writer(BaseSearchClass):
         """
         return self.tstart + self.duration
 
-    def _parse_args_consistent_with_mfd(self):
-        """Internal method to ensure parameters are handled consistently with MFD."""
-        self.signal_parameters = self.translate_keys_to_lal(
-            {
+    def _parse_signal_params_consistent_with_mfd(self):
+        """Internal method to ensure parameters are handled consistently with MFD.
+
+        FIXME: This can be simplified once the deprecated style
+        of passing individual parameters is removed.
+        """
+        if self.signal_parameters is not None:
+            for key, val in self.signal_parameters.items():
+                if val is None:  # pragma: no cover
+                    raise ValueError(
+                        "Entries in a 'signal_parameters' dictionary must not be `None`!"
+                    )
+            for key in self.required_signal_parameters:
+                if (
+                    not key == "F0" and key not in self.signal_parameters.keys()
+                ):  # pragma: no cover
+                    raise ValueError(
+                        f"Missing required entry '{key}' in 'signal_parameters' dictionary!"
+                    )
+            for key in self.signal_parameters.keys():
+                if (
+                    self.__dict__.get(key, None) is not None and not key == "F0"
+                ):  # pragma: no cover
+                    raise ValueError(
+                        f"Cannot set {key} both via 'signal_parameters' and as a separate option!"
+                    )
+            if "F0" in self.signal_parameters.keys():
+                if self.F0 is None:
+                    self.F0 = self.signal_parameters["F0"]
+                    logger.info(
+                        f"Setting self.F0={self.F0} from signal.parameters['F0']."
+                    )
+                if self.signal_parameters["F0"] != self.F0:  # pragma: no cover
+                    raise ValueError(
+                        "'F0' entry in 'signal_parameters' must be the same as"
+                        f" the separate F0 option ({self.signal_parameters['F0']}!={self.F0})"
+                    )
+            elif getattr(self, "F0", None) is None:  # pragma: no cover
+                raise ValueError(
+                    "F0 required either in signal_parameters or as separate option."
+                )
+            else:
+                logger.info(
+                    f"Setting signal_parameters['F0']={self.F0} from separate option."
+                )
+                self.signal_parameters["F0"] = self.F0
+            for key in self.standard_signal_parameter_keys:
+                if key not in self.signal_parameters.keys():
+                    self.signal_parameters[key] = 0.0
+                    logger.info(
+                        f"Assigning default: {key}={self.signal_parameters[key]}"
+                    )
+            # need to copy this for some special cases such as GlitchWriter:
+            self.tref = self.signal_parameters["tref"]
+        elif np.all(
+            [
+                key == "tref" or self.__dict__[key] is not None
+                for key in self.required_signal_parameters
+            ]
+        ):
+            # excluding special case of tref which has a legacy default
+            logger.warning(
+                "Passing injection parameters individually is DEPRECATED"
+                " and will be removed in a future version of PyFstat."
+                " Please change to using a 'signal_parameters' dictionary."
+            )
+            if self.tref is None:
+                logger.info(f"Assigning default: tref={self.tstart}")
+                self.tref = self.tstart
+            for key in ["F1", "F2", "phi", "psi"]:
+                if self.__dict__[key] is None:
+                    self.__dict__[key] = 0.0
+                    logger.info(f"Assigning default: {key}={self.__dict__[key]}")
+            # copy all supported and user-set parameters over to new-style dictionary
+            self.signal_parameters = {
                 key: self.__dict__[key]
-                for key in self.signal_parameter_labels
+                for key in self.supported_signal_parameters
                 if self.__dict__.get(key, None) is not None
             }
+        elif (self.h0 is None or self.h0 == 0.0) and np.any(
+            [
+                self.__dict__.get(key, None) is not None and key != "h0"
+                for key in self.supported_signal_parameters
+            ]
+        ):
+            ignored_params = [
+                key
+                for key in self.supported_signal_parameters
+                if self.__dict__.get(key, None) is not None and key != "h0"
+            ]
+            logger.warning(
+                "No 'signal_parameters' dictionary given"
+                f" and separate h0={self.h0},"
+                f" will ignore all other signal parameters ({ignored_params})"
+                " and not inject a signal."
+            )
+            return
+        elif np.any(
+            [
+                self.__dict__.get(key, None) is not None and key not in ["h0", "F0"]
+                for key in self.standard_signal_parameter_keys
+            ]
+        ):  # pragma: no cover
+            raise ValueError(
+                f"Need either a 'signal_parameters' dictionary"
+                f"{' (not given)' if self.signal_parameters is None else ''}"
+                f" or a full set of individual options {self.required_signal_parameters} (DEPRECATED,"
+                f" {sum([self.__dict__[key] is not None for key in self.required_signal_parameters])} of {len(self.required_signal_parameters)} given"
+                f") plus optional transient and binary parameters (also DEPRECATED)."
+            )
+        else:
+            logger.info("No signal parameter options given, no injection will be done.")
+            return
+
+        if self.signal_parameters["h0"] and np.any(
+            [
+                self.signal_parameters[key] is None
+                for key in self.required_signal_parameters
+            ]
+        ):  # pragma: no cover
+            raise ValueError(
+                "If h0>0, also need all of ({:s})".format(
+                    ",".join(self.required_signal_parameters)
+                )
+            )
+
+        # translate to lalpulsar-style names
+        self.signal_parameters = self.translate_keys_to_lal(self.signal_parameters)
+        logger.debug(
+            f"Parsed signal_parameters dictionary for injection:\n{self.signal_parameters}"
         )
 
         self.signal_formats = {
@@ -577,17 +744,29 @@ class Writer(BaseSearchClass):
                 " (corresponding to default F-statistic settings).".format(extraBins)
             )
             fkdot = np.zeros(lalpulsar.PULSAR_MAX_SPINS)
-            for k in range(3):
-                fkdot[k] = getattr(self, f"F{k}")
+            fkdot[0] = self.F0
+            if self.signal_parameters:
+                for k in range(self.max_fkdot + 1):
+                    if f"f{k + 1}dot" in self.signal_parameters.keys():
+                        fkdot[k + 1] = self.signal_parameters[f"f{k + 1}dot"]
+                tref = self.signal_parameters.get("refTime", self.tstart)
+                maxOrbitAsini = self.signal_parameters.get("orbitasini", 0.0)
+                minOrbitPeriod = self.signal_parameters.get("orbitPeriod", 0.0)
+                maxOrbitEcc = self.signal_parameters.get("orbitEcc", 0.0)
+            else:
+                tref = self.tstart
+                maxOrbitAsini = 0.0
+                minOrbitPeriod = 0.0
+                maxOrbitEcc = 0.0
             minCoverFreq, maxCoverFreq = utils.get_covering_band(
-                tref=self.tref,
+                tref=tref,
                 tstart=self.tstart,
                 tend=self.tend,
                 fkdot=fkdot,
                 fkdotBand=np.zeros(lalpulsar.PULSAR_MAX_SPINS),
-                maxOrbitAsini=getattr(self, "asini", 0.0),
-                minOrbitPeriod=getattr(self, "period", 0.0),
-                maxOrbitEcc=getattr(self, "ecc", 0.0),
+                maxOrbitAsini=maxOrbitAsini,
+                minOrbitPeriod=minOrbitPeriod,
+                maxOrbitEcc=maxOrbitEcc,
             )
             self.fmin = minCoverFreq - extraBins / self.Tsft
             self.Band = maxCoverFreq - minCoverFreq + 2 * extraBins / self.Tsft
@@ -700,19 +879,21 @@ class Writer(BaseSearchClass):
         for sftfile in self.sftfilenames:
             catalog = lalpulsar.SFTdataFind(sftfile, None)
             cl_old = utils.get_commandline_from_SFTDescriptor(catalog.data[0])
-            if len(cl_old) == 0:
+            if len(cl_old) == 0:  # pragma: no cover
                 logger.info(
                     "......could not obtain comparison commandline from first SFT"
                     " header in old file '{}'. {}".format(sftfile, need_new)
                 )
                 return False
-            if not utils.match_commandlines(cl_old, cl_mfd):
+            cls_match, unmatched_items = utils.match_commandlines(cl_old, cl_mfd)
+            if not cls_match:
                 logger.info(
                     "......commandlines unmatched for first SFT in old"
                     " file '{}':".format(sftfile)
                 )
-                logger.info(cl_old)
-                logger.info(cl_mfd)
+                logger.info(f"Old CL: {cl_old}")
+                logger.info(f"New CL: {cl_mfd}")
+                logger.info(f"Unmatched items: {unmatched_items}")
                 logger.info(need_new)
                 return False
         logger.info("......OK: Commandline matched with old SFT header(s).")
@@ -756,10 +937,12 @@ class Writer(BaseSearchClass):
 
     def make_data(self, verbose=False):
         """A convenience wrapper to generate a cff file and then SFTs."""
-        if self.h0:
+        if self.signal_parameters:
             self.make_cff(verbose)
         else:
-            logger.info("Got h0=0, not writing an injection .cff file.")
+            logger.info(
+                "No signal parameters given, not writing an injection .cff file."
+            )
         self.run_makefakedata()
 
     def run_makefakedata(self):
@@ -827,7 +1010,7 @@ class Writer(BaseSearchClass):
         if hasattr(self, "Band") and self.Band:
             cl_mfd.append("--Band={:.16g}".format(self.Band))
         cl_mfd.append("--Tsft={}".format(self.Tsft))
-        if self.h0:
+        if self.signal_parameters and self.signal_parameters["h0"]:
             cl_mfd.append('--injectionSources="{}"'.format(self.config_file_name))
         earth_ephem = getattr(self, "earth_ephem", None)
         sun_ephem = getattr(self, "sun_ephem", None)
@@ -857,12 +1040,12 @@ class Writer(BaseSearchClass):
             Detectors will be paired to list elements following alphabetical order.
         """
         twoF_expected, twoF_sigma = utils.predict_fstat(
-            h0=self.h0,
-            cosi=self.cosi,
-            psi=self.psi,
-            Alpha=self.Alpha,
-            Delta=self.Delta,
-            F0=self.F0,
+            h0=self.signal_parameters["h0"],
+            cosi=self.signal_parameters["cosi"],
+            psi=self.signal_parameters["psi"],
+            Alpha=self.signal_parameters["Alpha"],
+            Delta=self.signal_parameters["Delta"],
+            F0=self.signal_parameters["Freq"],
             sftfilepattern=self.sftfilepath,
             minStartTime=self.tstart,
             duration=self.duration,
@@ -871,15 +1054,21 @@ class Writer(BaseSearchClass):
             tempory_filename=os.path.join(self.outdir, self.label + ".tmp"),
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
-            transientWindowType=self.transientWindowType,
-            transientStartTime=self.transientStartTime,
-            transientTau=self.transientTau,
+            transientWindowType=self.signal_parameters.get(
+                "transientWindowType", "none"
+            ),
+            transientStartTime=self.signal_parameters.get("transientStartTime", None),
+            transientTau=self.signal_parameters.get("transientTau", None),
         )
         return twoF_expected
 
 
-class BinaryModulatedWriter(Writer):
-    """Special Writer variant for simulating a CW signal for a source in a binary system."""
+class BinaryModulatedWriter(Writer, DeprecatedClass):
+    """Special Writer variant for simulating a CW signal for a source in a binary system.
+
+    DEPRECATED: This can now be replaced by the standard Writer class,
+        passing the values for `[tp,argp,asini,ecc,period]` in the `signal_parameters` dictionary.
+    """
 
     @utils.initializer
     def __init__(
@@ -889,19 +1078,20 @@ class BinaryModulatedWriter(Writer):
         duration=None,
         tref=None,
         F0=None,
-        F1=0,
-        F2=0,
+        F1=None,
+        F2=None,
         Alpha=None,
         Delta=None,
-        tp=0.0,
-        argp=0.0,
-        asini=0.0,
-        ecc=0.0,
-        period=0.0,
+        tp=None,
+        argp=None,
+        asini=None,
+        ecc=None,
+        period=None,
         h0=None,
         cosi=None,
-        psi=0.0,
-        phi=0,
+        psi=None,
+        phi=None,
+        signal_parameters=None,
         Tsft=1800,
         outdir=".",
         sqrtSX=None,
@@ -913,7 +1103,7 @@ class BinaryModulatedWriter(Writer):
         detectors=None,
         earth_ephem=None,
         sun_ephem=None,
-        transientWindowType="none",
+        transientWindowType=None,
         transientStartTime=None,
         transientTau=None,
         randSeed=None,
@@ -928,14 +1118,6 @@ class BinaryModulatedWriter(Writer):
         tp, argp, asini, ecc, period:
             binary orbit parameters
         """
-        self.signal_parameter_labels = super().signal_parameter_labels + [
-            "tp",
-            "argp",
-            "asini",
-            "ecc",
-            "period",
-        ]
-        self.gps_time_and_string_formats_as_LAL["orbitTp"] = ":10.9f"
 
         super().__init__(
             label=label,
@@ -951,6 +1133,7 @@ class BinaryModulatedWriter(Writer):
             cosi=cosi,
             psi=psi,
             phi=phi,
+            signal_parameters=signal_parameters,
             Tsft=Tsft,
             outdir=outdir,
             sqrtSX=sqrtSX,
@@ -992,11 +1175,9 @@ class LineWriter(Writer):
     """Required parameters for Makefakedata_v4 to success. Any other parameter is
     silently given a default value by Makefakedata_v4.
     """
-    signal_parameters_labels = required_signal_parameters + [
-        "transientWindowType",
-        "transientStartTime",
-        "transientTau",
-    ]
+    supported_signal_parameters = (
+        required_signal_parameters + Writer.transient_signal_parameter_keys
+    )
     """Other signal parameters will be removed before passing to Makefakedata_v4."""
 
     def __init__(self, *args, **kwargs):
@@ -1011,35 +1192,40 @@ class LineWriter(Writer):
                 "on single-detector SFT sets once at a time."
             )
 
-    def _parse_args_consistent_with_mfd(self):
+    def _parse_signal_params_consistent_with_mfd(self):
         """
         Adapt input arguments.
         Take care of minor inconsistencies between MFD_v4 and MFD_v5
         """
-        super()._parse_args_consistent_with_mfd()
+        super()._parse_signal_params_consistent_with_mfd()
 
         # FIXME: There should be a smoother way to translate keys
-        lal_required_signal_parameters = self.translate_keys_to_lal(
+        lal_supported_signal_parameters = self.translate_keys_to_lal(
             dict(
                 zip(
-                    self.required_signal_parameters,
-                    [0] * len(self.required_signal_parameters),
+                    self.supported_signal_parameters,
+                    [0] * len(self.supported_signal_parameters),
                 )
             )
         )
 
-        if any(
-            key not in lal_required_signal_parameters for key in self.signal_parameters
+        if self.signal_parameters and np.any(
+            [
+                key not in lal_supported_signal_parameters
+                for key in self.signal_parameters
+            ]
         ):
             logger.warning(
                 "Injection of line artifacts only uses the following parameters:\n"
-                f"{self.required_signal_parameters}.\n"
+                f"{self.supported_signal_parameters}\n"
+                f"(for lalpulsar: {list(lal_supported_signal_parameters.keys())}).\n"
                 "Any other parameter will be purged from this class now"
             )
             params_to_purge = list(
-                set(self.signal_parameters) - set(lal_required_signal_parameters)
+                set(self.signal_parameters)
+                - set(lal_supported_signal_parameters.keys())
             )
-            logger.info(
+            logger.warning(
                 "Purging input parameters that are not meaningful for LineWriter: {}".format(
                     params_to_purge
                 )
@@ -1047,17 +1233,25 @@ class LineWriter(Writer):
             for key in params_to_purge:
                 self.signal_parameters.pop(key)
 
-        if "transientTau" in self.signal_parameters:
+        if self.signal_parameters and "transientTau" in self.signal_parameters:
             self.signal_parameters["transientTauDays"] = (
                 self.signal_parameters.pop("transientTau") / 86400.0
             )
-            self.signal_formats["transientTauDays"] = self.signal_formats.pop(
-                "transientTau"
-            )
+
+        if self.signal_parameters:
+            self.signal_formats = {
+                key: self.gps_time_and_string_formats_as_LAL.get(key, ":.16g")
+                for key in self.signal_parameters
+            }
+
+        logger.debug(
+            f"Final signal_parameters dictionary for {self.mfd}:"
+            f" {self.signal_parameters}"
+        )
 
     def _build_MFD_command_line(self):
         """Generate the SFT data calling Makefakedata_v4."""
-
+        logger.info(f"Building {self.mfd} commandline...")
         cl_mfd = [self.mfd]
 
         cl_mfd.append("--lineFeature=TRUE")
@@ -1096,10 +1290,18 @@ class LineWriter(Writer):
         if getattr(self, "Band", None):
             cl_mfd.append("--Band={:.16g}".format(self.Band))
         cl_mfd.append("--Tsft={}".format(self.Tsft))
-        if self.h0:
+        if self.signal_parameters and self.signal_parameters.get("h0", None):
             cl_mfd.append(
                 " ".join(
-                    f"--{key}={value:.16g}"
+                    (
+                        '--{}="{{{}}}"'.format(key, self.signal_formats[key]).format(
+                            value
+                        )
+                        if self.signal_formats[key] == ":s"
+                        else "--{}={{{}}}".format(key, self.signal_formats[key]).format(
+                            value
+                        )
+                    )
                     for key, value in self.signal_parameters.items()
                 )
             )
@@ -1133,14 +1335,15 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
         delta_F2=0,
         tref=None,
         F0=None,
-        F1=0,
-        F2=0,
+        F1=None,
+        F2=None,
         Alpha=None,
         Delta=None,
         h0=None,
         cosi=None,
-        psi=0.0,
-        phi=0,
+        psi=None,
+        phi=None,
+        signal_parameters=None,
         Tsft=1800,
         outdir=".",
         sqrtSX=None,
@@ -1171,6 +1374,7 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
 
         self.set_ephemeris_files(earth_ephem, sun_ephem)
         self._basic_setup()
+        self._parse_signal_params_consistent_with_mfd()
         self.calculate_fmin_Band()
 
         shapes = np.array(
@@ -1197,13 +1401,25 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
         tbs = np.array(self.tbounds)
         self.durations = tbs[1:] - tbs[:-1]
 
-        self.delta_thetas = np.atleast_2d(
-            np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T
-        )
+        if self.signal_parameters:
+            if self.signal_parameters.get("transientWindowType", None) is None:
+                # for the way we inject glitches, we always need this
+                self.signal_parameters["transientWindowType"] = self.transientWindowType
+            self.theta = np.array(
+                [
+                    self.signal_parameters["phi0"],
+                    self.signal_parameters["Freq"],
+                    self.signal_parameters["f1dot"],
+                    self.signal_parameters["f2dot"],
+                ]
+            )
+            self.delta_thetas = np.atleast_2d(
+                np.array([delta_phi, delta_F0, delta_F1, delta_F2]).T
+            )
 
     def _get_base_template(self, i, Alpha, Delta, h0, cosi, psi, phi, F0, F1, F2, tref):
         """FIXME: ported over from Writer,
-        should be replaced by a more elegant reuse of _parse_args_consistent_with_mfd
+        should be replaced by a more elegant reuse of _parse_signal_params_consistent_with_mfd
         """
         return """[TS{}]
 Alpha = {:1.18e}
@@ -1327,17 +1543,17 @@ transientTau = {:10.0f}\n"""
         for i, (t, d, ts) in enumerate(zip(thetas, self.durations, self.tbounds[:-1])):
             line = self._get_single_config_line(
                 i,
-                self.Alpha,
-                self.Delta,
-                self.h0,
-                self.cosi,
-                self.psi,
+                self.signal_parameters["Alpha"],
+                self.signal_parameters["Delta"],
+                self.signal_parameters["h0"],
+                self.signal_parameters["cosi"],
+                self.signal_parameters["psi"],
                 t[0],
                 t[1],
                 t[2],
                 t[3],
-                self.tref,
-                self.transientWindowType,
+                self.signal_parameters["refTime"],
+                self.signal_parameters["transientWindowType"],
                 ts,
                 d,
             )
