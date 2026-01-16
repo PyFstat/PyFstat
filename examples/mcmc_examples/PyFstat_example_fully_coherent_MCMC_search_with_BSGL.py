@@ -121,6 +121,7 @@ mcmc_F = pyfstat.MCMCSearch(
     ntemps=ntemps,
     log10beta_min=log10beta_min,
     BSGL=False,
+    singleFstats=True,
 )
 mcmc_F.transform_dictionary = transform_dict
 mcmc_F.run(
