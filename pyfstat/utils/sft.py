@@ -354,20 +354,20 @@ def plot_spectrogram(
 
     time_in_days = (timestamps[detector] - timestamps[detector][0]) / 86400
 
-    if "power" in quantity:
-        logger.info("Computing SFT power")
+    if quantity == "normpower":
+        if sqrtSX is None:  # pragma: no cover
+            raise ValueError("Value of sqrtSX needed to compute the normalized power.")
+        # to avoid overflows, take out common magnitude scale factor
+        scale = 10 ** (-np.floor(np.log10(sqrtSX)))
+        q = (fourier_data[detector].real * scale) ** 2 + (
+            fourier_data[detector].imag * scale
+        ) ** 2
+        q *= 2 / (Tsft * (sqrtSX * scale) ** 2)
+        label = "Normalized power"
+
+    elif quantity == "power":
         q = fourier_data[detector].real ** 2 + fourier_data[detector].imag ** 2
-        if quantity == "normpower":
-            if sqrtSX is None:  # pragma: no cover
-                raise ValueError(
-                    "Value of sqrtSX needed to compute the normalized power."
-                )
-            q *= (
-                2 / (Tsft * sqrtSX) / sqrtSX
-            )  # we divide in two steps to avoid overflows
-            label = "Normalized power"
-        else:
-            label = "Power"
+        label = "Power"
 
     elif quantity == "real":
         q = fourier_data[detector].real
