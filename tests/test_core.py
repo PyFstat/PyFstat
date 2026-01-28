@@ -1183,15 +1183,13 @@ class TestBinaryInjection(BaseForTestsWithOutdir):
 
     def test_binary_injection_onthefly(self):
         """Test that binary parameters are correctly handled in on-the-fly injections.
-        
+
         This is a regression test for issue #592.
         """
         output_directory = self.outdir
         randSeed = 1
         duration = 5 * 86400
-        nsegs = 80
         start_time = 1238166018
-        Tsft = 1800
         F0 = 100.0
         Band = 1
         sqrtSX_base = 1e-23
