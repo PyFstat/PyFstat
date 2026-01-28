@@ -1,4 +1,4 @@
-""" The core tools used in pyfstat """
+"""The core tools used in pyfstat"""
 
 import getpass
 import glob
