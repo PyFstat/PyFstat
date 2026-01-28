@@ -722,6 +722,10 @@ class ComputeFstat(BaseSearchClass):
             else:
                 PP.Doppler.fkdot = self._set_fkdot_from_params_dict(self.injectSources)
             PP.Doppler.refTime = self.tref
+            # Set binary parameters if present
+            for key in self.binary_keys:
+                if key in self.injectSources:
+                    setattr(PP.Doppler, key, float(self.injectSources[key]))
             if "t0" not in self.injectSources:
                 PP.Transient.type = lalpulsar.TRANSIENT_NONE
             FstatOAs.injectSources = PPV
