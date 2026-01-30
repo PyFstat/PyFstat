@@ -4,11 +4,7 @@ import unittest
 import lalpulsar
 import numpy as np
 import pytest
-
-# FIXME this should be made cleaner with fixtures
 from commons_for_tests import (
-    BaseForTestsWithData,
-    BaseForTestsWithOutdir,
     default_binary_params,
     default_signal_params,
     default_Writer_params,
@@ -18,7 +14,8 @@ from scipy.stats import chi2
 import pyfstat
 
 
-class TestReadParFile(BaseForTestsWithOutdir):
+@pytest.mark.usefixtures("outdir")
+class TestReadParFile:
     label = "TestReadParFile"
 
     def test(self):
@@ -26,15 +23,16 @@ class TestReadParFile(BaseForTestsWithOutdir):
         os.system('echo "x=100\ny=10" > ' + parfile)
 
         par = pyfstat.utils.read_par(filename=parfile)
-        self.assertTrue(par["x"] == 100)
-        self.assertTrue(par["y"] == 10)
+        assert par["x"] == 100
+        assert par["y"] == 10
 
         par = pyfstat.utils.read_par(outdir=self.outdir, label=self.label)
-        self.assertTrue(par["x"] == 100)
-        self.assertTrue(par["y"] == 10)
+        assert par["x"] == 100
+        assert par["y"] == 10
 
 
-class TestPredictFstat(BaseForTestsWithOutdir):
+@pytest.mark.usefixtures("outdir")
+class TestPredictFstat:
     label = "TestPredictFstat"
     # here we only test the modes WITHOUT sftfilepattern,
     # which itself is tested through the Writer and Search classes
@@ -49,8 +47,8 @@ class TestPredictFstat(BaseForTestsWithOutdir):
         print(
             "predict_fstat() returned: E[2F]={}+-{}".format(twoF_expected, twoF_sigma)
         )
-        self.assertTrue(twoF_expected == 4)
-        self.assertAlmostEqual(twoF_sigma, chi2.std(df=4), places=5)
+        assert twoF_expected == 4
+        assert np.isclose(twoF_sigma, chi2.std(df=4), rtol=1e-5)
 
     def test_PFS_noise_TSfiles(self):
         IFOs = ["H1", "L1"]
@@ -74,8 +72,8 @@ class TestPredictFstat(BaseForTestsWithOutdir):
         print(
             "predict_fstat() returned: E[2F]={}+-{}".format(twoF_expected, twoF_sigma)
         )
-        self.assertTrue(twoF_expected == 4)
-        self.assertAlmostEqual(twoF_sigma, chi2.std(df=4), places=5)
+        assert twoF_expected == 4
+        assert np.isclose(twoF_sigma, chi2.std(df=4), rtol=1e-5)
 
     def test_PFS_signal(self):
         duration = 10 * default_Writer_params["duration"]
@@ -91,8 +89,8 @@ class TestPredictFstat(BaseForTestsWithOutdir):
             assumeSqrtSX=1,
         )
         print("predict_fstat() returned:" f" E[2F]={twoF_expected}+-{twoF_sigma}")
-        self.assertTrue(twoF_expected > 4)
-        self.assertTrue(twoF_sigma > 0)
+        assert twoF_expected > 4
+        assert twoF_sigma > 0
         # call again but this time using a dictionary of parameters
         params = {
             "h0": 1,
@@ -115,7 +113,7 @@ class TestPredictFstat(BaseForTestsWithOutdir):
             "predict_fstat() called with a dict returned:"
             f" E[2F]={twoF_expected_dict}+-{twoF_sigma_dict}"
         )
-        self.assertEqual(twoF_expected_dict, twoF_expected)
+        assert twoF_expected_dict == twoF_expected
         # add transient parameters
         params["transientWindowType"] = "rect"
         params["transient_tstart"] = default_Writer_params["tstart"]
@@ -135,7 +133,7 @@ class TestPredictFstat(BaseForTestsWithOutdir):
             "predict_fstat() called with a dict including a transient returned:"
             f" E[2F]={twoF_expected_transient}+-{twoF_sigma_transient}"
         )
-        self.assertTrue(twoF_expected_transient < twoF_expected)
+        assert twoF_expected_transient < twoF_expected
 
 
 class TestBaseSearchClass(unittest.TestCase):
@@ -143,7 +141,8 @@ class TestBaseSearchClass(unittest.TestCase):
     pass
 
 
-class TestComputeFstat(BaseForTestsWithData):
+@pytest.mark.usefixtures("data_fixture")
+class TestComputeFstat:
     label = "TestComputeFstat"
 
     def test_run_computefstatistic_single_point_injectSqrtSX(self):
@@ -165,7 +164,7 @@ class TestComputeFstat(BaseForTestsWithData):
             Alpha=self.Alpha,
             Delta=self.Delta,
         )
-        self.assertTrue(FS > 0.0)
+        assert FS > 0.0
         # now with new input params option
         FS_new = search.get_fullycoherent_twoF(
             params={
@@ -214,7 +213,7 @@ class TestComputeFstat(BaseForTestsWithData):
             Delta=self.Delta,
             **default_binary_params,
         )
-        self.assertTrue(FS > 0.0)
+        assert FS > 0.0
         # now with new input params option
         params = {
             "F0": self.F0,
@@ -225,7 +224,7 @@ class TestComputeFstat(BaseForTestsWithData):
         }
         params.update(default_binary_params)
         FS = search.get_fullycoherent_twoF(params=params)
-        self.assertTrue(FS > 0.0)
+        assert FS > 0.0
 
     def test_run_computefstatistic_single_point_with_SFTs(self):
         twoF_predicted = self.Writer.predict_fstat()
@@ -250,7 +249,7 @@ class TestComputeFstat(BaseForTestsWithData):
                 " relative difference: {}".format(twoF_predicted, twoF, diff)
             )
         )
-        self.assertTrue(diff < 0.3)
+        assert diff < 0.3
 
         # the following seems to be a leftover from when this test case was
         # doing separate H1 vs H1,L1 searches, but now only really tests the
@@ -278,9 +277,9 @@ class TestComputeFstat(BaseForTestsWithData):
                 " relative difference: {}".format(twoF_predicted, twoF2, diff)
             )
         )
-        self.assertTrue(diff < 0.3)
+        assert diff < 0.3
         diff = np.abs(twoF2 - twoF) / twoF
-        self.assertTrue(diff < 0.001)
+        assert diff < 0.001
 
     def test_run_computefstatistic_allowedMismatchFromSFTLength(self):
         long_Tsft_params = default_Writer_params.copy()
@@ -335,7 +334,7 @@ class TestComputeFstat(BaseForTestsWithData):
             Alpha=self.Writer.Alpha,
             Delta=self.Writer.Delta,
         )
-        self.assertTrue(np.abs(predicted_FS - FS_from_file) / FS_from_file < 0.3)
+        assert np.abs(predicted_FS - FS_from_file) / FS_from_file < 0.3
 
         injectSourcesdict = search.read_par(filename=injectSources)
         injectSourcesdict["F0"] = injectSourcesdict.pop("Freq")
@@ -359,7 +358,7 @@ class TestComputeFstat(BaseForTestsWithData):
             Alpha=self.Writer.Alpha,
             Delta=self.Writer.Delta,
         )
-        self.assertTrue(FS_from_dict == FS_from_file)
+        assert FS_from_dict == FS_from_file
 
     def test_get_fully_coherent_BSGL(self):
         # first pure noise, expect log10BSGL<0
@@ -401,7 +400,7 @@ class TestComputeFstat(BaseForTestsWithData):
             Alpha=self.Alpha,
             Delta=self.Delta,
         )
-        self.assertTrue(log10BSGL < 0)
+        assert log10BSGL < 0
         self.assertTrue(
             log10BSGL == lalpulsar.ComputeBSGL(twoF, twoFX, search_H1L1_BSGL.BSGLSetup)
         )
@@ -464,7 +463,7 @@ class TestComputeFstat(BaseForTestsWithData):
             Alpha=self.Alpha,
             Delta=self.Delta,
         )
-        self.assertTrue(log10BSGL > 0)
+        assert log10BSGL > 0
         self.assertTrue(
             log10BSGL == lalpulsar.ComputeBSGL(twoF, twoFX, search_H1L1_BSGL.BSGLSetup)
         )
@@ -642,7 +641,7 @@ class TestComputeFstat(BaseForTestsWithData):
                 twoF, twoF_cumulative[-1], 100 * reldiff
             )
         )
-        self.assertTrue(reldiff < 0.1)
+        assert reldiff < 0.1
         idx = int(Nsft / 2)
         partial_2F_expected = (taus[idx] / taus[-1]) * twoF
         reldiff = (
@@ -659,7 +658,7 @@ class TestComputeFstat(BaseForTestsWithData):
                 100 * reldiff,
             )
         )
-        self.assertTrue(reldiff < 0.1)
+        assert reldiff < 0.1
         _, _, pfs, pfs_sigma = search.predict_twoF_cumulative(
             F0=self.Writer.F0,
             Alpha=self.Writer.Alpha,
@@ -690,8 +689,8 @@ class TestComputeFstat(BaseForTestsWithData):
                 reldiffend,
             )
         )
-        self.assertTrue(reldiffmid < 0.25)
-        self.assertTrue(reldiffend < 0.25)
+        assert reldiffmid < 0.25
+        assert reldiffend < 0.25
 
 
 @pytest.fixture
@@ -793,7 +792,8 @@ def test_atoms_io(tmp_path, CFS_default_params, lambda_params):
         )
 
 
-class TestComputeFstatNoNoise(BaseForTestsWithData):
+@pytest.mark.usefixtures("data_fixture")
+class TestComputeFstatNoNoise:
     # FIXME: should be possible to merge into TestComputeFstat with smart
     # defaults handlingf
     label = "TestComputeFstatSinglePointNoNoise"
@@ -814,7 +814,7 @@ class TestComputeFstatNoNoise(BaseForTestsWithData):
             Alpha=self.Writer.Alpha,
             Delta=self.Writer.Delta,
         )
-        self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
+        assert np.abs(predicted_FS - FS) / FS < 0.3
 
     def test_run_computefstatistic_single_point_no_noise_manual_ephem(self):
         predicted_FS = self.Writer.predict_fstat(assumeSqrtSX=1)
@@ -841,7 +841,7 @@ class TestComputeFstatNoNoise(BaseForTestsWithData):
             Alpha=self.Writer.Alpha,
             Delta=self.Writer.Delta,
         )
-        self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
+        assert np.abs(predicted_FS - FS) / FS < 0.3
 
 
 class TestSearchForSignalWithJumps(TestBaseSearchClass):
@@ -862,7 +862,7 @@ class TestSearchForSignalWithJumps(TestBaseSearchClass):
                 [0, 0, 0, 1],
             ]
         )
-        self.assertTrue(np.array_equal(a, b))
+        assert np.array_equal(a, b)
 
     def test_shift_coefficients(self):
         search = pyfstat.SearchForSignalWithJumps()
@@ -878,7 +878,7 @@ class TestSearchForSignalWithJumps(TestBaseSearchClass):
             thetaA[1] * dT + 0.5 * thetaA[2] * dT**2 + thetaA[3] * dT**3 / 6.0
         )
 
-        self.assertTrue(np.array_equal(thetaB, search._shift_coefficients(thetaA, dT)))
+        assert np.array_equal(thetaB, search._shift_coefficients(thetaA, dT))
 
     def test_shift_coefficients_loop(self):
         search = pyfstat.SearchForSignalWithJumps()
@@ -892,7 +892,8 @@ class TestSearchForSignalWithJumps(TestBaseSearchClass):
         )
 
 
-class TestSemiCoherentSearch(BaseForTestsWithData):
+@pytest.mark.usefixtures("data_fixture")
+class TestSemiCoherentSearch:
     label = "TestSemiCoherentSearch"
     detectors = "H1,L1"
     nsegs = 2
@@ -931,7 +932,7 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
             print(self.Writer.duration)
             twoF_per_seg_predicted[n] = self.Writer.predict_fstat()
 
-        self.assertTrue(len(twoF_per_seg_computed) == len(twoF_per_seg_predicted))
+        assert len(twoF_per_seg_computed) == len(twoF_per_seg_predicted)
         diffs = (
             np.abs(twoF_per_seg_computed - twoF_per_seg_predicted)
             / twoF_per_seg_predicted
@@ -945,7 +946,7 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
                 )
             )
         )
-        self.assertTrue(np.all(diffs < 0.3))
+        assert np.all(diffs < 0.3)
         diff = np.abs(twoF_sc - twoF_predicted) / twoF_predicted
         print(
             (
@@ -954,7 +955,7 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
                 " relative difference: {}".format(twoF_predicted, twoF_sc, diff)
             )
         )
-        self.assertTrue(diff < 0.3)
+        assert diff < 0.3
 
     def _test_get_semicoherent_BSGL(self, **dataopts):
         search_noBSGL = pyfstat.SemiCoherentSearch(
@@ -988,7 +989,7 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
             self.Writer.Delta,
             record_segments=True,
         )
-        self.assertTrue(log10BSGL > 0)
+        assert log10BSGL > 0
         self.assertTrue(
             log10BSGL == lalpulsar.ComputeBSGL(twoF, twoFX, search_BSGL.BSGLSetup)
         )
@@ -1054,7 +1055,8 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
         search.get_semicoherent_twoF(F0=1500, F1=0, F2=0, Alpha=0, Delta=0)
 
 
-class TestSemiCoherentGlitchSearch(BaseForTestsWithData):
+@pytest.mark.usefixtures("data_fixture")
+class TestSemiCoherentGlitchSearch:
     label = "TestSemiCoherentGlitchSearch"
     dtglitch = 3600
     Band = 1
@@ -1121,9 +1123,9 @@ class TestSemiCoherentGlitchSearch(BaseForTestsWithData):
             )
         )
         if delta_F0 == 0:
-            self.assertTrue(diff < 0.3)
+            assert diff < 0.3
         else:
-            self.assertFalse(diff < 0.3)
+            assert not diff < 0.3
 
         # glitch-robust search
         keys = ["F0", "F1", "F2", "Alpha", "Delta"]
@@ -1164,17 +1166,17 @@ class TestSemiCoherentGlitchSearch(BaseForTestsWithData):
                 )
             )
         )
-        self.assertTrue(diff < 0.3)
+        assert diff < 0.3
         diff2 = np.abs((twoF_glitch - twoF_sc_vanilla) / twoF_sc_vanilla)
         print(
             "Relative difference between SemiCoherentSearch"
             "and SemiCoherentGlitchSearch: {}".format(diff2)
         )
         if delta_F0 == 0:
-            self.assertTrue(diff2 < 0.01)
+            assert diff2 < 0.01
         else:
-            self.assertTrue(twoF_glitch > twoF_sc_vanilla)
-            self.assertTrue(diff2 > 0.3)
+            assert twoF_glitch > twoF_sc_vanilla
+            assert diff2 > 0.3
 
     def test_get_semicoherent_nglitch_twoF_no_glitch(self):
         self._run_test(delta_F0=0)

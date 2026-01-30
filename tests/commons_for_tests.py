@@ -273,6 +273,24 @@ def data_fixture(request, outdir):
     )
     test_cls.Writer.make_data(verbose=True)
 
+    # Set up search_keys and search_ranges (needed by some tests)
+    test_cls.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
+    test_cls.search_ranges = {
+        key: [getattr(test_cls.Writer, key)] for key in test_cls.search_keys
+    }
+
+    # Set parameters on test class for backward compatibility with test_core.py
+    # These were set by BaseForTestsWithData
+    for key in list(default_Writer_params.keys()) + list(default_signal_params.keys()):
+        if not hasattr(test_cls, key):
+            # Get value from Writer if it exists there, otherwise use default
+            if hasattr(test_cls.Writer, key):
+                setattr(test_cls, key, getattr(test_cls.Writer, key))
+            elif key in default_Writer_params:
+                setattr(test_cls, key, default_Writer_params[key])
+            elif key in default_signal_params:
+                setattr(test_cls, key, default_signal_params[key])
+
     yield test_cls
 
 
