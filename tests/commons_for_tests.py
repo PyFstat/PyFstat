@@ -198,9 +198,9 @@ def data_fixture(request, outdir):
     test_cls.style = request.param
 
     # Allow overwriting parameters from child classes
-    signal_params = {}
+    test_cls.signal_params = {}
     for key, val in default_signal_params.items():
-        signal_params[key] = getattr(test_cls, key, default_signal_params[key])
+        test_cls.signal_params[key] = getattr(test_cls, key, default_signal_params[key])
 
     # Create fake data SFTs
     test_cls.Writer = pyfstat.Writer(
@@ -257,7 +257,7 @@ def data_fixture(request, outdir):
             if test_cls.style == "old"
             else None
         ),
-        signal_parameters=signal_params if test_cls.style == "new" else None,
+        signal_parameters=test_cls.signal_params if test_cls.style == "new" else None,
         Tsft=getattr(test_cls, "Tsft", default_Writer_params["Tsft"]),
         outdir=test_cls.outdir,
         sqrtSX=getattr(test_cls, "sqrtSX", default_Writer_params["sqrtSX"]),
@@ -274,22 +274,10 @@ def data_fixture(request, outdir):
     test_cls.Writer.make_data(verbose=True)
 
     # Set up search_keys and search_ranges (needed by some tests)
-    test_cls.search_keys = ["F0", "F1", "F2", "Alpha", "Delta"]
+    test_cls.search_keys = pyfstat.BaseSearchClass.default_search_keys
     test_cls.search_ranges = {
-        key: [getattr(test_cls.Writer, key)] for key in test_cls.search_keys
+        key: [test_cls.signal_params[key]] for key in test_cls.search_keys
     }
-
-    # Set parameters on test class for backward compatibility with test_core.py
-    # These were set by BaseForTestsWithData
-    for key in list(default_Writer_params.keys()) + list(default_signal_params.keys()):
-        if not hasattr(test_cls, key):
-            # Get value from Writer if it exists there, otherwise use default
-            if hasattr(test_cls.Writer, key):
-                setattr(test_cls, key, getattr(test_cls.Writer, key))
-            elif key in default_Writer_params:
-                setattr(test_cls, key, default_Writer_params[key])
-            elif key in default_signal_params:
-                setattr(test_cls, key, default_signal_params[key])
 
     yield test_cls
 
