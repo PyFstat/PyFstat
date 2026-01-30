@@ -514,7 +514,7 @@ class TestComputeFstat:
         lnBtSG1c = search1.FstatMap.get_lnBtSG()
         assert np.isclose(
             lnBtSG1a,
-            lnBtSG1b,
+            lnBtSG1c,
             rtol=1e-4,
         ), f"lnBtSG: from get_fullycoherent_detstat() -> {lnBtSG1a}, from FstatMap.get_lnBtSG() -> {lnBtSG1c}"
         # recompute BtSG and other stats from a map saved to disk, using our own implementation
@@ -532,11 +532,6 @@ class TestComputeFstat:
         assert (
             shape1 == shape2
         ), f"shape(search1.FstatMap.F_mn)={shape1}, shape(Fmap_from_file.F_mn)={shape2}"
-        assert np.isclose(
-            search1.FstatMap.maxF,
-            Fmap_from_file.maxF,
-            rtol=1e-4,
-        ), f"search1.FstatMap.maxF={search1.FstatMap.maxF}, Fmap_from_file.maxF={Fmap_from_file.maxF}"
         assert np.isclose(
             search1.FstatMap.maxF,
             Fmap_from_file.maxF,
