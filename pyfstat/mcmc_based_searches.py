@@ -1215,6 +1215,11 @@ class MCMCSearch(BaseSearchClass):
             norm_trunc_warning = "norm" in prior_dict["type"] or norm_trunc_warning
 
             if prior_dict["type"] == "unif":
+                if prior_dict["lower"] > prior_dict["upper"]:  # pragma: no cover
+                    raise ValueError(
+                        f"Uniform prior bounds on {key} are the wrong way around:"
+                        f" lower bound {prior_dict['lower']} is above upper bound {prior_dict['upper']}."
+                    )
                 prior_bounds[key]["lower"] = prior_dict["lower"]
                 prior_bounds[key]["upper"] = prior_dict["upper"]
             elif prior_dict["type"] == "log10unif":
