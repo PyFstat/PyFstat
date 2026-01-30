@@ -4,11 +4,7 @@ import unittest
 import lalpulsar
 import numpy as np
 import pytest
-
-# FIXME this should be made cleaner with fixtures
 from commons_for_tests import (
-    BaseForTestsWithData,
-    BaseForTestsWithOutdir,
     default_binary_params,
     default_signal_params,
     default_Writer_params,
@@ -18,7 +14,8 @@ from scipy.stats import chi2
 import pyfstat
 
 
-class TestReadParFile(BaseForTestsWithOutdir):
+@pytest.mark.usefixtures("outdir")
+class TestReadParFile:
     label = "TestReadParFile"
 
     def test(self):
@@ -26,15 +23,16 @@ class TestReadParFile(BaseForTestsWithOutdir):
         os.system('echo "x=100\ny=10" > ' + parfile)
 
         par = pyfstat.utils.read_par(filename=parfile)
-        self.assertTrue(par["x"] == 100)
-        self.assertTrue(par["y"] == 10)
+        assert par["x"] == 100
+        assert par["y"] == 10
 
         par = pyfstat.utils.read_par(outdir=self.outdir, label=self.label)
-        self.assertTrue(par["x"] == 100)
-        self.assertTrue(par["y"] == 10)
+        assert par["x"] == 100
+        assert par["y"] == 10
 
 
-class TestPredictFstat(BaseForTestsWithOutdir):
+@pytest.mark.usefixtures("outdir")
+class TestPredictFstat:
     label = "TestPredictFstat"
     # here we only test the modes WITHOUT sftfilepattern,
     # which itself is tested through the Writer and Search classes
@@ -49,8 +47,8 @@ class TestPredictFstat(BaseForTestsWithOutdir):
         print(
             "predict_fstat() returned: E[2F]={}+-{}".format(twoF_expected, twoF_sigma)
         )
-        self.assertTrue(twoF_expected == 4)
-        self.assertAlmostEqual(twoF_sigma, chi2.std(df=4), places=5)
+        assert twoF_expected == 4
+        assert np.isclose(twoF_sigma, chi2.std(df=4), rtol=1e-5)
 
     def test_PFS_noise_TSfiles(self):
         IFOs = ["H1", "L1"]
@@ -74,8 +72,8 @@ class TestPredictFstat(BaseForTestsWithOutdir):
         print(
             "predict_fstat() returned: E[2F]={}+-{}".format(twoF_expected, twoF_sigma)
         )
-        self.assertTrue(twoF_expected == 4)
-        self.assertAlmostEqual(twoF_sigma, chi2.std(df=4), places=5)
+        assert twoF_expected == 4
+        assert np.isclose(twoF_sigma, chi2.std(df=4), rtol=1e-5)
 
     def test_PFS_signal(self):
         duration = 10 * default_Writer_params["duration"]
@@ -91,8 +89,8 @@ class TestPredictFstat(BaseForTestsWithOutdir):
             assumeSqrtSX=1,
         )
         print("predict_fstat() returned:" f" E[2F]={twoF_expected}+-{twoF_sigma}")
-        self.assertTrue(twoF_expected > 4)
-        self.assertTrue(twoF_sigma > 0)
+        assert twoF_expected > 4
+        assert twoF_sigma > 0
         # call again but this time using a dictionary of parameters
         params = {
             "h0": 1,
@@ -115,7 +113,7 @@ class TestPredictFstat(BaseForTestsWithOutdir):
             "predict_fstat() called with a dict returned:"
             f" E[2F]={twoF_expected_dict}+-{twoF_sigma_dict}"
         )
-        self.assertEqual(twoF_expected_dict, twoF_expected)
+        assert twoF_expected_dict == twoF_expected
         # add transient parameters
         params["transientWindowType"] = "rect"
         params["transient_tstart"] = default_Writer_params["tstart"]
@@ -135,7 +133,7 @@ class TestPredictFstat(BaseForTestsWithOutdir):
             "predict_fstat() called with a dict including a transient returned:"
             f" E[2F]={twoF_expected_transient}+-{twoF_sigma_transient}"
         )
-        self.assertTrue(twoF_expected_transient < twoF_expected)
+        assert twoF_expected_transient < twoF_expected
 
 
 class TestBaseSearchClass(unittest.TestCase):
@@ -143,51 +141,52 @@ class TestBaseSearchClass(unittest.TestCase):
     pass
 
 
-class TestComputeFstat(BaseForTestsWithData):
+@pytest.mark.usefixtures("data_fixture")
+class TestComputeFstat:
     label = "TestComputeFstat"
 
     def test_run_computefstatistic_single_point_injectSqrtSX(self):
         # not using any SFTs
         search = pyfstat.ComputeFstat(
-            tref=self.tref,
-            minStartTime=self.tstart,
-            maxStartTime=self.tstart + self.duration,
-            detectors=self.detectors,
-            injectSqrtSX=self.sqrtSX,
-            minCoverFreq=self.F0 - 0.1,
-            maxCoverFreq=self.F0 + 0.1,
+            tref=self.Writer.tref,
+            minStartTime=self.Writer.tstart,
+            maxStartTime=self.Writer.tstart + self.Writer.duration,
+            detectors=self.Writer.detectors,
+            injectSqrtSX=self.Writer.sqrtSX,
+            minCoverFreq=self.signal_params["F0"] - 0.1,
+            maxCoverFreq=self.signal_params["F0"] + 0.1,
         )
         # FIXME: This way is deprecated, remove test in future versions
         FS = search.get_fullycoherent_twoF(
-            F0=self.F0,
-            F1=self.F1,
-            F2=self.F2,
-            Alpha=self.Alpha,
-            Delta=self.Delta,
+            F0=self.signal_params["F0"],
+            F1=self.signal_params["F1"],
+            F2=self.signal_params["F2"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
         )
-        self.assertTrue(FS > 0.0)
+        assert FS > 0.0
         # now with new input params option
         FS_new = search.get_fullycoherent_twoF(
             params={
-                "F0": self.F0,
-                "F1": self.F1,
-                "F2": self.F2,
-                "Alpha": self.Alpha,
-                "Delta": self.Delta,
+                "F0": self.signal_params["F0"],
+                "F1": self.signal_params["F1"],
+                "F2": self.signal_params["F2"],
+                "Alpha": self.signal_params["Alpha"],
+                "Delta": self.signal_params["Delta"],
             }
         )
         np.isclose(FS_new, FS, rtol=1e-6, atol=0)
         # now with higher spindowns
         FS_sd = search.get_fullycoherent_twoF(
             params={
-                "F0": self.F0,
-                "F1": self.F1,
-                "F2": self.F2,
+                "F0": self.signal_params["F0"],
+                "F1": self.signal_params["F1"],
+                "F2": self.signal_params["F2"],
                 # deliberately skipping F3 to test non-contiguous lists
                 # (omtited terms should be assumed as 0)
                 "F4": 1e-20,
-                "Alpha": self.Alpha,
-                "Delta": self.Delta,
+                "Alpha": self.signal_params["Alpha"],
+                "Delta": self.signal_params["Delta"],
             }
         )
         np.isclose(FS_sd, FS, rtol=1e-6, atol=0)
@@ -196,36 +195,36 @@ class TestComputeFstat(BaseForTestsWithData):
     def test_run_computefstatistic_single_point_injectSqrtSX_binary(self):
         # not using any SFTs
         search = pyfstat.ComputeFstat(
-            tref=self.tref,
-            minStartTime=self.tstart,
-            maxStartTime=self.tstart + self.duration,
-            detectors=self.detectors,
-            injectSqrtSX=self.sqrtSX,
-            minCoverFreq=self.F0 - 0.1,
-            maxCoverFreq=self.F0 + 0.1,
+            tref=self.Writer.tref,
+            minStartTime=self.Writer.tstart,
+            maxStartTime=self.Writer.tstart + self.Writer.duration,
+            detectors=self.Writer.detectors,
+            injectSqrtSX=self.Writer.sqrtSX,
+            minCoverFreq=self.signal_params["F0"] - 0.1,
+            maxCoverFreq=self.signal_params["F0"] + 0.1,
             binary=True,
         )
         # FIXME: This way is deprecated, remove test in future versions
         FS = search.get_fullycoherent_twoF(
-            F0=self.F0,
-            F1=self.F1,
-            F2=self.F2,
-            Alpha=self.Alpha,
-            Delta=self.Delta,
+            F0=self.signal_params["F0"],
+            F1=self.signal_params["F1"],
+            F2=self.signal_params["F2"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
             **default_binary_params,
         )
-        self.assertTrue(FS > 0.0)
+        assert FS > 0.0
         # now with new input params option
         params = {
-            "F0": self.F0,
-            "F1": self.F1,
-            "F2": self.F2,
-            "Alpha": self.Alpha,
-            "Delta": self.Delta,
+            "F0": self.signal_params["F0"],
+            "F1": self.signal_params["F1"],
+            "F2": self.signal_params["F2"],
+            "Alpha": self.signal_params["Alpha"],
+            "Delta": self.signal_params["Delta"],
         }
         params.update(default_binary_params)
         FS = search.get_fullycoherent_twoF(params=params)
-        self.assertTrue(FS > 0.0)
+        assert FS > 0.0
 
     def test_run_computefstatistic_single_point_with_SFTs(self):
         twoF_predicted = self.Writer.predict_fstat()
@@ -236,11 +235,11 @@ class TestComputeFstat(BaseForTestsWithData):
             search_ranges=self.search_ranges,
         )
         twoF = search.get_fullycoherent_twoF(
-            F0=self.Writer.F0,
-            F1=self.Writer.F1,
-            F2=self.Writer.F2,
-            Alpha=self.Writer.Alpha,
-            Delta=self.Writer.Delta,
+            F0=self.signal_params["F0"],
+            F1=self.signal_params["F1"],
+            F2=self.signal_params["F2"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
         )
         diff = np.abs(twoF - twoF_predicted) / twoF_predicted
         print(
@@ -250,7 +249,7 @@ class TestComputeFstat(BaseForTestsWithData):
                 " relative difference: {}".format(twoF_predicted, twoF, diff)
             )
         )
-        self.assertTrue(diff < 0.3)
+        assert diff < 0.3
 
         # the following seems to be a leftover from when this test case was
         # doing separate H1 vs H1,L1 searches, but now only really tests the
@@ -264,11 +263,11 @@ class TestComputeFstat(BaseForTestsWithData):
             search_ranges=self.search_ranges,
         )
         twoF2 = search.get_fullycoherent_twoF(
-            F0=self.Writer.F0,
-            F1=self.Writer.F1,
-            F2=self.Writer.F2,
-            Alpha=self.Writer.Alpha,
-            Delta=self.Writer.Delta,
+            F0=self.signal_params["F0"],
+            F1=self.signal_params["F1"],
+            F2=self.signal_params["F2"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
         )
         diff = np.abs(twoF2 - twoF_predicted) / twoF_predicted
         print(
@@ -278,9 +277,9 @@ class TestComputeFstat(BaseForTestsWithData):
                 " relative difference: {}".format(twoF_predicted, twoF2, diff)
             )
         )
-        self.assertTrue(diff < 0.3)
+        assert diff < 0.3
         diff = np.abs(twoF2 - twoF) / twoF
-        self.assertTrue(diff < 0.001)
+        assert diff < 0.001
 
     def test_run_computefstatistic_allowedMismatchFromSFTLength(self):
         long_Tsft_params = default_Writer_params.copy()
@@ -295,7 +294,7 @@ class TestComputeFstat(BaseForTestsWithData):
         )
         long_Tsft_Writer.run_makefakedata()
         search = pyfstat.ComputeFstat(
-            tref=self.tref,
+            tref=self.Writer.tref,
             sftfilepattern=long_Tsft_Writer.sftfilepath,
             minCoverFreq=1499.5,
             maxCoverFreq=1500.5,
@@ -306,7 +305,7 @@ class TestComputeFstat(BaseForTestsWithData):
             search.get_fullycoherent_twoF(F0=1500, F1=0, F2=0, Alpha=0, Delta=0)
 
         search = pyfstat.ComputeFstat(
-            tref=self.tref,
+            tref=self.Writer.tref,
             sftfilepattern=long_Tsft_Writer.sftfilepath,
             minCoverFreq=1499.5,
             maxCoverFreq=1500.5,
@@ -329,13 +328,13 @@ class TestComputeFstat(BaseForTestsWithData):
             detectors=self.Writer.detectors,
         )
         FS_from_file = search.get_fullycoherent_twoF(
-            F0=self.Writer.F0,
-            F1=self.Writer.F1,
-            F2=self.Writer.F2,
-            Alpha=self.Writer.Alpha,
-            Delta=self.Writer.Delta,
+            F0=self.signal_params["F0"],
+            F1=self.signal_params["F1"],
+            F2=self.signal_params["F2"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
         )
-        self.assertTrue(np.abs(predicted_FS - FS_from_file) / FS_from_file < 0.3)
+        assert np.abs(predicted_FS - FS_from_file) / FS_from_file < 0.3
 
         injectSourcesdict = search.read_par(filename=injectSources)
         injectSourcesdict["F0"] = injectSourcesdict.pop("Freq")
@@ -353,133 +352,133 @@ class TestComputeFstat(BaseForTestsWithData):
             detectors=self.Writer.detectors,
         )
         FS_from_dict = search.get_fullycoherent_twoF(
-            F0=self.Writer.F0,
-            F1=self.Writer.F1,
-            F2=self.Writer.F2,
-            Alpha=self.Writer.Alpha,
-            Delta=self.Writer.Delta,
+            F0=self.signal_params["F0"],
+            F1=self.signal_params["F1"],
+            F2=self.signal_params["F2"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
         )
-        self.assertTrue(FS_from_dict == FS_from_file)
+        assert FS_from_dict == FS_from_file
 
     def test_get_fully_coherent_BSGL(self):
         # first pure noise, expect log10BSGL<0
         search_H1L1_noBSGL = pyfstat.ComputeFstat(
-            tref=self.tref,
-            minStartTime=self.tstart,
-            maxStartTime=self.tstart + self.duration,
+            tref=self.Writer.tref,
+            minStartTime=self.Writer.tstart,
+            maxStartTime=self.Writer.tstart + self.Writer.duration,
             detectors="H1,L1",
-            injectSqrtSX=np.repeat(self.sqrtSX, 2),
-            minCoverFreq=self.F0 - 0.1,
-            maxCoverFreq=self.F0 + 0.1,
+            injectSqrtSX=np.repeat(self.Writer.sqrtSX, 2),
+            minCoverFreq=self.signal_params["F0"] - 0.1,
+            maxCoverFreq=self.signal_params["F0"] + 0.1,
             BSGL=False,
             singleFstats=True,
-            randSeed=self.randSeed,
+            randSeed=self.Writer.randSeed,
         )
         twoF = search_H1L1_noBSGL.get_fullycoherent_detstat(
-            F0=self.F0,
-            F1=self.F1,
-            F2=self.F2,
-            Alpha=self.Alpha,
-            Delta=self.Delta,
+            F0=self.signal_params["F0"],
+            F1=self.signal_params["F1"],
+            F2=self.signal_params["F2"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
         )
         twoFX = search_H1L1_noBSGL.get_fullycoherent_single_IFO_twoFs()
         search_H1L1_BSGL = pyfstat.ComputeFstat(
-            tref=self.tref,
-            minStartTime=self.tstart,
-            maxStartTime=self.tstart + self.duration,
+            tref=self.Writer.tref,
+            minStartTime=self.Writer.tstart,
+            maxStartTime=self.Writer.tstart + self.Writer.duration,
             detectors="H1,L1",
-            injectSqrtSX=np.repeat(self.sqrtSX, 2),
-            minCoverFreq=self.F0 - 0.1,
-            maxCoverFreq=self.F0 + 0.1,
+            injectSqrtSX=np.repeat(self.Writer.sqrtSX, 2),
+            minCoverFreq=self.signal_params["F0"] - 0.1,
+            maxCoverFreq=self.signal_params["F0"] + 0.1,
             BSGL=True,
-            randSeed=self.randSeed,
+            randSeed=self.Writer.randSeed,
         )
         log10BSGL = search_H1L1_BSGL.get_fullycoherent_detstat(
-            F0=self.F0,
-            F1=self.F1,
-            F2=self.F2,
-            Alpha=self.Alpha,
-            Delta=self.Delta,
+            F0=self.signal_params["F0"],
+            F1=self.signal_params["F1"],
+            F2=self.signal_params["F2"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
         )
-        self.assertTrue(log10BSGL < 0)
-        self.assertTrue(
-            log10BSGL == lalpulsar.ComputeBSGL(twoF, twoFX, search_H1L1_BSGL.BSGLSetup)
+        assert log10BSGL < 0
+        assert log10BSGL == lalpulsar.ComputeBSGL(
+            twoF, twoFX, search_H1L1_BSGL.BSGLSetup
         )
         # now with an added signal, expect log10BSGL>0
         search_H1L1_noBSGL = pyfstat.ComputeFstat(
-            tref=self.tref,
-            minStartTime=self.tstart,
-            maxStartTime=self.tstart + self.duration,
+            tref=self.Writer.tref,
+            minStartTime=self.Writer.tstart,
+            maxStartTime=self.Writer.tstart + self.Writer.duration,
             detectors="H1,L1",
-            injectSqrtSX=np.repeat(self.sqrtSX, 2),
+            injectSqrtSX=np.repeat(self.Writer.sqrtSX, 2),
             injectSources="{{Alpha={:g}; Delta={:g}; h0={:g}; cosi={:g}; Freq={:g}; f1dot={:g}; f2dot={:g}; refTime={:d};}}".format(
-                self.Alpha,
-                self.Delta,
-                self.h0,
-                self.cosi,
-                self.F0,
-                self.F1,
-                self.F2,
-                self.tref,
+                self.signal_params["Alpha"],
+                self.signal_params["Delta"],
+                self.signal_params["h0"],
+                self.signal_params["cosi"],
+                self.signal_params["F0"],
+                self.signal_params["F1"],
+                self.signal_params["F2"],
+                self.Writer.tref,
             ),
-            minCoverFreq=self.F0 - 0.1,
-            maxCoverFreq=self.F0 + 0.1,
+            minCoverFreq=self.signal_params["F0"] - 0.1,
+            maxCoverFreq=self.signal_params["F0"] + 0.1,
             BSGL=False,
             singleFstats=True,
-            randSeed=self.randSeed,
+            randSeed=self.Writer.randSeed,
         )
         twoF = search_H1L1_noBSGL.get_fullycoherent_detstat(
-            F0=self.F0,
-            F1=self.F1,
-            F2=self.F2,
-            Alpha=self.Alpha,
-            Delta=self.Delta,
+            F0=self.signal_params["F0"],
+            F1=self.signal_params["F1"],
+            F2=self.signal_params["F2"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
         )
         twoFX = search_H1L1_noBSGL.get_fullycoherent_single_IFO_twoFs()
         search_H1L1_BSGL = pyfstat.ComputeFstat(
-            tref=self.tref,
-            minStartTime=self.tstart,
-            maxStartTime=self.tstart + self.duration,
+            tref=self.Writer.tref,
+            minStartTime=self.Writer.tstart,
+            maxStartTime=self.Writer.tstart + self.Writer.duration,
             detectors="H1,L1",
-            injectSqrtSX=np.repeat(self.sqrtSX, 2),
+            injectSqrtSX=np.repeat(self.Writer.sqrtSX, 2),
             injectSources="{{Alpha={:g}; Delta={:g}; h0={:g}; cosi={:g}; Freq={:g}; f1dot={:g}; f2dot={:g}; refTime={:d};}}".format(
-                self.Alpha,
-                self.Delta,
-                self.h0,
-                self.cosi,
-                self.F0,
-                self.F1,
-                self.F2,
-                self.tref,
+                self.signal_params["Alpha"],
+                self.signal_params["Delta"],
+                self.signal_params["h0"],
+                self.signal_params["cosi"],
+                self.signal_params["F0"],
+                self.signal_params["F1"],
+                self.signal_params["F2"],
+                self.Writer.tref,
             ),
-            minCoverFreq=self.F0 - 0.1,
-            maxCoverFreq=self.F0 + 0.1,
+            minCoverFreq=self.signal_params["F0"] - 0.1,
+            maxCoverFreq=self.signal_params["F0"] + 0.1,
             BSGL=True,
-            randSeed=self.randSeed,
+            randSeed=self.Writer.randSeed,
         )
         log10BSGL = search_H1L1_BSGL.get_fullycoherent_detstat(
-            F0=self.F0,
-            F1=self.F1,
-            F2=self.F2,
-            Alpha=self.Alpha,
-            Delta=self.Delta,
+            F0=self.signal_params["F0"],
+            F1=self.signal_params["F1"],
+            F2=self.signal_params["F2"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
         )
-        self.assertTrue(log10BSGL > 0)
-        self.assertTrue(
-            log10BSGL == lalpulsar.ComputeBSGL(twoF, twoFX, search_H1L1_BSGL.BSGLSetup)
+        assert log10BSGL > 0
+        assert log10BSGL == lalpulsar.ComputeBSGL(
+            twoF, twoFX, search_H1L1_BSGL.BSGLSetup
         )
 
     def test_transient_detstats(self):
         # first get maxTwoF and lnBtSG (from lalpulsar.ComputeTransientBstat) stats
         CFS_params = {
-            "tref": self.tref,
-            "minStartTime": self.tstart,
-            "maxStartTime": self.tstart + self.duration,
+            "tref": self.Writer.tref,
+            "minStartTime": self.Writer.tstart,
+            "maxStartTime": self.Writer.tstart + self.Writer.duration,
             "detectors": "H1,L1",
-            "injectSqrtSX": np.repeat(self.sqrtSX, 2),
+            "injectSqrtSX": np.repeat(self.Writer.sqrtSX, 2),
             "randSeed": 42,
-            "minCoverFreq": self.F0 - 0.1,
-            "maxCoverFreq": self.F0 + 0.1,
+            "minCoverFreq": self.signal_params["F0"] - 0.1,
+            "maxCoverFreq": self.signal_params["F0"] + 0.1,
             "transientWindowType": "rect",
             "t0Band": 2 * default_Writer_params["Tsft"],
             "tauBand": 2 * default_Writer_params["Tsft"],
@@ -487,11 +486,11 @@ class TestComputeFstat(BaseForTestsWithData):
             "tCWFstatMapVersion": "lal",
         }
         lambda_params = {
-            "F0": self.F0,
-            "F1": self.F1,
-            "F2": self.F2,
-            "Alpha": self.Alpha,
-            "Delta": self.Delta,
+            "F0": self.signal_params["F0"],
+            "F1": self.signal_params["F1"],
+            "F2": self.signal_params["F2"],
+            "Alpha": self.signal_params["Alpha"],
+            "Delta": self.signal_params["Delta"],
         }
         search1 = pyfstat.ComputeFstat(
             **CFS_params,
@@ -506,20 +505,18 @@ class TestComputeFstat(BaseForTestsWithData):
         # recompute BtSG by calling one function level lower,
         # this should still redo the F-stat map and use the lalpulsar implementation
         lnBtSG1b = search1.get_transient_detstats()
-        self.assertAlmostEqual(
+        assert np.isclose(
             lnBtSG1a,
             lnBtSG1b,
-            places=4,
-            msg=f"lnBtSG: from get_fullycoherent_detstat() -> {lnBtSG1a}, from get_transient_detstats() -> {lnBtSG1b}",
-        )
+            rtol=1e-4,
+        ), f"lnBtSG: from get_fullycoherent_detstat() -> {lnBtSG1a}, from get_transient_detstats() -> {lnBtSG1b}"
         # recompute BtSG from the F-stat map using our own implementation
         lnBtSG1c = search1.FstatMap.get_lnBtSG()
-        self.assertAlmostEqual(
+        assert np.isclose(
             lnBtSG1a,
-            lnBtSG1b,
-            places=4,
-            msg=f"lnBtSG: from get_fullycoherent_detstat() -> {lnBtSG1a}, from FstatMap.get_lnBtSG() -> {lnBtSG1c}",
-        )
+            lnBtSG1c,
+            rtol=1e-4,
+        ), f"lnBtSG: from get_fullycoherent_detstat() -> {lnBtSG1a}, from FstatMap.get_lnBtSG() -> {lnBtSG1c}"
         # recompute BtSG and other stats from a map saved to disk, using our own implementation
         tCWfile = os.path.join(self.outdir, "Fmn.txt")
         search1.FstatMap.write_F_mn_to_file(
@@ -532,40 +529,29 @@ class TestComputeFstat(BaseForTestsWithData):
         tau_ML = search1.windowRange.tau + maxidx[1] * search1.windowRange.dtau
         shape1 = np.shape(search1.FstatMap.F_mn)
         shape2 = np.shape(Fmap_from_file.F_mn)
-        self.assertTrue(
-            shape1 == shape2,
-            msg=f"shape(search1.FstatMap.F_mn)={shape1}, shape(Fmap_from_file.F_mn)={shape2}",
-        )
-        self.assertAlmostEqual(
+        assert (
+            shape1 == shape2
+        ), f"shape(search1.FstatMap.F_mn)={shape1}, shape(Fmap_from_file.F_mn)={shape2}"
+        assert np.isclose(
             search1.FstatMap.maxF,
             Fmap_from_file.maxF,
-            places=4,
-            msg=f"search1.FstatMap.maxF={search1.FstatMap.maxF}, Fmap_from_file.maxF={Fmap_from_file.maxF}",
-        )
-        self.assertAlmostEqual(
-            search1.FstatMap.maxF,
-            Fmap_from_file.maxF,
-            places=4,
-            msg=f"search1.FstatMap.maxF={search1.FstatMap.maxF}, Fmap_from_file.maxF={Fmap_from_file.maxF}",
-        )
-        self.assertAlmostEqual(
+            rtol=1e-4,
+        ), f"search1.FstatMap.maxF={search1.FstatMap.maxF}, Fmap_from_file.maxF={Fmap_from_file.maxF}"
+        assert np.isclose(
             search1.FstatMap.t0_ML,
             t0_ML,
-            places=4,
-            msg=f"search1.FstatMap.t0_ML={search1.FstatMap.t0_ML}, from file: t0_ML={t0_ML}",
-        )
-        self.assertAlmostEqual(
+            rtol=1e-4,
+        ), f"search1.FstatMap.t0_ML={search1.FstatMap.t0_ML}, from file: t0_ML={t0_ML}"
+        assert np.isclose(
             search1.FstatMap.tau_ML,
             tau_ML,
-            places=4,
-            msg=f"search1.FstatMap.tau_ML={search1.FstatMap.tau_ML}, from file: tau_ML={tau_ML}",
-        )
-        self.assertAlmostEqual(
+            rtol=1e-4,
+        ), f"search1.FstatMap.tau_ML={search1.FstatMap.tau_ML}, from file: tau_ML={tau_ML}"
+        assert np.isclose(
             search1.FstatMap.lnBtSG,
             Fmap_from_file.lnBtSG,
-            places=2,  # more tolerant than other checks due to implementation details
-            msg=f"search1.FstatMap.lnBtSG={search1.FstatMap.lnBtSG}, Fmap_from_file.lnBtSG={Fmap_from_file.lnBtSG}",
-        )
+            rtol=1e-2,  # more tolerant than other checks due to implementation details
+        ), f"search1.FstatMap.lnBtSG={search1.FstatMap.lnBtSG}, Fmap_from_file.lnBtSG={Fmap_from_file.lnBtSG}"
 
         # now set up for transient BSGL as "main" detection statistic instead
         search2 = pyfstat.ComputeFstat(
@@ -573,64 +559,60 @@ class TestComputeFstat(BaseForTestsWithData):
             BSGL=True,
         )
         log10BSGL2a = search2.get_fullycoherent_detstat(**lambda_params)
-        self.assertAlmostEqual(
+        assert np.isclose(
             search1.twoF,
             search2.twoF,
-            places=4,
-            msg=f"search1.twoF={search1.twoF}, search2.twoF={search2.twoF}",
-        )
+            rtol=1e-4,
+        ), f"search1.twoF={search1.twoF}, search2.twoF={search2.twoF}"
         Ndet = len(search2.detectors.split(","))
         for X in range(Ndet):
             print(search2.twoFX[X])
-            self.assertTrue(
-                search2.twoFX[X] > 0,
-                msg=f"search2.twoFX={search1.twoFX} but the first {Ndet} entries should be non-zero.",
-            )
-        self.assertAlmostEqual(
+            assert (
+                search2.twoFX[X] > 0
+            ), f"search2.twoFX={search1.twoFX} but the first {Ndet} entries should be non-zero."
+        assert np.isclose(
             search1.maxTwoF,
             search2.maxTwoF,
-            places=4,
-            msg=f"search1.maxTwoF={search1.maxTwoF}, search2.maxTwoF={search2.maxTwoF}",
-        )
+            rtol=1e-4,
+        ), f"search1.maxTwoF={search1.maxTwoF}, search2.maxTwoF={search2.maxTwoF}"
         print(f"twoFXatMaxTwoF={search2.twoFXatMaxTwoF}")
         print(f"log10BSGL={search2.log10BSGL}")
         # recompute log10BSGL by calling one function level lower
         log10BSGL2b = search2.get_transient_detstats()
-        self.assertAlmostEqual(
+        assert np.isclose(
             log10BSGL2a,
             log10BSGL2b,
-            places=4,
-            msg=f"log10BSGL: from get_fullycoherent_detstat() -> {log10BSGL2a}, from get_transient_detstats() -> {log10BSGL2b}",
-        )
+            rtol=1e-4,
+        ), f"log10BSGL: from get_fullycoherent_detstat() -> {log10BSGL2a}, from get_transient_detstats() -> {log10BSGL2b}"
         # FIXME: add more quantitative tests of BSGL values
 
     def test_cumulative_twoF(self):
         Nsft = 100
         # not using any SFTs on disk
         search = pyfstat.ComputeFstat(
-            tref=self.tref,
-            minStartTime=self.tstart,
-            maxStartTime=self.tstart + Nsft * self.Tsft,
-            detectors=self.detectors,
-            injectSqrtSX=self.sqrtSX,
+            tref=self.Writer.tref,
+            minStartTime=self.Writer.tstart,
+            maxStartTime=self.Writer.tstart + Nsft * self.Writer.Tsft,
+            detectors=self.Writer.detectors,
+            injectSqrtSX=self.Writer.sqrtSX,
             injectSources=default_signal_params,
-            minCoverFreq=self.F0 - 0.1,
-            maxCoverFreq=self.F0 + 0.1,
+            minCoverFreq=self.signal_params["F0"] - 0.1,
+            maxCoverFreq=self.signal_params["F0"] + 0.1,
         )
         start_time, taus, twoF_cumulative = search.calculate_twoF_cumulative(
-            self.Writer.F0,
-            self.Writer.F1,
-            self.Writer.F2,
-            self.Writer.Alpha,
-            self.Writer.Delta,
+            self.signal_params["F0"],
+            self.signal_params["F1"],
+            self.signal_params["F2"],
+            self.signal_params["Alpha"],
+            self.signal_params["Delta"],
             num_segments=Nsft + 1,
         )
         twoF = search.get_fullycoherent_detstat(
-            F0=self.Writer.F0,
-            F1=self.Writer.F1,
-            F2=self.Writer.F2,
-            Alpha=self.Writer.Alpha,
-            Delta=self.Writer.Delta,
+            F0=self.signal_params["F0"],
+            F1=self.signal_params["F1"],
+            F2=self.signal_params["F2"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
             tstart=self.Writer.tstart,
             tend=self.Writer.tstart + taus[-1],
         )
@@ -642,7 +624,7 @@ class TestComputeFstat(BaseForTestsWithData):
                 twoF, twoF_cumulative[-1], 100 * reldiff
             )
         )
-        self.assertTrue(reldiff < 0.1)
+        assert reldiff < 0.1
         idx = int(Nsft / 2)
         partial_2F_expected = (taus[idx] / taus[-1]) * twoF
         reldiff = (
@@ -659,18 +641,18 @@ class TestComputeFstat(BaseForTestsWithData):
                 100 * reldiff,
             )
         )
-        self.assertTrue(reldiff < 0.1)
+        assert reldiff < 0.1
         _, _, pfs, pfs_sigma = search.predict_twoF_cumulative(
-            F0=self.Writer.F0,
-            Alpha=self.Writer.Alpha,
-            Delta=self.Writer.Delta,
-            h0=self.Writer.h0,
-            cosi=self.Writer.cosi,
-            psi=self.Writer.psi,
-            tstart=self.tstart,
-            tend=self.tstart + Nsft * self.Tsft,
-            IFOs=self.detectors,
-            assumeSqrtSX=self.sqrtSX,
+            F0=self.signal_params["F0"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
+            h0=self.signal_params["h0"],
+            cosi=self.signal_params["cosi"],
+            psi=self.signal_params["psi"],
+            tstart=self.Writer.tstart,
+            tend=self.Writer.tstart + Nsft * self.Writer.Tsft,
+            IFOs=self.Writer.detectors,
+            assumeSqrtSX=self.Writer.sqrtSX,
             num_segments=3,  # this is slow, so only do start,mid,end
         )
         reldiffmid = 100 * (twoF_cumulative[idx] - pfs[1]) / pfs[1]
@@ -690,8 +672,8 @@ class TestComputeFstat(BaseForTestsWithData):
                 reldiffend,
             )
         )
-        self.assertTrue(reldiffmid < 0.25)
-        self.assertTrue(reldiffend < 0.25)
+        assert reldiffmid < 0.25
+        assert reldiffend < 0.25
 
 
 @pytest.fixture
@@ -793,7 +775,8 @@ def test_atoms_io(tmp_path, CFS_default_params, lambda_params):
         )
 
 
-class TestComputeFstatNoNoise(BaseForTestsWithData):
+@pytest.mark.usefixtures("data_fixture")
+class TestComputeFstatNoNoise:
     # FIXME: should be possible to merge into TestComputeFstat with smart
     # defaults handlingf
     label = "TestComputeFstatSinglePointNoNoise"
@@ -808,13 +791,13 @@ class TestComputeFstatNoNoise(BaseForTestsWithData):
             search_ranges=self.search_ranges,
         )
         FS = search.get_fullycoherent_twoF(
-            F0=self.Writer.F0,
-            F1=self.Writer.F1,
-            F2=self.Writer.F2,
-            Alpha=self.Writer.Alpha,
-            Delta=self.Writer.Delta,
+            F0=self.signal_params["F0"],
+            F1=self.signal_params["F1"],
+            F2=self.signal_params["F2"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
         )
-        self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
+        assert np.abs(predicted_FS - FS) / FS < 0.3
 
     def test_run_computefstatistic_single_point_no_noise_manual_ephem(self):
         predicted_FS = self.Writer.predict_fstat(assumeSqrtSX=1)
@@ -835,13 +818,13 @@ class TestComputeFstatNoNoise(BaseForTestsWithData):
             search_ranges=self.search_ranges,
         )
         FS = search.get_fullycoherent_twoF(
-            F0=self.Writer.F0,
-            F1=self.Writer.F1,
-            F2=self.Writer.F2,
-            Alpha=self.Writer.Alpha,
-            Delta=self.Writer.Delta,
+            F0=self.signal_params["F0"],
+            F1=self.signal_params["F1"],
+            F2=self.signal_params["F2"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
         )
-        self.assertTrue(np.abs(predicted_FS - FS) / FS < 0.3)
+        assert np.abs(predicted_FS - FS) / FS < 0.3
 
 
 class TestSearchForSignalWithJumps(TestBaseSearchClass):
@@ -862,7 +845,7 @@ class TestSearchForSignalWithJumps(TestBaseSearchClass):
                 [0, 0, 0, 1],
             ]
         )
-        self.assertTrue(np.array_equal(a, b))
+        assert np.array_equal(a, b)
 
     def test_shift_coefficients(self):
         search = pyfstat.SearchForSignalWithJumps()
@@ -878,21 +861,20 @@ class TestSearchForSignalWithJumps(TestBaseSearchClass):
             thetaA[1] * dT + 0.5 * thetaA[2] * dT**2 + thetaA[3] * dT**3 / 6.0
         )
 
-        self.assertTrue(np.array_equal(thetaB, search._shift_coefficients(thetaA, dT)))
+        assert np.array_equal(thetaB, search._shift_coefficients(thetaA, dT))
 
     def test_shift_coefficients_loop(self):
         search = pyfstat.SearchForSignalWithJumps()
         thetaA = np.array([10.0, 1e2, 10.0, 1e2])
         dT = 1e1
         thetaB = search._shift_coefficients(thetaA, dT)
-        self.assertTrue(
-            np.allclose(
-                thetaA, search._shift_coefficients(thetaB, -dT), rtol=1e-9, atol=1e-9
-            )
+        assert np.allclose(
+            thetaA, search._shift_coefficients(thetaB, -dT), rtol=1e-9, atol=1e-9
         )
 
 
-class TestSemiCoherentSearch(BaseForTestsWithData):
+@pytest.mark.usefixtures("data_fixture")
+class TestSemiCoherentSearch:
     label = "TestSemiCoherentSearch"
     detectors = "H1,L1"
     nsegs = 2
@@ -909,29 +891,41 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
         )
 
         twoF_sc = search.get_semicoherent_det_stat(
-            self.Writer.F0,
-            self.Writer.F1,
-            self.Writer.F2,
-            self.Writer.Alpha,
-            self.Writer.Delta,
+            self.signal_params["F0"],
+            self.signal_params["F1"],
+            self.signal_params["F2"],
+            self.signal_params["Alpha"],
+            self.signal_params["Delta"],
             record_segments=True,
         )
         twoF_per_seg_computed = np.array(search.twoF_per_segment)
 
         twoF_predicted = self.Writer.predict_fstat()
         # now compute the predicted semi-coherent Fstat for each segment
-        print(self.Writer.duration)
-        self.Writer.duration /= self.nsegs
-        tstart = self.Writer.tstart
-        print(tstart)
         twoF_per_seg_predicted = np.zeros(self.nsegs)
         for n in range(self.nsegs):
-            self.Writer.tstart = tstart + n * self.Writer.duration
-            print(self.Writer.tstart)
-            print(self.Writer.duration)
-            twoF_per_seg_predicted[n] = self.Writer.predict_fstat()
+            twoF_per_seg_predicted[n], _ = pyfstat.utils.predict_fstat(
+                h0=self.signal_params["h0"],
+                cosi=self.signal_params["cosi"],
+                psi=self.signal_params["psi"],
+                Alpha=self.signal_params["Alpha"],
+                Delta=self.signal_params["Delta"],
+                F0=self.signal_params["F0"],
+                sftfilepattern=self.Writer.sftfilepath,
+                minStartTime=self.Writer.tstart
+                + n * self.Writer.duration // self.nsegs,
+                duration=self.Writer.duration // self.nsegs,
+                IFOs=self.Writer.detectors,
+                assumeSqrtSX=self.Writer.sqrtSX,
+                tempory_filename=os.path.join(self.outdir, self.label + ".tmp"),
+                transientWindowType=self.signal_params.get(
+                    "transientWindowType", "none"
+                ),
+                transientStartTime=self.signal_params.get("transientStartTime", None),
+                transientTau=self.signal_params.get("transientTau", None),
+            )
 
-        self.assertTrue(len(twoF_per_seg_computed) == len(twoF_per_seg_predicted))
+        assert len(twoF_per_seg_computed) == len(twoF_per_seg_predicted)
         diffs = (
             np.abs(twoF_per_seg_computed - twoF_per_seg_predicted)
             / twoF_per_seg_predicted
@@ -945,7 +939,7 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
                 )
             )
         )
-        self.assertTrue(np.all(diffs < 0.3))
+        assert np.all(diffs < 0.3)
         diff = np.abs(twoF_sc - twoF_predicted) / twoF_predicted
         print(
             (
@@ -954,7 +948,7 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
                 " relative difference: {}".format(twoF_predicted, twoF_sc, diff)
             )
         )
-        self.assertTrue(diff < 0.3)
+        assert diff < 0.3
 
     def _test_get_semicoherent_BSGL(self, **dataopts):
         search_noBSGL = pyfstat.SemiCoherentSearch(
@@ -966,11 +960,11 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
             **dataopts,
         )
         twoF = search_noBSGL.get_semicoherent_det_stat(
-            self.Writer.F0,
-            self.Writer.F1,
-            self.Writer.F2,
-            self.Writer.Alpha,
-            self.Writer.Delta,
+            self.signal_params["F0"],
+            self.signal_params["F1"],
+            self.signal_params["F2"],
+            self.signal_params["Alpha"],
+            self.signal_params["Delta"],
         )
         twoFX = search_noBSGL.get_semicoherent_single_IFO_twoFs()
         search_BSGL = pyfstat.SemiCoherentSearch(
@@ -981,17 +975,15 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
             **dataopts,
         )
         log10BSGL = search_BSGL.get_semicoherent_det_stat(
-            self.Writer.F0,
-            self.Writer.F1,
-            self.Writer.F2,
-            self.Writer.Alpha,
-            self.Writer.Delta,
+            self.signal_params["F0"],
+            self.signal_params["F1"],
+            self.signal_params["F2"],
+            self.signal_params["Alpha"],
+            self.signal_params["Delta"],
             record_segments=True,
         )
-        self.assertTrue(log10BSGL > 0)
-        self.assertTrue(
-            log10BSGL == lalpulsar.ComputeBSGL(twoF, twoFX, search_BSGL.BSGLSetup)
-        )
+        assert log10BSGL > 0
+        assert log10BSGL == lalpulsar.ComputeBSGL(twoF, twoFX, search_BSGL.BSGLSetup)
 
     def test_get_semicoherent_BSGL_SFTs(self):
         dataopts = {
@@ -1003,15 +995,15 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
 
     def test_get_semicoherent_BSGL_inject(self):
         dataopts = {
-            "tref": self.tref,
-            "minStartTime": self.tstart,
-            "maxStartTime": self.tstart + self.duration,
+            "tref": self.Writer.tref,
+            "minStartTime": self.Writer.tstart,
+            "maxStartTime": self.Writer.tstart + self.Writer.duration,
             "detectors": "H1,L1",
-            "injectSqrtSX": np.repeat(self.sqrtSX, 2),
-            "minCoverFreq": self.F0 - 0.1,
-            "maxCoverFreq": self.F0 + 0.1,
+            "injectSqrtSX": np.repeat(self.Writer.sqrtSX, 2),
+            "minCoverFreq": self.signal_params["F0"] - 0.1,
+            "maxCoverFreq": self.signal_params["F0"] + 0.1,
             "injectSources": self.Writer.config_file_name,
-            "randSeed": self.randSeed,
+            "randSeed": self.Writer.randSeed,
         }
         self._test_get_semicoherent_BSGL(**dataopts)
 
@@ -1031,7 +1023,7 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
         search = pyfstat.SemiCoherentSearch(
             label=self.label,
             outdir=self.outdir,
-            tref=self.tref,
+            tref=self.Writer.tref,
             sftfilepattern=long_Tsft_Writer.sftfilepath,
             nsegs=self.nsegs,
             minCoverFreq=1499.5,
@@ -1044,7 +1036,7 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
         search = pyfstat.SemiCoherentSearch(
             label=self.label,
             outdir=self.outdir,
-            tref=self.tref,
+            tref=self.Writer.tref,
             sftfilepattern=long_Tsft_Writer.sftfilepath,
             nsegs=self.nsegs,
             minCoverFreq=1499.5,
@@ -1054,7 +1046,8 @@ class TestSemiCoherentSearch(BaseForTestsWithData):
         search.get_semicoherent_twoF(F0=1500, F1=0, F2=0, Alpha=0, Delta=0)
 
 
-class TestSemiCoherentGlitchSearch(BaseForTestsWithData):
+@pytest.mark.usefixtures("data_fixture")
+class TestSemiCoherentGlitchSearch:
     label = "TestSemiCoherentGlitchSearch"
     dtglitch = 3600
     Band = 1
@@ -1063,21 +1056,21 @@ class TestSemiCoherentGlitchSearch(BaseForTestsWithData):
         Writer = pyfstat.GlitchWriter(
             self.label,
             outdir=self.outdir,
-            tstart=self.tstart,
-            duration=self.duration,
+            tstart=self.Writer.tstart,
+            duration=self.Writer.duration,
             dtglitch=self.dtglitch,
             delta_F0=delta_F0,
-            detectors=self.detectors,
-            sqrtSX=self.sqrtSX,
+            detectors=self.Writer.detectors,
+            sqrtSX=self.Writer.sqrtSX,
             **{
                 k: v
                 for k, v in default_signal_params.items()
                 if not (k.startswith("F") and int(k[-1]) > 2)
             },
-            SFTWindowType=self.SFTWindowType,
-            SFTWindowParam=self.SFTWindowParam,
-            randSeed=self.randSeed,
-            Band=self.Band,
+            SFTWindowType=self.Writer.SFTWindowType,
+            SFTWindowParam=self.Writer.SFTWindowParam,
+            randSeed=self.Writer.randSeed,
+            Band=self.Writer.Band,
         )
 
         Writer.make_data(verbose=True)
@@ -1121,9 +1114,9 @@ class TestSemiCoherentGlitchSearch(BaseForTestsWithData):
             )
         )
         if delta_F0 == 0:
-            self.assertTrue(diff < 0.3)
+            assert diff < 0.3
         else:
-            self.assertFalse(diff < 0.3)
+            assert not diff < 0.3
 
         # glitch-robust search
         keys = ["F0", "F1", "F2", "Alpha", "Delta"]
@@ -1164,17 +1157,17 @@ class TestSemiCoherentGlitchSearch(BaseForTestsWithData):
                 )
             )
         )
-        self.assertTrue(diff < 0.3)
+        assert diff < 0.3
         diff2 = np.abs((twoF_glitch - twoF_sc_vanilla) / twoF_sc_vanilla)
         print(
             "Relative difference between SemiCoherentSearch"
             "and SemiCoherentGlitchSearch: {}".format(diff2)
         )
         if delta_F0 == 0:
-            self.assertTrue(diff2 < 0.01)
+            assert diff2 < 0.01
         else:
-            self.assertTrue(twoF_glitch > twoF_sc_vanilla)
-            self.assertTrue(diff2 > 0.3)
+            assert twoF_glitch > twoF_sc_vanilla
+            assert diff2 > 0.3
 
     def test_get_semicoherent_nglitch_twoF_no_glitch(self):
         self._run_test(delta_F0=0)

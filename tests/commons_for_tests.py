@@ -198,9 +198,9 @@ def data_fixture(request, outdir):
     test_cls.style = request.param
 
     # Allow overwriting parameters from child classes
-    signal_params = {}
+    test_cls.signal_params = {}
     for key, val in default_signal_params.items():
-        signal_params[key] = getattr(test_cls, key, default_signal_params[key])
+        test_cls.signal_params[key] = getattr(test_cls, key, default_signal_params[key])
 
     # Create fake data SFTs
     test_cls.Writer = pyfstat.Writer(
@@ -257,7 +257,7 @@ def data_fixture(request, outdir):
             if test_cls.style == "old"
             else None
         ),
-        signal_parameters=signal_params if test_cls.style == "new" else None,
+        signal_parameters=test_cls.signal_params if test_cls.style == "new" else None,
         Tsft=getattr(test_cls, "Tsft", default_Writer_params["Tsft"]),
         outdir=test_cls.outdir,
         sqrtSX=getattr(test_cls, "sqrtSX", default_Writer_params["sqrtSX"]),
@@ -272,6 +272,12 @@ def data_fixture(request, outdir):
         randSeed=getattr(test_cls, "randSeed", default_Writer_params["randSeed"]),
     )
     test_cls.Writer.make_data(verbose=True)
+
+    # Set up search_keys and search_ranges (needed by some tests)
+    test_cls.search_keys = pyfstat.BaseSearchClass.default_search_keys
+    test_cls.search_ranges = {
+        key: [test_cls.signal_params[key]] for key in test_cls.search_keys
+    }
 
     yield test_cls
 
