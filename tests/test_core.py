@@ -670,7 +670,7 @@ class TestComputeFstat:
                 twoF, twoF_cumulative[-1], 100 * reldiff
             )
         )
-        assert reldiff < 0.1
+        assert reldiff < 0.01
         idx = int(Nsft / 2)
         partial_2F_expected = (taus[idx] / taus[-1]) * twoF
         reldiff = (
@@ -701,21 +701,21 @@ class TestComputeFstat:
             assumeSqrtSX=self.Writer.sqrtSX,
             num_segments=3,  # this is slow, so only do start,mid,end
         )
-        reldiffmid = 100 * (twoF_cumulative[idx] - pfs[1]) / pfs[1]
-        reldiffend = 100 * (twoF_cumulative[-1] - pfs[2]) / pfs[2]
+        reldiffmid = np.abs(twoF_cumulative[idx] - pfs[1]) / pfs[1]
+        reldiffend = np.abs(twoF_cumulative[-1] - pfs[2]) / pfs[2]
         print(
             "Predicted 2F values from predict_twoF_cumulative() are"
             " {:.4f}+-{:.4f}(+-{:.2f}%) at midpoint of data"
             " and {:.4f}+-{:.4f}(+-{:.2f}%) after full data,"
-            " , relative differences: {:.2f}% and {:.2f}%".format(
+            " relative differences: {:.2f}% and {:.2f}%".format(
                 pfs[1],
                 pfs_sigma[1],
                 100 * pfs_sigma[1] / pfs[1],
                 pfs[2],
                 pfs_sigma[2],
                 100 * pfs_sigma[2] / pfs[2],
-                reldiffmid,
-                reldiffend,
+                100 * reldiffmid,
+                100 * reldiffend,
             )
         )
         assert reldiffmid < 0.25
