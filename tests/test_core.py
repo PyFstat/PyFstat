@@ -296,8 +296,8 @@ class TestComputeFstat:
         search = pyfstat.ComputeFstat(
             tref=self.Writer.tref,
             sftfilepattern=long_Tsft_Writer.sftfilepath,
-            minCoverFreq=1499.5,
-            maxCoverFreq=1500.5,
+            minCoverFreq=long_Tsft_params["F0"] - 0.5,
+            maxCoverFreq=long_Tsft_params["F0"] + 0.5,
             allowedMismatchFromSFTLength=0.1,
         )
 
@@ -307,26 +307,34 @@ class TestComputeFstat:
         search = pyfstat.ComputeFstat(
             tref=self.Writer.tref,
             sftfilepattern=long_Tsft_Writer.sftfilepath,
-            minCoverFreq=1499.5,
-            maxCoverFreq=1500.5,
+            minCoverFreq=long_Tsft_params["F0"] - 0.5,
+            maxCoverFreq=long_Tsft_params["F0"] + 0.5,
             allowedMismatchFromSFTLength=0.5,
         )
-        search.get_fullycoherent_twoF(F0=1500, F1=0, F2=0, Alpha=0, Delta=0)
+        search.get_fullycoherent_twoF(
+            F0=long_Tsft_params["F0"], F1=0, F2=0, Alpha=0, Delta=0
+        )
 
-    def test_run_computefstatistic_single_point_injectSources(self):
+    @pytest.mark.parametrize("binary", ["nobinary", "binary"])
+    def test_run_computefstatistic_single_point_injectSources(self, binary):
+        binary = binary == "binary"
+
         predicted_FS = self.Writer.predict_fstat()
 
+        # first on-the-fly injection, via file loading,
+        # and never with binary parameters
         injectSources = self.Writer.config_file_name
         search = pyfstat.ComputeFstat(
             tref=self.Writer.tref,
             assumeSqrtSX=1,
             injectSources=injectSources,
-            minCoverFreq=28,
-            maxCoverFreq=32,
+            minCoverFreq=self.signal_params["F0"] - 2,
+            maxCoverFreq=self.signal_params["F0"] + 2,
             minStartTime=self.Writer.tstart,
             maxStartTime=self.Writer.tend,
             detectors=self.Writer.detectors,
         )
+        # get Fstat also ignoring binary parameters
         FS_from_file = search.get_fullycoherent_twoF(
             F0=self.signal_params["F0"],
             F1=self.signal_params["F1"],
@@ -334,31 +342,69 @@ class TestComputeFstat:
             Alpha=self.signal_params["Alpha"],
             Delta=self.signal_params["Delta"],
         )
-        assert np.abs(predicted_FS - FS_from_file) / FS_from_file < 0.3
+        assert (
+            np.abs(predicted_FS - FS_from_file) / FS_from_file < 0.3
+        ), f"2F from on-the-fly CFS injection should be similar to predicted 2F, but got {FS_from_file} more than 30% off from {predicted_FS}"
 
-        injectSourcesdict = search.read_par(filename=injectSources)
+        # second on-the-fly injection, this time with a dict,
+        # and optionally with binary parameters
+        injectSourcesdict = pyfstat.utils.read_par(filename=injectSources)
         injectSourcesdict["F0"] = injectSourcesdict.pop("Freq")
         injectSourcesdict["F1"] = injectSourcesdict.pop("f1dot")
         injectSourcesdict["F2"] = injectSourcesdict.pop("f2dot")
         injectSourcesdict["phi"] = injectSourcesdict.pop("phi0")
-        search = pyfstat.ComputeFstat(
+        if binary:
+            injectSourcesdict.update(default_binary_params)
+        search2 = pyfstat.ComputeFstat(
             tref=self.Writer.tref,
             assumeSqrtSX=1,
             injectSources=injectSourcesdict,
-            minCoverFreq=28,
-            maxCoverFreq=32,
+            minCoverFreq=self.signal_params["F0"] - 2,
+            maxCoverFreq=self.signal_params["F0"] + 2,
             minStartTime=self.Writer.tstart,
             maxStartTime=self.Writer.tend,
             detectors=self.Writer.detectors,
+            binary=True,
         )
-        FS_from_dict = search.get_fullycoherent_twoF(
+        # recover without considering binary parameters
+        FS_from_dict_nobinary = search2.get_fullycoherent_twoF(
             F0=self.signal_params["F0"],
             F1=self.signal_params["F1"],
             F2=self.signal_params["F2"],
             Alpha=self.signal_params["Alpha"],
             Delta=self.signal_params["Delta"],
+            asini=0,
+            period=0,
+            ecc=0,
+            tp=0,
+            argp=0,
         )
-        assert FS_from_dict == FS_from_file
+        # recover with considering binary parameters
+        FS_from_dict_binary = search2.get_fullycoherent_twoF(
+            F0=self.signal_params["F0"],
+            F1=self.signal_params["F1"],
+            F2=self.signal_params["F2"],
+            Alpha=self.signal_params["Alpha"],
+            Delta=self.signal_params["Delta"],
+            **default_binary_params,
+        )
+        if binary:
+            assert (
+                FS_from_dict_nobinary < FS_from_file
+            ), f"2F from analysing binary injection while ignoring binary parameters should be smaller, but got {FS_from_dict_nobinary} >= {FS_from_file}"
+            assert (
+                FS_from_dict_binary > FS_from_dict_nobinary
+            ), f"2F from analysing binary injection and searching over binary parameters should be bigger, but got {FS_from_dict_binary} <= {FS_from_dict_nobinary}"
+            assert (
+                np.abs(FS_from_dict_binary - predicted_FS) / predicted_FS < 0.3
+            ), f"2F from on-the-fly CFS injection with correct binary treatment should be similar to predicted 2F, but got {FS_from_dict_binary} more than 30% off from {predicted_FS}"
+        else:
+            assert (
+                FS_from_dict_nobinary == FS_from_file
+            ), f"2F from injecting via dict should be the same as via file, but got {FS_from_dict_nobinary} != {FS_from_file}"
+            assert (
+                FS_from_dict_binary < FS_from_dict_nobinary
+            ), f"2F from analysing non-binary injection with binary parameters should be smaller, but got {FS_from_dict_binary} >= {FS_from_dict_nobinary}"
 
     def test_get_fully_coherent_BSGL(self):
         # first pure noise, expect log10BSGL<0
