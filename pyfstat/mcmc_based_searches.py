@@ -103,6 +103,7 @@ class MCMCSearch(BaseSearchClass):
         theta_initial=None,
         rhohatmax=1000,
         binary=False,
+        singleFstats=False,
         BSGL=False,
         BtSG=False,
         SSBprec=None,
@@ -159,6 +160,10 @@ class MCMCSearch(BaseSearchClass):
             evidence.
         binary: bool, optional
             If true, search over binary orbital parameters.
+        singleFstats: bool
+            If true, also include the single-detector twoF values in the final samples export.
+            Note these values are only added in post-processing,
+            not during the sampler run.
         BSGL: bool, optional
             If true, use the BSGL statistic.
         BtSG: bool, optional
@@ -209,6 +214,7 @@ class MCMCSearch(BaseSearchClass):
         self.theta_initial = theta_initial
         self.rhohatmax = rhohatmax
         self.binary = binary
+        self.singleFstats = singleFstats
         self.BSGL = BSGL
         self.BtSG = BtSG
         self.SSBprec = SSBprec
@@ -319,6 +325,7 @@ class MCMCSearch(BaseSearchClass):
             search_ranges=search_ranges,
             detectors=self.detectors,
             BSGL=self.BSGL,
+            singleFstats=self.singleFstats,
             transientWindowType=self.transientWindowType,
             minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime,
@@ -411,11 +418,6 @@ class MCMCSearch(BaseSearchClass):
         self.theta_idxs = [self.theta_idxs[i] for i in idxs]
         self.theta_symbols = [self.theta_symbols[i] for i in idxs]
         self.theta_keys = [self.theta_keys[i] for i in idxs]
-
-        self.output_keys = self.theta_keys.copy()
-        self.output_keys.append("twoF")
-        if self.BSGL:
-            self.output_keys.append("log10BSGL")
 
     def _evaluate_logpost(self, p0vec):
         init_logp = np.array(
@@ -1869,11 +1871,23 @@ class MCMCSearch(BaseSearchClass):
                     logger.info(key)
             return False
 
+    def _get_output_keys(self):
+        self.output_keys = self.theta_keys.copy()
+        self.output_keys.append("twoF")
+        if self.singleFstats or self.BSGL:
+            self.output_keys += [f"twoF{IFO}" for IFO in self.search.detector_names]
+        if self.BSGL:
+            self.output_keys.append("log10BSGL")
+
     def _get_savetxt_fmt_dict(self):
         fmt_dict = utils.get_doppler_params_output_format(
             self.theta_keys, self.fmt_doppler
         )
         fmt_dict["twoF"] = self.fmt_detstat
+        if self.singleFstats or self.BSGL:
+            fmt_dict.update(
+                {f"twoF{IFO}": self.fmt_detstat for IFO in self.search.detector_names}
+            )
         if self.BSGL:
             fmt_dict["log10BSGL"] = self.fmt_detstat
         return fmt_dict
@@ -1888,33 +1902,85 @@ class MCMCSearch(BaseSearchClass):
         fmt_list = [fmt_dict[key] for key in self.output_keys]
         return fmt_list
 
-    def export_samples_to_disk(self):
+    def add_samples_to_detstats(self):
         """
-        Export MCMC samples into a text file using `numpy.savetxt`.
+        Add detection statistics to the sampled parameter-space points.
+
+        This includes 2F
+        and additional detection statistics (BSGL, single-detector 2F)
+        if requested,
+        and also stores the samples augmented with these values
+        to self.samples_with_detstats
+
+        For convenience, we always save a twoF column,
+        even if log10BSGL was used for the likelihood.
+        If requested, BSGL and/or single-IFO F-stats are added.
+        The actual detstat used (twoF or BSGL) always goes last.
         """
-        self.samples_file = os.path.join(self.outdir, self.label + "_samples.dat")
-        logger.info("Exporting samples to {}".format(self.samples_file))
-        header = "\n".join(self.output_file_header)
-        header += "\n" + " ".join(self.output_keys)
-        outfmt = self._get_savetxt_fmt_list()
+
         samples_out = copy.copy(self.samples)
-        # For convenience, we always save a twoF column,
-        # even if log10BSGL was used for the likelihood.
         detstat = np.atleast_2d(self._get_detstat_from_loglikelihood()).T
-        if self.BSGL:
+        if self.singleFstats or self.BSGL:
             twoF = np.zeros_like(detstat)
-            self.search.BSGL = False
-            for idx, samp in enumerate(self.samples):
+            if self.BSGL:
+                self.search.BSGL = (
+                    False  # temporarily disable this to get the actual Fstat back
+                )
+            twoFX = np.zeros((len(self.samples), self.search.FstatResults.numDetectors))
+            for idx, samp in enumerate(
+                tqdm(
+                    self.samples,
+                    desc=f"Recomputing full detection statistics for {len(self.samples)} final samples",
+                )
+            ):
                 p = self._set_point_for_evaluation(samp)
                 if isinstance(p, dict):
                     twoF[idx] = self.search.get_det_stat(**p)
                 else:
                     twoF[idx] = self.search.get_det_stat(*p)
-            self.search.BSGL = self.BSGL
-            samples_out = np.concatenate((samples_out, twoF), axis=1)
-        # TODO: add single-IFO F-stats?
-        samples_out = np.concatenate((samples_out, detstat), axis=1)
-        Ncols = np.shape(samples_out)[1]
+                if self.singleFstats or self.BSGL:
+                    twoFX[idx, :] = self.search.twoFX[
+                        : self.search.FstatResults.numDetectors
+                    ]
+            if self.BSGL:
+                samples_out = np.concatenate((samples_out, twoF), axis=1)
+                self.search.BSGL = self.BSGL  # reset to original value
+            samples_out = np.concatenate((samples_out, twoFX), axis=1)
+        self.samples_with_detstats = np.concatenate((samples_out, detstat), axis=1)
+
+        # update dtype
+        new_dtype = np.dtype(
+            [(key, self.samples_with_detstats.dtype) for key in self.output_keys]
+        )
+        # In converting the array,
+        # we use .view() to change how the memory is interpreted without copying data,
+        # then .reshape(-1) to flatten the extra dimension that view() might preserve.
+        # Note this produces a structured array with shape (nsamples,),
+        # not (nsamples,nkeys)!
+        self.samples_with_detstats = self.samples_with_detstats.view(new_dtype).reshape(
+            -1
+        )
+
+        return self.samples_with_detstats
+
+    def export_samples_to_disk(self):
+        """
+        Export MCMC samples into a text file using `numpy.savetxt`.
+
+        This includes both the parameter-space point values
+        and the detection statistics calculated for them.
+        """
+        self._get_output_keys()
+        if self.samples.dtype.names is None or np.any(
+            [key not in self.samples.dtype.names for key in self.output_keys]
+        ):
+            self.add_samples_to_detstats()
+        self.samples_file = os.path.join(self.outdir, self.label + "_samples.dat")
+        logger.info("Exporting samples to {}".format(self.samples_file))
+        header = "\n".join(self.output_file_header)
+        header += "\n" + " ".join(self.output_keys)
+        outfmt = self._get_savetxt_fmt_list()
+        Ncols = len(self.samples_with_detstats.dtype.names)
         if len(outfmt) != Ncols:
             raise RuntimeError(
                 "Lengths of data rows ({:d})"
@@ -1927,7 +1993,7 @@ class MCMCSearch(BaseSearchClass):
             )
         np.savetxt(
             self.samples_file,
-            samples_out,
+            self.samples_with_detstats,
             delimiter=" ",
             header=header,
             fmt=outfmt,
@@ -2452,6 +2518,7 @@ class MCMCGlitchSearch(MCMCSearch):
         theta_initial=None,
         rhohatmax=1000,
         binary=False,
+        singleFstats=False,
         BSGL=False,
         SSBprec=None,
         RngMedWindow=None,
@@ -2528,6 +2595,7 @@ class MCMCGlitchSearch(MCMCSearch):
             maxCoverFreq=self.maxCoverFreq,
             search_ranges=search_ranges,
             detectors=self.detectors,
+            singleFstats=self.singleFstats,
             BSGL=self.BSGL,
             nglitch=self.nglitch,
             theta0_idx=self.theta0_idx,
@@ -2634,11 +2702,6 @@ class MCMCGlitchSearch(MCMCSearch):
             for i, idx in enumerate(self.theta_idxs):
                 if idx in self.theta_idxs[:i]:
                     self.theta_idxs[i] += 1
-
-        self.output_keys = self.theta_keys.copy()
-        self.output_keys.append("twoF")
-        if self.BSGL:
-            self.output_keys.append("log10BSGL")
 
     def _get_data_dictionary_to_save(self):
         d = dict(
@@ -2778,6 +2841,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         theta_initial=None,
         rhohatmax=1000,
         binary=False,
+        singleFstats=False,
         BSGL=False,
         SSBprec=None,
         RngMedWindow=None,
@@ -2814,6 +2878,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         self.theta_initial = theta_initial
         self.rhohatmax = rhohatmax
         self.binary = binary
+        self.singleFstats = (singleFstats,)
         self.BSGL = BSGL
         self.SSBprec = SSBprec
         self.RngMedWindow = RngMedWindow
@@ -2885,6 +2950,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             nsegs=self.nsegs,
             sftfilepattern=self.sftfilepattern,
             binary=self.binary,
+            singleFstats=self.singleFstats,
             BSGL=self.BSGL,
             minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime,
@@ -2940,6 +3006,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
         theta_initial=None,
         rhohatmax=1000,
         binary=False,
+        singleFstats=False,
         BSGL=False,
         SSBprec=None,
         RngMedWindow=None,
@@ -2968,6 +3035,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
         self.theta_initial = theta_initial
         self.rhohatmax = rhohatmax
         self.binary = binary
+        self.singleFstats = (singleFstats,)
         self.BSGL = BSGL
         self.SSBprec = SSBprec
         self.RngMedWindow = RngMedWindow
@@ -3434,6 +3502,7 @@ class MCMCTransientSearch(MCMCSearch):
             transientWindowType=self.transientWindowType,
             minStartTime=self.minStartTime,
             maxStartTime=self.maxStartTime,
+            singleFstats=self.singleFstats,
             BSGL=self.BSGL,
             BtSG=self.BtSG,
             binary=self.binary,
@@ -3530,11 +3599,6 @@ class MCMCTransientSearch(MCMCSearch):
         self.theta_idxs = [self.theta_idxs[i] for i in idxs]
         self.theta_symbols = [self.theta_symbols[i] for i in idxs]
         self.theta_keys = [self.theta_keys[i] for i in idxs]
-
-        self.output_keys = self.theta_keys.copy()
-        self.output_keys.append("twoF")
-        if self.BSGL:
-            self.output_keys.append("log10BSGL")
 
     def _get_savetxt_fmt_dict(self):
         fmt_dict = utils.get_doppler_params_output_format(

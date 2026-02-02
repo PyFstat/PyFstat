@@ -253,10 +253,37 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
             ntemps=2,
             log10beta_min=-1,
             BSGL=False,
+            singleFstats=True,
         )
         self.search.run(plot_walkers=True)
         self.search.print_summary()
-        # The standard checks here are expected to fail,
+        # check for the right output keys
+        self.assertTrue(
+            "twoF" in self.search.output_keys,
+            f"'twoF' is not in output keys: {self.search.output_keys}",
+        )
+        self.assertTrue(
+            "twoF" in self.search.samples_with_detstats.dtype.names,
+            f"'twoF' is not in samples dtype names:  {self.search.samples_with_detstats.dtype.names}",
+        )
+        for IFO in self.detectors.split(","):
+            self.assertTrue(
+                f"twoF{IFO}" in self.search.output_keys,
+                f"'twoF{IFO}' is not in output keys: {self.search.output_keys}",
+            )
+            self.assertTrue(
+                f"twoF{IFO}" in self.search.samples_with_detstats.dtype.names,
+                f"'twoF{IFO}' is not in samples dtype names:  {self.search.samples_with_detstats.dtype.names}",
+            )
+        self.assertFalse(
+            "log10BSGL" in self.search.output_keys,
+            f"'log10BSGL' should not be in output keys: {self.search.output_keys}",
+        )
+        self.assertFalse(
+            "log10BSGL" in self.search.samples_with_detstats.dtype.names,
+            f"'log10BSGL' should not be in samples dtype names:  {self.search.samples_with_detstats.dtype.names}",
+        )
+        # The standard checks on detection statistics values here are expected to fail,
         # as the F-search will get confused by the line
         # and recover a much higher maxTwoF than predicted.
         self._check_twoF_predicted(assertTrue=False)
@@ -280,7 +307,33 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         )
         self.search.run(plot_walkers=True)
         self.search.print_summary()
-        # Still skipping the standard checks,
+        # check for the right output keys
+        self.assertTrue(
+            "twoF" in self.search.output_keys,
+            f"'twoF' is not in output keys: {self.search.output_keys}",
+        )
+        self.assertTrue(
+            "twoF" in self.search.samples_with_detstats.dtype.names,
+            f"'twoF' is not in samples dtype names:  {self.search.samples_with_detstats.dtype.names}",
+        )
+        for IFO in self.detectors.split(","):
+            self.assertTrue(
+                f"twoF{IFO}" in self.search.output_keys,
+                f"'twoF{IFO}' is not in output keys: {self.search.output_keys}",
+            )
+            self.assertTrue(
+                f"twoF{IFO}" in self.search.samples_with_detstats.dtype.names,
+                f"'twoF{IFO}' is not in samples dtype names:  {self.search.samples_with_detstats.dtype.names}",
+            )
+        self.assertTrue(
+            "log10BSGL" in self.search.output_keys,
+            f"'log10BSGL' is not in output keys: {self.search.output_keys}",
+        )
+        self.assertTrue(
+            "log10BSGL" in self.search.samples_with_detstats.dtype.names,
+            f"'log10BSGL' is not in samples dtype names:  {self.search.samples_with_detstats.dtype.names}",
+        )
+        # Still skipping the standard checks on detection statistics values,
         # as we're using too cheap a MCMC setup here for them to be robust.
         self._check_twoF_predicted(assertTrue=False)
         mode_F0_BSGLsearch = self.max_dict["F0"]
