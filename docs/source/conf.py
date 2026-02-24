@@ -40,11 +40,18 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
+    "sphinx_autodoc_typehints",  # Must import napoleon before typehints
     "numpydoc",  # to keep adding "optional" tags and default values to function/class args
     "sphinx.ext.viewcode",
     "sphinx_gallery.gen_gallery",
     "m2r2",
 ]
+
+# add (default: ...) after the type, which matches our old look
+typehints_defaults = "braces-after"
+
+# ensure "Optional[str]" is simplified to "str, optional"
+simplify_optional_unions = True
 
 source_suffix = [".rst", ".md"]
 

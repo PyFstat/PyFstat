@@ -50,6 +50,7 @@ extras_require = {
     ],
     "docs": [
         "sphinx==9.1.0",
+        "sphinx_autodoc_typehints==3.7.0",
         "sphinx_gallery==0.20.0",
         "sphinx_rtd_theme==3.1.0",
         "m2r2==0.3.4",
