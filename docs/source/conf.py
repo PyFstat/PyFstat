@@ -21,8 +21,10 @@ sys.path.insert(0, os.path.abspath("../../pyfstat/"))
 # -- Project information -----------------------------------------------------
 
 project = "PyFstat"
-copyright = "2020, Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio"
-author = "Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio"
+copyright = "2026, Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio, Maria-Antonia Ferrer"
+author = (
+    "Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio, Maria-Antonia Ferrer"
+)
 
 # The full version, including alpha/beta/rc tags
 version = pyfstat.__version__
