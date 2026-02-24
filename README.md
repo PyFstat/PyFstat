@@ -158,18 +158,18 @@ PyFstat uses the following external python modules,
 which should all be pulled in automatically if you use `pip` or `conda`:
 
 * [attrs](https://pypi.org/project/attrs/)
-* [corner](https://pypi.python.org/pypi/corner/)
-* [dill](https://pypi.python.org/pypi/dill)
+* [corner](https://pypi.org/project/corner/)
+* [dill](https://pypi.org/project/dill)
 * [lalsuite](https://pypi.org/project/lalsuite/)
 * [matplotlib](https://matplotlib.org/)
 * [numpy](https://www.numpy.org/)
-* [pandas](https://pypi.python.org/pypi/pandas)
-* [pathos](https://pypi.python.org/pypi/pathos)
+* [pandas](https://pypi.org/project/pandas)
+* [pathos](https://pypi.org/project/pathos)
 * [ptemcee](https://github.com/willvousden/ptemcee)
 * [scipy](https://www.scipy.org/)
 * [solar-system-ephemerides](https://pypi.org/project/solar-system-ephemerides/)
   (from `lalsuite>7.15` on)
-* [tqdm](https://pypi.python.org/pypi/tqdm)
+* [tqdm](https://pypi.org/project/tqdm)
 * [versioneer](https://pypi.org/project/versioneer/)
 
 For a general introduction to installing modules, see
