@@ -155,13 +155,15 @@ This should pull in all dependencies in the same way as installing from PyPI.
 ### Dependencies
 
 PyFstat uses the following external python modules,
-which should all be pulled in automatically if you use `pip`:
+which should all be pulled in automatically if you use `pip` or `conda`:
 
+* [attrs](https://pypi.org/project/attrs/)
 * [corner](https://pypi.python.org/pypi/corner/)
 * [dill](https://pypi.python.org/pypi/dill)
 * [lalsuite](https://pypi.org/project/lalsuite/)
 * [matplotlib](https://matplotlib.org/)
 * [numpy](https://www.numpy.org/)
+* [pandas](https://pypi.python.org/pypi/pandas)
 * [pathos](https://pypi.python.org/pypi/pathos)
 * [ptemcee](https://github.com/willvousden/ptemcee)
 * [scipy](https://www.scipy.org/)
