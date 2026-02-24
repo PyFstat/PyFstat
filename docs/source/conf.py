@@ -40,16 +40,11 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",  # https://github.com/tox-dev/sphinx-autodoc-typehints/issues/15
-    "sphinx_autodoc_defaultargs",  # should be loaded after napoleon
     "sphinx_autodoc_typehints",  # Must import napoleon before typehints
     "sphinx.ext.viewcode",
     "sphinx_gallery.gen_gallery",
     "m2r2",
 ]
-
-# Fix for the "no signature found for builtin <time>" error on readthedocs.org
-# This prevents Sphinx from crashing when it hits C-extensions
-autodoc_mock_imports = ["time", "numpy", "pandas"]
 
 source_suffix = [".rst", ".md"]
 
@@ -80,6 +75,13 @@ html_theme = "sphinx_rtd_theme"
 autoclass_content = "both"
 # how to sort automatically documented members
 autodoc_member_order = "bysource"
+# move the types from the signature to the parameter list
+autodoc_typehints = "description"
+# ensure that even if we don't document a parameter,
+# Sphinx will still show its type hint.
+autodoc_typehints_description_target = "documented"
+# show the default value next to the type
+autodoc_preserve_defaults = True
 
 # -- Options for gallery -----------------------------------
 min_reported_time = 0
