@@ -47,6 +47,10 @@ extensions = [
     "m2r2",
 ]
 
+# Fix for the "no signature found for builtin <time>" error on readthedocs.org
+# This prevents Sphinx from crashing when it hits C-extensions
+autodoc_mock_imports = ["time", "numpy", "pandas"]
+
 source_suffix = [".rst", ".md"]
 
 # Add any paths that contain templates here, relative to this directory.
