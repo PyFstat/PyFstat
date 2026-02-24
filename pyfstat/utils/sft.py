@@ -272,7 +272,7 @@ def plot_spectrogram(
         Set to "power" by default.
     sqrtSX:
         Amplitude spectral density of the data.
-        Only needed if `quantity = "normpower".
+        Only needed if `quantity = "normpower"`.
     fMin, fMax:
         Restrict frequency range to `[fMin, fMax]`.
         If None, retrieve the full frequency range.
