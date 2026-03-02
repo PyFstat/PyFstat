@@ -347,7 +347,7 @@ class MCMCSearch(BaseSearchClass):
             # We turn this off unless needed for BSGL,
             # because the main sampler run will not return any extra stats anyway,
             # and we will just recompute these in post-processing.
-            # (see add_samples_to_detstats()).
+            # (see add_detstats_to_samples()).
             # But we do this only after initiating the self.search object,
             # so that whatToCompute is set up correctly.
             self.search.singleFstats = False
@@ -1910,7 +1910,7 @@ class MCMCSearch(BaseSearchClass):
         fmt_list = [fmt_dict[key] for key in self.output_keys]
         return fmt_list
 
-    def add_samples_to_detstats(self):
+    def add_detstats_to_samples(self):
         """
         Add detection statistics to the sampled parameter-space points.
 
@@ -1985,7 +1985,7 @@ class MCMCSearch(BaseSearchClass):
         if self.samples.dtype.names is None or np.any(
             [key not in self.samples.dtype.names for key in self.output_keys]
         ):
-            self.add_samples_to_detstats()
+            self.add_detstats_to_samples()
         self.samples_file = os.path.join(self.outdir, self.label + "_samples.dat")
         logger.info("Exporting samples to {}".format(self.samples_file))
         header = "\n".join(self.output_file_header)
@@ -2619,7 +2619,7 @@ class MCMCGlitchSearch(MCMCSearch):
             # We turn this off unless needed for BSGL,
             # because the main sampler run will not return any extra stats anyway,
             # and we will just recompute these in post-processing.
-            # (see add_samples_to_detstats()).
+            # (see add_detstats_to_samples()).
             # But we do this only after initiating the self.search object,
             # so that whatToCompute is set up correctly.
             self.search.singleFstats = False
@@ -2987,7 +2987,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             # We turn this off unless needed for BSGL,
             # because the main sampler run will not return any extra stats anyway,
             # and we will just recompute these in post-processing.
-            # (see add_samples_to_detstats()).
+            # (see add_detstats_to_samples()).
             # But we do this only after initiating the self.search object,
             # so that whatToCompute is set up correctly.
             self.search.singleFstats = False
