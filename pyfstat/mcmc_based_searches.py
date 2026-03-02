@@ -343,6 +343,14 @@ class MCMCSearch(BaseSearchClass):
             self.minStartTime = self.search.minStartTime
         if self.maxStartTime is None:
             self.maxStartTime = self.search.maxStartTime
+        if not self.BSGL:
+            # We turn this off unless needed for BSGL,
+            # because the main sampler run will not return any extra stats anyway,
+            # and we will just recompute these in post-processing.
+            # (see add_samples_to_detstats()).
+            # But we do this only after initiating the self.search object,
+            # so that whatToCompute is set up correctly.
+            self.search.singleFstats = False
 
     def _logp(self, theta_vals, theta_prior, theta_keys, search):
         H = [
@@ -1921,6 +1929,9 @@ class MCMCSearch(BaseSearchClass):
         samples_out = copy.copy(self.samples)
         detstat = np.atleast_2d(self._get_detstat_from_loglikelihood()).T
         if self.singleFstats or self.BSGL:
+            # first ensure that the singleFstats attribute of the search object is in fact set,
+            # since to speed up the main sampling stage we might have skipped it there (in the non-BSGL case).
+            self.search.singleFstats = True
             twoF = np.zeros_like(detstat)
             if self.BSGL:
                 self.search.BSGL = (
@@ -2604,6 +2615,14 @@ class MCMCGlitchSearch(MCMCSearch):
             sun_ephem=self.sun_ephem,
             allowedMismatchFromSFTLength=self.allowedMismatchFromSFTLength,
         )
+        if not self.BSGL:
+            # We turn this off unless needed for BSGL,
+            # because the main sampler run will not return any extra stats anyway,
+            # and we will just recompute these in post-processing.
+            # (see add_samples_to_detstats()).
+            # But we do this only after initiating the self.search object,
+            # so that whatToCompute is set up correctly.
+            self.search.singleFstats = False
         if self.minStartTime is None:
             self.minStartTime = self.search.minStartTime
         if self.maxStartTime is None:
@@ -2964,6 +2983,14 @@ class MCMCSemiCoherentSearch(MCMCSearch):
             sun_ephem=self.sun_ephem,
             allowedMismatchFromSFTLength=self.allowedMismatchFromSFTLength,
         )
+        if not self.BSGL:
+            # We turn this off unless needed for BSGL,
+            # because the main sampler run will not return any extra stats anyway,
+            # and we will just recompute these in post-processing.
+            # (see add_samples_to_detstats()).
+            # But we do this only after initiating the self.search object,
+            # so that whatToCompute is set up correctly.
+            self.search.singleFstats = False
         if self.minStartTime is None:
             self.minStartTime = self.search.minStartTime
         if self.maxStartTime is None:
