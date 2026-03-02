@@ -2026,7 +2026,7 @@ class SemiCoherentSearch(ComputeFstat):
         covering `[self.minStartTime,self.maxStartTime]`
         and `self.Tcoh` will be the total duration divided by `self.nsegs`.
 
-        Each segment is required to be at least two SFTs long.f
+        Each segment is required to be at least two SFTs long.
         """
         logger.info(
             (
@@ -2043,7 +2043,9 @@ class SemiCoherentSearch(ComputeFstat):
                 self.nsegs, self.Tcoh, self.Tcoh / 86400.0
             )
         )
-        logger.debug("Segment boundaries: {}".format(self.tboundaries))
+        logger.debug(
+            f"Segment boundaries: {', '.join(f'{tb:.2f}' for tb in self.tboundaries)}"
+        )
         if self.Tcoh < 2 * self.Tsft:
             raise RuntimeError(
                 "Per-segment coherent time {} may not be < Tsft={}"
@@ -2239,12 +2241,61 @@ class SemiCoherentSearch(ComputeFstat):
             singleIFOmultiFatoms = utils.extract_singleIFOmultiFatoms_from_multiAtoms(
                 self.FstatResults.multiFatoms[0], X
             )
-            FXstatMap = lalpulsar.ComputeTransientFstatMap(
-                multiFstatAtoms=singleIFOmultiFatoms,
-                windowRange=self.semicoherentWindowRange,
-                useFReg=False,
+            singleIFOtimestamps = [
+                singleIFOmultiFatoms.data[0].data[k].timestamp
+                for k in range(singleIFOmultiFatoms.data[0].length)
+            ]
+            logger.debug(
+                f"X={X} single-IFO timestamps: [{singleIFOtimestamps[0]},{singleIFOtimestamps[-1]}]"
             )
-            twoFX_per_segment = 2 * FXstatMap.F_mn.data[:, 0]
+            if self.semicoherentWindowRange.t0 < singleIFOtimestamps[0]:
+                # Workaround for issue still to be fixed in lalpulsar.ComputeTransientFstatMap()
+                # with a window start time before the first SFT.
+                # This only fixes issues in the first segment,
+                # not if there are multiple segments starting before one of the detectors turns on.
+                twoFX_per_segment = np.zeros(self.nsegs)
+                singleIFOsemicoherentWindowRange = lalpulsar.transientWindowRange_t()
+                for key in ["type", "dt0", "tauBand", "dtau"]:
+                    setattr(
+                        singleIFOsemicoherentWindowRange,
+                        key,
+                        getattr(self.semicoherentWindowRange, key),
+                    )
+                # For the first segment, shift the start time and shorten the duration,
+                # keeping the original end time.
+                singleIFOsemicoherentWindowRange.t0 = singleIFOtimestamps[0]
+                singleIFOsemicoherentWindowRange.t0Band = 0
+                singleIFOsemicoherentWindowRange.tau -= (
+                    self.semicoherentWindowRange.t0 - singleIFOtimestamps[0]
+                )
+                FXstatMap = lalpulsar.ComputeTransientFstatMap(
+                    multiFstatAtoms=singleIFOmultiFatoms,
+                    windowRange=singleIFOsemicoherentWindowRange,
+                    useFReg=False,
+                )
+                twoFX_per_segment[0] = 2 * FXstatMap.F_mn.data[0, 0]
+                if self.nsegs > 1:
+                    # for all later segments, use the original start/end times
+                    singleIFOsemicoherentWindowRange.t0 = int(self.tboundaries[1])
+                    singleIFOsemicoherentWindowRange.t0Band = int(
+                        self.tboundaries[-1] - self.tboundaries[1] - self.Tcoh
+                    )
+                    singleIFOsemicoherentWindowRange.tau = (
+                        self.semicoherentWindowRange.tau
+                    )
+                    FXstatMap = lalpulsar.ComputeTransientFstatMap(
+                        multiFstatAtoms=singleIFOmultiFatoms,
+                        windowRange=singleIFOsemicoherentWindowRange,
+                        useFReg=False,
+                    )
+                    twoFX_per_segment[1:] = 2 * FXstatMap.F_mn.data[:, 0]
+            else:
+                FXstatMap = lalpulsar.ComputeTransientFstatMap(
+                    multiFstatAtoms=singleIFOmultiFatoms,
+                    windowRange=self.semicoherentWindowRange,
+                    useFReg=False,
+                )
+                twoFX_per_segment = 2 * FXstatMap.F_mn.data[:, 0]
             self.twoFX[X] = twoFX_per_segment.sum()
             if np.isnan(self.twoFX[X]):
                 logger.debug(
