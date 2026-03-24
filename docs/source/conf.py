@@ -41,7 +41,6 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",  # Must import napoleon before typehints
-    "numpydoc",  # to keep adding "optional" tags and default values to function/class args
     "sphinx.ext.viewcode",
     "sphinx_gallery.gen_gallery",
     "m2r2",
@@ -98,17 +97,6 @@ napoleon_numpy_docstring = True
 napoleon_use_param = True
 napoleon_use_rtype = True
 napoleon_preprocess_types = True
-
-# --- Numpydoc Settings ---
-# This recreates the "Default: X" and "(type, optional)" logic
-numpydoc_show_inherited_class_members = False
-numpydoc_class_members_toctree = False
-numpydoc_attributes_as_param_list = (
-    True  # Tell numpydoc to stop trying to validate signatures for built-ins
-)
-numpydoc_validation_checks = {"all", "GL01", "SA01", "EX01"}  # Optional: adjust checks
-autodoc_mock_imports = ["time"]
-autodoc_preserve_defaults = True  # Keeps the raw text of defaults
 
 # -- Options for gallery -----------------------------------
 min_reported_time = 0
