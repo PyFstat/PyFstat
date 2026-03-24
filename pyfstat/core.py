@@ -155,7 +155,7 @@ class BaseSearchClass:
 
         Parameters
         ----------
-        earth_ephem, sun_ephem: str
+        earth_ephem, sun_ephem : str or None, optional
             Paths of the two files containing positions of Earth and Sun,
             respectively at evenly spaced times, as passed to CreateFstatInput
         """
@@ -228,11 +228,11 @@ class BaseSearchClass:
 
         Parameters
         ----------
-        filename: str or None
+        filename : str or None, optional
             Filename (path) containing rows of `key=val` data to read in.
-        label, outdir, suffix : str or None
+        label, outdir, suffix : str or None, optional
             If filename is None, form the file to read as `outdir/label.suffix`.
-        raise_error : bool
+        raise_error : bool, optional
             If True, raise an error for lines which are not comments,
             but cannot be read.
 
@@ -342,22 +342,22 @@ class ComputeFstat(BaseSearchClass):
         ----------
         tref : int
             GPS seconds of the reference time.
-        sftfilepattern : str
+        sftfilepattern : str or None, optional
             Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
             multiple patterns can be given separated by colons.
-        minStartTime, maxStartTime : int
+        minStartTime, maxStartTime : int or None, optional
             Only use SFTs with timestamps starting from within this range,
             following the XLALCWGPSinRange convention:
             half-open intervals [minStartTime,maxStartTime].
-        Tsft: int
+        Tsft : int, optional
             SFT duration in seconds.
             Only required if `sftfilepattern=None` and hence simulted data is
             generated on the fly.
-        binary : bool
+        binary : bool, optional
             If true, search over binary parameters.
-        singleFstats : bool
+        singleFstats : bool, optional
             If true, also compute the single-detector twoF values.
-        BSGL : bool
+        BSGL : bool, optional
             If true, compute the log10BSGL statistic rather than the twoF value.
             For details, see Keitel et al (PRD 89, 064023, 2014):
             https://arxiv.org/abs/1311.5738
@@ -370,39 +370,39 @@ class ComputeFstat(BaseSearchClass):
               for semicoherent searches.
 
             * Uniform per-detector prior line-vs-Gaussian odds.
-        BtSG: bool
+        BtSG : bool, optional
             If true and `transientWindowType` is not `None`,
             compute the transient
             :math:`\\ln\\mathcal{B}_{\\mathrm{tS}/\\mathrm{G}}`
             statistic from Prix, Giampanis & Messenger (PRD 84, 023007, 2011)
             (tCWFstatMap marginalised over uniform t0, tau priors).
             rather than the maxTwoF value.
-        transientWindowType: str
+        transientWindowType : str or None, optional
             If `rect` or `exp`,
             allow for the Fstat to be computed over a transient range.
             (`none` instead of `None` explicitly calls the transient-window
             function, but with the full range, for debugging.)
             (If not None, will also force atoms regardless of computeAtoms option.)
-        t0Band, tauBand: int
+        t0Band, tauBand : int or None, optional
             Search ranges for transient start-time t0 and duration tau.
             If >0, search t0 in (minStartTime,minStartTime+t0Band)
             and tau in (tauMin,2*Tsft+tauBand).
             If =0, only compute the continuous-wave Fstat with t0=minStartTime,
             tau=maxStartTime-minStartTime.
-        tauMin: int
+        tauMin : int or None, optional
             Minimum transient duration to cover,
             defaults to 2*Tsft.
-        dt0: int
+        dt0 : int or None, optional
             Grid resolution in transient start-time,
             defaults to Tsft.
-        dtau: int
+        dtau : int or None, optional
             Grid resolution in transient duration,
             defaults to Tsft.
-        detectors : str
+        detectors : str or None, optional
             Two-character references to the detectors for which to use data.
             Specify `None` for no constraint.
             For multiple detectors, separate by commas.
-        minCoverFreq, maxCoverFreq : float
+        minCoverFreq, maxCoverFreq : float or None, optional
             The min and max cover frequency passed to lalpulsar.CreateFstatInput.
             For negative values, these will be used as offsets from the min/max
             frequency contained in the sftfilepattern.
@@ -411,7 +411,7 @@ class ComputeFstat(BaseSearchClass):
             what to set these two options to, setting both to -0.5 will
             reproduce the default behaviour of PyFstat <=1.4 and may be a
             reasonably safe fallback in many cases.
-        search_ranges: dict
+        search_ranges : dict or None, optional
             Dictionary of ranges in all search parameters,
             only used to estimate frequency band passed to lalpulsar.CreateFstatInput,
             if minCoverFreq, maxCoverFreq are not specified (==`None`).
@@ -419,53 +419,53 @@ class ComputeFstat(BaseSearchClass):
             grids/points will have to be passed separately to the .run() method.
             The entry for each parameter must be a list of length 1, 2 or 3:
             [single_value], [min,max] or [min,max,step].
-        injectSources : dict or str
+        injectSources : dict or str or None, optional
             Either a dictionary of the signal parameters to inject,
             or a string pointing to a .cff file defining a signal.
-        injectSqrtSX : float or list or str
+        injectSqrtSX : float or list or str or None, optional
             Single-sided PSD values for generating fake Gaussian noise on the fly.
             Single float or str value: use same for all IFOs.
             List or comma-separated string: must match len(detectors)
             and/or the data in sftfilepattern.
             Detectors will be paired to list elements following alphabetical order.
-        randSeed : int or None
+        randSeed : int or None, optional
             random seed for on-the-fly noise generation using `injectSqrtSX`.
             Setting this to 0 or None is equivalent; both will randomise the seed,
             following the behaviour of XLALAddGaussianNoise(),
             while any number not equal to 0 will produce a reproducible noise realisation.
-        assumeSqrtSX : float or list or str
+        assumeSqrtSX : float or list or str or None, optional
             Don't estimate noise-floors but assume this (stationary) single-sided PSD.
             Single float or str value: use same for all IFOs.
             List or comma-separated string: must match len(detectors)
             and/or the data in sftfilepattern.
             Detectors will be paired to list elements following alphabetical order.
             If working with signal-only data, please set assumeSqrtSX=1 .
-        SSBprec : int
+        SSBprec : int or None, optional
             Flag to set the Solar System Barycentring (SSB) calculation in lalpulsar:
             0=Newtonian, 1=relativistic,
             2=relativistic optimised, 3=DMoff, 4=NO_SPIN
-        RngMedWindow : int
+        RngMedWindow : int or None, optional
            Running-Median window size for F-statistic noise normalization
            (number of SFT bins).
-        tCWFstatMapVersion: str
+        tCWFstatMapVersion : str, optional
             Choose between implementations of the transient F-statistic functionality:
             standard `lal` implementation,
             `pycuda` for GPU version,
             and some others only for devel/debug.
-        cudaDeviceName: str
+        cudaDeviceName : str or None, optional
             GPU name to be matched against drv.Device output,
             only for `tCWFstatMapVersion=pycuda`.
-        computeAtoms: bool
+        computeAtoms : bool, optional
             Request calculation of 'F-statistic atoms' regardless of transientWindowType.
-        earth_ephem: str
+        earth_ephem : str or None, optional
             Earth ephemeris file path.
             If None, will check standard sources as per
             utils.get_ephemeris_files().
-        sun_ephem: str
+        sun_ephem : str or None, optional
             Sun ephemeris file path.
             If None, will check standard sources as per
             utils.get_ephemeris_files().
-        allowedMismatchFromSFTLength: float
+        allowedMismatchFromSFTLength : float or None, optional
             Maximum allowed mismatch from SFTs being too long
             [Default: what's hardcoded in XLALFstatMaximumSFTLength]
         """
@@ -1164,14 +1164,14 @@ class ComputeFstat(BaseSearchClass):
 
         Parameters
         ----------
-        F0, F1, F2, Alpha, Delta: float
+        F0, F1, F2, Alpha, Delta : float or None, optional
             DEPRECATED: Parameters at which to compute the statistic.
-        asini, period, ecc, tp, argp: float, optional
+        asini, period, ecc, tp, argp: float or None, optional
             DEPRECATED: Optional: Binary parameters at which to compute the statistic.
-        params: dict
+        params : dict or None, optional
             A dictionary defining a parameter space point.
             See get_fullycoherent_twoF() for more information.
-        tstart, tend: int or None
+        tstart, tend : int or None, optional
             GPS times to restrict the range of data used.
             If None: falls back to self.minStartTime and self.maxStartTime.
             This is only passed on to `self.get_transient_detstats()`,
@@ -1231,12 +1231,12 @@ class ComputeFstat(BaseSearchClass):
 
         Parameters
         ----------
-        params: dict, optional
+        params: dict or None, optional
             A dictionary defining a parameter space point.
             See get_fullycoherent_twoF() for more information.
-        F0, F1, F2, Alpha, Delta: float, optional
+        F0, F1, F2, Alpha, Delta: float or None, optional
             DEPRECATED: Parameters at which to compute the statistic.
-        asini, period, ecc, tp, argp: float, optional
+        asini, period, ecc, tp, argp: float or None, optional
             DEPRECATED: Optional: Binary parameters at which to compute the statistic
 
         """
@@ -1322,11 +1322,11 @@ class ComputeFstat(BaseSearchClass):
 
         Parameters
         ----------
-        F0, F1, F2, Alpha, Delta: float
+        F0, F1, F2, Alpha, Delta : float or None, optional
             DEPRECATED: Parameters at which to compute the statistic.
-        asini, period, ecc, tp, argp: float, optional
+        asini, period, ecc, tp, argp: float or None, optional
             DEPRECATED: Optional: Binary parameters at which to compute the statistic.
-        params: dict
+        params : dict or None, optional
             A dictionary defining a parameter space point,
             with `["F0","Alpha","Delta"]` required as a minimum set of keys.
             Also supported:
@@ -1426,7 +1426,7 @@ class ComputeFstat(BaseSearchClass):
 
         Parameters
         ----------
-        tstart, tend: int or None
+        tstart, tend : int or None, optional
             GPS times to restrict the range of data used.
             If None: falls back to self.minStartTime and self.maxStartTime.
 
@@ -1486,7 +1486,7 @@ class ComputeFstat(BaseSearchClass):
 
         Parameters
         ----------
-        tstart, tend: int or None
+        tstart, tend : int or None, optional
             GPS times to restrict the range of data used.
             If None: falls back to self.minStartTime and self.maxStartTime.
 
@@ -1556,7 +1556,7 @@ class ComputeFstat(BaseSearchClass):
 
         Parameters
         ----------
-        tstart, tend: int or None
+        tstart, tend : int or None
             GPS times to restrict the range of data used;
             if None: falls back to self.minStartTime and self.maxStartTime;
             if outside those: auto-truncated
@@ -1599,24 +1599,24 @@ class ComputeFstat(BaseSearchClass):
 
         Parameters
         ----------
-        F0, F1, F2, Alpha, Delta: float
+        F0, F1, F2, Alpha, Delta : float or None, optional
             DEPRECATED: Parameters at which to compute the cumulative twoF.
-        asini, period, ecc, tp, argp: float, optional
+        asini, period, ecc, tp, argp: float or None, optional
             DEPRECATED: Optional: Binary parameters at which to compute the cumulative 2F.
-        params: dict
+        params : dict or None, optional
             A dictionary defining a parameter space point.
             See get_fullycoherent_twoF() for more information.
             Note this may NOT include transient parameters.
             as these are intrinsically taken care of by this function.
-        tstart, tend: int or None
+        tstart, tend : int or None, optional
             GPS times to restrict the range of data used.
             If None: falls back to self.minStartTime and self.maxStartTime;.
             If outside those: auto-truncated.
-        num_segments: int
-            Number of segments to split [tstart,tend] into.
-        transient_tstart, transient_duration: float or None
+        transient_tstart, transient_duration : float or None, optional
             These are not actually used by this function,
             but just included so a parameters dict can be safely passed.
+        num_segments : int, optional
+            Number of segments to split [tstart,tend] into.
         Returns
         -------
         cumulative_durations : ndarray of shape (num_segments,)
@@ -1693,11 +1693,11 @@ class ComputeFstat(BaseSearchClass):
         ----------
         F0, Alpha, Delta, h0, cosi, psi: float
             Parameters at which to compute the cumulative predicted twoF.
-        tstart, tend: int or None
+        tstart, tend : int or None, optional
             GPS times to restrict the range of data used.
             If None: falls back to self.minStartTime and self.maxStartTime.
             If outside those: auto-truncated.
-        num_segments: int
+        num_segments : int, optional
             Number of segments to split [tstart,tend] into.
         predict_fstat_kwargs:
             Other kwargs to be passed to utils.predict_fstat().
@@ -1759,27 +1759,27 @@ class ComputeFstat(BaseSearchClass):
         CFS_input: dict
             Input arguments for self.calculate_twoF_cumulative()
             (besides [tstart, tend, num_segments]).
-        PFS_input: dict
+        PFS_input : dict or None, optional
             Input arguments for self.predict_twoF_cumulative()
             (besides [tstart, tend, num_segments]).
             If None: do not calculate predicted 2F.
-        tstart, tend: int or None
+        tstart, tend : int or None, optional
             GPS times to restrict the range of data used.
             If None: falls back to self.minStartTime and self.maxStartTime.
             If outside those: auto-truncated.
-        num_segments_(CFS|PFS) : int
+        num_segments_(CFS|PFS) : int, optional
             Number of time segments to (compute|predict) twoF.
-        custom_ax_kwargs : dict
+        custom_ax_kwargs : dict or None, optional
             Optional axis formatting options.
-        savefig : bool
+        savefig : bool, optional
             If true, save the figure in `outdir`.
             If false, return an axis object without saving to disk.
-        label: str
+        label : str or None, optional
             Output filename will be constructed by appending `_twoFcumulative.png`
             to this label. (Ignored unless `savefig=true`.)
-        outdir: str
+        outdir : str or None, optional
             Output folder (ignored unless `savefig=true`).
-        PFS_kwargs: dict
+        PFS_kwargs: dict, optional
             Other kwargs to be passed to self.predict_twoF_cumulative().
 
         Returns
@@ -1881,12 +1881,12 @@ class ComputeFstat(BaseSearchClass):
 
         Parameters
         ----------
-        fnamebase: str
+        fnamebase : str, optional
             Basis for output filename, full name will be
             `{fnamebase}_Fstatatoms_{dopplerName}.dat`
             where `dopplerName` is a canonical lalpulsar formatting of the
             'Doppler' parameter space point (frequency-evolution parameters).
-        comments: str
+        comments : str, optional
             Comments marker character(s) to be prepended to header lines.
             Note that the column headers line
             (last line of the header before the atoms data)
@@ -1968,12 +1968,12 @@ class SemiCoherentSearch(ComputeFstat):
             A label and directory to read/write data from/to.
         tref: int
             GPS seconds of the reference time.
-        nsegs: int
+        nsegs : int or None, optional
             The (fixed) number of segments to split the data set into.
-        sftfilepattern: str
+        sftfilepattern : str, or None optional
             Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
             multiple patterns can be given separated by colons.
-        minStartTime, maxStartTime : int
+        minStartTime, maxStartTime : int or None, optional
             Only use SFTs with timestamps starting from this range,
             following the XLALCWGPSinRange convention:
             half-open intervals [minStartTime,maxStartTime].
@@ -2094,14 +2094,14 @@ class SemiCoherentSearch(ComputeFstat):
 
         Parameters
         ----------
-        F0, F1, F2, Alpha, Delta: float
+        F0, F1, F2, Alpha, Delta : float or None, optional
             DEPRECATED: Parameters at which to compute the statistic.
-        asini, period, ecc, tp, argp: float, optional
+        asini, period, ecc, tp, argp: float, or None optional
             DEPRECATED:Optional: Binary parameters at which to compute the statistic.
-        params: dict
+        params : dict or None, optional
             A dictionary defining a parameter space point.
             See get_fullycoherent_twoF() for more information.
-        record_segments: boolean
+        record_segments : boolean, optional
             If True, store the per-segment F-stat values as `self.twoF_per_segment`
             and (if `self.singleFstats`) the per-detector per-segment F-stats
             as `self.twoFX_per_segment`.
@@ -2155,14 +2155,14 @@ class SemiCoherentSearch(ComputeFstat):
 
         Parameters
         ----------
-        F0, F1, F2, Alpha, Delta: float
+        F0, F1, F2, Alpha, Delta : float or None, optional
             DEPRECATED: Parameters at which to compute the statistic.
-        asini, period, ecc, tp, argp: float, optional
+        asini, period, ecc, tp, argp: float or None, optional
             DEPRECATED: Optional: Binary parameters at which to compute the statistic.
-        params: dict
+        params : dict or None, optional
             A dictionary defining a parameter space point.
             See get_fullycoherent_twoF() for more information.
-        record_segments: boolean
+        record_segments : boolean, optional
             If True, store the per-segment F-stat values as `self.twoF_per_segment`.
 
         Returns
@@ -2218,7 +2218,7 @@ class SemiCoherentSearch(ComputeFstat):
 
         Parameters
         ----------
-        record_segments: boolean
+        record_segments : boolean, optional
             If True, store the per-detector per-segment F-stat values
             as `self.twoFX_per_segment`.
 
@@ -2363,7 +2363,7 @@ class SearchForSignalWithJumps(BaseSearchClass):
             number of jumps.
         tbounds : array_like
             Time boundaries of the jumps of size (m+2,).
-        theta0_idx : int
+        theta0_idx : int, optional
             Index of the segment for which the theta are defined.
 
         Returns
@@ -2447,14 +2447,14 @@ class SemiCoherentGlitchSearch(SearchForSignalWithJumps, ComputeFstat):
             A label and directory to read/write data from/to.
         tref, minStartTime, maxStartTime: int
             GPS seconds of the reference time, and start and end of the data.
-        nglitch: int
+        nglitch : int, optional
             The (fixed) number of glitches.
             This is also allowed to be zero, but occasionally this causes issues,
             in which case please use the basic ComputeFstat class instead.
-        sftfilepattern: str
+        sftfilepattern : str or None, optional
             Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
             multiple patterns can be given separated by colons.
-        theta0_idx: int
+        theta0_idx : int, optional
             Index (zero-based) of which segment the theta (searched parameters)
             refer to.
             This is useful if providing a tight prior on theta to allow the

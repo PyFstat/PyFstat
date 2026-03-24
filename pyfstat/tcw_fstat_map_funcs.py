@@ -107,13 +107,13 @@ class pyTransientFstatMap:
 
         Parameters
         ----------
-        N_t0Range: int
+        N_t0Range: int or None, optional
             Number of `t0` values covered.
-        N_tauRange: int
+        N_tauRange: int or None, optional
             Number of `tau` values covered.
-        transientFstatMap_t: lalpulsar.transientFstatMap_t
+        transientFstatMap_t: lalpulsar.transientFstatMap_t or None, optional
             pre-allocated matrix from lalpulsar to initialise from.
-        from_file: str or None
+        from_file: str or None, optional
             Text file,
             compatible with `lalpulsar.write_transientFstatMap_to_fp()` format,
             to load and initialise from.
@@ -300,7 +300,7 @@ class pyTransientFstatMap:
             Name of the file to write to.
         windowRange: lalpulsar.transientWindowRange_t
             A lalpulsar structure containing the transient parameters.
-        header: list
+        header: list, optional
             A list of additional header lines
             to print at the start of the file.
         """

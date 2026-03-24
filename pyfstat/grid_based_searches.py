@@ -85,14 +85,14 @@ class GridSearch(BaseSearchClass):
             e.g [F0min, F0max, dF0].
             Alternatively, for a fixed value simply give [F0].
             Unless `input_arrays=True`, then these are the exact arrays to search over.
-        nsegs: int
+        nsegs: int, optional
             Number of segments to split the data set into.
             If `nsegs=1`, the basic ComputeFstat class is used.
             If `nsegs>1`, the SemiCoherentSearch class is used.
-        input_arrays: bool
+        input_arrays: bool, optional
             If true, use the F0s, F1s, etc as arrays just as they are given
             (do not interpret as 3-tuples of [min,max,step]).
-        clean: bool
+        clean: bool, optional
             If true, ignore existing data and overwrite.
             Otherwise, reuse existing data if no inconsistencies are found.
         """
@@ -374,7 +374,7 @@ class GridSearch(BaseSearchClass):
 
         Parameters
         ----------
-        return_data: boolean
+        return_data: boolean, optional
             If true, the final inputs+outputs data set is returned as a numpy array.
             If false, it is saved to disk and nothing is returned.
 
@@ -541,20 +541,20 @@ class GridSearch(BaseSearchClass):
         ----------
         xkey: str
             The name of the search parameter to plot against.
-        ax: matplotlib.axes._subplots_AxesSubplot or None
+        ax: matplotlib.axes._subplots_AxesSubplot or None, optional
             An optional pre-existing axes set to draw into.
-        x0: float or None
+        x0: float or None, optional
             Plot x values relative to this central value.
-        xrescale: float
+        xrescale: float, optional
             Rescale all x values by this factor.
-        savefig : bool
+        savefig: bool, optional
             If true, save the figure in `self.outdir`.
             If false, return an axis object without saving to disk.
-        xlabel: str or None
+        xlabel: str or None, optional
             Override default text label for the x-axis.
-        ylabel: str or None
+        ylabel: str or None, optional
             Override default text label for the y-axis.
-        agg_chunksize: int or None
+        agg_chunksize: int or None, optional
             Set this to some high value to work around
             matplotlib 'Exceeded cell block limit' errors.
 
@@ -630,48 +630,48 @@ class GridSearch(BaseSearchClass):
             The name of the first search parameter to plot against.
         ykey: str
             The name of the second search parameter to plot against.
-        ax: matplotlib.axes._subplots_AxesSubplot or None
+        ax: matplotlib.axes._subplots_AxesSubplot or None, optional
             An optional pre-existing axes set to draw into.
-        savefig: bool
+        savefig: bool, optional
             If true, save the figure in `self.outdir`.
             If false, return an axis object without saving to disk.
-        vmin, vmax: float or None
+        vmin, vmax: float or None, optional
             Cutoffs for rescaling the colormap.
-        add_mismatch: tuple or None
+        add_mismatch: tuple or None, optional
             If given a tuple `(xhat, yhat, Tseg)`,
             add a secondary axis with the metric mismatch from the
             point `(xhat, yhat)` with duration `Tseg`.
-        xN, yN: int or  None
+        xN, yN: int or None, optional
             Number of tick label intervals.
-        flat_keys: list
+        flat_keys: list, optional
             Keys to be used in flattening higher-dimensional arrays.
-        rel_flat_idxs: list
+        rel_flat_idxs: list, optional
             Indices to be used in flattening higher-dimensional arrays.
-        flatten_method: numpy function
+        flatten_method: numpy function, optional
             Function to use in flattening the `flat_keys`,
             default: `np.max`.
-        title: str or None
+        title: str or None, optional
             Optional plot title text.
-        predicted_twoF: float or None
+        predicted_twoF: float or None, optional
             Expected/predicted value of twoF,
             used to rescale the z-axis.
-        cm: matplotlib.colors.ListedColormap or None
+        cm: matplotlib.colors.ListedColormap or None, optional
             Override standard (viridis) colormap.
-        cbarkwargs: dict
+        cbarkwargs: dict, optional
             Additional arguments for colorbar formatting.
-        x0: float
+        x0: float or None, optional
             Plot x values relative to this central value.
-        y0: float
+        y0: float or None, optional
             Plot y values relative to this central value.
-        xrescale: float
+        xrescale: float, optional
             Rescale all x values by this factor.
-        yrescale: float
+        yrescale: float, optional
             Rescale all y values by this factor.
-        xlabel: str
+        xlabel: str or None, optional
             Override default text label for the x-axis.
-        ylabel: str
+        ylabel: str or None, optional
             Override default text label for the y-axis.
-        zlabel: str
+        zlabel: str or None, optional
             Override default text label for the z-axis.
 
         Returns
@@ -832,7 +832,7 @@ class GridSearch(BaseSearchClass):
 
         Parameters
         ----------
-        extra_label: str
+        extra_label: str or None, optional
             Additional text bit to be attached at the end of the filename
             (but before the extension).
         """
@@ -946,41 +946,41 @@ class TransientGridSearch(GridSearch):
         """
         Parameters
         ----------
-        BtSG: bool
+        BtSG: bool, optional
             If True, compute the transient Bayes factor detection statistic.
             This search also returns `t0_MP` and `tau_MP` values.
-        transientWindowType: str
+        transientWindowType: str or None, optional
             If `rect` or `exp`,
             allow for the Fstat to be computed over a transient range.
             (`none` instead of `None` explicitly calls the transient-window
             function, but with the full range, for debugging.)
-        t0Band, tauBand: int
+        t0Band, tauBand: int or None, optional
             Search ranges for transient start-time t0 and duration tau.
             If >0, search `t0` in `(minStartTime,minStartTime+t0Band)`
             and tau in `(tauMin,2*Tsft+tauBand)`.
             If =0, only compute the continuous-wave F-stat with `t0=minStartTime`,
             `tau=maxStartTime-minStartTime`.
-        tauMin: int
+        tauMin: int or None, optional
             Minimum transient duration to cover,
             defaults to `2*Tsft`.
-        dt0: int
+        dt0: int or None, optional
             Grid resolution in transient start-time,
             defaults to `Tsft`.
-        dtau: int
+        dtau: int or None, optional
             Grid resolution in transient duration,
             defaults to `Tsft`.
-        outputTransientFstatMap: bool
+        outputTransientFstatMap: bool, optional
             If true, write additional output files for `(t0,tau)` F-stat maps.
             (One file for each grid point!)
-        outputAtoms: bool
+        outputAtoms: bool, optional
             If true, write additional output files for the F-stat `atoms`.
             (One file for each grid point!)
-        tCWFstatMapVersion: str
+        tCWFstatMapVersion: str, optional
             Choose between implementations of the transient F-statistic functionality:
             standard `lal` implementation,
             `pycuda` for GPU version,
             and some others only for devel/debug.
-        cudaDeviceName: str
+        cudaDeviceName: str or None, optional
             GPU name to be matched against drv.Device output,
             only for `tCWFstatMapVersion=pycuda`.
         """
@@ -1154,7 +1154,7 @@ class TransientGridSearch(GridSearch):
 
         Parameters
         ----------
-        return_data: boolean
+        return_data: boolean, optional
             If true, the final inputs+outputs data set is returned as a numpy array.
             If false, it is saved to disk and nothing is returned.
 
@@ -1313,7 +1313,7 @@ class SearchOverGridFile(TransientGridSearch):
         ----------
         gridfile: str
             filename of the grid file to load
-        reading_method: str
+        reading_method: str, optional
             Currently, grid files can be read with either `numpy` or `pandas`.
             Pandas is expected to be faster for large files.
         """
@@ -1554,13 +1554,13 @@ class GridGlitchSearch(GridSearch):
 
         Parameters
         ----------
-        delta_F0s: tuple
+        delta_F0s: tuple, optional
             A length 3 tuple describing the grid of frequency jumps,
             or just `[delta_F0]` for a fixed value.
-        delta_F1s: tuple
+        delta_F1s: tuple, optional
             A length 3 tuple describing the grid of spindown parameter jumps,
             or just `[delta_F1]` for a fixed value.
-        tglitchs: tuple
+        tglitchs: tuple or None, optional
             A length 3 tuple describing the grid of glitch epochs,
             or just `[tglitch]` for a fixed value.
             These are relative time offsets, referenced to zero at `minStartTime`.

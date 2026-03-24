@@ -94,13 +94,13 @@ class SignalToNoiseRatio:
             Central frequency [Hz] to retrieve from the SFT files to compute noise weights.
         sftfilepath: str
             Path to SFT files in a format compatible with XLALSFTdataFind.
-        time_offset: float
+        time_offset: float or None, optional
             Timestamp offset to retrieve detector states.
             Defaults to LALSuite's default of using the central time of an STF (SFT's timestamp + Tsft/2).
-        running_median_window: int
+        running_median_window: int, optional
             Window used to compute the running-median noise floor estimation.
             Default value is consistent with that used in PredictFstat executable.
-        sft_constraint: lalpulsar.SFTConstraint
+        sft_constraint: lalpulsar.SFTConstraint or None, optional
             Optional argument to specify further constraints in XLALSFTdataFind.
         """
 
@@ -146,17 +146,17 @@ class SignalToNoiseRatio:
             Declination (equatorial latitude) of the signal in radians.
         psi: float
             Polarization angle.
-        h0: float
+        h0: float or None, optional
             Nominal GW amplitude. Must be given together with `cosi`
             and conflicts with `aPlus` and `aCross`.
-        cosi: float
+        cosi: float or None, optional
             Cosine of the source inclination w.r.t. line of sight.
             Must be given together with `h0`
             and conflicts with `aPlus` and `aCross`.
-        aPlus: float
+        aPlus: float or None, optional
             Plus polarization amplitude. Must be given with `aCross`
             and conflicts with `h0` and `cosi`.
-        aCross: float
+        aCross: float or None, optional
             Cross polarization amplitude. Must be given with `aPlus`
             and conflicts with `h0` and `cosi`.
 
@@ -328,10 +328,10 @@ class DetectorStates:
         Tsft: float
             Timespan covered by each timestamp. It does not need to coincide with the
             separation between consecutive timestamps.
-        detectors: list[str] or comma-separated string
+        detectors: list[str] or comma-separated string or None, optional
             List of detectors to be parsed using XLALParseMultiLALDetector.
             Conflicts with dictionary of `timestamps`, required otherwise.
-        time_offset: float
+        time_offset: float or None, optional
             Timestamp offset to retrieve detector states.
             Defaults to LALSuite's default of using the central time of an STF (SFT's timestamp + Tsft/2).
 
@@ -369,18 +369,18 @@ class DetectorStates:
             Frequency [Hz] around which SFT data will be retrieved.
             This option is only relevant if further information is to be
             retrieved from the SFTs (i.e. `return_sfts=True`).
-        time_offset: float
+        time_offset: float or None, optional
             Timestamp offset to retrieve detector states.
             Defaults to LALSuite's default of using the central time of an STF (SFT's timestamp + Tsft/2).
-        frequency_wing_bins: int
+        frequency_wing_bins: int, optional
             Frequency bins around the central frequency to retrieve from
             SFT data. Bin size is determined using the SFT baseline time
             as obtained from the catalog.
             This option is only relevant if further information is to be
             retrieved from the SFTs (i.e. `return_sfts=True`).
-        sft_constraint: lalpulsar.SFTConstraint
+        sft_constraint: lalpulsar.SFTConstraint or None, optional
             Optional argument to specify further constraints in XLALSFTdataFind.
-        return_sfts: bool
+        return_sfts: bool, optional
             If True, also return the loaded SFTs. This is useful to compute further
             quantities such as noise weights.
 
