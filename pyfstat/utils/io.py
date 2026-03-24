@@ -66,7 +66,7 @@ def read_txt_file_with_header(f, names=True, comments="#"):
     before the actual data starts).
 
     Parameters
-    -------
+    ----------
     f: str
         Name of the file to read.
     names: bool

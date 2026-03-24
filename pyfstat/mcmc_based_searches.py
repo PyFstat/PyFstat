@@ -1811,7 +1811,7 @@ class MCMCSearch(BaseSearchClass):
         """Read the data saved in `self.pickel_path` and return it as a dictionary.
 
         Returns
-        --------
+        -------
         d: dict
             Dictionary containing the data saved in the pickle `self.pickle_path`.
         """
@@ -2198,7 +2198,7 @@ class MCMCSearch(BaseSearchClass):
                     a = utils.texify_float(a)
                     b = utils.texify_float(b)
                     f.write(" " + line.format(s, a, b, u) + r" \\")
-            f.write("\n\\end{tabular}\n")
+            f.write(r"\n\end{tabular}\n")
 
     def print_summary(self):
         """Prints a summary of the max twoF found to the terminal"""

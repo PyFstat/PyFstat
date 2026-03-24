@@ -93,7 +93,7 @@ def generate_loudest_file(
     """Use ComputeFstatistic_v2 executable to produce a .loudest file.
 
     Parameters
-    -------
+    ----------
     max_params: dict
         Dictionary of a single parameter-space point.
         This needs to already have been translated to lal conventions

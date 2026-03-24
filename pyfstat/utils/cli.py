@@ -25,7 +25,7 @@ def run_commandline(
         If False, return ``None``.
 
     Returns
-    ----------
+    -------
     out: subprocess.CompletedProcess or None
         The ```subprocess.CompletedProcess`` of the subprocess
         if ``return_output=True``. ``None`` if ``return_output=False``

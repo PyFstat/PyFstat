@@ -33,7 +33,7 @@ def get_sft_as_arrays(
         GPS time range or timestamps to be retrieved.
 
     Returns
-    ----------
+    -------
     freqs: np.ndarray
         The frequency bins in each SFT. These will be the same for each SFT,
         so only a single 1D array is returned.

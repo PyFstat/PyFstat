@@ -555,7 +555,7 @@ class Writer(BaseSearchClass):
 
     @property
     def tend(self):
-        """`
+        """
         Defined as `self.start + self.duration`.
 
         If stored as an attribute, there would be the risk of it going out of
@@ -814,7 +814,7 @@ class Writer(BaseSearchClass):
             config_file.close()
 
     def check_cached_data_okay_to_use(self, cl_mfd):
-        """Check if SFT files already exist that can be re-used.
+        """Check if SFT files already exist that can be reused.
 
         This does not check the actual data contents of the SFTs,
         but only the following criteria:

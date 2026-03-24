@@ -831,7 +831,7 @@ class GridSearch(BaseSearchClass):
         but this method allows to attach an `extra_label` bit if desired.
 
         Parameters
-        -------
+        ----------
         extra_label: str
             Additional text bit to be attached at the end of the filename
             (but before the extension).

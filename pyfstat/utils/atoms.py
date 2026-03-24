@@ -16,7 +16,7 @@ def extract_singleIFOmultiFatoms_from_multiAtoms(
     and we do a deep copy of the actual per-timestamp atoms.
 
     Parameters
-    -------
+    ----------
     multiAtoms:
         Fully allocated multi-detector struct of `length > X`.
     X:
@@ -50,7 +50,7 @@ def copy_FstatAtomVector(
     and the destination vector must already be allocated.
 
     Parameters
-    -------
+    ----------
     dest:
         The destination vector to copy to.
         Must already be allocated.
