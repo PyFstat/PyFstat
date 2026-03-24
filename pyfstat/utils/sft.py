@@ -148,11 +148,11 @@ def get_official_sft_filename(
         GPS seconds of first SFT start time
     duration: int
         total time-spanned by all SFTs in seconds
-    label: str or None
+    label: str or None, optional
         optional 'Misc' entry in the SFT 'D' field
-    window_type: str or None
+    window_type: str or None, optional
         window function applied to SFTs
-    window_param: float or None
+    window_param: float or None, optional
         additional parameter for some window functions
 
     Returns

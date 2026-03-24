@@ -75,7 +75,7 @@ def get_doppler_params_output_format(keys, fmt_str="%.16g"):
     ----------
     keys: dict
         The parameter keys for which to select formats.
-    fmt_str: str
+    fmt_str: str, optional
         fprintf-style format specifier for a single value.
 
     Returns

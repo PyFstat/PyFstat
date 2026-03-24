@@ -41,11 +41,11 @@ def get_covering_band(
         Minimum frequency and spin-downs of signals to be covered.
     fktotBand: list
         Ranges of frequency and spin-downs of signals to be covered.
-    maxOrbitAsini: float
+    maxOrbitAsini: float, optional
         Largest orbital projected semi-major axis to be covered.
-    minOrbitPeriod: float
+    minOrbitPeriod: float, optional
         Shortest orbital period to be covered.
-    maxOrbitEcc: float
+    maxOrbitEcc: float, optional
         Highest orbital eccentricity to be covered.
 
     Returns
@@ -107,15 +107,15 @@ def generate_loudest_file(
     sftfilepattern: str
         Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
         multiple patterns can be given separated by colons.
-    minStartTime, maxStartTime: int or None
+    minStartTime, maxStartTime: int or None, optional
         GPS seconds of the start time and end time;
         default: use al available data.
-    transientWindowType: str or None
+    transientWindowType: str or None, optional
         optional: transient window type,
         needs to go with t0 and tau parameters inside max_params.
-    earth_ephem: str or None
+    earth_ephem: str or None, optional
         optional: user-set Earth ephemeris file
-    sun_ephem: str or None
+    sun_ephem: str or None, optional
         optional: user-set Sun ephemeris file
 
     Returns

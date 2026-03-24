@@ -74,7 +74,7 @@ def match_commandlines(cl1, cl2, be_strict_about_full_executable_path=False):
     ----------
     cl1, cl2: str
         Commandline strings of `executable --key1=val1 --key2=val2` etc format.
-    be_strict_about_full_executable_path: bool
+    be_strict_about_full_executable_path: bool, optional
         If False (default), only checks the basename of the executable.
         If True, requires its full path to match.
 
