@@ -43,7 +43,7 @@ extensions = [
     "sphinx_autodoc_typehints",  # Must import napoleon before typehints
     "sphinx.ext.viewcode",
     "sphinx_gallery.gen_gallery",
-    "m2r2",
+    "myst_parser",
 ]
 
 # add (default: ...) after the type, which matches our old look
@@ -53,6 +53,10 @@ typehints_defaults = "braces-after"
 simplify_optional_unions = True
 
 source_suffix = [".rst", ".md"]
+
+# Keep README.md's Markdown links as ordinary hyperlinks when included via MyST.
+myst_all_links_external = True
+myst_heading_anchors = 3
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
