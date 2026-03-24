@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath("../../pyfstat/"))
 # -- Project information -----------------------------------------------------
 
 project = "PyFstat"
-copyright = "2026, Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio, Maria-Antonia Ferrer"
+copyright = "2016-2026, Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio, Maria-Antonia Ferrer"
 author = (
     "Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio, Maria-Antonia Ferrer"
 )
