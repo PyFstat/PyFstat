@@ -146,12 +146,16 @@ def _get_nsegs_ip1(
         raise ValueError("Optimisation unsuccessful")
 
 
-def _extract_data_from_prior(prior):
+def _extract_data_from_prior(prior, normal_stds=3):
     """Calculate the input data from the prior
 
     Parameters
     ----------
     prior: dict
+        The priors as a dictionary over all parameters covered.
+    normal_stds: float, optional
+        Number of standard deviations to cut normal (Gaussian) or half-norm
+        distributions at.
 
     Returns
     -------
@@ -165,23 +169,37 @@ def _extract_data_from_prior(prior):
         Fidicual frequency
 
     """
-    keys = ["Alpha", "Delta", "F0", "F1", "F2"]
+    keys = ["Alpha", "Delta"] + [f"F{k}" for k in range(0, lalpulsar.PULSAR_MAX_SPINS)]
     spindown_keys = keys[3:]
     sky_keys = keys[:2]
     lims = []
     lims_keys = []
     lims_idxs = []
     for i, key in enumerate(keys):
-        if isinstance(prior[key], dict):
+        if key in prior.keys() and isinstance(prior[key], dict):
+            lims_keys.append(key)
+            lims_idxs.append(i)
             if prior[key]["type"] == "unif":
                 lims.append([prior[key]["lower"], prior[key]["upper"]])
-                lims_keys.append(key)
-                lims_idxs.append(i)
+            elif prior[key]["type"] == "log10unif":
+                lims.append([10 ** prior[key]["lower"], 10 ** prior[key]["upper"]])
+            elif prior[key]["type"] == "norm":
+                logger.warning(
+                    f"Equating Gaussian prior in {key} with a box of size {normal_stds}*sigma={(normal_stds * prior[key]['scale']):.4e}"
+                )
+                lims.append(
+                    [
+                        prior[key]["loc"] - normal_stds * prior[key]["scale"],
+                        prior[key]["loc"] + normal_stds * prior[key]["scale"],
+                    ]
+                )
             else:
                 raise ValueError(
                     "Prior type {} not yet supported".format(prior[key]["type"])
                 )
-        elif key not in spindown_keys:
+        elif key in sky_keys:
+            if key not in prior.keys():
+                raise ValueError("Prior dictionary needs to contain Alpha and Delta!")
             lims.append([prior[key], 0])
     lims = np.array(lims)
     lims_keys = np.array(lims_keys)
@@ -194,14 +212,16 @@ def _extract_data_from_prior(prior):
     spindowns = int(np.sum([np.sum(lims_keys == k) for k in spindown_keys]))
     sky = any([key in lims_keys for key in sky_keys])
     if isinstance(prior["F0"], dict):
-        fiducial_freq = prior["F0"]["upper"]
+        fiducial_freq = lims[lims_idxs[list(lims_keys).index("F0")]][-1]
     else:
         fiducial_freq = prior["F0"]
 
     return np.array(p).T, spindowns, sky, fiducial_freq
 
 
-def get_Nstar_estimate(nsegs, tref, minStartTime, maxStartTime, prior, detector_names):
+def get_Nstar_estimate(
+    nsegs, tref, minStartTime, maxStartTime, prior, detector_names, normal_stds=3
+):
     """Returns N* estimated from the super-sky metric
 
     Parameters
@@ -216,6 +236,9 @@ def get_Nstar_estimate(nsegs, tref, minStartTime, maxStartTime, prior, detector_
         The prior dictionary
     detector_names : array
         Array of detectors to average over
+    normal_stds: float, optional
+        Number of standard deviations to cut normal (Gaussian) or half-norm
+        distributions at.
 
     Returns
     -------
@@ -226,7 +249,9 @@ def get_Nstar_estimate(nsegs, tref, minStartTime, maxStartTime, prior, detector_
 
     """
     earth_ephem, sun_ephem = utils.get_ephemeris_files()
-    in_phys, spindowns, sky, fiducial_freq = _extract_data_from_prior(prior)
+    in_phys, spindowns, sky, fiducial_freq = _extract_data_from_prior(
+        prior, normal_stds
+    )
     out_rssky = np.zeros(in_phys.shape)
 
     in_phys = utils.convert_array_to_gsl_matrix(in_phys)
