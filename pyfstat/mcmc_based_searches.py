@@ -2686,12 +2686,20 @@ class MCMCGlitchSearch(MCMCSearch):
             delta_F0s.insert(self.theta0_idx, 0)
             delta_F0s = np.array(delta_F0s)
             delta_F0s[: self.theta0_idx] *= -1
+            delta_F1s = [d["delta_F1_{}".format(i)] for i in range(self.nglitch)]
+            delta_F1s.insert(self.theta0_idx, 0)
+            delta_F1s = np.array(delta_F1s)
+            delta_F1s[: self.theta0_idx] *= -1
             tglitches = [d["tglitch_{}".format(i)] for i in range(self.nglitch)]
         elif self.nglitch == 1:
             delta_F0s = [d["delta_F0"]]
             delta_F0s.insert(self.theta0_idx, 0)
             delta_F0s = np.array(delta_F0s)
             delta_F0s[: self.theta0_idx] *= -1
+            delta_F1s = [d["delta_F1"]]
+            delta_F1s.insert(self.theta0_idx, 0)
+            delta_F1s = np.array(delta_F1s)
+            delta_F1s[: self.theta0_idx] *= -1
             tglitches = [d["tglitch"]]
 
         tboundaries = [self.minStartTime] + tglitches + [self.maxStartTime]
@@ -2705,9 +2713,11 @@ class MCMCGlitchSearch(MCMCSearch):
             if j < self.theta0_idx:
                 summed_deltaF0 = np.sum(delta_F0s[j : self.theta0_idx])
                 F0_j = d["F0"] - summed_deltaF0
+                summed_deltaF1 = np.sum(delta_F1s[j : self.theta0_idx])
+                F1_j = d["F1"] - summed_deltaF1
                 actual_ts, taus, twoFs = self.search.calculate_twoF_cumulative(
-                    F0_j,
-                    F1=d["F1"],
+                    F0=F0_j,
+                    F1=F1_j,
                     F2=d["F2"],
                     Alpha=d["Alpha"],
                     Delta=d["Delta"],
@@ -2717,10 +2727,15 @@ class MCMCGlitchSearch(MCMCSearch):
 
             elif j >= self.theta0_idx:
                 summed_deltaF0 = np.sum(delta_F0s[self.theta0_idx : j + 1])
-                F0_j = d["F0"] + summed_deltaF0
+                summed_deltaF1 = np.sum(delta_F1s[self.theta0_idx : j + 1])
+                dt = self.search.tref - d["tglitch"]
+                F0_post = d["F0"] + summed_deltaF0
+                F1_post = d["F1"] + summed_deltaF1
+                F0_j = F0_post + (summed_deltaF1 * dt)
+                F1_j = F1_post
                 actual_ts, taus, twoFs = self.search.calculate_twoF_cumulative(
-                    F0_j,
-                    F1=d["F1"],
+                    F0=F0_j,
+                    F1=F1_j,
                     F2=d["F2"],
                     Alpha=d["Alpha"],
                     Delta=d["Delta"],
