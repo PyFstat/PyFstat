@@ -93,7 +93,7 @@ autodoc_typehints_description_target = "documented"
 # show the default value next to the type
 autodoc_preserve_defaults = True
 # to fix python 3.13 introspection crash
-autodoc_mock_imports = ["time"]
+# autodoc_mock_imports = ["time"]
 
 # --- Napoleon Settings ---
 napoleon_google_docstring = False  # Focus on NumPy
