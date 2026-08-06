@@ -54,7 +54,7 @@ extras_require = {
         "sphinx_gallery==0.20.0",
         "sphinx_rtd_theme==3.1.0",
         "myst-parser==5.0.0",
-        "pillow==12.1.1",
+        "pillow==12.3.0",
     ],
     "pycuda": ["pycuda"],
     "style": [
