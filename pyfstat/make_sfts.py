@@ -1051,7 +1051,7 @@ class Writer(BaseSearchClass):
             duration=self.duration,
             IFOs=self.detectors,
             assumeSqrtSX=(assumeSqrtSX or self.sqrtSX),
-            tempory_filename=os.path.join(self.outdir, self.label + ".tmp"),
+            temporary_filename=os.path.join(self.outdir, self.label + ".tmp"),
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
             transientWindowType=self.signal_parameters.get(

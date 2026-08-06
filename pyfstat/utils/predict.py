@@ -24,7 +24,8 @@ def predict_fstat(
     duration=None,
     IFOs=None,
     assumeSqrtSX=None,
-    tempory_filename="fs.tmp",
+    temporary_filename="fs.tmp",
+    tempory_filename=None,
     earth_ephem=None,
     sun_ephem=None,
     transientWindowType="none",
@@ -64,9 +65,11 @@ def predict_fstat(
         Detectors will be paired to list elements following alphabetical order.
         Required if `sftfilepattern=None`,
         optional otherwise..
-    tempory_filename: str, optional
+    temporary_filename: str, optional
         Temporary file used for `PredictFstat` output,
         will be deleted at the end.
+    tempory_filename: str, optional
+        DEPRECATED backwards-compatibility alias for `temporary_filename`,
     earth_ephem, sun_ephem: str or None, optional
         Ephemerides files, defaults will be used if `None`.
     transientWindowType: str, optional
@@ -82,6 +85,14 @@ def predict_fstat(
     twoF_expected, twoF_sigma : float
         The expectation and standard deviation of 2F.
     """
+
+    if tempory_filename:
+        logger.warning(
+            "The 'tempory_filename' option was a typo"
+            " and will be removed in an upcoming release of PyFstat!"
+            " Please use 'temporary_filename' instead."
+        )
+        temporary_filename = tempory_filename
 
     cl_pfs = []
     cl_pfs.append("lalpulsar_PredictFstat")
@@ -121,7 +132,7 @@ def predict_fstat(
             raise ValueError("assumeSqrtSX must be >0!")
         cl_pfs.append("--assumeSqrtSX={}".format(assumeSqrtSX))
 
-    cl_pfs.append("--outputFstat={}".format(tempory_filename))
+    cl_pfs.append("--outputFstat={}".format(temporary_filename))
 
     earth_ephem_default, sun_ephem_default = get_ephemeris_files()
     if earth_ephem is None:
@@ -138,10 +149,10 @@ def predict_fstat(
 
     cl_pfs = " ".join(cl_pfs)
     run_commandline(cl_pfs)
-    d = read_par(filename=tempory_filename)
+    d = read_par(filename=temporary_filename)
     twoF_expected = float(d["twoF_expected"])
     twoF_sigma = float(d["twoF_sigma"])
-    os.remove(tempory_filename)
+    os.remove(temporary_filename)
     return twoF_expected, twoF_sigma
 
 
