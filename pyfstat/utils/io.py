@@ -27,13 +27,15 @@ def read_par(
 
     Parameters
     ----------
-    filename : str
+    filename: str or None, optional
         Filename (path) containing rows of `key=val` data to read in.
-    label, outdir, suffix : str, optional
+    label, outdir : str or None, optional
         If filename is `None`, form the file to read as `outdir/label.suffix`.
-    comments : str or list of strings, optional
+    suffix : str, optional
+        If filename is `None`, form the file to read as `outdir/label.suffix`.
+    comments: str or list of strings, optional
         Characters denoting that a row is a comment.
-    raise_error : bool, optional
+    raise_error: bool, optional
         If True, raise an error for lines which are not comments, but cannot
         be read.
 
@@ -66,13 +68,13 @@ def read_txt_file_with_header(f, names=True, comments="#"):
     before the actual data starts).
 
     Parameters
-    -------
+    ----------
     f: str
         Name of the file to read.
-    names: bool
+    names: bool, optional
         Passed on to `np.genfromtxt()`:
         If True, the field names are read from the last header line.
-    comments: str
+    comments: str, optional
         The character used to indicate the start of a comment.
         Also passed on to `np.genfromtxt()`.
 
@@ -108,9 +110,9 @@ def read_parameters_dict_lines_from_file_header(
     ----------
     outfile: str
         Name of a PyFstat-produced output file.
-    comments: str
+    comments: str, optional
         Comment character used to start header lines.
-    strip_spaces: bool
+    strip_spaces: bool, optional
         Whether to strip leading/trailing spaces.
 
     Returns
@@ -159,9 +161,9 @@ def get_parameters_dict_from_file_header(outfile, comments="#", eval_values=Fals
     ----------
     outfile: str
         Name of a PyFstat-produced output file.
-    comments: str
+    comments: str, optional
         Comment character used to start header lines.
-    eval_values: bool
+    eval_values: bool, optional
         If False, return dictionary values as unparsed strings.
         If True, evaluate each of them.
         DANGER! Only do this if you trust the source of the file!

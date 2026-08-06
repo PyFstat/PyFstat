@@ -11,7 +11,7 @@ def convert_array_to_gsl_matrix(array):
         `array.shape` must have 2 dimensions.
 
     Returns
-    ----------
+    -------
     gsl_matrix: lal.gsl_matrix
         The LAL-wrapped GSL matrix object.
     """

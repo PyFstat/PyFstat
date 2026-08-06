@@ -33,7 +33,7 @@ def get_sft_as_arrays(
         GPS time range or timestamps to be retrieved.
 
     Returns
-    ----------
+    -------
     freqs: np.ndarray
         The frequency bins in each SFT. These will be the same for each SFT,
         so only a single 1D array is returned.
@@ -148,11 +148,11 @@ def get_official_sft_filename(
         GPS seconds of first SFT start time
     duration: int
         total time-spanned by all SFTs in seconds
-    label: str or None
+    label: str or None, optional
         optional 'Misc' entry in the SFT 'D' field
-    window_type: str or None
+    window_type: str or None, optional
         window function applied to SFTs
-    window_param: float or None
+    window_param: float or None, optional
         additional parameter for some window functions
 
     Returns
@@ -272,7 +272,7 @@ def plot_spectrogram(
         Set to "power" by default.
     sqrtSX:
         Amplitude spectral density of the data.
-        Only needed if `quantity = "normpower".
+        Only needed if `quantity = "normpower"`.
     fMin, fMax:
         Restrict frequency range to `[fMin, fMax]`.
         If None, retrieve the full frequency range.

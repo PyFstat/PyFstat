@@ -54,7 +54,7 @@ def parse_list_of_numbers(val):
     to try either type of input.
 
     Parameters
-    -------
+    ----------
     val: float, list or str
         The input to be parsed.
 
@@ -85,7 +85,7 @@ def gps_to_datestr_utc(gps):
     for safety you should probably call that commandline tool.
 
     Parameters
-    -------
+    ----------
     gps: int
         Integer seconds since GPS seconds.
 
@@ -121,7 +121,7 @@ def convert_h0_cosi_to_aPlus_aCross(h0, cosi):
     both outputs will be np.arrays.
 
     Parameters
-    -------
+    ----------
     h0: float, list or np.array
         Nominal GW amplitude.
     cosi: float, list or np.array
@@ -170,7 +170,7 @@ def convert_aPlus_aCross_to_h0_cosi(aPlus, aCross):
     both outputs will be np.arrays.
 
     Parameters
-    -------
+    ----------
     aPlus: float, list or np.array
         Plus polarization amplitude
         (must be `>= abs(aCross)` and `>= 0`).

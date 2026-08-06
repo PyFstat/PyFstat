@@ -126,17 +126,20 @@ class MCMCSearch(BaseSearchClass):
             For each parameters (key of the dict), if it is to be held fixed
             the value should be the constant float, if it is be searched, the
             value should be a dictionary of the prior.
-        tref, minStartTime, maxStartTime: int
-            GPS seconds of the reference time, start time and end time. While tref
-            is requirede, minStartTime and maxStartTime default to None in which
-            case all available data is used.
-        label, outdir: str
-            A label and output directory (optional, default is `data`) to
-            name files
-        sftfilepattern: str, optional
+        tref: int
+            GPS seconds of the reference time.
+        minStartTime, maxStartTime: int or None, optional
+            GPS seconds of the start time and end time.
+            If either is `None`, all available data is used in that direction.
+        label: str
+            A label to name files.
+        outdir: str, optional
+            Output directory used to name files.
+            Default is `data`.
+        sftfilepattern: str or None, optional
             Pattern to match SFTs using wildcards (`*?`) and ranges [0-9];
             multiple patterns can be given separated by colons.
-        detectors: str, optional
+        detectors: str or None, optional
             Two character reference to the detectors to use, specify None for no
             constraint and comma separated strings for multiple references.
         nsteps: list (2,), optional
@@ -150,7 +153,7 @@ class MCMCSearch(BaseSearchClass):
             The log_10(beta) value. If given, the set of betas passed to PTSampler
             are generated from `np.logspace(0, log10beta_min, ntemps)` (given
             in descending order to ptemcee).
-        theta_initial: dict, array, optional
+        theta_initial: dict, array or None, optional
             A dictionary of distribution about which to distribute the
             initial walkers about.
         rhohatmax: float, optional
@@ -166,30 +169,30 @@ class MCMCSearch(BaseSearchClass):
             (Only for transient searches.)
         SSBPrec: int, optional
             SSBPrec (SSB precision) to use when calling ComputeFstat. See `core.ComputeFstat`.
-        RngMedWindow: int, optional
+        RngMedWindow: int or None, optional
             Running-Median window size (number of bins) for ComputeFstat. See `core.ComputeFstat`.
-        minCoverFreq, maxCoverFreq: float, optional
+        minCoverFreq, maxCoverFreq: float or None, optional
             Minimum and maximum instantaneous frequency which will be covered
             over the SFT time span as passed to CreateFstatInput. See `core.ComputeFstat`.
-        injectSources: dict, optional
+        injectSources: dict or None, optional
             If given, inject these properties into the SFT files before running
             the search. See `core.ComputeFstat`.
-        assumeSqrtSX: float or list or str
+        assumeSqrtSX: float or list or str or None, optional
             Don't estimate noise-floors, but assume (stationary) per-IFO sqrt{SX}.
             See `core.ComputeFstat`.
-        transientWindowType: str
+        transientWindowType: str or None, optional
             If 'rect' or 'exp',
             compute atoms so that a transient (t0,tau) map can later be computed.
             ('none' instead of None explicitly calls the transient-window function,
             but with the full range, for debugging). See `core.ComputeFstat`.
             Currently only supported for nsegs=1.
-        tCWFstatMapVersion: str
+        tCWFstatMapVersion: str, optional
             Choose between standard 'lal' implementation,
             'pycuda' for gpu, and some others for devel/debug.
-        allowedMismatchFromSFTLength: float
+        allowedMismatchFromSFTLength: float or None, optional
             Maximum allowed mismatch from SFTs being too long
             [Default: what's hardcoded in XLALFstatMaximumSFTLength].
-        clean: bool
+        clean: bool, optional
             If true, ignore existing data and overwrite.
             Otherwise, reuse existing data if no inconsistencies are found.
         """
@@ -472,7 +475,7 @@ class MCMCSearch(BaseSearchClass):
         ----------
         nburn0: int
             Number of initialisation steps to take.
-        scatter_val: float
+        scatter_val: float, optional
             Relative number to scatter walkers around the maximum likelihood
             position after the initialisation step. If the maximum likelihood
             point is located at `p`, the new walkers are randomly drawn from a
@@ -680,7 +683,7 @@ class MCMCSearch(BaseSearchClass):
 
         Parameters
         ----------
-        proposal_scale_factor: float
+        proposal_scale_factor: float, optional
             The proposal scale factor `a > 1` used by the sampler.
             See Goodman & Weare (Comm App Math Comp Sci, Vol 5, No. 1, 2010): 10.2140/camcos.2010.5.65.
             The bigger the value, the wider the range to draw proposals from.
@@ -688,13 +691,13 @@ class MCMCSearch(BaseSearchClass):
             decreasing the `a` parameter; and if it is too high, you can reduce
             it by increasing the `a` parameter.
             See Foreman-Mackay et al. (PASP 125 306, 2013): https://arxiv.org/abs/1202.3665.
-        save_pickle: bool
+        save_pickle: bool, optional
             If true, save a pickle file of the full sampler state.
-        export_samples: bool
+        export_samples: bool, optional
             If true, save ASCII samples file to disk. See `MCMCSearch.export_samples_to_disk`.
-        save_loudest: bool
+        save_loudest: bool, optional
             If true, save a CFSv2 .loudest file to disk. See `MCMCSearch.generate_loudest`.
-        plot_walkers: bool
+        plot_walkers: bool, optional
             If true, save trace plots of the walkers.
         walker_plot_args:
             Dictionary passed as kwargs to _plot_walkers to control the plotting.
@@ -704,7 +707,7 @@ class MCMCSearch(BaseSearchClass):
             be present, otherwise this option is ignored.
             If both "fig" and "axes" entries are set, the plot is not saved to disk
             directly, but (fig, axes) are returned.
-        window: int
+        window: int, optional
             The minimum number of autocorrelation times needed to trust the
             result when estimating the autocorrelation time (see
             ptemcee.Sampler.get_autocorr_time for further details.
@@ -931,30 +934,30 @@ class MCMCSearch(BaseSearchClass):
 
         Parameters
         ----------
-        figsize: tuple (7, 7)
+        figsize: tuple (7, 7), optional
             Figure size in inches (passed to plt.subplots)
-        add_prior: bool, str
+        add_prior: bool, str, optional
             If true, plot the prior as a red line. If 'full' then for uniform
             priors plot the full extent of the prior.
-        nstds: float
+        nstds: float or None, optional
             The number of standard deviations to plot centered on the median.
             Standard deviation is computed from the samples using `numpy.std`.
-        label_offset: float
+        label_offset: float, optional
             Offset the labels from the plot: useful to prevent overlapping the
             tick labels with the axis labels. This option is passed to `ax.[x|y]axis.set_label_coords`.
-        dpi: int
+        dpi: int, optional
             Passed to plt.savefig.
-        rc_context: dict
+        rc_context: dict, optional
             Dictionary of rc values to set while generating the figure (see
             matplotlib rc for more details).
-        tglitch_ratio: bool
+        tglitch_ratio: bool, optional
             If true, and tglitch is a parameter, plot posteriors as the
             fractional time at which the glitch occurs instead of the actual
             time.
-        fig_and_axes: tuple
+        fig_and_axes: tuple or None, optional
             (fig, axes) tuple to plot on. The axes must be of the right shape,
             namely (ndim, ndim)
-        save_fig: bool
+        save_fig: bool, optional
             If true, save the figure, else return the fig, axes.
         **kwargs:
             Passed to corner.corner. Use "truths" to plot the true parameters of a signal.
@@ -1194,7 +1197,7 @@ class MCMCSearch(BaseSearchClass):
 
         Parameters
         ----------
-        normal_stds: float
+        normal_stds: float, optional
             Number of standard deviations to cut normal (Gaussian) or half-norm
             distributions at.
 
@@ -1266,15 +1269,15 @@ class MCMCSearch(BaseSearchClass):
 
         Parameters
         ----------
-        normal_stds: int
+        normal_stds: int, optional
            Bounds of priors in terms of their standard deviation. Only used if
            `norm`, `halfnorm`, `neghalfnorm` or `lognorm` priors are given, otherwise ignored.
-        injection_parameters: dict
+        injection_parameters: dict or None, optional
             Dictionary containing the parameters of a signal. All parameters being searched must be
             present as dictionary keys, otherwise this option is ignored.
-        fig_and_axes: tuple
+        fig_and_axes: tuple or None, optional
             (fig, axes) tuple to plot on.
-        save_fig: bool
+        save_fig: bool, optional
             If true, save the figure, else return the fig, axes.
 
         Returns
@@ -1808,10 +1811,10 @@ class MCMCSearch(BaseSearchClass):
             pickle.dump(d, File)
 
     def get_saved_data_dictionary(self):
-        """Read the data saved in `self.pickel_path` and return it as a dictionary.
+        """Read the data saved in `self.pickle_path` and return it as a dictionary.
 
         Returns
-        --------
+        -------
         d: dict
             Dictionary containing the data saved in the pickle `self.pickle_path`.
         """
@@ -2044,7 +2047,7 @@ class MCMCSearch(BaseSearchClass):
 
         Parameters
         ----------
-        threshold: float [0, 1]
+        threshold: float [0, 1], optional
             Fraction of the uniform prior to test (at upper and lower bound)
 
         Returns
@@ -2079,7 +2082,7 @@ class MCMCSearch(BaseSearchClass):
 
         Parameters
         ----------
-        method: str
+        method: str, optional
             How to select the `best-fit` params. Available methods: "median", "mean", "twoFmax".
         """
 
@@ -2283,7 +2286,7 @@ class MCMCSearch(BaseSearchClass):
 
         Parameters
         ----------
-        delta_F0: float
+        delta_F0: float, optional
             Frequency variation due to a glitch.
         time_trials: int, optional
             Number of trials in each glitch + 1.
@@ -2305,9 +2308,9 @@ class MCMCSearch(BaseSearchClass):
 
         Parameters
         ----------
-        make_plots: bool
+        make_plots: bool, optional
            Plot the results and save them to os.path.join(self.outdir, self.label + "_beta_lnl.png")
-        write_to_file: str
+        write_to_file: str or None, optional
            If given, dump evidence and uncertainty estimation to the specified path.
 
         Returns
@@ -2382,7 +2385,7 @@ class MCMCSearch(BaseSearchClass):
 
         Parameters
         ----------
-        evidence_file_name: str
+        evidence_file_name: str, optional
             Filename to read.
 
         Returns
@@ -2470,9 +2473,9 @@ class MCMCGlitchSearch(MCMCSearch):
         """
         Parameters
         ----------
-        nglitch: int
+        nglitch: int, optional
             The number of glitches to allow
-        dtglitchmin: int
+        dtglitchmin: int, optional
             The minimum duration (in seconds) of a segment between two glitches
             or a glitch and the start/end of the data
         theta0_idx, int
@@ -2668,7 +2671,7 @@ class MCMCGlitchSearch(MCMCSearch):
 
         Parameters
         ----------
-        savefig: boolean
+        savefig: boolean, optional
             included for consistency with core plot_twoF_cumulative() function.
             If true, save the figure in outdir.
             If false, return an axis object.
@@ -2809,7 +2812,7 @@ class MCMCSemiCoherentSearch(MCMCSearch):
         """
         Parameters
         ----------
-        nsegs: int
+        nsegs: int or None, optional
             The number of segments into which the input datastream will be divided.
             Coherence time is computed internally as (maxStartTime - minStarTime) / nsegs.
         """
@@ -3208,16 +3211,19 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
 
         Parameters
         ----------
-        NstarMax, Nsegs0: int
-            Required parameters to create a new follow-up setup.
+        NstarMax: int, optional
+            Parameter used to create a new follow-up setup.
             See `pyfstat.optimal_setup_functions.get_optimal_setup`.
-        run_setup: optional
+        Nsegs0: int or None, optional
+            Parameter used to create a new follow-up setup.
+            See `pyfstat.optimal_setup_functions.get_optimal_setup`.
+        run_setup: list or None, optional
             If None, a new setup will be created from NstarMax and Nsegs0.
             Use `MCMCFollowUpSearch.read_setup_input_file` to read a previous
             setup file.
-        log_table: bool
+        log_table: bool, optional
             Log follow-up setup using `logger.info` as a table.
-        gen_tex_table: bool
+        gen_tex_table: bool, optional
             Dump follow-up setup into a text file as a tex table.
             File is constructed as `os.path.join(self.outdir, self.label + "_run_setup.tex")`.
 

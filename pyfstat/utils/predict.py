@@ -24,7 +24,8 @@ def predict_fstat(
     duration=None,
     IFOs=None,
     assumeSqrtSX=None,
-    tempory_filename="fs.tmp",
+    temporary_filename="fs.tmp",
+    tempory_filename=None,
     earth_ephem=None,
     sun_ephem=None,
     transientWindowType="none",
@@ -35,28 +36,28 @@ def predict_fstat(
 
     Parameters
     ----------
-    h0, cosi, psi, Alpha, Delta : float
+    h0, cosi, psi, Alpha, Delta: float or None, optional
         Signal parameters, see `lalpulsar_PredictFstat --help` for more info.
-    F0: float or None
+    F0: float or None, optional
         Signal frequency.
         Only needed for noise floor estimation when given `sftfilepattern`
         but `assumeSqrtSX=None`.
         The actual F-stat prediction is frequency-independent.
-    sftfilepattern : str or None
+    sftfilepattern: str or None, optional
         Pattern matching the SFT files to use for inferring
         detectors, timestamps and/or estimating the noise floor.
-    timestampsFiles : str or None
+    timestampsFiles: str or None, optional
         Comma-separated list of per-detector files containing timestamps to use.
         Only used if `sftfilepattern=None`.
-    minStartTime, duration : int or None
+    minStartTime, duration: int or None, optional
         If `sftfilepattern` given: used as optional constraints.
         If `timestampsFiles` given: ignored.
         If neither given: used as the interval for prediction.
-    IFOs : str or None
+    IFOs: str or None, optional
         Comma-separated list of detectors.
         Required if `sftfilepattern=None`,
         ignored otherwise.
-    assumeSqrtSX : float or str
+    assumeSqrtSX: float or str or None, optional
         Assume stationary per-detector noise-floor instead of estimating from SFTs.
         Single float or str value: use same for all IFOs.
         Comma-separated string: must match `len(IFOs)`
@@ -64,16 +65,18 @@ def predict_fstat(
         Detectors will be paired to list elements following alphabetical order.
         Required if `sftfilepattern=None`,
         optional otherwise..
-    tempory_filename : str
+    temporary_filename: str, optional
         Temporary file used for `PredictFstat` output,
         will be deleted at the end.
-    earth_ephem, sun_ephem : str or None
+    tempory_filename: str, optional
+        DEPRECATED backwards-compatibility alias for `temporary_filename`,
+    earth_ephem, sun_ephem: str or None, optional
         Ephemerides files, defaults will be used if `None`.
-    transientWindowType: str
+    transientWindowType: str, optional
         Optional parameter for transient signals,
         see `lalpulsar_PredictFstat --help`.
         Default of `none` means a classical Continuous Wave signal.
-    transientStartTime, transientTau: int or None
+    transientStartTime, transientTau: int or None, optional
         Optional parameters for transient signals,
         see `lalpulsar_PredictFstat --help`.
 
@@ -82,6 +85,14 @@ def predict_fstat(
     twoF_expected, twoF_sigma : float
         The expectation and standard deviation of 2F.
     """
+
+    if tempory_filename:
+        logger.warning(
+            "The 'tempory_filename' option was a typo"
+            " and will be removed in an upcoming release of PyFstat!"
+            " Please use 'temporary_filename' instead."
+        )
+        temporary_filename = tempory_filename
 
     cl_pfs = []
     cl_pfs.append("lalpulsar_PredictFstat")
@@ -121,7 +132,7 @@ def predict_fstat(
             raise ValueError("assumeSqrtSX must be >0!")
         cl_pfs.append("--assumeSqrtSX={}".format(assumeSqrtSX))
 
-    cl_pfs.append("--outputFstat={}".format(tempory_filename))
+    cl_pfs.append("--outputFstat={}".format(temporary_filename))
 
     earth_ephem_default, sun_ephem_default = get_ephemeris_files()
     if earth_ephem is None:
@@ -138,10 +149,10 @@ def predict_fstat(
 
     cl_pfs = " ".join(cl_pfs)
     run_commandline(cl_pfs)
-    d = read_par(filename=tempory_filename)
+    d = read_par(filename=temporary_filename)
     twoF_expected = float(d["twoF_expected"])
     twoF_sigma = float(d["twoF_sigma"])
-    os.remove(tempory_filename)
+    os.remove(temporary_filename)
     return twoF_expected, twoF_sigma
 
 
@@ -159,7 +170,7 @@ def get_predict_fstat_parameters_from_dict(signal_parameters, transientWindowTyp
         helper_functions.predict_fstat.
         This dictionary's keys must follow
         the PyFstat convention (e.g. F0 instead of Freq).
-    transientWindowType: str
+    transientWindowType: str or None, optional
         Transient window type to store in the output dict.
         Currently required because the typical input dicts
         produced by various PyFstat functions

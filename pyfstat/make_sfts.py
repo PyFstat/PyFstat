@@ -147,7 +147,7 @@ class Writer(BaseSearchClass):
         """
         Parameters
         ----------
-        label: string
+        label: string, optional
             A human-readable label to be used in naming the output files.
             NOTE: to agree with the v3 SFT naming specification
             ( https://dcc.ligo.org/T040164-v2/public )
@@ -158,30 +158,30 @@ class Writer(BaseSearchClass):
             a "channel"/"frame" name is constructed as `IFO:label`,
             which may not exceed 64 characters,
             so a label may only be 60 characters long.
-        tstart: int
+        tstart: int or None, optional
             Starting GPS epoch of the data set.
             If `noiseSFT` are given, this is used as a LALPulsar
             `SFTConstraint <https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/struct_s_f_t_constraints.html>`_.
             NOTE: mutually exclusive with `timestamps`.
-        duration: int
+        duration: int or None, optional
             Duration (in GPS seconds) of the total data set.
             If `noiseSFT` are given, this is used as a LALPulsar
             `SFTConstraint <https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/struct_s_f_t_constraints.html>`_.
             NOTE: mutually exclusive with `timestamps`.
-        tref: float or None
+        tref: float or None, optional
             DEPRECATED, include this in `signal_parameters` instead!
             Reference time for simulated signals.
             Default is `None`, which sets the reference time to `tstart`.
-        F0: float or None
+        F0: float or None, optional
             If `Band` is not `None`, this is the frequency band center for the SFTs,
             and is required if no `noiseSFTs` or `signal_parameters` are given.
             Also used as the frequency of a signal to be injected,
             if `signal_parameters` or a non-zero `h0` are set.
             Can be used interchangeably with `signal_parameters['F0']`.
-        F1, F2, Alpha, Delta, h0, cosi, psi, phi: float or None
+        F1, F2, Alpha, Delta, h0, cosi, psi, phi: float or None, optional
             DEPRECATED: Additional frequency evolution and amplitude parameters for a signal.
             Include these in `signal_parameters` instead!
-        signal_parameters: dict
+        signal_parameters: dict or None, optional
             A dictionary of frequency evolution and amplitude parameters for a signal to inject.
             If `h0=0`, the other parameters are all ignored.
             If `h0>0`, then at least `[Alpha,Delta,cosi,tref]` need to also be set explicitly.
@@ -198,58 +198,58 @@ class Writer(BaseSearchClass):
             Start time for a transient signal.
             * transientTau (int or None):
             Duration (`rect` case) or decay time (`exp` case) of a transient signal.
-        Tsft: int
+        Tsft: int, optional
             The SFT duration in seconds.
             Will be ignored if `noiseSFTs` are given.
-        outdir: str
+        outdir: str, optional
             The directory where files are written to.
             Default: current working directory.
-        sqrtSX: float or list or str or None
+        sqrtSX: float or list or str or None, optional
             Single-sided PSD values for generating fake Gaussian noise.
             Single float or str value: use same for all detectors.
             List or comma-separated string: must match len(detectors).
             Detectors will be paired to list elements following alphabetical order.
-        noiseSFTs: str or None
+        noiseSFTs: str or None, optional
             Existing SFT files on top of which signals will be injected.
             If not `None`, additional constraints can be applied
             using the arguments `tstart` and `duration`.
             NOTE: mutually exclusive with `timestamps`.
-        SFTWindowType: str or None
+        SFTWindowType: str or None, optional
             LAL name of the windowing function to apply to the data.
-        SFTWindowParam: float
+        SFTWindowParam: float or None, optional
             Optional parameter for some windowing functions.
-        SFTWindowBeta: float
+        SFTWindowBeta: float or None, optional
             Defunct alias to `SFTWindowParam`.
             Will be removed in a future release.
-        Band: float or None
+        Band: float or None, optional
             If float, and `F0` is also not `None`, then output SFTs cover
             `[F0-Band/2,F0+Band/2]`.
             If `None` and `noiseSFTs` given, use their bandwidth.
             If `None` and no `noiseSFTs` given,
             a minimal covering band for a perfectly-matched
             single-template ComputeFstat analysis is estimated.
-        detectors: str or None
+        detectors: str or None, optional
             Comma-separated list of detectors to generate data for.
             May be required depending on `timestamps`; see its documentation.
-        earth_ephem, sun_ephem: str or None
+        earth_ephem, sun_ephem: str or None, optional
             Paths of the two files containing positions of Earth and Sun.
             If None, will check standard sources as per
             utils.get_ephemeris_files().
-        transientWindowType: str
+        transientWindowType: str or None, optional
             DEPRECATED, include this in `signal_parameters` instead!
             If `none`, a fully persistent CW signal is simulated.
             If `rect` or `exp`, a transient signal with the corresponding
             amplitude evolution is simulated.
-        transientStartTime: int or None
+        transientStartTime: int or None, optional
             DEPRECATED, include this in `signal_parameters` instead!
             Start time for a transient signal.
-        transientTau: int or None
+        transientTau: int or None, optional
             DEPRECATED, include this in `signal_parameters` instead!
             Duration (`rect` case) or decay time (`exp` case) of a transient signal.
-        randSeed: int or None
+        randSeed: int or None, optional
             Optionally fix the random seed of Gaussian noise generation
             for reproducibility.
-        timestamps: str or dict
+        timestamps: str or dict or None, optional
             Dictionary of timestamps (each key must refer to a detector),
             a single list of timestamps
             (will be replicated for all detectors; `detectors` must be set),
@@ -555,7 +555,7 @@ class Writer(BaseSearchClass):
 
     @property
     def tend(self):
-        """`
+        """
         Defined as `self.start + self.duration`.
 
         If stored as an attribute, there would be the risk of it going out of
@@ -797,7 +797,7 @@ class Writer(BaseSearchClass):
 
         Parameters
         ----------
-        verbose: boolean
+        verbose: boolean, optional
             If true, increase logging verbosity.
         """
 
@@ -814,7 +814,7 @@ class Writer(BaseSearchClass):
             config_file.close()
 
     def check_cached_data_okay_to_use(self, cl_mfd):
-        """Check if SFT files already exist that can be re-used.
+        """Check if SFT files already exist that can be reused.
 
         This does not check the actual data contents of the SFTs,
         but only the following criteria:
@@ -1031,7 +1031,7 @@ class Writer(BaseSearchClass):
 
         Parameters
         ----------
-        assumeSqrtSX: float, str or None
+        assumeSqrtSX: float, str or None, optional
             If None, PSD is estimated from self.sftfilepath.
             Else, assume this stationary per-detector noise-floor instead.
             Single float or str value: use same for all IFOs.
@@ -1051,7 +1051,7 @@ class Writer(BaseSearchClass):
             duration=self.duration,
             IFOs=self.detectors,
             assumeSqrtSX=(assumeSqrtSX or self.sqrtSX),
-            tempory_filename=os.path.join(self.outdir, self.label + ".tmp"),
+            temporary_filename=os.path.join(self.outdir, self.label + ".tmp"),
             earth_ephem=self.earth_ephem,
             sun_ephem=self.sun_ephem,
             transientWindowType=self.signal_parameters.get(
@@ -1365,10 +1365,10 @@ class GlitchWriter(SearchForSignalWithJumps, Writer):
 
         Parameters
         ----------
-        dtglitch: float or None
+        dtglitch: float or None, optional
             Time (in GPS seconds) of the glitch after `tstart`.
             To create data without a glitch, set `dtglitch=None`.
-        delta_phi, delta_F0, delta_F1: float
+        delta_phi, delta_F0, delta_F1: float, optional
             Instantaneous glitch magnitudes in rad, Hz, and Hz/s respectively.
         """
 
@@ -1533,7 +1533,7 @@ transientTau = {:10.0f}\n"""
 
         Parameters
         ----------
-        verbose: boolean
+        verbose: boolean, optional
             If true, increase logging verbosity.
         """
 
@@ -1609,44 +1609,44 @@ class FrequencyModulatedArtifactWriter(Writer):
         ----------
         label: string
             A human-readable label to be used in naming the output files.
-        outdir: str
+        outdir: str, optional
             The directory where files are written to.
             Default: current working directory.
-        tstart: int
+        tstart: int, optional
             Starting GPS epoch of the data set.
-        duration: int
+        duration: int, optional
             Duration (in GPS seconds) of the total data set.
-        F0: float
+        F0: float, optional
             Frequency of the artifact.
-        F1: float
+        F1: float, optional
             Frequency drift of the artifact.
-        tref: float or None
+        tref: float or None, optional
             Reference time for simulated signals.
             Default is `None`, which sets the reference time to `tstart`.
-        h0: float
+        h0: float, optional
             Amplitude of the artifact.
-        Tsft: int
+        Tsft: int, optional
             The SFT duration in seconds.
             Will be ignored if `noiseSFTs` are given.
-        sqrtSX: float
+        sqrtSX: float, optional
             Background detector noise level.
-        Band: float
+        Band: float, optional
             Output SFTs cover
             `[F0-Band/2,F0+Band/2]`.
-        Pmod: float
+        Pmod: float, optional
             Modulation period of the artifact.
-        Pmod_phi, Pmod_amp: float
+        Pmod_phi, Pmod_amp: float, optional
             Additional parameters for modulation of the artifact.
-        Alpha, Delta: float or None
+        Alpha, Delta: float or None, optional
             If not none: add an orbital modulation to the artifact
             corresponding to a signal from that sky position, in radians.
-        detectors: str or None
+        detectors: str or None, optional
             Comma-separated list of detectors to generate data for.
-        earth_ephem, sun_ephem: str or None
+        earth_ephem, sun_ephem: str or None, optional
             Paths of the two files containing positions of Earth and Sun.
             If None, will check standard sources as per
             utils.get_ephemeris_files().
-        randSeed: int or None
+        randSeed: int or None, optional
             Optionally fix the random seed of Gaussian noise generation
             for reproducibility.
         """

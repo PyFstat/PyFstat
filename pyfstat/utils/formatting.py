@@ -14,7 +14,7 @@ def round_to_n(x, n):
         (before plus after the decimal separator).
 
     Returns
-    ----------
+    -------
     rounded: float
         The rounded number.
     """
@@ -41,7 +41,7 @@ def texify_float(x, d=2):
         (before plus after the decimal separator).
 
     Returns
-    ----------
+    -------
     formatted: str
         The formatted string.
     """
@@ -72,10 +72,10 @@ def get_doppler_params_output_format(keys, fmt_str="%.16g"):
     and ignores any others.
 
     Parameters
-    -------
+    ----------
     keys: dict
         The parameter keys for which to select formats.
-    fmt_str: str
+    fmt_str: str, optional
         fprintf-style format specifier for a single value.
 
     Returns

@@ -27,7 +27,7 @@ def get_ephemeris_files():
     is no longer supported!
 
     Returns
-    ----------
+    -------
     earth_ephem, sun_ephem: str
         Paths of the two files containing positions of Earth and Sun.
     """

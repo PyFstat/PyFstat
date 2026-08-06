@@ -21,8 +21,10 @@ sys.path.insert(0, os.path.abspath("../../pyfstat/"))
 # -- Project information -----------------------------------------------------
 
 project = "PyFstat"
-copyright = "2020, Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio"
-author = "Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio"
+copyright = "2016-2026, Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio, Maria-Antonia Ferrer"
+author = (
+    "Gregory Ashton, David Keitel, Reinhard Prix, Rodrigo Tenorio, Maria-Antonia Ferrer"
+)
 
 # The full version, including alpha/beta/rc tags
 version = pyfstat.__version__
@@ -37,15 +39,24 @@ release = version
 extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.autodoc",
-    "sphinx.ext.napoleon",  # https://github.com/tox-dev/sphinx-autodoc-typehints/issues/15
-    "sphinx_autodoc_defaultargs",  # should be loaded after napoleon
+    "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",  # Must import napoleon before typehints
     "sphinx.ext.viewcode",
     "sphinx_gallery.gen_gallery",
-    "m2r2",
+    "myst_parser",
 ]
 
+# add (default: ...) after the type, which matches our old look
+typehints_defaults = "braces-after"
+
+# ensure "Optional[str]" is simplified to "str, optional"
+simplify_optional_unions = True
+
 source_suffix = [".rst", ".md"]
+
+# Keep README.md's Markdown links as ordinary hyperlinks when included via MyST.
+myst_all_links_external = True
+myst_heading_anchors = 3
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -74,6 +85,22 @@ html_theme = "sphinx_rtd_theme"
 autoclass_content = "both"
 # how to sort automatically documented members
 autodoc_member_order = "bysource"
+# move the types from the signature to the parameter list
+autodoc_typehints = "description"
+# ensure that even if we don't document a parameter,
+# Sphinx will still show its type hint.
+autodoc_typehints_description_target = "documented"
+# show the default value next to the type
+autodoc_preserve_defaults = True
+# to fix python 3.13 introspection crash
+# autodoc_mock_imports = ["time"]
+
+# --- Napoleon Settings ---
+napoleon_google_docstring = False  # Focus on NumPy
+napoleon_numpy_docstring = True
+napoleon_use_param = True
+napoleon_use_rtype = True
+napoleon_preprocess_types = True
 
 # -- Options for gallery -----------------------------------
 min_reported_time = 0
