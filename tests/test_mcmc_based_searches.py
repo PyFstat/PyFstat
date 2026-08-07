@@ -1,11 +1,10 @@
 import numpy as np
 import pytest
 
-# FIXME this should be made cleaner with fixtures
 from commons_for_tests import (
-    BaseForTestsWithData,
     FlakyError,
     default_signal_params,
+    default_Writer_params,
     is_flaky,
 )
 
@@ -13,11 +12,30 @@ import pyfstat
 
 
 @pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=is_flaky)
-class BaseForMCMCSearchTests(BaseForTestsWithData):
+class BaseForMCMCSearchTests:
     # this class is only used for common utilities for MCMCSearch-based classes
     # and doesn't run any tests itself
     label = "TestMCMCSearch"
     Band = 1
+    outdir = "TestData"
+    # Default Writer params (can be overridden in subclasses)
+    sqrtSX = default_Writer_params["sqrtSX"]
+    Tsft = default_Writer_params["Tsft"]
+    tstart = default_Writer_params["tstart"]
+    duration = default_Writer_params["duration"]
+    detectors = default_Writer_params["detectors"]
+    SFTWindowType = default_Writer_params["SFTWindowType"]
+    SFTWindowParam = default_Writer_params["SFTWindowParam"]
+    randSeed = default_Writer_params["randSeed"]
+    # Default signal params (can be overridden in subclasses)
+    tref = default_signal_params["tref"]
+    F0 = default_signal_params["F0"]
+    F1 = default_signal_params["F1"]
+    F2 = default_signal_params["F2"]
+    Alpha = default_signal_params["Alpha"]
+    Delta = default_signal_params["Delta"]
+    h0 = default_signal_params["h0"]
+    cosi = default_signal_params["cosi"]
 
     def _check_twoF_predicted(self, assertTrue=True):
         self.twoF_predicted = self.Writer.predict_fstat()
@@ -32,7 +50,7 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
             )
         )
         if assertTrue:
-            self.assertTrue(diff < 0.3)
+            assert diff < 0.3
 
     def _check_mcmc_quantiles(self, transient=False, assertTrue=True):
         summary_stats = self.search.get_summary_stats()
@@ -65,7 +83,7 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
             )
             if assertTrue:
                 try:
-                    self.assertTrue(within)
+                    assert within
                 except AssertionError:
                     print("FAIL: Not within tolerances!")
                     raise FlakyError
@@ -84,7 +102,7 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
             )
             if assertTrue:
                 try:
-                    self.assertTrue(within)
+                    assert within
                 except AssertionError:
                     print("FAIL: Not within tolerances!")
                     raise FlakyError
@@ -96,14 +114,13 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
         self.search.plot_chainconsumer()
 
 
+@pytest.mark.usefixtures("data_fixture")
 class TestMCMCSearch(BaseForMCMCSearchTests):
     label = "TestMCMCSearch"
     BSGL = False
 
     def test_fully_coherent_MCMC(self):
         # use a single test case with loop over multiple prior choices
-        # this could be much more elegantly done with @pytest.mark.parametrize
-        # but that cannot be mixed with unittest classes
         thetas = {
             "uniformF0-uniformF1-fixedSky": {
                 "F0": {
@@ -199,6 +216,7 @@ class TestMCMCSearch(BaseForMCMCSearchTests):
             self._test_plots()
 
 
+@pytest.mark.usefixtures("data_fixture")
 class TestMCMCSearchBSGL(TestMCMCSearch):
     label = "TestMCMCSearch"
     detectors = "H1,L1"
@@ -263,7 +281,7 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         mode_F0_Fsearch = self.max_dict["F0"]
         maxTwoF_Fsearch = self.maxTwoF
         self._check_mcmc_quantiles(assertTrue=False)
-        self.assertTrue(maxTwoF_Fsearch > self.twoF_predicted)
+        assert maxTwoF_Fsearch > self.twoF_predicted
         self._test_plots()
         # also run a BSGL search over the same data
         self.search = pyfstat.MCMCSearch(
@@ -288,15 +306,16 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         self._check_mcmc_quantiles(assertTrue=False)
         # But for sure, the BSGL search should find a lower-F mode
         # closer to the true multi-IFO signal.
-        self.assertTrue(maxTwoF_BSGLsearch < maxTwoF_Fsearch)
-        self.assertTrue(mode_F0_BSGLsearch < mode_F0_Fsearch)
-        self.assertTrue(
+        assert maxTwoF_BSGLsearch < maxTwoF_Fsearch
+        assert mode_F0_BSGLsearch < mode_F0_Fsearch
+        assert (
             np.abs(mode_F0_BSGLsearch - self.F0) < np.abs(mode_F0_Fsearch - self.F0)
         )
-        self.assertTrue(maxTwoF_BSGLsearch < self.twoF_predicted)
+        assert maxTwoF_BSGLsearch < self.twoF_predicted
         self._test_plots()
 
 
+@pytest.mark.usefixtures("data_fixture")
 class TestMCMCSemiCoherentSearch(BaseForMCMCSearchTests):
     label = "TestMCMCSemiCoherentSearch"
 
@@ -343,16 +362,17 @@ class TestMCMCSemiCoherentSearch(BaseForMCMCSearchTests):
             self.Delta,
             record_segments=True,
         )
-        self.assertTrue(np.abs(twoF_sc - self.maxTwoF) / self.maxTwoF < 0.01)
+        assert np.abs(twoF_sc - self.maxTwoF) / self.maxTwoF < 0.01
         twoF_per_seg = np.array(self.search.search.twoF_per_segment)
-        self.assertTrue(len(twoF_per_seg) == nsegs)
+        assert len(twoF_per_seg) == nsegs
         twoF_summed = twoF_per_seg.sum()
-        self.assertTrue(np.abs(twoF_summed - twoF_sc) / twoF_sc < 0.01)
+        assert np.abs(twoF_summed - twoF_sc) / twoF_sc < 0.01
 
         self._check_mcmc_quantiles()
         self._test_plots()
 
 
+@pytest.mark.usefixtures("data_fixture")
 class TestMCMCFollowUpSearch(BaseForMCMCSearchTests):
     label = "TestMCMCFollowUpSearch"
     # Supersky metric cannot be computed for segment lengths <= ~24 hours
@@ -400,6 +420,7 @@ class TestMCMCFollowUpSearch(BaseForMCMCSearchTests):
         self._test_plots()
 
 
+@pytest.mark.usefixtures("outdir")
 class TestMCMCTransientSearch(BaseForMCMCSearchTests):
     label = "TestMCMCTransientSearch"
     duration = 86400
