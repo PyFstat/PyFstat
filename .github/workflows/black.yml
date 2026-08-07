@@ -9,7 +9,7 @@ jobs:
     # by the push to the branch.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: psf/black@stable
         with:
           options: "--check --diff"
