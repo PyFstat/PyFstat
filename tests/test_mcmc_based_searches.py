@@ -11,10 +11,9 @@ from commons_for_tests import (
 import pyfstat
 
 
-@pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=is_flaky)
-class BaseForMCMCSearchTests:
-    # this class is only used for common utilities for MCMCSearch-based classes
-    # and doesn't run any tests itself
+class _MCMCSearchTestUtils:
+    # Plain mixin providing shared utility methods and default parameter values.
+    # Subclasses that require SFT data should use BaseForMCMCSearchTests instead.
     label = "TestMCMCSearch"
     Band = 1
     outdir = "TestData"
@@ -114,13 +113,30 @@ class BaseForMCMCSearchTests:
         self.search.plot_chainconsumer()
 
 
+@pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=is_flaky)
 @pytest.mark.usefixtures("data_fixture")
+class BaseForMCMCSearchTests(_MCMCSearchTestUtils):
+    # Base class for MCMC search tests that rely on the data_fixture.
+    # TestMCMCTransientSearch manages its own Writer and should inherit from
+    # _MCMCSearchTestUtils directly to avoid unintended data_fixture parametrisation.
+    pass
+
+
 class TestMCMCSearch(BaseForMCMCSearchTests):
     label = "TestMCMCSearch"
     BSGL = False
 
-    def test_fully_coherent_MCMC(self):
-        # use a single test case with loop over multiple prior choices
+    @pytest.mark.parametrize(
+        "prior_choice",
+        [
+            "uniformF0-uniformF1-fixedSky",
+            "log10uniformF0-uniformF1-fixedSky",
+            "normF0-normF1-fixedSky",
+            "lognormF0-halfnormF1-fixedSky",
+            "normF0-normF1-uniformSky",
+        ],
+    )
+    def test_fully_coherent_MCMC(self, prior_choice):
         thetas = {
             "uniformF0-uniformF1-fixedSky": {
                 "F0": {
@@ -194,29 +210,27 @@ class TestMCMCSearch(BaseForMCMCSearchTests):
                 },
             },
         }
+        theta = thetas[prior_choice]
+        self.search = pyfstat.MCMCSearch(
+            label=self.label + "-" + prior_choice,
+            outdir=self.outdir,
+            theta_prior=theta,
+            tref=self.tref,
+            sftfilepattern=self.Writer.sftfilepath,
+            nsteps=[20, 20],
+            nwalkers=20,
+            ntemps=2,
+            log10beta_min=-1,
+            BSGL=self.BSGL,
+        )
+        self.search.run(plot_walkers=False)
+        self.search.print_summary()
+        self.search.write_prior_table()
+        self._check_twoF_predicted()
+        self._check_mcmc_quantiles()
+        self._test_plots()
 
-        for prior_choice in thetas:
-            self.search = pyfstat.MCMCSearch(
-                label=self.label + "-" + prior_choice,
-                outdir=self.outdir,
-                theta_prior=thetas[prior_choice],
-                tref=self.tref,
-                sftfilepattern=self.Writer.sftfilepath,
-                nsteps=[20, 20],
-                nwalkers=20,
-                ntemps=2,
-                log10beta_min=-1,
-                BSGL=self.BSGL,
-            )
-            self.search.run(plot_walkers=False)
-            self.search.print_summary()
-            self.search.write_prior_table()
-            self._check_twoF_predicted()
-            self._check_mcmc_quantiles()
-            self._test_plots()
 
-
-@pytest.mark.usefixtures("data_fixture")
 class TestMCMCSearchBSGL(TestMCMCSearch):
     label = "TestMCMCSearch"
     detectors = "H1,L1"
@@ -315,7 +329,6 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         self._test_plots()
 
 
-@pytest.mark.usefixtures("data_fixture")
 class TestMCMCSemiCoherentSearch(BaseForMCMCSearchTests):
     label = "TestMCMCSemiCoherentSearch"
 
@@ -372,7 +385,6 @@ class TestMCMCSemiCoherentSearch(BaseForMCMCSearchTests):
         self._test_plots()
 
 
-@pytest.mark.usefixtures("data_fixture")
 class TestMCMCFollowUpSearch(BaseForMCMCSearchTests):
     label = "TestMCMCFollowUpSearch"
     # Supersky metric cannot be computed for segment lengths <= ~24 hours
@@ -420,8 +432,9 @@ class TestMCMCFollowUpSearch(BaseForMCMCSearchTests):
         self._test_plots()
 
 
+@pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=is_flaky)
 @pytest.mark.usefixtures("outdir")
-class TestMCMCTransientSearch(BaseForMCMCSearchTests):
+class TestMCMCTransientSearch(_MCMCSearchTestUtils):
     label = "TestMCMCTransientSearch"
     duration = 86400
 
