@@ -322,9 +322,7 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         # closer to the true multi-IFO signal.
         assert maxTwoF_BSGLsearch < maxTwoF_Fsearch
         assert mode_F0_BSGLsearch < mode_F0_Fsearch
-        assert (
-            np.abs(mode_F0_BSGLsearch - self.F0) < np.abs(mode_F0_Fsearch - self.F0)
-        )
+        assert np.abs(mode_F0_BSGLsearch - self.F0) < np.abs(mode_F0_Fsearch - self.F0)
         assert maxTwoF_BSGLsearch < self.twoF_predicted
         self._test_plots()
 
