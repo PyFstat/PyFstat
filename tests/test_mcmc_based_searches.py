@@ -57,7 +57,7 @@ class _MCMCSearchTestUtils:
         conf = "99"
 
         if not transient:
-            inj = {k: getattr(self.Writer, k) for k in self.max_dict}
+            inj = {k: self.signal_params[k] for k in self.max_dict}
         else:
             inj = {
                 "transient_tstart": self.Writer.signal_parameters["transientStartTime"],
