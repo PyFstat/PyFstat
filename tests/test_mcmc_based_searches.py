@@ -1,23 +1,30 @@
 import numpy as np
 import pytest
-
-# FIXME this should be made cleaner with fixtures
 from commons_for_tests import (
-    BaseForTestsWithData,
     FlakyError,
     default_signal_params,
+    default_Writer_params,
     is_flaky,
 )
 
 import pyfstat
 
 
-@pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=is_flaky)
-class BaseForMCMCSearchTests(BaseForTestsWithData):
-    # this class is only used for common utilities for MCMCSearch-based classes
-    # and doesn't run any tests itself
+class _MCMCSearchTestUtils:
+    # Plain mixin providing shared utility methods and default parameter values.
+    # Subclasses that require SFT data should use BaseForMCMCSearchTests instead.
     label = "TestMCMCSearch"
     Band = 1
+    outdir = "TestData"
+    # Default Writer params (can be overridden in subclasses)
+    sqrtSX = default_Writer_params["sqrtSX"]
+    Tsft = default_Writer_params["Tsft"]
+    tstart = default_Writer_params["tstart"]
+    duration = default_Writer_params["duration"]
+    detectors = default_Writer_params["detectors"]
+    SFTWindowType = default_Writer_params["SFTWindowType"]
+    SFTWindowParam = default_Writer_params["SFTWindowParam"]
+    randSeed = default_Writer_params["randSeed"]
 
     def _check_twoF_predicted(self, assertTrue=True):
         self.twoF_predicted = self.Writer.predict_fstat()
@@ -32,7 +39,7 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
             )
         )
         if assertTrue:
-            self.assertTrue(diff < 0.3)
+            assert diff < 0.3
 
     def _check_mcmc_quantiles(self, transient=False, assertTrue=True):
         summary_stats = self.search.get_summary_stats()
@@ -40,7 +47,7 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
         conf = "99"
 
         if not transient:
-            inj = {k: getattr(self.Writer, k) for k in self.max_dict}
+            inj = {k: self.signal_params[k] for k in self.max_dict}
         else:
             inj = {
                 "transient_tstart": self.Writer.signal_parameters["transientStartTime"],
@@ -65,7 +72,7 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
             )
             if assertTrue:
                 try:
-                    self.assertTrue(within)
+                    assert within
                 except AssertionError:
                     print("FAIL: Not within tolerances!")
                     raise FlakyError
@@ -84,63 +91,79 @@ class BaseForMCMCSearchTests(BaseForTestsWithData):
             )
             if assertTrue:
                 try:
-                    self.assertTrue(within)
+                    assert within
                 except AssertionError:
                     print("FAIL: Not within tolerances!")
                     raise FlakyError
 
     def _test_plots(self):
-        self.search.plot_corner(add_prior=True)
-        self.search.plot_prior_posterior()
+        self.search.plot_corner(add_prior=True, truths=self.signal_params)
+        self.search.plot_prior_posterior(injection_parameters=self.signal_params)
         self.search.plot_cumulative_max()
         self.search.plot_chainconsumer()
+
+
+@pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=is_flaky)
+@pytest.mark.usefixtures("data_fixture")
+class BaseForMCMCSearchTests(_MCMCSearchTestUtils):
+    # Base class for MCMC search tests that rely on the data_fixture.
+    # TestMCMCTransientSearch manages its own Writer and should inherit from
+    # _MCMCSearchTestUtils directly to avoid unintended data_fixture parametrisation.
+    pass
 
 
 class TestMCMCSearch(BaseForMCMCSearchTests):
     label = "TestMCMCSearch"
     BSGL = False
 
-    def test_fully_coherent_MCMC(self):
-        # use a single test case with loop over multiple prior choices
-        # this could be much more elegantly done with @pytest.mark.parametrize
-        # but that cannot be mixed with unittest classes
+    @pytest.mark.parametrize(
+        "prior_choice",
+        [
+            "uniformF0-uniformF1-fixedSky",
+            "log10uniformF0-uniformF1-fixedSky",
+            "normF0-normF1-fixedSky",
+            "lognormF0-halfnormF1-fixedSky",
+            "normF0-normF1-uniformSky",
+        ],
+    )
+    def test_fully_coherent_MCMC(self, prior_choice):
         thetas = {
             "uniformF0-uniformF1-fixedSky": {
                 "F0": {
                     "type": "unif",
-                    "lower": self.F0 - 1e-6,
-                    "upper": self.F0 + 1e-6,
+                    "lower": self.signal_params["F0"] - 1e-6,
+                    "upper": self.signal_params["F0"] + 1e-6,
                 },
                 "F1": {
                     "type": "unif",
-                    "lower": self.F1 - 1e-10,
-                    "upper": self.F1 + 1e-10,
+                    "lower": self.signal_params["F1"] - 1e-10,
+                    "upper": self.signal_params["F1"] + 1e-10,
                 },
-                "F2": self.F2,
-                "Alpha": self.Alpha,
-                "Delta": self.Delta,
+                "F2": self.signal_params["F2"],
+                "Alpha": self.signal_params["Alpha"],
+                "Delta": self.signal_params["Delta"],
             },
             "log10uniformF0-uniformF1-fixedSky": {
                 "F0": {
                     "type": "log10unif",
-                    "log10lower": np.log10(self.F0 - 1e-6),
-                    "log10upper": np.log10(self.F0 + 1e-6),
+                    "log10lower": np.log10(self.signal_params["F0"] - 1e-6),
+                    "log10upper": np.log10(self.signal_params["F0"] + 1e-6),
                 },
                 "F1": {
                     "type": "unif",
-                    "lower": self.F1 - 1e-10,
-                    "upper": self.F1 + 1e-10,
+                    "lower": self.signal_params["F1"] - 1e-10,
+                    "upper": self.signal_params["F1"] + 1e-10,
                 },
-                "F2": self.F2,
-                "Alpha": self.Alpha,
-                "Delta": self.Delta,
+                "F2": self.signal_params["F2"],
+                "Alpha": self.signal_params["Alpha"],
+                "Delta": self.signal_params["Delta"],
             },
             "normF0-normF1-fixedSky": {
-                "F0": {"type": "norm", "loc": self.F0, "scale": 1e-6},
-                "F1": {"type": "norm", "loc": self.F1, "scale": 1e-10},
-                "F2": self.F2,
-                "Alpha": self.Alpha,
-                "Delta": self.Delta,
+                "F0": {"type": "norm", "loc": self.signal_params["F0"], "scale": 1e-6},
+                "F1": {"type": "norm", "loc": self.signal_params["F1"], "scale": 1e-10},
+                "F2": self.signal_params["F2"],
+                "Alpha": self.signal_params["Alpha"],
+                "Delta": self.signal_params["Delta"],
             },
             "lognormF0-halfnormF1-fixedSky": {
                 # lognorm parametrization is weird, from the scipy docs:
@@ -154,49 +177,56 @@ class TestMCMCSearch(BaseForMCMCSearchTests):
                 # to give "loc" in log scale but "scale" in linear scale
                 # Also, "lognorm" makes no sense for negative F1,
                 # hence combining this with "halfnorm" into a single case.
-                "F0": {"type": "lognorm", "loc": np.log(self.F0), "scale": 1e-6},
-                "F1": {"type": "halfnorm", "loc": self.F1 - 1e-10, "scale": 1e-10},
-                "F2": self.F2,
-                "Alpha": self.Alpha,
-                "Delta": self.Delta,
+                "F0": {
+                    "type": "lognorm",
+                    "loc": np.log(self.signal_params["F0"]),
+                    "scale": 1e-6,
+                },
+                "F1": {
+                    "type": "halfnorm",
+                    "loc": self.signal_params["F1"] - 1e-10,
+                    "scale": 1e-10,
+                },
+                "F2": self.signal_params["F2"],
+                "Alpha": self.signal_params["Alpha"],
+                "Delta": self.signal_params["Delta"],
             },
             "normF0-normF1-uniformSky": {
                 # norm in sky is too dangerous, can easily jump out of range
-                "F0": {"type": "norm", "loc": self.F0, "scale": 1e-6},
-                "F1": {"type": "norm", "loc": self.F1, "scale": 1e-10},
-                "F2": self.F2,
+                "F0": {"type": "norm", "loc": self.signal_params["F0"], "scale": 1e-6},
+                "F1": {"type": "norm", "loc": self.signal_params["F1"], "scale": 1e-10},
+                "F2": self.signal_params["F2"],
                 "Alpha": {
                     "type": "unif",
-                    "lower": self.Alpha - 0.01,
-                    "upper": self.Alpha + 0.01,
+                    "lower": self.signal_params["Alpha"] - 0.01,
+                    "upper": self.signal_params["Alpha"] + 0.01,
                 },
                 "Delta": {
                     "type": "unif",
-                    "lower": self.Delta - 0.01,
-                    "upper": self.Delta + 0.01,
+                    "lower": self.signal_params["Delta"] - 0.01,
+                    "upper": self.signal_params["Delta"] + 0.01,
                 },
             },
         }
-
-        for prior_choice in thetas:
-            self.search = pyfstat.MCMCSearch(
-                label=self.label + "-" + prior_choice,
-                outdir=self.outdir,
-                theta_prior=thetas[prior_choice],
-                tref=self.tref,
-                sftfilepattern=self.Writer.sftfilepath,
-                nsteps=[20, 20],
-                nwalkers=20,
-                ntemps=2,
-                log10beta_min=-1,
-                BSGL=self.BSGL,
-            )
-            self.search.run(plot_walkers=False)
-            self.search.print_summary()
-            self.search.write_prior_table()
-            self._check_twoF_predicted()
-            self._check_mcmc_quantiles()
-            self._test_plots()
+        theta = thetas[prior_choice]
+        self.search = pyfstat.MCMCSearch(
+            label=self.label + "-" + prior_choice,
+            outdir=self.outdir,
+            theta_prior=theta,
+            tref=self.signal_params["tref"],
+            sftfilepattern=self.Writer.sftfilepath,
+            nsteps=[20, 20],
+            nwalkers=20,
+            ntemps=2,
+            log10beta_min=-1,
+            BSGL=self.BSGL,
+        )
+        self.search.run(plot_walkers=False)
+        self.search.print_summary()
+        self.search.write_prior_table()
+        self._check_twoF_predicted()
+        self._check_mcmc_quantiles()
+        self._test_plots()
 
 
 class TestMCMCSearchBSGL(TestMCMCSearch):
@@ -214,7 +244,7 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         extra_writer = pyfstat.Writer(
             label=self.label + "WithLine",
             outdir=self.outdir,
-            tref=self.tref,
+            tref=self.signal_params["tref"],
             F0=self.Writer.F0 + 0.5e-2,
             F1=0,
             F2=0,
@@ -233,20 +263,20 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         thetas = {
             "F0": {
                 "type": "unif",
-                "lower": self.F0 - 1e-2,
-                "upper": self.F0 + 1e-2,
+                "lower": self.signal_params["F0"] - 1e-2,
+                "upper": self.signal_params["F0"] + 1e-2,
             },
-            "F1": self.F1,
-            "F2": self.F2,
-            "Alpha": self.Alpha,
-            "Delta": self.Delta,
+            "F1": self.signal_params["F1"],
+            "F2": self.signal_params["F2"],
+            "Alpha": self.signal_params["Alpha"],
+            "Delta": self.signal_params["Delta"],
         }
         # now run a standard F-stat search over this data
         self.search = pyfstat.MCMCSearch(
             label=self.label + "F",
             outdir=self.outdir,
             theta_prior=thetas,
-            tref=self.tref,
+            tref=self.signal_params["tref"],
             sftfilepattern=data_with_line,
             nsteps=[20, 20],
             nwalkers=20,
@@ -263,14 +293,14 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         mode_F0_Fsearch = self.max_dict["F0"]
         maxTwoF_Fsearch = self.maxTwoF
         self._check_mcmc_quantiles(assertTrue=False)
-        self.assertTrue(maxTwoF_Fsearch > self.twoF_predicted)
+        assert maxTwoF_Fsearch > self.twoF_predicted
         self._test_plots()
         # also run a BSGL search over the same data
         self.search = pyfstat.MCMCSearch(
             label=self.label + "BSGL",
             outdir=self.outdir,
             theta_prior=thetas,
-            tref=self.tref,
+            tref=self.signal_params["tref"],
             sftfilepattern=data_with_line,
             nsteps=[20, 20],
             nwalkers=20,
@@ -288,12 +318,12 @@ class TestMCMCSearchBSGL(TestMCMCSearch):
         self._check_mcmc_quantiles(assertTrue=False)
         # But for sure, the BSGL search should find a lower-F mode
         # closer to the true multi-IFO signal.
-        self.assertTrue(maxTwoF_BSGLsearch < maxTwoF_Fsearch)
-        self.assertTrue(mode_F0_BSGLsearch < mode_F0_Fsearch)
-        self.assertTrue(
-            np.abs(mode_F0_BSGLsearch - self.F0) < np.abs(mode_F0_Fsearch - self.F0)
+        assert maxTwoF_BSGLsearch < maxTwoF_Fsearch
+        assert mode_F0_BSGLsearch < mode_F0_Fsearch
+        assert np.abs(mode_F0_BSGLsearch - self.signal_params["F0"]) < np.abs(
+            mode_F0_Fsearch - self.signal_params["F0"]
         )
-        self.assertTrue(maxTwoF_BSGLsearch < self.twoF_predicted)
+        assert maxTwoF_BSGLsearch < self.twoF_predicted
         self._test_plots()
 
 
@@ -304,24 +334,24 @@ class TestMCMCSemiCoherentSearch(BaseForMCMCSearchTests):
         theta = {
             "F0": {
                 "type": "unif",
-                "lower": self.F0 - 1e-6,
-                "upper": self.F0 + 1e-6,
+                "lower": self.signal_params["F0"] - 1e-6,
+                "upper": self.signal_params["F0"] + 1e-6,
             },
             "F1": {
                 "type": "unif",
-                "lower": self.F1 - 1e-10,
-                "upper": self.F1 + 1e-10,
+                "lower": self.signal_params["F1"] - 1e-10,
+                "upper": self.signal_params["F1"] + 1e-10,
             },
-            "F2": self.F2,
-            "Alpha": self.Alpha,
-            "Delta": self.Delta,
+            "F2": self.signal_params["F2"],
+            "Alpha": self.signal_params["Alpha"],
+            "Delta": self.signal_params["Delta"],
         }
         nsegs = 2
         self.search = pyfstat.MCMCSemiCoherentSearch(
             label=self.label,
             outdir=self.outdir,
             theta_prior=theta,
-            tref=self.tref,
+            tref=self.signal_params["tref"],
             sftfilepattern=self.Writer.sftfilepath,
             nsteps=[100, 100],
             nwalkers=100,
@@ -338,16 +368,16 @@ class TestMCMCSemiCoherentSearch(BaseForMCMCSearchTests):
         twoF_sc = self.search.search.get_semicoherent_det_stat(
             self.max_dict["F0"],
             self.max_dict["F1"],
-            self.F2,
-            self.Alpha,
-            self.Delta,
+            self.signal_params["F2"],
+            self.signal_params["Alpha"],
+            self.signal_params["Delta"],
             record_segments=True,
         )
-        self.assertTrue(np.abs(twoF_sc - self.maxTwoF) / self.maxTwoF < 0.01)
+        assert np.abs(twoF_sc - self.maxTwoF) / self.maxTwoF < 0.01
         twoF_per_seg = np.array(self.search.search.twoF_per_segment)
-        self.assertTrue(len(twoF_per_seg) == nsegs)
+        assert len(twoF_per_seg) == nsegs
         twoF_summed = twoF_per_seg.sum()
-        self.assertTrue(np.abs(twoF_summed - twoF_sc) / twoF_sc < 0.01)
+        assert np.abs(twoF_summed - twoF_sc) / twoF_sc < 0.01
 
         self._check_mcmc_quantiles()
         self._test_plots()
@@ -364,17 +394,17 @@ class TestMCMCFollowUpSearch(BaseForMCMCSearchTests):
         theta = {
             "F0": {
                 "type": "unif",
-                "lower": self.F0 - 1e-6,
-                "upper": self.F0 + 1e-6,
+                "lower": self.signal_params["F0"] - 1e-6,
+                "upper": self.signal_params["F0"] + 1e-6,
             },
             "F1": {
                 "type": "unif",
-                "lower": self.F1 - 1e-10,
-                "upper": self.F1 + 1e-10,
+                "lower": self.signal_params["F1"] - 1e-10,
+                "upper": self.signal_params["F1"] + 1e-10,
             },
-            "F2": self.F2,
-            "Alpha": self.Alpha,
-            "Delta": self.Delta,
+            "F2": self.signal_params["F2"],
+            "Alpha": self.signal_params["Alpha"],
+            "Delta": self.signal_params["Delta"],
         }
         nsegs = 10
         NstarMax = 1000
@@ -382,7 +412,7 @@ class TestMCMCFollowUpSearch(BaseForMCMCSearchTests):
             label=self.label,
             outdir=self.outdir,
             theta_prior=theta,
-            tref=self.tref,
+            tref=self.signal_params["tref"],
             sftfilepattern=self.Writer.sftfilepath,
             nsteps=[100, 100],
             nwalkers=100,
@@ -400,21 +430,29 @@ class TestMCMCFollowUpSearch(BaseForMCMCSearchTests):
         self._test_plots()
 
 
-class TestMCMCTransientSearch(BaseForMCMCSearchTests):
+@pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=is_flaky)
+@pytest.mark.usefixtures("outdir")
+class TestMCMCTransientSearch(_MCMCSearchTestUtils):
     label = "TestMCMCTransientSearch"
     duration = 86400
 
     def setup_method(self, method):
-        self.transientWindowType = "rect"
-        self.transientStartTime = int(self.tstart + 0.25 * self.duration)
-        self.transientTau = int(0.5 * self.duration)
+        # Allow overwriting parameters from child classes
+        self.signal_params = {}
+        for key, val in default_signal_params.items():
+            self.signal_params[key] = getattr(self, key, val)
+        self.signal_params["transientWindowType"] = "rect"
+        self.signal_params["transientStartTime"] = int(
+            self.tstart + 0.25 * self.duration
+        )
+        self.signal_params["transientTau"] = int(0.5 * self.duration)
         self.Writer = pyfstat.Writer(
             label=self.label,
             tstart=self.tstart,
             duration=self.duration,
             **{
                 k: v
-                for k, v in default_signal_params.items()
+                for k, v in self.signal_params.items()
                 if not (k.startswith("F") and int(k[-1]) > 2)
             },
             outdir=self.outdir,
@@ -424,17 +462,14 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
             SFTWindowType=self.SFTWindowType,
             SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
-            transientWindowType=self.transientWindowType,
-            transientStartTime=self.transientStartTime,
-            transientTau=self.transientTau,
         )
         self.Writer.make_data(verbose=True)
         self.basic_theta = {
-            "F0": self.F0,
-            "F1": self.F1,
-            "F2": self.F2,
-            "Alpha": self.Alpha,
-            "Delta": self.Delta,
+            "F0": self.signal_params["F0"],
+            "F1": self.signal_params["F1"],
+            "F2": self.signal_params["F2"],
+            "Alpha": self.signal_params["Alpha"],
+            "Delta": self.signal_params["Delta"],
         }
         self.MCMC_params = {
             "nsteps": [50, 50],
@@ -451,16 +486,16 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
                 "lower": self.Writer.tstart,
                 "upper": self.Writer.tend - 2 * self.Writer.Tsft,
             },
-            "transient_duration": self.transientTau,
+            "transient_duration": self.signal_params["transientTau"],
         }
         self.search = pyfstat.MCMCTransientSearch(
             label=self.label,
             outdir=self.outdir,
             theta_prior=theta,
-            tref=self.tref,
+            tref=self.signal_params["tref"],
             sftfilepattern=self.Writer.sftfilepath,
             **self.MCMC_params,
-            transientWindowType=self.transientWindowType,
+            transientWindowType=self.signal_params["transientWindowType"],
         )
         self.search.run(plot_walkers=False)
         self.search.print_summary()
@@ -471,7 +506,7 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
     def test_transient_MCMC_tauonly(self):
         theta = {
             **self.basic_theta,
-            "transient_tstart": self.transientStartTime,
+            "transient_tstart": self.signal_params["transientStartTime"],
             "transient_duration": {
                 "type": "unif",
                 "lower": 2 * self.Writer.Tsft,
@@ -482,10 +517,10 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
             label=self.label,
             outdir=self.outdir,
             theta_prior=theta,
-            tref=self.tref,
+            tref=self.signal_params["tref"],
             sftfilepattern=self.Writer.sftfilepath,
             **self.MCMC_params,
-            transientWindowType=self.transientWindowType,
+            transientWindowType=self.signal_params["transientWindowType"],
         )
         self.search.run(plot_walkers=False)
         self.search.print_summary()
@@ -511,10 +546,10 @@ class TestMCMCTransientSearch(BaseForMCMCSearchTests):
             label=self.label,
             outdir=self.outdir,
             theta_prior=theta,
-            tref=self.tref,
+            tref=self.signal_params["tref"],
             sftfilepattern=self.Writer.sftfilepath,
             **self.MCMC_params,
-            transientWindowType=self.transientWindowType,
+            transientWindowType=self.signal_params["transientWindowType"],
             BtSG=BtSG,
         )
         self.search.run(plot_walkers=False)
