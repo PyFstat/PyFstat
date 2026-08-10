@@ -452,7 +452,7 @@ class TestMCMCTransientSearch(_MCMCSearchTestUtils):
             duration=self.duration,
             **{
                 k: v
-                for k, v in default_signal_params.items()
+                for k, v in self.signal_params.items()
                 if not (k.startswith("F") and int(k[-1]) > 2)
             },
             outdir=self.outdir,
@@ -462,9 +462,6 @@ class TestMCMCTransientSearch(_MCMCSearchTestUtils):
             SFTWindowType=self.SFTWindowType,
             SFTWindowParam=self.SFTWindowParam,
             randSeed=self.randSeed,
-            transientWindowType=self.signal_params["transientWindowType"],
-            transientStartTime=self.signal_params["transientStartTime"],
-            transientTau=self.signal_params["transientTau"],
         )
         self.Writer.make_data(verbose=True)
         self.basic_theta = {
