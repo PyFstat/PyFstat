@@ -200,7 +200,7 @@ def data_fixture(request, outdir):
     # Allow overwriting parameters from child classes
     test_cls.signal_params = {}
     for key, val in default_signal_params.items():
-        test_cls.signal_params[key] = getattr(test_cls, key, default_signal_params[key])
+        test_cls.signal_params[key] = getattr(test_cls, key, val)
 
     # Create fake data SFTs
     test_cls.Writer = pyfstat.Writer(
