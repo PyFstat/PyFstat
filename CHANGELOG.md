@@ -1,7 +1,17 @@
+## 2.4.0 [19/08/2026]
+
+ - Dropped python 3.9 support.
+ - Full support for `F3` and higher spin-downs through `signal_parameters` dictionaries in Writer and derived classes.
+ - Flexible parameters dictionary suppport also in search classes.
+ - Improved error checking on MCMC prior bounds.
+ - Fixed numerical overflow problems in `plot_spectrogram()`.
+ - Fixed `MCMCGlitchSearch` cumulative 2F plot to include `F1` glitch steps.
+ - Migrated past of the test suite to pytest fixtures.
+ - Updated documentation build and other github integrations.
+
 ## 2.3.0 [28/05/2025]
 
  - Enabled support for python 3.13 and numpy 2.0.
-
 
 ## 2.2.1 [24/02/2025]
 
