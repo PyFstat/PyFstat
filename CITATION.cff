@@ -44,7 +44,7 @@ keywords:
   - pycuda
 preferred-citation:
   type: article
-  title: "PyFstat: a python package for gravitational wave F-statistic follow up"
+  title: "PyFstat: a Python package for gravitational-wave F-statistic follow up"
   journal: "Journal of Open Source Software"
   year: 2021
   doi: "10.21105/joss.03000"
