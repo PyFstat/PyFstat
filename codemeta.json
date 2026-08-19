@@ -32,9 +32,15 @@
         },
         {
             "@type": "Person",
-            "givenName": "Maria-Antonia",
-            "familyName": "Ferrer",
+            "givenName": "Maria Antonia",
+            "familyName": "Ferrer Martinez",
             "@id": "https://orcid.org/0009-0008-9801-9506"
+        },
+        {
+            "@type": "Person",
+            "givenName": "Marta",
+            "familyName": "Carrió Thomás",
+            "@id": "https://orcid.org/0009-0009-7114-5067"
         }
     ],
     "citation": "Please see citation information here: https://github.com/PyFstat/PyFstat/#citing-this-work",
