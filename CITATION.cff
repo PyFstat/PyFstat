@@ -1,0 +1,60 @@
+cff-version: 1.2.0
+message: "If you use PyFstat, please cite it using the metadata from this file."
+title: "PyFstat: a python package for gravitational wave analysis with the F-statistic"
+type: software
+abstract: "PyFstat performs F-statistic-based continuous gravitational wave (CW) searches and other CW data analysis tasks. It is built on top of the LALSuite library, making its functionality more accessible through a Python interface. It also provides an MCMC-based followup of promising candidates from wide-parameter-space searches."
+authors:
+  - family-names: Ashton
+    given-names: Gregory
+    affiliation: Royal Holloway, University of London
+    orcid: "https://orcid.org/0000-0001-7288-2231"
+  - family-names: Keitel
+    given-names: David
+    affiliation: Universitat de les Illes Balears
+    orcid: "https://orcid.org/0000-0002-2824-626X"
+  - family-names: Tenorio
+    given-names: Rodrigo
+    affiliation: Universitat de les Illes Balears
+    orcid: "https://orcid.org/0000-0002-3582-2587"
+  - family-names: Prix
+    given-names: Reinhard
+    affiliation: Albert Einstein Institute
+    orcid: "https://orcid.org/0000-0002-3789-6424"
+  - family-names: Ferrer Martinez
+    given-names: Maria Antonia
+    affiliation: Universitat de les Illes Balears
+    orcid: "https://orcid.org/0009-0008-9801-9506"
+  - family-names: Carrió Thomás
+    given-names: Marta
+    affiliation: Universitat de les Illes Balears
+    orcid: "https://orcid.org/0009-0009-7114-5067"
+doi: "10.5281/zenodo.3967045"
+repository-code: "https://github.com/PyFstat/PyFstat"
+url: "https://github.com/PyFstat/PyFstat"
+license: "MIT"
+keywords:
+  - astrophysics
+  - data analysis
+  - gravity
+  - gravitational waves
+  - neutron stars
+  - python3
+  - ligo
+  - virgo
+  - pycuda
+preferred-citation:
+  type: article
+  title: "PyFstat: a Python package for continuous gravitational-wave data analysis"
+  journal: "Journal of Open Source Software"
+  year: 2021
+  doi: "10.21105/joss.03000"
+  url: "https://doi.org/10.21105/joss.03000"
+  authors:
+    - family-names: Keitel
+      given-names: David
+    - family-names: Tenorio
+      given-names: Rodrigo
+    - family-names: Ashton
+      given-names: Gregory
+    - family-names: Prix
+      given-names: Reinhard
