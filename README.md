@@ -286,7 +286,8 @@ Maintainers:
 Core contributors:
 * Reinhard Prix
 * Rodrigo Tenorio
-* Maria-Antonia Ferrer
+* Maria Antonia Ferrer Martinez
+* Marta Carrió Thomás
 
 Other contributors:
 * Michael J. Williams
@@ -329,10 +330,11 @@ or use directly the following BibTeX entry:
                   Keitel, David and
                   Prix, Reinhard and
                   Tenorio, Rodrigo and
-                  Ferrer, Maria-Antonia},
+                  Ferrer Martinez, Maria Antonia and
+                  Marta Carri{\'o} Thom{\'a}s},
   title        = {{PyFstat}},
-  month        = jan,
-  year         = 2025,
+  month        = aug,
+  year         = 2026,
   publisher    = {Zenodo},
   doi          = {10.5281/zenodo.3967045},
   url          = {https://doi.org/10.5281/zenodo.3967045},
