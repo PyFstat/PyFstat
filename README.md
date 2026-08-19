@@ -331,7 +331,7 @@ or use directly the following BibTeX entry:
                   Prix, Reinhard and
                   Tenorio, Rodrigo and
                   Ferrer Martinez, Maria Antonia and
-                  Marta Carri{\'o} Thom{\'a}s},
+                  Carri{\'o} Thom{\'a}s, Marta},
   title        = {{PyFstat}},
   month        = aug,
   year         = 2026,
