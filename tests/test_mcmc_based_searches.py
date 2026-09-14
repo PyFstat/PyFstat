@@ -424,6 +424,7 @@ class TestMCMCFollowUpSearch(BaseForMCMCSearchTests):
             NstarMax=NstarMax,
             Nsegs0=nsegs,
         )
+        assert hasattr(self.search, "chain")
         self.search.print_summary()
         self._check_twoF_predicted()
         self._check_mcmc_quantiles()
