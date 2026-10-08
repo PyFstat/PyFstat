@@ -376,6 +376,7 @@ def _store_bilby_result(pyfstat_search, result):
         )
     )
     if can_reuse:
+        logger.debug("Reusing %d saved Bilby posterior likelihoods", len(samples))
         # Copy so normalization leaves Bilby's posterior unchanged.
         lnlikes = lnlikes.copy()
         # PyFstat expects likelihood ratios; absolute likelihoods include
@@ -384,6 +385,14 @@ def _store_bilby_result(pyfstat_search, result):
             lnlikes -= noise_log_likelihood
     else:
         # Recompute when saved values cannot be safely converted to ratios.
+        logger.info(
+            "Recomputing %d posterior likelihoods: saved values are missing, "
+            "nonfinite, or their normalization is unknown (use_ratio=%s, "
+            "log_noise_evidence=%s)",
+            len(samples),
+            use_ratio,
+            noise_log_likelihood,
+        )
         lnlikes = np.array(
             [pyfstat_search._logl(sample, pyfstat_search.search) for sample in samples],
             dtype=float,
