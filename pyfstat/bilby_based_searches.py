@@ -26,10 +26,10 @@ logger = logging.getLogger(__name__)
 class PyFstatBilbyLikelihood(bilby.Likelihood):
     """Bilby likelihood wrapper for a PyFstat MCMC search.
 
-    The parameter-dependent part is the existing PyFstat MCMC likelihood. If
-    ``include_noise_log_likelihood`` is true, the cached data-only Gaussian
-    noise likelihood is added following the standalone Bilby pipeline. If it
-    is false, the noise likelihood is defined as zero and Bilby samples the
+    The parameter-dependent part is the existing PyFstat MCMC likelihood.
+    If ``include_noise_log_likelihood`` is true, the cached data-only Gaussian
+    noise likelihood is added following the standalone Bilby pipeline.
+    If it is false, the noise likelihood is defined as zero and Bilby samples the
     likelihood ratio directly. The default selects the absolute likelihood for
     file-backed SFTs, except for BSGL searches, and the likelihood ratio
     otherwise. BSGL is a signal-versus-Gaussian-or-line-noise Bayes factor, so
@@ -55,8 +55,8 @@ class PyFstatBilbyLikelihood(bilby.Likelihood):
         elif include_noise_log_likelihood and has_no_file_backed_sfts:
             raise ValueError(
                 "The absolute noise likelihood cannot be computed for "
-                "data without file-backed SFT amplitudes. Set "
-                "include_noise_log_likelihood=False to use the likelihood "
+                "data without file-backed SFT amplitudes. "
+                "Set include_noise_log_likelihood=False to use the likelihood "
                 "ratio."
             )
         self.include_noise_log_likelihood = include_noise_log_likelihood
