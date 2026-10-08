@@ -289,6 +289,13 @@ def get_bilby_prior_dict(pyfstat_search, bilby_priors=None):
                 f"names. Missing: {missing_names}; unexpected: "
                 f"{unexpected_names}."
             )
+        logger.info(
+            "Using custom bilby_priors for sampling; theta_prior still defines "
+            "PyFstat's fixed/sample parameters and automatic frequency coverage. "
+            "Ensure that this coverage includes the parameter ranges allowed by "
+            "bilby_priors. Bounds may be wider but must not exclude allowed "
+            "values. Coverage compatibility is not checked automatically."
+        )
         return bilby_priors
 
     priors = bilby.core.prior.PriorDict()
