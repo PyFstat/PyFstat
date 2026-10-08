@@ -4,11 +4,14 @@ import logging
 import os
 import sys
 from contextlib import contextmanager
+from types import MethodType
+from unittest.mock import patch
 
 import bilby
 import lal
 import lalpulsar
 import numpy as np
+from bilby.core.sampler import ptemcee as bilby_ptemcee
 
 import pyfstat.utils as utils
 
@@ -358,13 +361,33 @@ def _store_bilby_result(pyfstat_search, result):
     samples = posterior[get_bilby_parameter_names(pyfstat_search.theta_keys)].to_numpy(
         dtype=float
     )
-    # Bilby's log_likelihood column may include the parameter-independent
-    # Gaussian-noise normalization. PyFstat's post-processing expects the
-    # likelihood-ratio convention returned by _logl(), so recompute it here.
-    lnlikes = np.array(
-        [pyfstat_search._logl(sample, pyfstat_search.search) for sample in samples],
-        dtype=float,
+    lnlikes = _get_posterior_column(posterior, "log_likelihood")
+    use_ratio = getattr(result, "use_ratio", None)
+    noise_log_likelihood = getattr(result, "log_noise_evidence", None)
+    can_reuse = (
+        # Saved values must be present and finite, with a known convention.
+        lnlikes is not None
+        and np.all(np.isfinite(lnlikes))
+        and use_ratio is not None
+        and (
+            # Ratios need no correction; absolute values need a noise constant.
+            use_ratio
+            or (noise_log_likelihood is not None and np.isfinite(noise_log_likelihood))
+        )
     )
+    if can_reuse:
+        # Copy so normalization leaves Bilby's posterior unchanged.
+        lnlikes = lnlikes.copy()
+        # PyFstat expects likelihood ratios; absolute likelihoods include
+        # the parameter-independent Gaussian-noise normalization.
+        if not use_ratio:
+            lnlikes -= noise_log_likelihood
+    else:
+        # Recompute when saved values cannot be safely converted to ratios.
+        lnlikes = np.array(
+            [pyfstat_search._logl(sample, pyfstat_search.search) for sample in samples],
+            dtype=float,
+        )
     lnpriors = _get_posterior_column(posterior, "log_prior")
 
     pyfstat_search.samples = samples
@@ -479,6 +502,90 @@ def _capture_bilby_logger(path, mode="a", level=logging.INFO):
 
 
 # -----------------------------------------------------------------------------
+# Fixed-step ptemcee adapter
+# -----------------------------------------------------------------------------
+
+
+def _ptemcee_sample_with_reused_state(sampler, p0=None, **kwargs):
+    """Continue FixedStepsPtemcee's underlying sampler from evaluated state."""
+    if sampler._pyfstat_reuse_state and sampler._pyfstat_state_initialized:
+        p0 = None
+    # setup_sampler replaces this object's sample method with this wrapper.
+    # The class still holds ptemcee's original method, which we call here.
+    original_sample = type(sampler).sample
+    sampling_results = original_sample(sampler, p0=p0, **kwargs)
+
+    for state in sampling_results:
+        positions = state[0]
+        log_posteriors = state[1]
+        log_likelihoods = state[2]
+
+        # Save the current positions and their likelihoods for the next sampling call
+        sampler._p0 = positions
+        sampler._logposterior0 = log_posteriors
+        sampler._loglikelihood0 = log_likelihoods
+        sampler._pyfstat_state_initialized = True
+        # Pass the state to Bilby, which requests the next sampling result.
+        yield state
+
+
+class FixedStepsPtemcee(bilby_ptemcee.Ptemcee):
+    """Legacy Bilby ptemcee with explicit burn-in and production step counts.
+
+    Retains every production step at the cold temperature.
+    Run searches sequentially or in separate processes to avoid interference
+    between their shared stopping rules.
+    A fixed step budget does not certify convergence.
+    """
+
+    def __init__(self, likelihood, priors, nsteps, **kwargs):
+        if (
+            not isinstance(nsteps, (list, tuple, np.ndarray))
+            or np.ndim(nsteps) != 1
+            or len(nsteps) != 2
+            or any(
+                isinstance(n, bool) or not isinstance(n, (int, np.integer))
+                for n in nsteps
+            )
+            or nsteps[0] < 0
+            or nsteps[1] <= 0
+        ):
+            raise ValueError(
+                "nsteps must be [nonnegative burn-in, positive production]"
+            )
+        self.fixed_nburn, self.fixed_nprod = map(int, nsteps)
+        if kwargs.get("resume", False):
+            raise ValueError("Fixed-step ptemcee requires resume=False")
+        kwargs.update(niterations_per_check=1, resume=False)
+        super().__init__(likelihood, priors=priors, **kwargs)
+
+    def _verify_external_sampler(self):
+        __import__("ptemcee")
+
+    def setup_sampler(self):
+        sampler = super().setup_sampler()
+        # Disable state reuse for periodic parameters because Bilby may wrap their
+        # positions after the likelihood was computed.
+        sampler._pyfstat_reuse_state = not np.any(self._periodic)
+        sampler._pyfstat_state_initialized = False
+        # Replace sample only on this object; its class method stays unchanged.
+        sampler.sample = MethodType(_ptemcee_sample_with_reused_state, sampler)
+        return sampler
+
+    def _check_fixed_steps(self, iteration, *unused, **unused_kwargs):
+        # Stop after the fixed number of burn-in and production steps
+        # ignoring all other arguments
+        self.discard = self.fixed_nburn
+        retained = max(0, iteration - self.fixed_nburn) * self.nwalkers
+        stop = iteration >= self.fixed_nburn + self.fixed_nprod
+        return stop, 0, 1, np.nan, retained
+
+    def run_sampler(self):
+        with patch.object(bilby_ptemcee, "check_iteration", self._check_fixed_steps):
+            return super().run_sampler()
+
+
+# -----------------------------------------------------------------------------
 # Top-level search orchestration
 # -----------------------------------------------------------------------------
 
@@ -496,6 +603,7 @@ def run_bilby_search(
     save_bilby_progress=False,
     bilby_log_file=None,
     bilby_progress_file=None,
+    nsteps=None,
     **run_sampler_kwargs,
 ):
     """Run a PyFstat MCMC-based search through ``bilby.run_sampler``."""
@@ -512,6 +620,22 @@ def run_bilby_search(
         )
         sampler_kwargs = sampler_kwargs or {}
         kwargs = {**run_sampler_kwargs, **sampler_kwargs}
+        steps = kwargs.pop("nsteps", nsteps)
+        if steps is not None:
+            if sampler != "ptemcee":
+                raise ValueError("Fixed nsteps is supported only for sampler='ptemcee'")
+            kwargs.setdefault("nwalkers", pyfstat_search.nwalkers)
+            kwargs.setdefault("ntemps", pyfstat_search.ntemps)
+            kwargs.setdefault("log10beta_min", pyfstat_search.log10beta_min)
+            sampler = FixedStepsPtemcee(
+                likelihood,
+                priors,
+                steps,
+                outdir=pyfstat_search.outdir,
+                label=pyfstat_search.label,
+                **kwargs,
+            )
+            kwargs = {}
         if save_bilby_logs and bilby_log_file is None:
             bilby_log_file = os.path.join(
                 pyfstat_search.outdir, f"{pyfstat_search.label}.log"

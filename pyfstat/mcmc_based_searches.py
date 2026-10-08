@@ -852,6 +852,7 @@ class MCMCSearch(BaseSearchClass):
         save_bilby_progress=False,
         bilby_log_file=None,
         bilby_progress_file=None,
+        nsteps=None,
         **run_sampler_kwargs,
     ):
         """Run the search with any sampler supported by Bilby.
@@ -865,6 +866,12 @@ class MCMCSearch(BaseSearchClass):
             Name of the Bilby sampler to use, e.g. ``"dynesty"``, ``"emcee"``,
             ``"ptemcee"``, ``"bilby_mcmc"`` or any other sampler available in
             the installed Bilby environment.
+        nsteps: list or None
+            For sampler="ptemcee", optionally run exactly [burn-in, production]
+            attempted steps per walker, with no thinning or convergence-based
+            stopping. Defaults to None (Bilby's usual stopping). Constructor
+            nsteps is not used automatically. Requires resume=False and one
+            ptemcee sampler per process. Also accepted in sampler_kwargs.
         sampler_kwargs: dict
             Keyword arguments forwarded to ``bilby.run_sampler`` for the chosen
             sampler.
@@ -921,6 +928,7 @@ class MCMCSearch(BaseSearchClass):
         return run_bilby_search(
             self,
             sampler=sampler,
+            nsteps=nsteps,
             sampler_kwargs=sampler_kwargs,
             bilby_priors=bilby_priors,
             include_noise_log_likelihood=include_noise_log_likelihood,
