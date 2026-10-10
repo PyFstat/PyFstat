@@ -1,4 +1,4 @@
-FROM python:3.13-trixie
+FROM python:3.14-trixie
 
 WORKDIR /pyfstat-repo
 
