@@ -32,6 +32,7 @@ If you need to work with older versions, the last PyFstat release supporting tho
 [![codecov](https://codecov.io/gh/PyFstat/PyFstat/branch/master/graph/badge.svg?token=P0W8MIIUGD)](https://codecov.io/gh/PyFstat/PyFstat)
 [![Documentation Status](https://readthedocs.org/projects/pyfstat/badge/?version=latest)](https://pyfstat.readthedocs.io/en/latest/?badge=latest)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![AI-DECLARATION: copilot](https://img.shields.io/badge/䷼%20AI--DECLARATION-copilot-fee2e2?labelColor=fee2e2)](https://github.com/PyFstat/PyFstat/blob/master/ai-declaration.md)
 
 ## Installation
 
