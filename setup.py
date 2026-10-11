@@ -6,20 +6,24 @@ from setuptools import find_packages, setup
 import versioneer
 
 # check python version
-min_python_version = (3, 10, 0)  # (major,minor,micro)
-next_unsupported_python_version = (3, 14)  # (major,minor) - don't restrict micro
+min_python_version = (3, 11, 0)  # (major,minor,micro)
+next_unsupported_python_version = (3, 15)  # (major,minor) - don't restrict micro
 python_version = sys.version_info
 if (
     python_version < min_python_version
-    or python_version > next_unsupported_python_version
+    or python_version[:2] >= next_unsupported_python_version
 ):
     sys.exit(
         f"Python {'.'.join(str(v) for v in python_version[:3])} is not supported, aborting setup."
     )
 else:
+    max_python_version = (
+        next_unsupported_python_version[0],
+        next_unsupported_python_version[1] - 1,
+    )
     print(
         f"Confirmed Python version between [{'.'.join(str(v) for v in min_python_version[:3])},"
-        f" {'.'.join(str(v) for v in next_unsupported_python_version[:2])}]"
+        f" {'.'.join(str(v) for v in max_python_version)}]"
     )
 
 
@@ -100,6 +104,10 @@ setup(
     platforms="POSIX",
     classifiers=[
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "License :: OSI Approved :: MIT License",
         "Operating System :: POSIX",
         "Natural Language :: English",
@@ -107,7 +115,12 @@ setup(
         "Topic :: Scientific/Engineering :: Astronomy",
         "Topic :: Scientific/Engineering :: Physics",
     ],
-    python_requires=">=%s.%s.%s" % min_python_version[:3],
+    python_requires=">=%s.%s.%s,<%s.%s"
+    % (
+        *min_python_version,
+        next_unsupported_python_version[0],
+        next_unsupported_python_version[1],
+    ),
     install_requires=requires
     + ([] if os.environ.get("NO_LALSUITE_FROM_PYPI", False) else [lalsuite]),
     extras_require=extras_require,
