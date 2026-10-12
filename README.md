@@ -191,6 +191,7 @@ PyFstat manages optional dependencies through setuptool's `extras_require`.
 
 Available sets of optional dependencies are:
 
+* `bilby` ([see documentation](https://bilby-dev.github.io/bilby/)): Enable alternative sampling interface. Note this is still an experimental feature.
 * `chainconsumer` ([Samreay/Chainconsumer](https://github.com/Samreay/ChainConsumer)): Required to run some optional
 plotting methods and some of the [example scripts](./examples).
 * `dev`: Collects `docs`, `style`, `test` and `wheel`.

@@ -20,7 +20,7 @@ jobs:
     - name: Install package and development dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e ${GITHUB_WORKSPACE}[style,test,wheel]
+        pip install -e ${GITHUB_WORKSPACE}[style,test,wheel,bilby,chainconsumer]
         pip install --upgrade --pre lalsuite[lalpulsar]
     - name: Test with pytest
       run: |

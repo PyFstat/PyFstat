@@ -27,7 +27,7 @@ jobs:
         # we might still need a newer pip to be able to pull in lalsuite
         # we need setuptools>=69.3.0 to support PEP 625 and avoid PyPI deprecation warnings
         python -m pip install --upgrade pip setuptools
-        pip install -e ${GITHUB_WORKSPACE}[test,wheel]
+        pip install -e ${GITHUB_WORKSPACE}[test,wheel,bilby,chainconsumer]
     - name: Run test suite with pytest
       run: |
         (cd .. && pytest --durations=0 $GITHUB_WORKSPACE/tests/ --log-file=$GITHUB_WORKSPACE/tests.log)
