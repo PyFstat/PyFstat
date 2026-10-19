@@ -48,11 +48,13 @@ requires = [
 ]
 lalsuite = "lalsuite[lalpulsar]>=7.13"
 extras_require = {
+    "bilby": ["bilby"],
     "chainconsumer": ["chainconsumer<1.0"],
     "dev": [
         "pre-commit",
     ],
     "docs": [
+        "bilby",
         "sphinx==9.1.0",
         "sphinx_autodoc_typehints==3.9.10",
         "sphinx_gallery==0.20.0",

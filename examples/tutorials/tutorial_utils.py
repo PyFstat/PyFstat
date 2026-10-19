@@ -28,6 +28,7 @@ def plot_real_imag_spectrograms(timestamps, frequency, fourier_data):
         frequency,
         fourier_data.real,
         norm=colors.CenteredNorm(),
+        shading="auto",
     )
     fig.colorbar(c, ax=axs[0], orientation="horizontal", label="Fourier Amplitude")
 
@@ -37,6 +38,7 @@ def plot_real_imag_spectrograms(timestamps, frequency, fourier_data):
         frequency,
         fourier_data.imag,
         norm=colors.CenteredNorm(),
+        shading="auto",
     )
 
     fig.colorbar(c, ax=axs[1], orientation="horizontal", label="Fourier Amplitude")
