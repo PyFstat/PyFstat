@@ -1,4 +1,4 @@
-name: Conda Integration Tests
+name: Conda Development Package Tests
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   conda-test:
-    name: conda test
+    name: conda development test
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v7
