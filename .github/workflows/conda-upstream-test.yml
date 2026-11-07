@@ -1,4 +1,4 @@
-name: Conda Upstream Package Tests
+name: Conda Published Packages Tests
 
 on:
   workflow_dispatch:

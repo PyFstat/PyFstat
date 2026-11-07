@@ -1,4 +1,4 @@
-name: Conda Development Package Tests
+name: Conda Development Environment Tests
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
     - cron:  '42 6 * * 1'
 
 jobs:
-  conda-test:
+  conda-dev-test:
     name: conda development test
     runs-on: "ubuntu-latest"
     steps:
