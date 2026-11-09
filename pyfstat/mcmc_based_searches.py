@@ -77,6 +77,12 @@ class MCMCSearch(BaseSearchClass):
 
     Evaluates the coherent F-statistic across a parameter space region
     corresponding to an isolated/binary-modulated CW signal.
+
+    The standard implementation takes its sampler configuration during
+    initialisation and :meth:`run` uses the ``ptemcee`` sampler. Alternatively,
+    the experimental :meth:`run_bilby` interface takes the sampler name and
+    sampler-specific arguments when it is called, providing access to samplers
+    supported by `Bilby <https://bilby-dev.github.io/bilby/>`_.
     """
 
     transform_dictionary = {}
@@ -228,7 +234,7 @@ class MCMCSearch(BaseSearchClass):
 
         os.makedirs(outdir, exist_ok=True)
         self.output_file_header = self.get_output_file_header()
-        logger.info("Set-up MCMC search for model {}".format(self.label))
+        logger.info("Set-up search for model {}".format(self.label))
         if sftfilepattern:
             logger.info("Using data {}".format(self.sftfilepattern))
         else:
@@ -280,6 +286,8 @@ class MCMCSearch(BaseSearchClass):
 
     def _log_input(self):
         logger.info("theta_prior = {}".format(self.theta_prior))
+
+    def _log_sampler_input(self):
         logger.info("nwalkers={}".format(self.nwalkers))
         logger.info("nsteps = {}".format(self.nsteps))
         logger.info("ntemps = {}".format(self.ntemps))
@@ -679,7 +687,10 @@ class MCMCSearch(BaseSearchClass):
         walker_plot_args=None,
         window=50,
     ):
-        """Run the MCMC simulation
+        """Run the MCMC simulation using the standard ``ptemcee`` sampler.
+
+        For other samplers and sampler-specific options, see the experimental
+        :meth:`run_bilby` interface.
 
         Parameters
         ----------
@@ -714,6 +725,7 @@ class MCMCSearch(BaseSearchClass):
 
         """
 
+        self._log_sampler_input()
         self._initiate_search_object()
 
         self.old_data_is_okay_to_use = self._check_old_data_is_okay_to_use()
@@ -826,6 +838,109 @@ class MCMCSearch(BaseSearchClass):
                     logger.warning(
                         "Failed to save walker plots due to Error {}".format(e)
                     )
+
+    def run_bilby(
+        self,
+        sampler="dynesty",
+        sampler_kwargs=None,
+        bilby_priors=None,
+        include_noise_log_likelihood=None,
+        save_pickle=True,
+        export_samples=True,
+        save_loudest=True,
+        save_bilby_logs=False,
+        save_bilby_progress=False,
+        bilby_log_file=None,
+        bilby_progress_file=None,
+        nsteps=None,
+        **run_sampler_kwargs,
+    ):
+        """Run the search with any sampler supported by Bilby.
+
+        This builds a Bilby likelihood from this PyFstat MCMC search and
+        delegates sampling to ``bilby.run_sampler``.
+
+        Parameters
+        ----------
+        sampler: str
+            Name of the Bilby sampler to use, e.g. ``"dynesty"``, ``"emcee"``,
+            ``"ptemcee"``, ``"bilby_mcmc"`` or any other sampler available in
+            the installed Bilby environment.
+        nsteps: list or None
+            For sampler="ptemcee", optionally run exactly [burn-in, production]
+            attempted steps per walker, with no thinning or convergence-based
+            stopping. Defaults to None (Bilby's usual stopping). Constructor
+            nsteps is not used automatically. Requires resume=False and one
+            ptemcee sampler per process. Also accepted in sampler_kwargs.
+        sampler_kwargs: dict
+            Keyword arguments forwarded to ``bilby.run_sampler`` for the chosen
+            sampler.
+        bilby_priors: bilby.core.prior.PriorDict or dict
+            Optional Bilby priors keyed by the sampled Bilby parameter names.
+            When supplied, these replace the priors converted from
+            ``theta_prior`` and allow any prior supported by Bilby. The keys
+            must exactly match the sampled parameter names; repeated PyFstat
+            glitch parameters use indexed names such as ``delta_F0_0`` and
+            ``delta_F0_1``. The PyFstat ``theta_prior`` is still used to
+            identify sampled parameters and initialize the covered frequency
+            band.
+        include_noise_log_likelihood: bool or None
+            If true, add the absolute Gaussian noise likelihood computed from
+            file-backed SFTs. If false, use the likelihood ratio with a zero
+            noise baseline. The default uses the absolute likelihood for
+            file-backed SFTs and the likelihood ratio for on-the-fly data,
+            where the SFT amplitudes cannot be reloaded from a file. BSGL
+            searches always use the signal-versus-Gaussian-or-line-noise Bayes
+            factor directly and automatically set this option to false. The
+            normalization choice is logged, and explicitly requesting true
+            with BSGL emits a warning.
+        save_pickle, export_samples, save_loudest: bool
+            Reuse the corresponding PyFstat post-processing steps after Bilby
+            returns posterior samples. Bilby samples are pickled separately at
+            ``<outdir>/<label>_bilby_saved_data.p`` so that a native run cannot
+            mistake them for a compatible ``ptemcee`` cache.
+        save_bilby_logs: bool
+            Save Bilby's logger output to ``bilby_log_file`` or to
+            ``<outdir>/<label>.log``.
+        save_bilby_progress: bool
+            Mirror stdout/stderr during ``bilby.run_sampler`` to
+            ``bilby_progress_file`` or to
+            ``<outdir>/<label>_bilby_progress.log``. This captures sampler
+            progress output such as dynesty iteration updates.
+        bilby_log_file, bilby_progress_file: str
+            Optional explicit output paths for the Bilby log and progress files.
+        **run_sampler_kwargs:
+            Additional keyword arguments forwarded to ``bilby.run_sampler``.
+        """
+        try:
+            from pyfstat.bilby_based_searches import run_bilby_search
+        except ModuleNotFoundError as exc:
+            if exc.name != "bilby":
+                raise
+            raise ModuleNotFoundError(
+                "MCMCSearch.run_bilby() requires the optional 'bilby' "
+                "dependency. Install it with `python -m pip install "
+                "-e '.[bilby]'`, or create/update a conda environment with "
+                "`NO_LALSUITE_FROM_PYPI=1 mamba env create -f "
+                "etc/pyfstat-dev-bilby.yml`."
+            ) from exc
+
+        return run_bilby_search(
+            self,
+            sampler=sampler,
+            nsteps=nsteps,
+            sampler_kwargs=sampler_kwargs,
+            bilby_priors=bilby_priors,
+            include_noise_log_likelihood=include_noise_log_likelihood,
+            save_pickle=save_pickle,
+            export_samples=export_samples,
+            save_loudest=save_loudest,
+            save_bilby_logs=save_bilby_logs,
+            save_bilby_progress=save_bilby_progress,
+            bilby_log_file=bilby_log_file,
+            bilby_progress_file=bilby_progress_file,
+            **run_sampler_kwargs,
+        )
 
     def _get_rescale_multiplier_for_key(self, key):
         """Get the rescale multiplier from the transform_dictionary
@@ -1387,7 +1502,7 @@ class MCMCSearch(BaseSearchClass):
         )
 
     def _generic_lnprior(self, **kwargs):
-        """Return a lambda function of the pdf
+        """Return a lambda function of the log-pdf.
 
         Parameters
         ----------
@@ -1460,7 +1575,7 @@ class MCMCSearch(BaseSearchClass):
         elif kwargs["type"] == "lognorm":
             # as of scipy 1.4.1 and numpy 1.18.1 the following parametrisation
             # should be consistent with np.random.lognormal in _generate_rv()
-            return lambda x: lognorm.pdf(
+            return lambda x: lognorm.logpdf(
                 x, s=kwargs["scale"], scale=np.exp(kwargs["loc"])
             )
         else:
@@ -1792,22 +1907,28 @@ class MCMCSearch(BaseSearchClass):
         )
         return d
 
-    def _pickle_data(self, samples, lnprobs, lnlikes, all_lnlikelihood):
+    def _pickle_data(
+        self,
+        samples,
+        lnprobs,
+        lnlikes,
+        all_lnlikelihood,
+        pickle_path=None,
+    ):
+        pickle_path = self.pickle_path if pickle_path is None else pickle_path
         d = self._get_data_dictionary_to_save()
         d["samples"] = samples
         d["lnprobs"] = lnprobs
         d["lnlikes"] = lnlikes
-        d["chain"] = self.sampler.chain
+        d["chain"] = self.chain
         d["all_lnlikelihood"] = all_lnlikelihood
 
-        if os.path.isfile(self.pickle_path):
+        if os.path.isfile(pickle_path):
             logger.info(
-                "Saving backup of {} as {}.old".format(
-                    self.pickle_path, self.pickle_path
-                )
+                "Saving backup of {} as {}.old".format(pickle_path, pickle_path)
             )
-            os.rename(self.pickle_path, self.pickle_path + ".old")
-        with open(self.pickle_path, "wb") as File:
+            os.rename(pickle_path, pickle_path + ".old")
+        with open(pickle_path, "wb") as File:
             pickle.dump(d, File)
 
     def get_saved_data_dictionary(self):
@@ -2937,6 +3058,10 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
     to then zoom-in said region using a finer "effective resolution" by increasing the coherence time.
     See Ashton & Prix (PRD 97, 103020, 2018): https://arxiv.org/abs/1802.05450
 
+    Bilby-backed sampling is not supported for this staged search. Use
+    :meth:`run` for hierarchical follow-ups, or use
+    :class:`MCMCSemiCoherentSearch` for a single fixed-coherence Bilby run.
+
     See MCMCSemiCoherentSearch for a list of additional parameters, here we list only the additional
     init parameters of this class.
     """
@@ -3021,6 +3146,16 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
             self._set_likelihoodcoef()
         else:
             logger.info("Value `nsegs` not yet provided")
+
+    def run_bilby(self, *args, **kwargs):
+        """Raise an error because staged follow-ups are not yet supported via Bilby."""
+        raise NotImplementedError(
+            "MCMCFollowUpSearch.run_bilby() is not supported because a "
+            "follow-up consists of multiple sampler stages with changing "
+            "coherence times. Use run() for a hierarchical follow-up, or "
+            "MCMCSemiCoherentSearch.run_bilby() for a single fixed-nsegs "
+            "Bilby search."
+        )
 
     def _get_data_dictionary_to_save(self):
         d = dict(
@@ -3156,6 +3291,7 @@ class MCMCFollowUpSearch(MCMCSemiCoherentSearch, core.DeprecatedClass):
         lnlikes = self.sampler.loglikelihood[0, :, nburn:].reshape((-1))
         all_lnlikelihood = self.sampler.loglikelihood
         self.samples = samples
+        self.chain = self.sampler.chain
         self.lnprobs = lnprobs
         self.lnlikes = lnlikes
         self.all_lnlikelihood = all_lnlikelihood

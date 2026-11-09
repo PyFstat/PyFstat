@@ -18,6 +18,14 @@ Subpackages
 Submodules
 ----------
 
+pyfstat.bilby\_based\_searches module
+-------------------------------------
+
+.. automodule:: pyfstat.bilby_based_searches
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pyfstat.core module
 -------------------
 
