@@ -16,9 +16,10 @@ jobs:
           python-version: "3.14"
           channels: conda-forge
           channel-priority: true
+          conda-remove-defaults: "true"
           activate-environment: pyfstat-dev
           environment-file: etc/pyfstat-dev.yml
-          auto-activate-base: false
+          auto-activate: false
       - name: check conda
         shell: bash -l {0}
         run: |
