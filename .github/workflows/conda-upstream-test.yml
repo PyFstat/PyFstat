@@ -13,12 +13,14 @@ jobs:
       - uses: actions/checkout@v7
       - uses: conda-incubator/setup-miniconda@v4
         with:
-          python-version: "3.14"
+          # Temporary until a conda-forge release supports Python 3.14.
+          python-version: "3.13"
           channels: conda-forge
           channel-priority: true
+          conda-remove-defaults: "true"
           activate-environment: pyfstat
           environment-file: etc/pyfstat.yml
-          auto-activate-base: false
+          auto-activate: false
       - name: check conda
         shell: bash -l {0}
         run: |
