@@ -19,7 +19,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e ${GITHUB_WORKSPACE}[test]
+        pip install -e ${GITHUB_WORKSPACE}[test,bilby,chainconsumer]
     - name: Generate coverage report
       run: |
         pytest tests/ --cov=pyfstat --cov-report=xml
